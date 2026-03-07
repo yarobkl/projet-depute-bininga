@@ -1,0 +1,35 @@
+{
+  "hero": {
+    "firstName": "Aimé Ange Wilfrid",
+    "lastName": "BININGA",
+    "role": "Ministre · Député d'Ewo",
+    "slogan": "Ensemble, bâtissons une <em>justice forte</em>",
+    "subtitle": "Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones — au service du Congo."
+  },
+  "about": {
+    "title": "Un homme forgé par le terrain",
+    "intro": "Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville."
+  },
+  "stats": [
+    {
+      "num": "23",
+      "label": "Mandats de Député"
+    },
+    {
+      "num": "2",
+      "label": "Portefeuilles ministériels"
+    },
+    {
+      "num": "107",
+      "label": "Voix pour la loi anti-corruption"
+    },
+    {
+      "num": "50+",
+      "label": "Ans de convention renégociée"
+    }
+  ],
+  "seo": {
+    "title": "Aimé Ange Wilfrid BININGA — Ministre · Député d'Ewo",
+    "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"
+  }
+}
