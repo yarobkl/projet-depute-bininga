@@ -917,7 +917,7 @@ function fSub(e,f){e.preventDefault();const b=f.querySelector("button");b.textCo
 function fCt(e,f){e.preventDefault();const b=f.querySelector("button");b.textContent="✅ Message envoyé — Réponse sous 24h";b.style.background="#2ecc71";b.disabled=true}
 
 // smooth scroll
-document.querySelecdocument.querySelectorAll("a[href^='#']").forEach(a=>a.addEventListener("click",e=>{const t=document.querySelector(a.getAttribute("href"));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth"})}}));
+document.querySelectorAll("a[href^='#']").forEach(a=>a.addEventListener("click",e=>{const t=document.querySelector(a.getAttribute("href"));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth"})}}));
 
 // admin secret trigger (4 clics)
 let _ac=0,_at=null;
