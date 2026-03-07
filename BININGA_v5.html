@@ -917,4 +917,19 @@ function fSub(e,f){e.preventDefault();const b=f.querySelector("button");b.textCo
 function fCt(e,f){e.preventDefault();const b=f.querySelector("button");b.textContent="✅ Message envoyé — Réponse sous 24h";b.style.background="#2ecc71";b.disabled=true}
 
 // smooth scroll
-document.querySelec
+document.querySelecdocument.querySelectorAll("a[href^='#']").forEach(a=>a.addEventListener("click",e=>{const t=document.querySelector(a.getAttribute("href"));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth"})}}));
+
+// admin secret trigger (4 clics)
+let _ac=0,_at=null;
+document.getElementById("adminTrigger").addEventListener("click",()=>{
+  _ac++;clearTimeout(_at);
+  _at=setTimeout(()=>{_ac=0},2000);
+  if(_ac>=4){_ac=0;window.location.href="admin.html";}
+});
+</script>
+
+<!-- Bouton admin caché -->
+<div id="adminTrigger" style="position:fixed;bottom:0;right:0;width:40px;height:40px;z-index:99999;cursor:default;opacity:0;"></div>
+
+</body>
+</html>
