@@ -219,28 +219,6 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .btn-form{width:100%;background:var(--r);color:var(--w);border:none;padding:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:var(--t);margin-top:8px}
 .btn-form:hover{background:var(--rd);transform:translateY(-2px)}
 
-/* DON */
-#don{padding:120px 6%;background:var(--n3)}
-.don-wrap{max-width:960px;margin:60px auto 0}
-.don-amts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
-.don-btn{background:var(--n2);border:1px solid rgba(255,255,255,.07);color:var(--w);padding:22px 10px;border-radius:4px;cursor:pointer;transition:var(--t);font-family:'DM Sans',sans-serif;text-align:center}
-.don-btn:hover,.don-btn.a{background:var(--r);border-color:var(--r);transform:translateY(-5px);box-shadow:0 20px 50px rgba(200,16,46,.35)}
-.don-n{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;display:block}
-.don-l{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px}
-.don-btn.a .don-l{color:rgba(255,255,255,.8)}
-.don-cust{display:flex;align-items:center;background:var(--n2);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:24px}
-.don-sym{padding:16px 22px;background:var(--r);font-weight:700;font-size:16px}
-.don-cust input{flex:1;background:transparent;border:none;padding:16px 20px;color:var(--w);font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;outline:none}
-.don-cust input::placeholder{color:rgba(255,255,255,.2)}
-.don-card{background:var(--n2);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:40px}
-.don-card .fg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.don-card .fgrp input,.don-card .fgrp select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--w)}
-.don-card .fgrp label{color:rgba(255,255,255,.45)}
-.don-card .fgrp input::placeholder{color:rgba(255,255,255,.2)}
-.don-card .fgrp input:focus,.don-card .fgrp select:focus{background:rgba(200,16,46,.05);border-color:rgba(200,16,46,.4)}
-.don-btn-sub{width:100%;background:var(--g);color:var(--n);border:none;padding:17px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:var(--t);margin-top:14px}
-.don-btn-sub:hover{background:var(--gl);transform:translateY(-2px)}
-.don-sec{text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:14px;line-height:1.7;letter-spacing:.5px}
 
 /* CTA BAND */
 .cta-band{background:var(--n);border-top:1px solid rgba(200,16,46,.15);border-bottom:1px solid rgba(200,16,46,.15);padding:90px 6%;text-align:center;position:relative;overflow:hidden}
@@ -308,17 +286,15 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   .prog-grid{grid-template-columns:1fr}
   .gal-grid{grid-template-columns:repeat(2,1fr)}
   .gi:first-child{grid-column:span 2}
-  .don-amts{grid-template-columns:repeat(3,1fr)}
   .about-badge{display:none}
 }
 @media(max-width:600px){
-  section,.about-grid,.prog-wrap,.don-wrap,.ct-wrap{padding-left:4%;padding-right:4%}
+  section,.about-grid,.prog-wrap,.ct-wrap{padding-left:4%;padding-right:4%}
   #hero{padding-left:4%;padding-right:4%}
   .hero-btns{flex-direction:column;align-items:flex-start}
   .hero-stat-strip{grid-template-columns:repeat(2,1fr)}
   .ft-grid{grid-template-columns:1fr 1fr}
-  .don-amts{grid-template-columns:repeat(2,1fr)}
-  .fg2,.don-card .fg2{grid-template-columns:1fr}
+  .fg2{grid-template-columns:1fr}
   .cta-btns{flex-direction:column;align-items:center}
   .prog-hero{grid-template-columns:1fr}
   .prog-hero-big{display:none}
@@ -366,7 +342,6 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <a href="#galerie" onclick="cMob()">Galerie</a>
   <a href="#actu" onclick="cMob()">Actualités</a>
   <a href="#engagement" onclick="cMob()">Soutenir</a>
-  <a href="#don" onclick="cMob()">Faire un don</a>
   <a href="#contact" onclick="cMob()">Contact</a>
 </div>
 
@@ -395,7 +370,6 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <p class="hero-sub">Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.</p>
     <div class="hero-btns">
       <a href="#engagement" class="btn btn-r">🤝 Rejoindre la campagne</a>
-      <a href="#don" class="btn btn-g">💛 Faire un don</a>
       <a href="#programme" class="btn btn-o">Notre programme</a>
     </div>
   </div>
@@ -504,7 +478,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           <div class="tl-year">2016</div>
           <div class="tl-title">Ministre de la Fonction publique et de la Réforme de l'État</div>
           <div class="tl-desc">Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale.</div>
-          <span class="tl-tag">🏛️ Ministère du Travail</span>
+          <span class="tl-tag">🏛️ Ministère de la Fonction publique</span>
         </div>
       </div>
       <div class="tl-item rev">
@@ -856,7 +830,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
     </div>
     <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#don">Faire un don</a></li><li><a href="#contact">Presse</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Financement</a></li><li><a href="#">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
@@ -906,11 +880,6 @@ document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
 // reveal
 const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");rObs.unobserve(e.target)}})},{threshold:.12});
 document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
-
-// don
-function selAmt(b,v){document.querySelectorAll(".don-btn").forEach(x=>x.classList.remove("a"));b.classList.add("a");document.getElementById("dAmt").value=v;document.getElementById("dDisp").textContent=v.toLocaleString("fr-FR")}
-document.getElementById("dAmt").addEventListener("input",function(){const v=+this.value||0;document.getElementById("dDisp").textContent=v.toLocaleString("fr-FR");document.querySelectorAll(".don-btn").forEach(x=>x.classList.remove("a"))});
-function fDon(e){e.preventDefault();const b=document.getElementById("donBtn");b.textContent="✅ Don confirmé — Merci pour votre soutien à BININGA !";b.style.background="#2ecc71";b.disabled=true}
 
 // forms
 function fSub(e,f){e.preventDefault();const b=f.querySelector("button");b.textContent="✅ Inscription enregistrée ! Bienvenue dans l'équipe";b.style.background="#2ecc71";b.disabled=true}
