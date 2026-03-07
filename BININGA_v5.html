@@ -307,6 +307,21 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .mob-nav a{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--w);text-decoration:none;letter-spacing:2px;transition:var(--t)}
 .mob-nav a:hover{color:var(--r)}
 .mob-close{position:absolute;top:25px;right:25px;background:none;border:none;color:var(--w);font-size:28px;cursor:pointer}
+
+/* MODALES LÉGALES */
+.lmodal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
+.lmodal-overlay.open{opacity:1;pointer-events:all}
+.lmodal{background:var(--n2);border:1px solid rgba(200,16,46,.2);border-radius:10px;max-width:700px;width:100%;max-height:85vh;display:flex;flex-direction:column;transform:translateY(20px);transition:transform .3s}
+.lmodal-overlay.open .lmodal{transform:translateY(0)}
+.lmodal-head{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
+.lmodal-head h3{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--w)}
+.lmodal-close{background:none;border:none;color:rgba(255,255,255,.4);font-size:22px;cursor:pointer;line-height:1;transition:color .2s}
+.lmodal-close:hover{color:var(--w)}
+.lmodal-body{padding:24px 28px;overflow-y:auto;font-size:14px;line-height:1.85;color:rgba(255,255,255,.6)}
+.lmodal-body h4{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--r);margin:22px 0 8px}
+.lmodal-body h4:first-child{margin-top:0}
+.lmodal-body p{margin-bottom:12px}
+.lmodal-body strong{color:rgba(255,255,255,.85)}
 </style>
 </head>
 <body>
@@ -828,11 +843,11 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     </div>
     <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Financement</a></li><li><a href="#">PCT officiel</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="#" onclick="event.preventDefault();openLegal('financement')">Financement</a></li><li><a href="#">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
     <p>© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
-    <div class="ft-legal"><a href="#">Mentions légales</a><a href="#">Confidentialité</a><a href="#">Cookies</a></div>
+    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a></div>
   </div>
 </footer>
 
@@ -932,6 +947,12 @@ function fCt(e, f) {
 // smooth scroll
 document.querySelectorAll("a[href^='#']").forEach(a=>a.addEventListener("click",e=>{const t=document.querySelector(a.getAttribute("href"));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth"})}}));
 
+// modales légales
+function openLegal(id){document.getElementById("modal-"+id).classList.add("open");document.body.style.overflow="hidden"}
+function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
+document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
+document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
+
 // admin secret trigger (4 clics)
 let _ac=0,_at=null;
 document.getElementById("adminTrigger").addEventListener("click",()=>{
@@ -943,6 +964,99 @@ document.getElementById("adminTrigger").addEventListener("click",()=>{
 
 <!-- Bouton admin caché -->
 <div id="adminTrigger" style="position:fixed;bottom:0;right:0;width:40px;height:40px;z-index:99999;cursor:default;opacity:0;"></div>
+
+<!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
+
+<!-- Mentions légales -->
+<div class="lmodal-overlay" id="modal-mentions">
+  <div class="lmodal">
+    <div class="lmodal-head">
+      <h3>Mentions légales</h3>
+      <button class="lmodal-close" onclick="closeLegal('mentions')">✕</button>
+    </div>
+    <div class="lmodal-body">
+      <h4>Éditeur du site</h4>
+      <p>Ce site est édité par la <strong>Cellule de communication de la campagne d'Ange Aimé Wilfrid BININGA</strong>, candidat aux élections législatives de 2027 pour la 1re circonscription d'Ewo (Cuvette-Ouest), République du Congo.</p>
+      <h4>Responsable de la publication</h4>
+      <p><strong>Ange Aimé Wilfrid BININGA</strong> — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo depuis le 19 août 2017. Membre du Parti Congolais du Travail (PCT).</p>
+      <h4>Contact</h4>
+      <p>Ewo, département de la Cuvette-Ouest, République du Congo.<br>Pour toute demande : via le formulaire de contact disponible sur ce site.</p>
+      <h4>Hébergement</h4>
+      <p>Ce site est hébergé par un prestataire tiers. Les informations relatives à l'hébergeur sont disponibles sur simple demande auprès de la cellule de communication.</p>
+      <h4>Propriété intellectuelle</h4>
+      <p>L'ensemble des contenus de ce site (textes, photos, graphismes) est la propriété exclusive de la campagne Aimé BININGA ou de leurs auteurs respectifs. Toute reproduction sans autorisation préalable est interdite.</p>
+      <h4>Limitation de responsabilité</h4>
+      <p>Les informations publiées sur ce site sont fournies à titre indicatif. La campagne ne saurait être tenue responsable des inexactitudes ou omissions qui pourraient y figurer.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Confidentialité -->
+<div class="lmodal-overlay" id="modal-confidentialite">
+  <div class="lmodal">
+    <div class="lmodal-head">
+      <h3>Politique de confidentialité</h3>
+      <button class="lmodal-close" onclick="closeLegal('confidentialite')">✕</button>
+    </div>
+    <div class="lmodal-body">
+      <h4>Données collectées</h4>
+      <p>Ce site collecte des données personnelles uniquement via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message).</p>
+      <h4>Finalité du traitement</h4>
+      <p>Les données collectées sont utilisées exclusivement pour <strong>répondre à vos demandes</strong> et assurer le suivi de votre contact avec l'équipe du Député. Elles ne font l'objet d'aucune cession à des tiers ni d'aucune utilisation commerciale.</p>
+      <h4>Stockage des données</h4>
+      <p>Les soumissions sont conservées dans l'espace d'administration sécurisé du site. Elles ne sont accessibles qu'aux membres habilités de la cellule de communication.</p>
+      <h4>Durée de conservation</h4>
+      <p>Les données sont conservées pour la durée nécessaire au traitement de votre demande, et au maximum <strong>12 mois</strong> à compter de la soumission.</p>
+      <h4>Vos droits</h4>
+      <p>Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous via le formulaire du site.</p>
+      <h4>Cookies</h4>
+      <p>Ce site n'utilise pas de cookies de suivi ou publicitaires. Des cookies techniques essentiels au fonctionnement du site peuvent être utilisés.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Financement -->
+<div class="lmodal-overlay" id="modal-financement">
+  <div class="lmodal">
+    <div class="lmodal-head">
+      <h3>Financement de la campagne</h3>
+      <button class="lmodal-close" onclick="closeLegal('financement')">✕</button>
+    </div>
+    <div class="lmodal-body">
+      <h4>Transparence financière</h4>
+      <p>La campagne d'Ange Aimé Wilfrid BININGA est conduite dans le respect des dispositions légales régissant le financement des campagnes électorales en République du Congo.</p>
+      <h4>Sources de financement</h4>
+      <p>La campagne est financée par :</p>
+      <p>— Les contributions personnelles du candidat ;<br>— Les dons et soutiens de sympathisants congolais conformément à la législation en vigueur ;<br>— Le soutien logistique du <strong>Parti Congolais du Travail (PCT)</strong>.</p>
+      <h4>Conformité légale</h4>
+      <p>Tous les financements reçus sont conformes aux dispositions de la loi électorale congolaise. Aucun financement étranger n'est accepté. Les comptes de campagne sont soumis au contrôle des autorités compétentes.</p>
+      <h4>Contact</h4>
+      <p>Pour toute question relative au financement, adressez-vous à la cellule de communication de la campagne via le formulaire de contact du site.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Cookies -->
+<div class="lmodal-overlay" id="modal-cookies">
+  <div class="lmodal">
+    <div class="lmodal-head">
+      <h3>Gestion des cookies</h3>
+      <button class="lmodal-close" onclick="closeLegal('cookies')">✕</button>
+    </div>
+    <div class="lmodal-body">
+      <h4>Qu'est-ce qu'un cookie ?</h4>
+      <p>Un cookie est un petit fichier déposé sur votre terminal lors de la visite d'un site. Il permet de mémoriser des informations relatives à votre navigation.</p>
+      <h4>Cookies utilisés sur ce site</h4>
+      <p><strong>Cookies techniques (essentiels) :</strong> nécessaires au fonctionnement du site (navigation, sécurité). Ils ne peuvent pas être désactivés.</p>
+      <p><strong>Cookies de mesure d'audience :</strong> ce site n'utilise pas de cookies de mesure d'audience ou d'analyse de comportement.</p>
+      <p><strong>Cookies publicitaires :</strong> ce site ne dépose aucun cookie publicitaire ou de reciblage.</p>
+      <h4>Données stockées localement</h4>
+      <p>Ce site utilise le <strong>stockage local (localStorage)</strong> de votre navigateur uniquement pour la gestion interne de l'administration du site. Ces données ne sont pas transmises à des tiers.</p>
+      <h4>Vos choix</h4>
+      <p>Vous pouvez à tout moment supprimer les données stockées via les paramètres de votre navigateur (<em>Outils → Confidentialité → Effacer les données de navigation</em>).</p>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
