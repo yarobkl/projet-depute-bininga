@@ -226,6 +226,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       <div class="sb-item" onclick="showPanel('stats',this)">
         <span class="icon">📈</span> Statistiques
       </div>
+      <div class="sb-item" onclick="showPanel('galerie',this)">
+        <span class="icon">🖼️</span> Galerie
+      </div>
       <div class="sb-item" onclick="showPanel('actus',this)">
         <span class="icon">📰</span> Actualités
       </div>
@@ -408,6 +411,33 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         </div>
       </div>
 
+      <!-- ── GALERIE ── -->
+      <div class="panel" id="panel-galerie">
+
+        <!-- Diaporama -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header">
+            <div class="card-title">🎞️ Diaporama</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addSlide()">+ Ajouter une slide</button>
+            </div>
+          </div>
+          <div id="slides-list"></div>
+        </div>
+
+        <!-- Grille -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🖼️ Grille de photos</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addGridPhoto()">+ Ajouter une photo</button>
+            </div>
+          </div>
+          <div id="grid-list"></div>
+        </div>
+
+      </div>
+
       <!-- ── ACTUALITÉS ── -->
       <div class="panel" id="panel-actus">
 
@@ -487,6 +517,164 @@ let siteData = {};
 function init() {
   loadSiteData();
   refreshDashboard();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GALERIE
+// ══════════════════════════════════════════════════════════════════════════
+function renderGalerie() {
+  renderSlides();
+  renderGrid();
+}
+
+function renderSlides() {
+  const slides = (siteData.gallery && siteData.gallery.slides) || [];
+  const list = document.getElementById("slides-list");
+  if (!slides.length) {
+    list.innerHTML = '<div class="msg-empty">Aucune slide. Cliquez sur "+ Ajouter".</div>';
+    return;
+  }
+  list.innerHTML = slides.map((s, i) => `
+    <div class="stats-row" style="grid-template-columns:90px 1fr 1fr auto;gap:12px;align-items:start;padding:14px 0">
+      <div style="text-align:center">
+        <div style="width:80px;height:56px;border-radius:6px;overflow:hidden;background:#1c1c1c;display:flex;align-items:center;justify-content:center;margin-bottom:6px;border:1px solid rgba(255,255,255,.08)">
+          ${s.image
+            ? `<img src="${esc(s.image)}" style="width:100%;height:100%;object-fit:cover">`
+            : `<span style="font-size:24px">${esc(s.emoji||'🖼️')}</span>`}
+        </div>
+        <button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px" onclick="uploadForSlide(${i})">📷 Photo</button>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Titre</label>
+        <input type="text" value="${esc(s.title||'')}" placeholder="Titre de la slide"
+          oninput="updSlide(${i},'title',this.value)">
+        <label style="margin-top:8px">Emoji (si pas de photo)</label>
+        <input type="text" value="${esc(s.emoji||'')}" placeholder="🏛️"
+          oninput="updSlide(${i},'emoji',this.value)" style="width:80px">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Sous-titre</label>
+        <textarea oninput="updSlide(${i},'subtitle',this.value)"
+          style="min-height:72px">${esc(s.subtitle||'')}</textarea>
+      </div>
+      <div style="padding-top:22px;display:flex;flex-direction:column;gap:6px">
+        <button class="btn-danger" onclick="delSlide(${i})" title="Supprimer">🗑</button>
+        ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveSlide(${i},-1)" title="Monter">↑</button>` : ''}
+        ${i < slides.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveSlide(${i},1)" title="Descendre">↓</button>` : ''}
+      </div>
+    </div>
+  `).join('<div style="border-bottom:1px solid rgba(255,255,255,.05)"></div>');
+}
+
+function renderGrid() {
+  const grid = (siteData.gallery && siteData.gallery.grid) || [];
+  const list = document.getElementById("grid-list");
+  if (!grid.length) {
+    list.innerHTML = '<div class="msg-empty">Aucune photo. Cliquez sur "+ Ajouter".</div>';
+    return;
+  }
+  list.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:8px 0">` +
+    grid.map((g, i) => `
+      <div style="background:var(--n3);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+        <div style="width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
+          ${g.image
+            ? `<img src="${esc(g.image)}" style="width:100%;height:100%;object-fit:cover">`
+            : `<span style="font-size:32px">${esc(g.emoji||'🖼️')}</span>`}
+        </div>
+        <input type="text" value="${esc(g.alt||'')}" placeholder="Description"
+          oninput="updGrid(${i},'alt',this.value)"
+          style="width:100%;font-size:11px;margin-bottom:6px">
+        <div style="display:flex;gap:4px;justify-content:center">
+          <button class="sbtn sbtn-progress" style="font-size:10px;padding:3px 7px" onclick="uploadForGrid(${i})">📷</button>
+          <input type="text" value="${esc(g.emoji||'')}" placeholder="😀"
+            oninput="updGrid(${i},'emoji',this.value)"
+            style="width:42px;font-size:13px;text-align:center">
+          <button class="btn-danger" style="font-size:11px;padding:3px 7px" onclick="delGrid(${i})">🗑</button>
+        </div>
+      </div>
+    `).join("") + `</div>`;
+}
+
+// ── Upload d'image ─────────────────────────────────────────────────────────
+function uploadImage(callback) {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "image/*";
+  input.onchange = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    showToast("⏳ Upload en cours…");
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "X-Admin-Token": "secured" },
+        body: formData
+      });
+      const data = await res.json();
+      if (data.ok) { callback(data.path); showToast("Photo uploadée !"); }
+      else showToast("Erreur : " + data.message, true);
+    } catch { showToast("Serveur non disponible", true); }
+  };
+  input.click();
+}
+
+function uploadForSlide(i) {
+  uploadImage(path => {
+    if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
+    siteData.gallery.slides[i].image = path;
+    renderSlides();
+  });
+}
+
+function uploadForGrid(i) {
+  uploadImage(path => {
+    if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
+    siteData.gallery.grid[i].image = path;
+    renderGrid();
+  });
+}
+
+// ── CRUD Slides ────────────────────────────────────────────────────────────
+function updSlide(i, field, val) {
+  if (siteData.gallery && siteData.gallery.slides[i])
+    siteData.gallery.slides[i][field] = val;
+}
+function delSlide(i) {
+  if (!confirm("Supprimer cette slide ?")) return;
+  siteData.gallery.slides.splice(i, 1);
+  renderSlides();
+  showToast("Slide supprimée");
+}
+function addSlide() {
+  if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
+  siteData.gallery.slides.push({ image: "", emoji: "🖼️", title: "", subtitle: "" });
+  renderSlides();
+}
+function moveSlide(i, dir) {
+  const arr = siteData.gallery.slides;
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  renderSlides();
+}
+
+// ── CRUD Grid ──────────────────────────────────────────────────────────────
+function updGrid(i, field, val) {
+  if (siteData.gallery && siteData.gallery.grid[i])
+    siteData.gallery.grid[i][field] = val;
+}
+function delGrid(i) {
+  if (!confirm("Supprimer cette photo ?")) return;
+  siteData.gallery.grid.splice(i, 1);
+  renderGrid();
+  showToast("Photo supprimée");
+}
+function addGridPhoto() {
+  if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
+  siteData.gallery.grid.push({ image: "", alt: "", emoji: "🖼️" });
+  renderGrid();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -847,7 +1035,7 @@ function setStatus(storageKey, idx, status) {
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
-  hero:"Section Hero", about:"À propos", stats:"Statistiques", actus:"Actualités", seo:"SEO"
+  hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos", actus:"Actualités", seo:"SEO"
 };
 
 function showPanel(name, el) {
@@ -861,6 +1049,7 @@ function showPanel(name, el) {
   if (name === "reclamations") renderReclamations();
   if (name === "contacts")     renderContacts();
   if (name === "stats")        renderStats();
+  if (name === "galerie")      renderGalerie();
   if (name === "actus")        renderActus();
 }
 

@@ -1,6 +1,8 @@
 import http.server
 import json
 import os
+import io
+import cgi
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 
@@ -94,13 +96,50 @@ class BininigaHandler(http.server.SimpleHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length)
         
+        # API: Upload d'image
+        if path == "/api/upload":
+            token = self.headers.get("X-Admin-Token", "")
+            if token != "secured":
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+
+            content_type = self.headers.get("Content-Type", "")
+            if "multipart/form-data" not in content_type:
+                self._json({"ok": False, "message": "Format invalide"}, 400)
+                return
+
+            environ = {
+                "REQUEST_METHOD": "POST",
+                "CONTENT_TYPE": content_type,
+                "CONTENT_LENGTH": str(length),
+            }
+            form = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
+
+            if "file" not in form:
+                self._json({"ok": False, "message": "Pas de fichier"}, 400)
+                return
+
+            file_item = form["file"]
+            raw_name = os.path.basename(file_item.filename or "upload.jpg")
+            # Nettoyage du nom de fichier
+            safe_name = "".join(c for c in raw_name if c.isalnum() or c in ".-_")
+            if not safe_name:
+                safe_name = "image.jpg"
+
+            os.makedirs("images", exist_ok=True)
+            filepath = os.path.join("images", safe_name)
+            with open(filepath, "wb") as f:
+                f.write(file_item.file.read())
+
+            print(f"[BININGA] 📷 Image uploadée : {safe_name}")
+            self._json({"ok": True, "path": "images/" + safe_name})
+            return
+
         # API: Sauvegarder les données (avec authentification)
         if path == "/api/save":
             # Vérifie l'authentification
             token = self.headers.get("X-Admin-Token", "")
-            expected_token = f"{ADMIN_USER}:{ADMIN_PASS}"
-            
-            if token != expected_token:
+            if token != "secured":
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             

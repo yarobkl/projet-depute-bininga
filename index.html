@@ -698,62 +698,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <h2 class="stitle">Aimé BININGA <span class="g">sur le terrain</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
-    <div class="gal-wrap">
-      <div class="gal-slider rev">
-        <div class="gal-track" id="galTrack">
-          <div class="gal-slide">
-            <img src="images/bininga.jpg" alt="Aimé BININGA — Portrait officiel" style="object-position:top center">
-            <div class="gal-cap">
-              <h3>Portrait officiel — Ministre de la Justice</h3>
-              <p>Ange Aimé Wilfrid BININGA, Ministre de la Justice, Député d'Ewo</p>
-            </div>
-          </div>
-          <div class="gal-slide">
-            <img src="images/Darmanin.jpeg" alt="BININGA et Darmanin — Place Vendôme, Paris" style="object-position:center center">
-            <div class="gal-cap">
-              <h3>Rencontre Place Vendôme — BININGA & Darmanin</h3>
-              <p>Coopération judiciaire Congo–France, 18 Février 2026</p>
-            </div>
-          </div>
-          <div class="gal-slide">
-            <div class="gal-slide-placeholder">
-              <div style="font-size:50px">🏛️</div>
-              <p style="color:rgba(255,255,255,.3);font-size:14px">Photo officielle Ministère de la Fonction publique</p>
-            </div>
-            <div class="gal-cap">
-              <h3>Au Ministère de la Fonction publique et de la Réforme de l'État</h3>
-              <p>Modernisation de l'administration et dialogue social</p>
-            </div>
-          </div>
-          <div class="gal-slide">
-            <div class="gal-slide-placeholder">
-              <div style="font-size:50px">🗳️</div>
-              <p style="color:rgba(255,255,255,.3);font-size:14px">Meeting de campagne — Photo à intégrer</p>
-            </div>
-            <div class="gal-cap">
-              <h3>Grand meeting populaire à Ewo</h3>
-              <p>Lancement officiel de la campagne législative 2027</p>
-            </div>
-          </div>
-        </div>
-        <button class="gal-btn p" onclick="gSlide(-1)">‹</button>
-        <button class="gal-btn n" onclick="gSlide(1)">›</button>
-        <div class="gal-dots" id="galDots">
-          <button class="gal-dot a" onclick="gGo(0)"></button>
-          <button class="gal-dot" onclick="gGo(1)"></button>
-          <button class="gal-dot" onclick="gGo(2)"></button>
-          <button class="gal-dot" onclick="gGo(3)"></button>
-        </div>
-      </div>
-      <div class="gal-grid rev">
-        <div class="gi"><img src="images/bininga.jpg" alt="BININGA portrait"><div class="gi-ov">🔍</div></div>
-        <div class="gi"><img src="images/Darmanin.jpeg" alt="BININGA et Darmanin"><div class="gi-ov">🔍</div></div>
-        <div class="gi"><div class="gi-ph">⚖️</div><div class="gi-ov">🔍</div></div>
-        <div class="gi"><div class="gi-ph">🏗️</div><div class="gi-ov">🔍</div></div>
-        <div class="gi"><div class="gi-ph">📚</div><div class="gi-ov">🔍</div></div>
-        <div class="gi"><div class="gi-ph">🏥</div><div class="gi-ov">🔍</div></div>
-        <div class="gi"><div class="gi-ph">👷</div><div class="gi-ov">🔍</div></div>
-      </div>
+    <div class="gal-wrap" id="gal-wrap">
+      <!-- Contenu généré dynamiquement via data.json -->
     </div>
   </div>
 </section>
@@ -950,6 +896,45 @@ function loadContent() {
         if (lblEl) lblEl.textContent = s.label;
       });
 
+      // Galerie
+      const gal = d.gallery;
+      const galWrap = document.getElementById("gal-wrap");
+      if (gal && galWrap) {
+        const slidesHtml = (gal.slides || []).map(s => `
+          <div class="gal-slide">
+            ${s.image
+              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}">`
+              : `<div class="gal-slide-placeholder"><div style="font-size:50px">${escHtml(s.emoji||'🖼️')}</div></div>`}
+            <div class="gal-cap">
+              <h3>${escHtml(s.title||'')}</h3>
+              <p>${escHtml(s.subtitle||'')}</p>
+            </div>
+          </div>`).join("");
+
+        const dotsHtml = (gal.slides || []).map((_, i) =>
+          `<button class="gal-dot${i===0?' a':''}" onclick="gGo(${i})"></button>`
+        ).join("");
+
+        const gridHtml = (gal.grid || []).map(g =>
+          `<div class="gi">${g.image
+            ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}">`
+            : `<div class="gi-ph">${escHtml(g.emoji||'🖼️')}</div>`
+          }<div class="gi-ov">🔍</div></div>`
+        ).join("");
+
+        galWrap.innerHTML = `
+          <div class="gal-slider rev">
+            <div class="gal-track" id="galTrack">${slidesHtml}</div>
+            <button class="gal-btn p" onclick="gSlide(-1)">‹</button>
+            <button class="gal-btn n" onclick="gSlide(1)">›</button>
+            <div class="gal-dots" id="galDots">${dotsHtml}</div>
+          </div>
+          <div class="gal-grid rev">${gridHtml}</div>`;
+
+        // Réinitialiser le slider avec le bon nombre de slides
+        initSlider();
+      }
+
       // Actualités
       const actu = d.actus;
       const actuWrap = document.getElementById("actu-wrap");
@@ -1018,11 +1003,20 @@ document.getElementById("mobClose").onclick=()=>mob.classList.remove("open");
 function cMob(){mob.classList.remove("open")}
 
 // slider
-let cs=0;const st=document.getElementById("galTrack"),slides=st.querySelectorAll(".gal-slide"),dots=document.querySelectorAll(".gal-dot");
-function upd(){st.style.transform=`translateX(-${cs*100}%)`;dots.forEach((d,i)=>d.classList.toggle("a",i===cs))}
-function gSlide(d){cs=(cs+d+slides.length)%slides.length;upd()}
+let cs=0, galSlides=[], galDotEls=[], galTrackEl=null, galTimer=null;
+function initSlider() {
+  galTrackEl = document.getElementById("galTrack");
+  if (!galTrackEl) return;
+  galSlides = galTrackEl.querySelectorAll(".gal-slide");
+  galDotEls = document.querySelectorAll(".gal-dot");
+  cs = 0;
+  if (galTimer) clearInterval(galTimer);
+  galTimer = setInterval(() => gSlide(1), 5500);
+  upd();
+}
+function upd(){if(!galTrackEl)return;galTrackEl.style.transform=`translateX(-${cs*100}%)`;galDotEls.forEach((d,i)=>d.classList.toggle("a",i===cs))}
+function gSlide(d){cs=(cs+d+galSlides.length)%galSlides.length;upd()}
 function gGo(n){cs=n;upd()}
-setInterval(()=>gSlide(1),5500);
 
 // counters
 function aCount(el){

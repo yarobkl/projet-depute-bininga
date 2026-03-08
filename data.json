@@ -56,6 +56,43 @@
       }
     ]
   },
+  "gallery": {
+    "slides": [
+      {
+        "image": "images/bininga.jpg",
+        "emoji": "",
+        "title": "Portrait officiel — Ministre de la Justice",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Ministre de la Justice, Député d'Ewo"
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "emoji": "",
+        "title": "Rencontre Place Vendôme — BININGA & Darmanin",
+        "subtitle": "Coopération judiciaire Congo–France, 18 Février 2026"
+      },
+      {
+        "image": "",
+        "emoji": "🏛️",
+        "title": "Au Ministère de la Fonction publique et de la Réforme de l'État",
+        "subtitle": "Modernisation de l'administration et dialogue social"
+      },
+      {
+        "image": "",
+        "emoji": "🗳️",
+        "title": "Grand meeting populaire à Ewo",
+        "subtitle": "Lancement officiel de la campagne législative 2027"
+      }
+    ],
+    "grid": [
+      { "image": "images/bininga.jpg", "alt": "BININGA portrait",       "emoji": "" },
+      { "image": "images/Darmanin.jpeg", "alt": "BININGA et Darmanin",  "emoji": "" },
+      { "image": "", "alt": "Justice",      "emoji": "⚖️" },
+      { "image": "", "alt": "Construction", "emoji": "🏗️" },
+      { "image": "", "alt": "Éducation",    "emoji": "📚" },
+      { "image": "", "alt": "Santé",        "emoji": "🏥" },
+      { "image": "", "alt": "Travaux",      "emoji": "👷" }
+    ]
+  },
   "seo": {
     "title": "Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo",
     "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"
