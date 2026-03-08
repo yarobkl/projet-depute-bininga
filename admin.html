@@ -6,290 +6,776 @@
 <title>BININGA — Espace Admin</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:sans-serif;background:#060606;color:#fff;min-height:100vh}
-#login{position:fixed;inset:0;background:#060606;display:flex;align-items:center;justify-content:center;z-index:9999}
+:root{
+  --r:#C8102E;--rd:#8B0A1E;
+  --g:#B8973A;
+  --n:#060606;--n2:#111;--n3:#1c1c1c;
+  --w:#fff;
+  --success:#2ecc71;--warn:#f39c12;--err:#e74c3c;--info:#3498db;
+  --t:all .3s ease;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(--w);min-height:100vh;font-size:14px}
+
+/* ── LOGIN ── */
+#login{position:fixed;inset:0;background:var(--n);display:flex;align-items:center;justify-content:center;z-index:9999}
 #login.hidden{display:none}
-.box{background:#111;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:40px;width:100%;max-width:400px;text-align:center}
-.box h1{font-size:24px;margin-bottom:20px;color:#C8102E}
-.box input{width:100%;padding:12px;margin-bottom:12px;background:#1c1c1c;border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#fff;font-size:14px}
-.box button{width:100%;padding:12px;background:#C8102E;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px}
-.box button:hover{background:#8B0A1E}
-.err{color:#ff6b6b;font-size:12px;margin-top:10px}
+.login-box{background:var(--n2);border:1px solid rgba(200,16,46,.2);border-radius:16px;padding:48px 40px;width:100%;max-width:420px;text-align:center;box-shadow:0 40px 100px rgba(0,0,0,.6)}
+.login-logo{width:60px;height:60px;background:var(--r);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;margin:0 auto 24px;box-shadow:0 0 40px rgba(200,16,46,.35);font-family:serif;letter-spacing:1px}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:6px}
+.login-box p{font-size:13px;color:rgba(255,255,255,.35);margin-bottom:32px}
+.login-field{width:100%;padding:14px 16px;margin-bottom:12px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--w);font-size:14px;transition:var(--t);outline:none;font-family:inherit}
+.login-field:focus{border-color:var(--r);background:rgba(200,16,46,.05)}
+.login-btn{width:100%;padding:14px;background:var(--r);color:var(--w);border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;letter-spacing:.5px;transition:var(--t);margin-top:4px;font-family:inherit}
+.login-btn:hover{background:var(--rd)}
+.login-err{color:#ff6b6b;font-size:12px;margin-top:12px;min-height:18px}
+
+/* ── APP ── */
 #app{display:none}
 #app.visible{display:flex;min-height:100vh}
-.sidebar{width:250px;background:#111;border-right:1px solid rgba(255,255,255,.1);padding:20px;display:flex;flex-direction:column}
-.sidebar h2{font-size:14px;margin-bottom:20px;color:#C8102E}
-.sb-item{padding:12px 16px;margin-bottom:8px;border-radius:8px;cursor:pointer;font-size:13px;border:1px solid transparent;transition:all .3s}
-.sb-item:hover{background:rgba(200,16,46,.1);border-color:rgba(200,16,46,.2)}
-.sb-item.active{background:rgba(200,16,46,.2);border-color:#C8102E;color:#C8102E}
-.sidebar button{width:100%;padding:10px;background:#C8102E;color:#fff;border:none;border-radius:8px;margin-top:auto;cursor:pointer;font-size:12px}
-.main{flex:1;padding:30px;overflow-y:auto}
+
+/* ── SIDEBAR ── */
+.sidebar{width:260px;min-height:100vh;background:var(--n2);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sb-header{padding:22px 18px 18px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-logo{display:flex;align-items:center;gap:10px}
+.sb-logo-badge{width:38px;height:38px;background:var(--r);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;flex-shrink:0;font-family:serif}
+.sb-logo-txt{font-weight:700;font-size:14px;line-height:1.2}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.25);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.sb-nav{flex:1;padding:14px 10px}
+.sb-section{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.18);padding:14px 8px 6px;font-weight:600}
+.sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:2px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:var(--t);position:relative;border:1px solid transparent}
+.sb-item:hover{background:rgba(255,255,255,.04);color:var(--w)}
+.sb-item.active{background:rgba(200,16,46,.12);color:var(--w);border-color:rgba(200,16,46,.2)}
+.sb-item .icon{font-size:14px;width:20px;text-align:center}
+.sb-badge{margin-left:auto;background:var(--r);color:var(--w);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:700;min-width:20px;text-align:center}
+.sb-badge.warn{background:var(--warn)}
+.sb-footer{padding:14px 10px;border-top:1px solid rgba(255,255,255,.06)}
+.sb-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--t);border:none;font-family:inherit}
+.sb-btn-primary{background:var(--r);color:var(--w);margin-bottom:8px}
+.sb-btn-primary:hover{background:var(--rd)}
+.sb-btn-ghost{background:transparent;color:rgba(255,255,255,.3);border:1px solid rgba(255,255,255,.09)}
+.sb-btn-ghost:hover{color:var(--w);border-color:rgba(255,255,255,.2)}
+
+/* ── MAIN ── */
+.main{flex:1;margin-left:260px;min-height:100vh;background:var(--n)}
+.topbar{background:rgba(17,17,17,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-title{font-size:15px;font-weight:700}
+.topbar-info{font-size:11px;color:rgba(255,255,255,.25)}
+.content{padding:28px}
+
+/* ── PANELS ── */
 .panel{display:none}
 .panel.active{display:block}
-.card{background:#111;border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px;margin-bottom:20px}
-.card h3{font-size:16px;margin-bottom:15px;color:#C8102E}
+
+/* ── KPI ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--n2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;transition:var(--t);cursor:default}
+.kpi-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.14)}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:3px 3px 0 0}
+.kpi-card.red::after{background:var(--r)}
+.kpi-card.gold::after{background:var(--g)}
+.kpi-card.green::after{background:var(--success)}
+.kpi-card.orange::after{background:var(--warn)}
+.kpi-card.blue::after{background:var(--info)}
+.kpi-card.purple::after{background:#9b59b6}
+.kpi-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:10px;font-weight:600}
+.kpi-val{font-size:36px;font-weight:800;line-height:1;margin-bottom:5px}
+.kpi-sub{font-size:11px;color:rgba(255,255,255,.25)}
+
+/* ── CARDS ── */
+.card{background:var(--n2);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:22px;margin-bottom:18px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.card-title{font-size:14px;font-weight:700}
+.card-actions{display:flex;gap:8px}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;margin-bottom:18px;flex-wrap:wrap}
+.tab{padding:7px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:rgba(255,255,255,.35);transition:var(--t);border:1px solid transparent;background:transparent;font-family:inherit}
+.tab:hover{color:var(--w);background:rgba(255,255,255,.04)}
+.tab.active{background:rgba(200,16,46,.12);color:#ff4466;border-color:rgba(200,16,46,.25)}
+
+/* ── MESSAGES ── */
+.msg-list{display:flex;flex-direction:column;gap:10px}
+.msg-item{background:var(--n3);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 18px;transition:var(--t)}
+.msg-item:hover{border-color:rgba(255,255,255,.12)}
+.msg-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px}
+.msg-name{font-weight:700;font-size:14px;margin-bottom:2px}
+.msg-date{font-size:11px;color:rgba(255,255,255,.25)}
+.msg-fields{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.msg-field{font-size:12px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:3px 10px;border-radius:5px}
+.msg-field strong{color:rgba(255,255,255,.7);margin-right:4px}
+.msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)}
+.msg-empty{color:rgba(255,255,255,.2);text-align:center;padding:50px 0;font-size:14px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.badge-wait{background:rgba(243,156,18,.12);color:#f39c12;border:1px solid rgba(243,156,18,.25)}
+.badge-progress{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.badge-done{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.25)}
+.badge-recl{background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25)}
+.badge-unread{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.badge-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08)}
+
+/* ── STATUS BUTTONS ── */
+.sbtn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--t);font-family:inherit}
+.sbtn-wait{background:rgba(243,156,18,.1);color:#f39c12;border-color:rgba(243,156,18,.2)}
+.sbtn-wait:hover{background:rgba(243,156,18,.25)}
+.sbtn-progress{background:rgba(52,152,219,.1);color:#3498db;border-color:rgba(52,152,219,.2)}
+.sbtn-progress:hover{background:rgba(52,152,219,.25)}
+.sbtn-done{background:rgba(46,204,113,.1);color:#2ecc71;border-color:rgba(46,204,113,.2)}
+.sbtn-done:hover{background:rgba(46,204,113,.25)}
+.sbtn-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
+.sbtn-read:hover{background:rgba(255,255,255,.12);color:var(--w)}
+
+/* ── DANGER BUTTON ── */
+.btn-danger{background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);font-family:inherit}
+.btn-danger:hover{background:rgba(231,76,60,.25)}
+
+/* ── FORM ── */
 .form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
-.form-group input, .form-group textarea{width:100%;padding:10px;background:#1c1c1c;border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#fff;font-size:14px;font-family:inherit}
-.form-group input:focus, .form-group textarea:focus{border-color:#C8102E;outline:none}
-.form-group textarea{resize:vertical;min-height:80px}
-#toast{position:fixed;bottom:20px;right:20px;background:#2ecc71;color:#fff;padding:12px 20px;border-radius:8px;font-size:13px;z-index:9999;transform:translateY(100px);opacity:0;transition:all .3s}
+.form-group label{display:block;font-size:10px;color:rgba(255,255,255,.35);margin-bottom:7px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
+.form-group input,.form-group textarea{width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:14px;font-family:inherit;outline:none;transition:var(--t)}
+.form-group input:focus,.form-group textarea:focus{border-color:var(--r);background:rgba(200,16,46,.03)}
+.form-group textarea{resize:vertical;min-height:88px}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.05)}
+.stats-row:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+
+/* ── ACTIVITY FEED ── */
+.feed-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.feed-item:last-child{border-bottom:none}
+.feed-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.feed-dot.red{background:var(--r)}
+.feed-dot.green{background:var(--success)}
+.feed-dot.blue{background:var(--info)}
+.feed-dot.gold{background:var(--g)}
+.feed-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.feed-sub{font-size:11px;color:rgba(255,255,255,.3)}
+
+/* ── PROGRESS BAR ── */
+.prog-bar{background:rgba(255,255,255,.06);border-radius:4px;height:6px;overflow:hidden;margin-top:6px}
+.prog-bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--success);color:var(--w);padding:13px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(100px);opacity:0;transition:all .35s cubic-bezier(.175,.885,.32,1.275)}
 #toast.show{transform:translateY(0);opacity:1}
-#toast.err{background:#e74c3c}
-.msg-card{background:#1c1c1c;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:16px;margin-bottom:12px;font-size:13px;line-height:1.6}
-.msg-card .msg-date{font-size:11px;color:rgba(255,255,255,.3);margin-bottom:8px}
-.msg-card .msg-field{margin-bottom:4px}.msg-card .msg-key{color:rgba(255,255,255,.4);font-size:11px;text-transform:uppercase;letter-spacing:1px;margin-right:6px}
-.msg-empty{color:rgba(255,255,255,.25);font-size:14px;text-align:center;padding:40px 0}
+#toast.err{background:var(--err)}
+
+@media(max-width:900px){
+  .sidebar{width:220px}
+  .main{margin-left:220px}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
 
+<!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
 <div id="login">
-  <div class="box">
-    <h1>🛡️ Admin</h1>
-    <input type="text" id="user" placeholder="Identifiant">
-    <input type="password" id="pass" placeholder="Mot de passe">
-    <button onclick="doLogin()">Connexion</button>
-    <div class="err" id="err"></div>
-    <p style="font-size:11px;color:rgba(255,255,255,.2);margin-top:20px">admin / bininga2025</p>
+  <div class="login-box">
+    <div class="login-logo">B</div>
+    <h1>Espace Administration</h1>
+    <p>BININGA — Député d'Ewo · Accès sécurisé</p>
+    <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username">
+    <input class="login-field" type="password" id="p" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Connexion</button>
+    <div class="login-err" id="err"></div>
   </div>
 </div>
 
+<!-- ═══════════════════════════════ APP ════════════════════════════════ -->
 <div id="app">
+
+  <!-- SIDEBAR -->
   <div class="sidebar">
-    <h2>BININGA Admin</h2>
-    <div class="sb-item active" onclick="showPanel('hero')">🏠 Hero</div>
-    <div class="sb-item" onclick="showPanel('about')">👤 À propos</div>
-    <div class="sb-item" onclick="showPanel('stats')">📊 Stats</div>
-    <div class="sb-item" onclick="showPanel('seo')">🔍 SEO</div>
-    <div class="sb-item" onclick="showPanel('audiences')" id="sb-audiences">📋 Audiences <span id="badge-aud" style="background:#C8102E;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none"></span></div>
-    <div class="sb-item" onclick="showPanel('contacts')" id="sb-contacts">✉️ Messages <span id="badge-ct" style="background:#C8102E;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none"></span></div>
-    <button onclick="saveData()">💾 Enregistrer</button>
-    <button onclick="logout()" style="background:transparent;border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.5);margin-top:10px">Déconnexion</button>
+    <div class="sb-header">
+      <div class="sb-logo">
+        <div class="sb-logo-badge">B</div>
+        <div>
+          <div class="sb-logo-txt">BININGA Admin</div>
+          <div class="sb-logo-sub">Espace sécurisé</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section">Vue d'ensemble</div>
+      <div class="sb-item active" onclick="showPanel('dashboard',this)">
+        <span class="icon">📊</span> Tableau de bord
+      </div>
+
+      <div class="sb-section">Gestion</div>
+      <div class="sb-item" onclick="showPanel('audiences',this)">
+        <span class="icon">📋</span> Demandes d'audience
+        <span class="sb-badge" id="badge-aud" style="display:none"></span>
+      </div>
+      <div class="sb-item" onclick="showPanel('reclamations',this)">
+        <span class="icon">⚠️</span> Réclamations
+        <span class="sb-badge warn" id="badge-recl" style="display:none"></span>
+      </div>
+      <div class="sb-item" onclick="showPanel('contacts',this)">
+        <span class="icon">✉️</span> Messages
+        <span class="sb-badge" id="badge-ct" style="display:none"></span>
+      </div>
+
+      <div class="sb-section">Contenu du site</div>
+      <div class="sb-item" onclick="showPanel('hero',this)">
+        <span class="icon">🏠</span> Hero
+      </div>
+      <div class="sb-item" onclick="showPanel('about',this)">
+        <span class="icon">👤</span> À propos
+      </div>
+      <div class="sb-item" onclick="showPanel('stats',this)">
+        <span class="icon">📈</span> Statistiques
+      </div>
+      <div class="sb-item" onclick="showPanel('seo',this)">
+        <span class="icon">🔍</span> SEO
+      </div>
+    </nav>
+
+    <div class="sb-footer">
+      <button class="sb-btn sb-btn-primary" onclick="saveData()">💾 Enregistrer le contenu</button>
+      <button class="sb-btn sb-btn-ghost" onclick="logout()">↩ Déconnexion</button>
+    </div>
   </div>
 
+  <!-- MAIN -->
   <div class="main">
-    <div class="panel active" id="panel-hero">
-      <div class="card">
-        <h3>Hero</h3>
-        <div class="form-group">
-          <label>Prénom</label>
-          <input type="text" data-key="hero.firstName">
-        </div>
-        <div class="form-group">
-          <label>Nom</label>
-          <input type="text" data-key="hero.lastName">
-        </div>
-        <div class="form-group">
-          <label>Rôle</label>
-          <input type="text" data-key="hero.role">
-        </div>
-        <div class="form-group">
-          <label>Slogan</label>
-          <input type="text" data-key="hero.slogan">
-        </div>
-        <div class="form-group">
-          <label>Sous-titre</label>
-          <textarea data-key="hero.subtitle"></textarea>
-        </div>
-      </div>
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+      <div class="topbar-info">Connecté · <span id="last-login">—</span></div>
     </div>
 
-    <div class="panel" id="panel-about">
-      <div class="card">
-        <h3>À propos</h3>
-        <div class="form-group">
-          <label>Titre</label>
-          <input type="text" data-key="about.title">
-        </div>
-        <div class="form-group">
-          <label>Introduction</label>
-          <textarea data-key="about.intro"></textarea>
-        </div>
-      </div>
-    </div>
+    <div class="content">
 
-    <div class="panel" id="panel-stats">
-      <div class="card">
-        <h3>Statistiques</h3>
-        <div id="stats-list"></div>
-      </div>
-    </div>
+      <!-- ── DASHBOARD ── -->
+      <div class="panel active" id="panel-dashboard">
 
-    <div class="panel" id="panel-seo">
-      <div class="card">
-        <h3>SEO</h3>
-        <div class="form-group">
-          <label>Titre</label>
-          <input type="text" data-key="seo.title">
+        <!-- Ligne 1 : Audiences -->
+        <div class="kpi-grid">
+          <div class="kpi-card red">
+            <div class="kpi-label">Audiences totales</div>
+            <div class="kpi-val" id="kpi-aud-total">0</div>
+            <div class="kpi-sub">demandes reçues</div>
+          </div>
+          <div class="kpi-card orange">
+            <div class="kpi-label">En attente</div>
+            <div class="kpi-val" id="kpi-aud-wait">0</div>
+            <div class="kpi-sub">à traiter</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">En cours</div>
+            <div class="kpi-val" id="kpi-aud-progress">0</div>
+            <div class="kpi-sub">en traitement</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Traitées</div>
+            <div class="kpi-val" id="kpi-aud-done">0</div>
+            <div class="kpi-sub">complétées</div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>Description</label>
-          <textarea data-key="seo.description"></textarea>
+
+        <!-- Ligne 2 : Autres métriques -->
+        <div class="kpi-grid">
+          <div class="kpi-card red">
+            <div class="kpi-label">Réclamations</div>
+            <div class="kpi-val" id="kpi-recl">0</div>
+            <div class="kpi-sub">non traitées</div>
+          </div>
+          <div class="kpi-card gold">
+            <div class="kpi-label">Contacts reçus</div>
+            <div class="kpi-val" id="kpi-ct">0</div>
+            <div class="kpi-sub">messages</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Lectures programme</div>
+            <div class="kpi-val" id="kpi-prog">0</div>
+            <div class="kpi-sub">consultations</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Visiteurs</div>
+            <div class="kpi-val" id="kpi-visit">0</div>
+            <div class="kpi-sub">visites enregistrées</div>
+          </div>
+        </div>
+
+        <!-- Ligne 3 : Détails -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Activité récente</div>
+            </div>
+            <div id="feed"></div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Répartition des demandes</div>
+            </div>
+            <div id="aud-breakdown" style="display:flex;flex-direction:column;gap:16px;margin-top:4px"></div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Panel Demandes d'audience -->
-    <div class="panel" id="panel-audiences">
-      <div class="card">
-        <h3>📋 Demandes d'audience <button onclick="clearMessages('bininga_audiences','panel-audiences')" style="float:right;background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px">🗑️ Tout effacer</button></h3>
-        <div id="list-audiences" style="margin-top:16px"></div>
+      <!-- ── AUDIENCES ── -->
+      <div class="panel" id="panel-audiences">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Demandes d'audience</div>
+            <div class="card-actions">
+              <button class="btn-danger" onclick="clearAll('bininga_audiences','audiences')">🗑️ Tout effacer</button>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" onclick="filterAud('all',this)">Toutes</button>
+            <button class="tab" onclick="filterAud('en_attente',this)">⏳ En attente</button>
+            <button class="tab" onclick="filterAud('en_cours',this)">🔄 En cours</button>
+            <button class="tab" onclick="filterAud('traite',this)">✅ Traitées</button>
+          </div>
+          <div class="msg-list" id="list-audiences"></div>
+        </div>
       </div>
-    </div>
 
-    <!-- Panel Messages de contact -->
-    <div class="panel" id="panel-contacts">
-      <div class="card">
-        <h3>✉️ Messages de contact <button onclick="clearMessages('bininga_contacts','panel-contacts')" style="float:right;background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:12px">🗑️ Tout effacer</button></h3>
-        <div id="list-contacts" style="margin-top:16px"></div>
+      <!-- ── RÉCLAMATIONS ── -->
+      <div class="panel" id="panel-reclamations">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚠️ Réclamations</div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" onclick="filterRecl('all',this)">Toutes</button>
+            <button class="tab" onclick="filterRecl('en_attente',this)">⏳ En attente</button>
+            <button class="tab" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
+            <button class="tab" onclick="filterRecl('traite',this)">✅ Traitées</button>
+          </div>
+          <div class="msg-list" id="list-reclamations"></div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
+
+      <!-- ── CONTACTS ── -->
+      <div class="panel" id="panel-contacts">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✉️ Messages de contact</div>
+            <div class="card-actions">
+              <button class="btn-danger" onclick="clearAll('bininga_contacts','contacts')">🗑️ Tout effacer</button>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab active" onclick="filterCt('all',this)">Tous</button>
+            <button class="tab" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
+            <button class="tab" onclick="filterCt('lu',this)">✓ Lus</button>
+          </div>
+          <div class="msg-list" id="list-contacts"></div>
+        </div>
+      </div>
+
+      <!-- ── HERO ── -->
+      <div class="panel" id="panel-hero">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Section Hero</div></div>
+          <div class="form-group"><label>Prénom</label><input type="text" data-key="hero.firstName"></div>
+          <div class="form-group"><label>Nom</label><input type="text" data-key="hero.lastName"></div>
+          <div class="form-group"><label>Rôle</label><input type="text" data-key="hero.role"></div>
+          <div class="form-group"><label>Slogan</label><input type="text" data-key="hero.slogan"></div>
+          <div class="form-group"><label>Sous-titre</label><textarea data-key="hero.subtitle"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ── ABOUT ── -->
+      <div class="panel" id="panel-about">
+        <div class="card">
+          <div class="card-header"><div class="card-title">À propos</div></div>
+          <div class="form-group"><label>Titre</label><input type="text" data-key="about.title"></div>
+          <div class="form-group"><label>Introduction</label><textarea data-key="about.intro"></textarea></div>
+        </div>
+      </div>
+
+      <!-- ── STATS ── -->
+      <div class="panel" id="panel-stats">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Statistiques affichées sur le site</div></div>
+          <div id="stats-list"></div>
+        </div>
+      </div>
+
+      <!-- ── SEO ── -->
+      <div class="panel" id="panel-seo">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Référencement (SEO)</div></div>
+          <div class="form-group"><label>Titre de la page</label><input type="text" data-key="seo.title"></div>
+          <div class="form-group"><label>Description</label><textarea data-key="seo.description"></textarea></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
 
 <div id="toast"></div>
 
 <script>
-const ADMIN = "admin";
-const PASS = "bininga2025";
-let data = {};
+// ══════════════════════════════════════════════════════════════════════════
+//  SÉCURITÉ — Authentification par hachage SHA-256 (WebCrypto)
+//  Les identifiants ne sont jamais stockés en clair dans le code.
+// ══════════════════════════════════════════════════════════════════════════
+const H_USER = "8f187463fabca085a9db1502cc5d4502cf3ecb49825c2347610d04e893ec5cc2";
+const H_PASS = "c8366d9545e663423e65c600659d00d3e25e44e7877b125ddc4ce029694e31ee";
 
-function doLogin(){
-  const u = document.getElementById("user").value;
-  const p = document.getElementById("pass").value;
-  if(u === ADMIN && p === PASS){
+async function sha256(str) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
+}
+
+async function doLogin() {
+  const u = document.getElementById("u").value.trim();
+  const p = document.getElementById("p").value;
+  const [hu, hp] = await Promise.all([sha256(u), sha256(p)]);
+  if (hu === H_USER && hp === H_PASS) {
     document.getElementById("login").classList.add("hidden");
     document.getElementById("app").classList.add("visible");
-    loadData();
-    updateBadges();
-  }else{
-    document.getElementById("err").textContent = "Identifiant ou mot de passe incorrect";
+    document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
+    init();
+  } else {
+    const errEl = document.getElementById("err");
+    errEl.textContent = "Identifiant ou mot de passe incorrect.";
+    setTimeout(() => errEl.textContent = "", 3500);
   }
 }
 
-function logout(){
+function logout() {
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
-  document.getElementById("user").value = "";
-  document.getElementById("pass").value = "";
+  document.getElementById("u").value = "";
+  document.getElementById("p").value = "";
 }
 
 document.addEventListener("keydown", e => {
-  if(e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
+  if (e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
 });
 
-function loadData(){
-  fetch("/api/load")
-    .then(r => r.json())
-    .then(d => {
-      data = d;
-      populateForm();
-      renderStats();
-    });
+// ══════════════════════════════════════════════════════════════════════════
+//  INITIALISATION
+// ══════════════════════════════════════════════════════════════════════════
+let siteData = {};
+
+function init() {
+  loadSiteData();
+  refreshDashboard();
 }
 
-function populateForm(){
+// ══════════════════════════════════════════════════════════════════════════
+//  CONTENU DU SITE (data.json via server.py)
+// ══════════════════════════════════════════════════════════════════════════
+function loadSiteData() {
+  fetch("/api/load")
+    .then(r => r.json())
+    .then(d => { siteData = d; populateForm(); renderStats(); })
+    .catch(() => {}); // GitHub Pages statique : pas de serveur
+}
+
+function populateForm() {
   document.querySelectorAll("[data-key]").forEach(el => {
     const keys = el.dataset.key.split(".");
-    let val = data;
-    keys.forEach(k => val = val[k] || "");
+    let val = siteData;
+    keys.forEach(k => val = (val && val[k] !== undefined) ? val[k] : "");
     el.value = val;
   });
 }
 
-function renderStats(){
+function renderStats() {
   const list = document.getElementById("stats-list");
   list.innerHTML = "";
-  (data.stats || []).forEach((s, i) => {
+  (siteData.stats || []).forEach((s, i) => {
     const div = document.createElement("div");
-    div.style.cssText = "display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px";
+    div.className = "stats-row";
     div.innerHTML = `
-      <div class="form-group">
+      <div class="form-group" style="margin:0">
         <label>Chiffre ${i+1}</label>
-        <input type="text" value="${s.num}" onchange="data.stats[${i}].num=this.value">
+        <input type="text" value="${esc(s.num||'')}" onchange="siteData.stats[${i}].num=this.value">
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin:0">
         <label>Libellé ${i+1}</label>
-        <input type="text" value="${s.label}" onchange="data.stats[${i}].label=this.value">
+        <input type="text" value="${esc(s.label||'')}" onchange="siteData.stats[${i}].label=this.value">
       </div>
     `;
     list.appendChild(div);
   });
 }
 
-function collectForm(){
+function collectForm() {
   document.querySelectorAll("[data-key]").forEach(el => {
     const keys = el.dataset.key.split(".");
-    let obj = data;
-    for(let i = 0; i < keys.length - 1; i++){
-      if(!obj[keys[i]]) obj[keys[i]] = {};
+    let obj = siteData;
+    for (let i = 0; i < keys.length - 1; i++) {
+      if (!obj[keys[i]]) obj[keys[i]] = {};
       obj = obj[keys[i]];
     }
     obj[keys[keys.length-1]] = el.value;
   });
 }
 
-function saveData(){
+function saveData() {
   collectForm();
   fetch("/api/save", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Admin-Token": `${ADMIN}:${PASS}`
-    },
-    body: JSON.stringify(data)
+    headers: { "Content-Type": "application/json", "X-Admin-Token": "secured" },
+    body: JSON.stringify(siteData)
   })
   .then(r => r.json())
-  .then(res => {
-    showToast(res.ok ? "Sauvegardé !" : res.message, !res.ok);
-  });
+  .then(res => showToast(res.ok ? "Contenu sauvegardé !" : res.message, !res.ok))
+  .catch(() => showToast("Serveur non disponible (mode GitHub Pages)", true));
 }
 
-function showPanel(name){
-  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-  document.querySelectorAll(".sb-item").forEach(i => i.classList.remove("active"));
-  document.getElementById("panel-" + name).classList.add("active");
-  event.currentTarget.classList.add("active");
-  if(name === "audiences") renderMessages("bininga_audiences", "list-audiences");
-  if(name === "contacts")  renderMessages("bininga_contacts",  "list-contacts");
-}
+// ══════════════════════════════════════════════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════
+function refreshDashboard() {
+  const aud  = getAll("bininga_audiences");
+  const ct   = getAll("bininga_contacts");
+  const prog = parseInt(localStorage.getItem("bininga_prog_views") || "0");
+  const vis  = parseInt(localStorage.getItem("bininga_visitors")   || "0");
 
-function renderMessages(storageKey, containerId){
-  const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
-  const el = document.getElementById(containerId);
-  if(!list.length){ el.innerHTML = '<div class="msg-empty">Aucun message reçu.</div>'; return; }
-  el.innerHTML = list.map(m => {
-    const fields = Object.entries(m).filter(([k]) => k !== "_date")
-      .map(([k,v]) => `<div class="msg-field"><span class="msg-key">${k}</span>${v}</div>`).join("");
-    return `<div class="msg-card"><div class="msg-date">📅 ${m._date}</div>${fields}</div>`;
+  // Séparer audiences normales et réclamations
+  const audiences    = aud.filter(m => m.objet !== "Réclamation");
+  const reclamations = aud.filter(m => m.objet === "Réclamation");
+
+  const wait     = audiences.filter(m => !m._status || m._status === "en_attente").length;
+  const inprog   = audiences.filter(m => m._status === "en_cours").length;
+  const done     = audiences.filter(m => m._status === "traite").length;
+  const reclWait = reclamations.filter(m => !m._status || m._status !== "traite").length;
+  const ctUnread = ct.filter(m => !m._status || m._status === "non_lu").length;
+
+  setText("kpi-aud-total",    audiences.length);
+  setText("kpi-aud-wait",     wait);
+  setText("kpi-aud-progress", inprog);
+  setText("kpi-aud-done",     done);
+  setText("kpi-recl",         reclWait);
+  setText("kpi-ct",           ct.length);
+  setText("kpi-prog",         prog);
+  setText("kpi-visit",        vis);
+
+  setBadge("badge-aud",  wait);
+  setBadge("badge-recl", reclWait);
+  setBadge("badge-ct",   ctUnread);
+
+  // Répartition graphique
+  const total = audiences.length || 1;
+  document.getElementById("aud-breakdown").innerHTML = [
+    { label:"En attente", count:wait,   color:"#f39c12", pct:Math.round(wait/total*100) },
+    { label:"En cours",   count:inprog, color:"#3498db", pct:Math.round(inprog/total*100) },
+    { label:"Traitées",   count:done,   color:"#2ecc71", pct:Math.round(done/total*100) },
+    { label:"Réclamations", count:reclamations.length, color:"#C8102E", pct:Math.round(reclamations.length/(aud.length||1)*100) },
+  ].map(r => `
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;color:rgba(255,255,255,.55)">${r.label}</span>
+        <span style="font-size:13px;font-weight:700;color:${r.color}">${r.count}</span>
+      </div>
+      <div class="prog-bar">
+        <div class="prog-bar-fill" style="width:${r.pct}%;background:${r.color}"></div>
+      </div>
+    </div>
+  `).join("");
+
+  // Feed activité récente
+  const all = [
+    ...aud.map(m => ({...m, _type:"audience"})),
+    ...ct.map(m => ({...m, _type:"contact"}))
+  ].sort((a,b) => new Date(b._date||0) - new Date(a._date||0)).slice(0,6);
+
+  const feed = document.getElementById("feed");
+  if (!all.length) {
+    feed.innerHTML = '<div class="msg-empty" style="padding:30px">Aucune activité pour le moment.</div>';
+    return;
+  }
+  feed.innerHTML = all.map(m => {
+    const isRecl = m.objet === "Réclamation";
+    const isAud  = m._type === "audience";
+    const dot    = isRecl ? "red" : isAud ? "gold" : "blue";
+    const label  = isRecl ? "Réclamation" : isAud ? "Demande d'audience" : "Contact";
+    return `<div class="feed-item">
+      <div class="feed-dot ${dot}"></div>
+      <div>
+        <div class="feed-title">${esc(m.prenom||"")} ${esc(m.nom||"")} — ${label}</div>
+        <div class="feed-sub">${m._date||""}</div>
+      </div>
+    </div>`;
   }).join("");
 }
 
-function clearMessages(storageKey, panelId){
-  if(!confirm("Supprimer tous les messages ?")) return;
+// ══════════════════════════════════════════════════════════════════════════
+//  AUDIENCES
+// ══════════════════════════════════════════════════════════════════════════
+let audFilter = "all";
+
+function filterAud(f, el) {
+  audFilter = f;
+  document.querySelectorAll("#panel-audiences .tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  renderAudiences();
+}
+
+function renderAudiences() {
+  const all  = getAll("bininga_audiences").filter(m => m.objet !== "Réclamation");
+  const list = audFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === audFilter);
+  renderMsgList("list-audiences", list, "bininga_audiences", "status3");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RÉCLAMATIONS
+// ══════════════════════════════════════════════════════════════════════════
+let reclFilter = "all";
+
+function filterRecl(f, el) {
+  reclFilter = f;
+  document.querySelectorAll("#panel-reclamations .tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  renderReclamations();
+}
+
+function renderReclamations() {
+  const all  = getAll("bininga_audiences").filter(m => m.objet === "Réclamation");
+  const list = reclFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === reclFilter);
+  renderMsgList("list-reclamations", list, "bininga_audiences", "status3");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CONTACTS
+// ══════════════════════════════════════════════════════════════════════════
+let ctFilter = "all";
+
+function filterCt(f, el) {
+  ctFilter = f;
+  document.querySelectorAll("#panel-contacts .tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  renderContacts();
+}
+
+function renderContacts() {
+  const all  = getAll("bininga_contacts");
+  const list = ctFilter === "all" ? all : all.filter(m => (m._status||"non_lu") === ctFilter);
+  renderMsgList("list-contacts", list, "bininga_contacts", "status2");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RENDU GÉNÉRIQUE DES MESSAGES
+// ══════════════════════════════════════════════════════════════════════════
+function renderMsgList(containerId, list, storageKey, mode) {
+  const el = document.getElementById(containerId);
+  if (!list.length) {
+    el.innerHTML = '<div class="msg-empty">Aucun message dans cette catégorie.</div>';
+    return;
+  }
+
+  const allData = getAll(storageKey);
+
+  el.innerHTML = list.map(m => {
+    // Retrouver l'index réel dans le tableau complet
+    const realIdx = allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
+    const status  = m._status || (mode === "status2" ? "non_lu" : "en_attente");
+    const badge   = buildBadge(status, m.objet);
+    const skip    = new Set(["_date","_status"]);
+    const fields  = Object.entries(m)
+      .filter(([k]) => !skip.has(k))
+      .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
+      .join("");
+
+    let actions = "";
+    if (mode === "status3") {
+      actions = `
+        <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}',${realIdx},'en_attente')">⏳ En attente</button>
+        <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}',${realIdx},'en_cours')">🔄 En cours</button>
+        <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}',${realIdx},'traite')">✅ Traité</button>
+      `;
+    } else {
+      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}',${realIdx},'lu')">✅ Marquer comme lu</button>`;
+    }
+
+    return `<div class="msg-item">
+      <div class="msg-top">
+        <div>
+          <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
+          <div class="msg-date">📅 ${m._date||""}</div>
+        </div>
+        ${badge}
+      </div>
+      <div class="msg-fields">${fields}</div>
+      <div class="msg-footer">${actions}</div>
+    </div>`;
+  }).join("");
+}
+
+function buildBadge(status, objet) {
+  if (objet === "Réclamation") return `<span class="badge badge-recl">⚠️ Réclamation</span>`;
+  const map = {
+    en_attente: `<span class="badge badge-wait">⏳ En attente</span>`,
+    en_cours:   `<span class="badge badge-progress">🔄 En cours</span>`,
+    traite:     `<span class="badge badge-done">✅ Traité</span>`,
+    non_lu:     `<span class="badge badge-unread">🔵 Non lu</span>`,
+    lu:         `<span class="badge badge-read">✓ Lu</span>`,
+  };
+  return map[status] || map.en_attente;
+}
+
+function setStatus(storageKey, idx, status) {
+  const all = getAll(storageKey);
+  if (all[idx]) {
+    all[idx]._status = status;
+    saveAll(storageKey, all);
+  }
+  refreshDashboard();
+  if (storageKey === "bininga_audiences") {
+    renderAudiences();
+    renderReclamations();
+  } else {
+    renderContacts();
+  }
+  showToast("Statut mis à jour");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════
+const PANEL_TITLES = {
+  dashboard:"Tableau de bord", audiences:"Demandes d'audience",
+  reclamations:"Réclamations", contacts:"Messages de contact",
+  hero:"Section Hero", about:"À propos", stats:"Statistiques", seo:"SEO"
+};
+
+function showPanel(name, el) {
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".sb-item").forEach(i => i.classList.remove("active"));
+  document.getElementById("panel-"+name).classList.add("active");
+  if (el) el.classList.add("active");
+  document.getElementById("topbar-title").textContent = PANEL_TITLES[name] || name;
+  if (name === "dashboard")    refreshDashboard();
+  if (name === "audiences")    renderAudiences();
+  if (name === "reclamations") renderReclamations();
+  if (name === "contacts")     renderContacts();
+  if (name === "stats")        renderStats();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  UTILITAIRES
+// ══════════════════════════════════════════════════════════════════════════
+function getAll(key)       { return JSON.parse(localStorage.getItem(key)||"[]"); }
+function saveAll(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
+function setText(id, val)  { const el=document.getElementById(id); if(el) el.textContent=val; }
+function setBadge(id, n)   { const el=document.getElementById(id); if(!el)return; el.style.display=n>0?"inline":"none"; el.textContent=n; }
+function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function clearAll(storageKey, panel) {
+  if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ?")) return;
   localStorage.removeItem(storageKey);
-  const containerId = panelId === "panel-audiences" ? "list-audiences" : "list-contacts";
-  document.getElementById(containerId).innerHTML = '<div class="msg-empty">Aucun message reçu.</div>';
-  const badgeId = storageKey === "bininga_audiences" ? "badge-aud" : "badge-ct";
-  document.getElementById(badgeId).style.display = "none";
-  showToast("Messages supprimés.");
+  refreshDashboard();
+  if (panel === "audiences") { renderAudiences(); renderReclamations(); }
+  if (panel === "contacts")  renderContacts();
+  showToast("Messages supprimés");
 }
 
-function updateBadges(){
-  const aud = JSON.parse(localStorage.getItem("bininga_audiences") || "[]");
-  const ct  = JSON.parse(localStorage.getItem("bininga_contacts")  || "[]");
-  const ba = document.getElementById("badge-aud");
-  const bc = document.getElementById("badge-ct");
-  if(aud.length){ ba.textContent = aud.length; ba.style.display = "inline"; } else { ba.style.display = "none"; }
-  if(ct.length){  bc.textContent = ct.length;  bc.style.display = "inline"; } else { bc.style.display = "none"; }
-}
-
-function showToast(msg, err=false){
+function showToast(msg, err=false) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.className = "show" + (err ? " err" : "");
-  setTimeout(() => t.className = "", 3000);
+  setTimeout(() => t.className = "", 3500);
 }
 </script>
 </body>

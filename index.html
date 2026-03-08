@@ -1030,6 +1030,30 @@ window.addEventListener("load", () => {
   setTimeout(() => { document.getElementById("loader").classList.add("done"); }, 1400);
 });
 
+// ── TRACKING VISITEURS ────────────────────────────────────
+(function(){
+  const count = parseInt(localStorage.getItem("bininga_visitors")||"0") + 1;
+  localStorage.setItem("bininga_visitors", count);
+})();
+
+// ── TRACKING LECTURES DU PROGRAMME ───────────────────────
+(function(){
+  const progEl = document.getElementById("programme");
+  if(!progEl) return;
+  let tracked = false;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting && !tracked){
+        tracked = true;
+        const n = parseInt(localStorage.getItem("bininga_prog_views")||"0") + 1;
+        localStorage.setItem("bininga_prog_views", n);
+        obs.disconnect();
+      }
+    });
+  }, { threshold: 0.2 });
+  obs.observe(progEl);
+})();
+
 // ── SCROLL REVEAL ─────────────────────────────────────────
 const revObs = new IntersectionObserver((entries) => {
   entries.forEach(el => {
