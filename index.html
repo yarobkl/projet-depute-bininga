@@ -766,44 +766,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <h2 class="stitle">Sur le <span class="r">terrain</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
-    <div class="actu-wrap">
-      <div class="actu-feat rev-l">
-        <div class="actu-feat-img">
-          <img src="images/Darmanin.jpeg" alt="Ange Aimé Wilfrid BININGA et Gérald Darmanin — Place Vendôme, Paris" style="object-position:center center;">
-          <div class="actu-chip">Diplomatie</div>
-        </div>
-        <div class="actu-feat-body">
-          <div class="actu-feat-date">📅 18 Février 2026 — Paris</div>
-          <h3 class="actu-feat-title">Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France</h3>
-          <p class="actu-feat-txt">Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, a été reçu place Vendôme par son homologue français Gérald Darmanin. L'objet : la révision de la convention de coopération judiciaire liant les deux pays depuis 1974. Trois nouvelles conventions portant sur l'entraide judiciaire, les extraditions et les transfèrements sont en cours de négociation, avec pour objectif une signature à l'été 2026. Une nouvelle dynamique diplomatique saluée par les deux ministères.</p>
-        </div>
-      </div>
-      <div class="actu-list rev-r">
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">18</div><span class="actu-mon">FÉV</span></div>
-          <div><div class="actu-item-title">Place Vendôme : rencontre avec Gérald Darmanin</div><div class="actu-item-desc">Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026.</div></div>
-        </div>
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">15</div><span class="actu-mon">DÉC</span></div>
-          <div><div class="actu-item-title">Inauguration du tribunal de proximité d'Ewo</div><div class="actu-item-desc">Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens.</div></div>
-        </div>
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">08</div><span class="actu-mon">NOV</span></div>
-          <div><div class="actu-item-title">Accord de dialogue social signé avec les syndicats</div><div class="actu-item-desc">Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais.</div></div>
-        </div>
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">22</div><span class="actu-mon">OCT</span></div>
-          <div><div class="actu-item-title">Remise de 50 bourses d'études à des étudiants d'Ewo</div><div class="actu-item-desc">Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest.</div></div>
-        </div>
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">05</div><span class="actu-mon">SEP</span></div>
-          <div><div class="actu-item-title">Forum sur l'emploi des jeunes de la Cuvette-Ouest</div><div class="actu-item-desc">300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région.</div></div>
-        </div>
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">14</div><span class="actu-mon">JUL</span></div>
-          <div><div class="actu-item-title">Mission diplomatique à l'AIEA — Représentation du Congo</div><div class="actu-item-desc">Aimé BININGA représente la République du Congo dans des instances internationales.</div></div>
-        </div>
-      </div>
+    <div class="actu-wrap" id="actu-wrap">
+      <!-- Contenu généré dynamiquement via data.json -->
     </div>
   </div>
 </section>
@@ -928,6 +892,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const IMG = "images/bininga.jpg";
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 // ── CHARGEMENT DU CONTENU DEPUIS data.json (synchronisé avec l'admin) ─────
 function loadContent() {
@@ -984,6 +949,43 @@ function loadContent() {
         }
         if (lblEl) lblEl.textContent = s.label;
       });
+
+      // Actualités
+      const actu = d.actus;
+      const actuWrap = document.getElementById("actu-wrap");
+      if (actu && actuWrap) {
+        const f = actu.featured || {};
+        const imgSrc = f.image || "";
+        const imgHtml = imgSrc
+          ? `<img src="${imgSrc}" alt="${escHtml(f.title||'')}" style="object-position:center center;">`
+          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:50px;background:linear-gradient(135deg,#111,#1c1c1c)">📰</div>`;
+
+        const itemsHtml = (actu.items || []).map(it => `
+          <div class="actu-item">
+            <div class="actu-date-box">
+              <div class="actu-day">${escHtml(it.day||'')}</div>
+              <span class="actu-mon">${escHtml(it.month||'')}</span>
+            </div>
+            <div>
+              <div class="actu-item-title">${escHtml(it.title||'')}</div>
+              <div class="actu-item-desc">${escHtml(it.desc||'')}</div>
+            </div>
+          </div>`).join("");
+
+        actuWrap.innerHTML = `
+          <div class="actu-feat rev-l">
+            <div class="actu-feat-img">
+              ${imgHtml}
+              <div class="actu-chip">${escHtml(f.category||'')}</div>
+            </div>
+            <div class="actu-feat-body">
+              <div class="actu-feat-date">📅 ${escHtml(f.date||'')}</div>
+              <h3 class="actu-feat-title">${escHtml(f.title||'')}</h3>
+              <p class="actu-feat-txt">${escHtml(f.text||'')}</p>
+            </div>
+          </div>
+          <div class="actu-list rev-r">${itemsHtml}</div>`;
+      }
 
       // SEO
       if (d.seo) {

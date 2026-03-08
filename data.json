@@ -11,19 +11,51 @@
     "intro": "Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays."
   },
   "stats": [
-    {
-      "num": "2",
-      "label": "Ministères dirigés"
-    },
-    {
-      "num": "2",
-      "label": "Mandats de Député"
-    },
-    {
-      "num": "1re",
-      "label": "Circonscription d'Ewo"
-    }
+    { "num": "2",   "label": "Ministères dirigés" },
+    { "num": "2",   "label": "Mandats de Député" },
+    { "num": "1re", "label": "Circonscription d'Ewo" }
   ],
+  "actus": {
+    "featured": {
+      "category": "Diplomatie",
+      "date": "18 Février 2026 — Paris",
+      "title": "Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France",
+      "text": "Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, a été reçu place Vendôme par son homologue français Gérald Darmanin. L'objet : la révision de la convention de coopération judiciaire liant les deux pays depuis 1974. Trois nouvelles conventions portant sur l'entraide judiciaire, les extraditions et les transfèrements sont en cours de négociation, avec pour objectif une signature à l'été 2026. Une nouvelle dynamique diplomatique saluée par les deux ministères.",
+      "image": "images/Darmanin.jpeg"
+    },
+    "items": [
+      {
+        "day": "18", "month": "FÉV",
+        "title": "Place Vendôme : rencontre avec Gérald Darmanin",
+        "desc": "Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026."
+      },
+      {
+        "day": "15", "month": "DÉC",
+        "title": "Inauguration du tribunal de proximité d'Ewo",
+        "desc": "Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens."
+      },
+      {
+        "day": "08", "month": "NOV",
+        "title": "Accord de dialogue social signé avec les syndicats",
+        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais."
+      },
+      {
+        "day": "22", "month": "OCT",
+        "title": "Remise de 50 bourses d'études à des étudiants d'Ewo",
+        "desc": "Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest."
+      },
+      {
+        "day": "05", "month": "SEP",
+        "title": "Forum sur l'emploi des jeunes de la Cuvette-Ouest",
+        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région."
+      },
+      {
+        "day": "14", "month": "JUL",
+        "title": "Mission diplomatique à l'AIEA — Représentation du Congo",
+        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales."
+      }
+    ]
+  },
   "seo": {
     "title": "Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo",
     "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"

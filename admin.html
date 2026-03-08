@@ -226,6 +226,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       <div class="sb-item" onclick="showPanel('stats',this)">
         <span class="icon">📈</span> Statistiques
       </div>
+      <div class="sb-item" onclick="showPanel('actus',this)">
+        <span class="icon">📰</span> Actualités
+      </div>
       <div class="sb-item" onclick="showPanel('seo',this)">
         <span class="icon">🔍</span> SEO
       </div>
@@ -405,6 +408,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         </div>
       </div>
 
+      <!-- ── ACTUALITÉS ── -->
+      <div class="panel" id="panel-actus">
+
+        <!-- Article mis en avant -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">⭐ Article mis en avant</div></div>
+          <div class="form-group"><label>Catégorie (ex: Diplomatie)</label><input type="text" id="feat-cat" placeholder="Diplomatie"></div>
+          <div class="form-group"><label>Date affichée (ex: 18 Février 2026 — Paris)</label><input type="text" id="feat-date" placeholder="18 Février 2026 — Paris"></div>
+          <div class="form-group"><label>Titre de l'article</label><input type="text" id="feat-title" placeholder="Titre de l'article principal"></div>
+          <div class="form-group"><label>Texte complet</label><textarea id="feat-text" style="min-height:130px" placeholder="Contenu de l'article..."></textarea></div>
+        </div>
+
+        <!-- Petites actualités -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Petites actualités</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addActuItem()">+ Ajouter</button>
+            </div>
+          </div>
+          <div id="actu-items-list"></div>
+        </div>
+
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -462,6 +490,87 @@ function init() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  ACTUALITÉS
+// ══════════════════════════════════════════════════════════════════════════
+function renderActus() {
+  // Article mis en avant
+  const f = (siteData.actus && siteData.actus.featured) || {};
+  document.getElementById("feat-cat").value   = f.category || "";
+  document.getElementById("feat-date").value  = f.date     || "";
+  document.getElementById("feat-title").value = f.title    || "";
+  document.getElementById("feat-text").value  = f.text     || "";
+
+  // Petites actualités
+  renderActuItems();
+}
+
+function renderActuItems() {
+  const items = (siteData.actus && siteData.actus.items) || [];
+  const list = document.getElementById("actu-items-list");
+  if (!items.length) {
+    list.innerHTML = '<div class="msg-empty">Aucune actualité. Cliquez sur "+ Ajouter".</div>';
+    return;
+  }
+  list.innerHTML = items.map((it, i) => `
+    <div class="stats-row" style="grid-template-columns:60px 80px 1fr 1fr auto;gap:10px;align-items:start">
+      <div class="form-group" style="margin:0">
+        <label>Jour</label>
+        <input type="text" value="${esc(it.day||'')}" placeholder="18"
+          oninput="updActu(${i},'day',this.value)" style="text-align:center;font-size:18px;font-weight:700">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Mois</label>
+        <input type="text" value="${esc(it.month||'')}" placeholder="FÉV"
+          oninput="updActu(${i},'month',this.value)" style="text-align:center;text-transform:uppercase">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Titre</label>
+        <input type="text" value="${esc(it.title||'')}" placeholder="Titre de l'actualité"
+          oninput="updActu(${i},'title',this.value)">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Description courte</label>
+        <input type="text" value="${esc(it.desc||'')}" placeholder="Résumé en une ligne"
+          oninput="updActu(${i},'desc',this.value)">
+      </div>
+      <div style="padding-top:22px">
+        <button class="btn-danger" onclick="delActuItem(${i})" title="Supprimer">🗑</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function updActu(i, field, val) {
+  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
+  if (!siteData.actus.items[i]) return;
+  siteData.actus.items[i][field] = val;
+}
+
+function addActuItem() {
+  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
+  if (!siteData.actus.items) siteData.actus.items = [];
+  siteData.actus.items.unshift({ day: "", month: "", title: "", desc: "" });
+  renderActuItems();
+}
+
+function delActuItem(i) {
+  if (!confirm("Supprimer cette actualité ?")) return;
+  siteData.actus.items.splice(i, 1);
+  renderActuItems();
+  showToast("Actualité supprimée");
+}
+
+function collectActus() {
+  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
+  if (!siteData.actus.featured) siteData.actus.featured = {};
+  siteData.actus.featured.category = document.getElementById("feat-cat").value;
+  siteData.actus.featured.date     = document.getElementById("feat-date").value;
+  siteData.actus.featured.title    = document.getElementById("feat-title").value;
+  siteData.actus.featured.text     = document.getElementById("feat-text").value;
+  // Les items sont déjà mis à jour via oninput (updActu)
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  CONTENU DU SITE (data.json via server.py)
 // ══════════════════════════════════════════════════════════════════════════
 function loadSiteData() {
@@ -514,6 +623,7 @@ function collectForm() {
 
 function saveData() {
   collectForm();
+  collectActus();
   fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Admin-Token": "secured" },
@@ -737,7 +847,7 @@ function setStatus(storageKey, idx, status) {
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
-  hero:"Section Hero", about:"À propos", stats:"Statistiques", seo:"SEO"
+  hero:"Section Hero", about:"À propos", stats:"Statistiques", actus:"Actualités", seo:"SEO"
 };
 
 function showPanel(name, el) {
@@ -751,6 +861,7 @@ function showPanel(name, el) {
   if (name === "reclamations") renderReclamations();
   if (name === "contacts")     renderContacts();
   if (name === "stats")        renderStats();
+  if (name === "actus")        renderActus();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
