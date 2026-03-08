@@ -474,31 +474,45 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 //  SÉCURITÉ — Authentification par hachage SHA-256 (WebCrypto)
 //  Les identifiants ne sont jamais stockés en clair dans le code.
 // ══════════════════════════════════════════════════════════════════════════
-const H_USER = "8f187463fabca085a9db1502cc5d4502cf3ecb49825c2347610d04e893ec5cc2";
-const H_PASS = "c8366d9545e663423e65c600659d00d3e25e44e7877b125ddc4ce029694e31ee";
-
-async function sha256(str) {
-  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-}
+// Token reçu du serveur après login — jamais codé en dur ici
+let SESSION_TOKEN = "";
 
 async function doLogin() {
   const u = document.getElementById("u").value.trim();
   const p = document.getElementById("p").value;
-  const [hu, hp] = await Promise.all([sha256(u), sha256(p)]);
-  if (hu === H_USER && hp === H_PASS) {
-    document.getElementById("login").classList.add("hidden");
-    document.getElementById("app").classList.add("visible");
-    document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
-    init();
-  } else {
+  const btn = document.querySelector(".login-btn");
+  btn.disabled = true;
+  btn.textContent = "Connexion…";
+  try {
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      SESSION_TOKEN = data.token;
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("app").classList.add("visible");
+      document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
+      init();
+    } else {
+      const errEl = document.getElementById("err");
+      errEl.textContent = "Identifiant ou mot de passe incorrect.";
+      setTimeout(() => errEl.textContent = "", 3500);
+    }
+  } catch(e) {
     const errEl = document.getElementById("err");
-    errEl.textContent = "Identifiant ou mot de passe incorrect.";
+    errEl.textContent = "Erreur de connexion au serveur.";
     setTimeout(() => errEl.textContent = "", 3500);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Connexion";
   }
 }
 
 function logout() {
+  SESSION_TOKEN = "";
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
@@ -609,7 +623,7 @@ function uploadImage(callback) {
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
-        headers: { "X-Admin-Token": "secured" },
+        headers: { "X-Admin-Token": SESSION_TOKEN },
         body: formData
       });
       const data = await res.json();
@@ -814,7 +828,7 @@ function saveData() {
   collectActus();
   fetch("/api/save", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Admin-Token": "secured" },
+    headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
     body: JSON.stringify(siteData)
   })
   .then(r => r.json())
