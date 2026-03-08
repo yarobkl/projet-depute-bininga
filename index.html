@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo</title>
+<title>Aimé Ange Wilfrid BININGA — Ministre · Député d'Ewo</title>
 <meta name="description" content="Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
@@ -75,7 +75,7 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .hero-scroll{position:absolute;bottom:40px;left:6%;display:flex;align-items:center;gap:14px;color:rgba(255,255,255,.25);font-size:10px;letter-spacing:3px;text-transform:uppercase;z-index:10;text-decoration:none}
 .hero-scroll-line{width:60px;height:1px;background:linear-gradient(to right,var(--r),transparent);animation:scrollPulse 2s infinite}
 @keyframes scrollPulse{0%,100%{opacity:.3}50%{opacity:1}}
-.hero-stat-strip{position:absolute;bottom:0;left:0;right:0;z-index:10;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(255,255,255,.06)}
+.hero-stat-strip{position:absolute;bottom:0;left:0;right:0;z-index:10;display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(255,255,255,.06)}
 .hstat{padding:22px 30px;border-right:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:14px;background:rgba(6,6,6,.85);backdrop-filter:blur(10px)}
 .hstat:last-child{border-right:none}
 .hstat-num{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--r);line-height:1}
@@ -219,6 +219,28 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .btn-form{width:100%;background:var(--r);color:var(--w);border:none;padding:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:var(--t);margin-top:8px}
 .btn-form:hover{background:var(--rd);transform:translateY(-2px)}
 
+/* DON */
+#don{padding:120px 6%;background:var(--n3)}
+.don-wrap{max-width:960px;margin:60px auto 0}
+.don-amts{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.don-btn{background:var(--n2);border:1px solid rgba(255,255,255,.07);color:var(--w);padding:22px 10px;border-radius:4px;cursor:pointer;transition:var(--t);font-family:'DM Sans',sans-serif;text-align:center}
+.don-btn:hover,.don-btn.a{background:var(--r);border-color:var(--r);transform:translateY(-5px);box-shadow:0 20px 50px rgba(200,16,46,.35)}
+.don-n{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;display:block}
+.don-l{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px}
+.don-btn.a .don-l{color:rgba(255,255,255,.8)}
+.don-cust{display:flex;align-items:center;background:var(--n2);border:1px solid rgba(255,255,255,.07);border-radius:4px;overflow:hidden;margin-bottom:24px}
+.don-sym{padding:16px 22px;background:var(--r);font-weight:700;font-size:16px}
+.don-cust input{flex:1;background:transparent;border:none;padding:16px 20px;color:var(--w);font-family:'DM Sans',sans-serif;font-size:20px;font-weight:700;outline:none}
+.don-cust input::placeholder{color:rgba(255,255,255,.2)}
+.don-card{background:var(--n2);border:1px solid rgba(255,255,255,.06);border-radius:6px;padding:40px}
+.don-card .fg2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.don-card .fgrp input,.don-card .fgrp select{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--w)}
+.don-card .fgrp label{color:rgba(255,255,255,.45)}
+.don-card .fgrp input::placeholder{color:rgba(255,255,255,.2)}
+.don-card .fgrp input:focus,.don-card .fgrp select:focus{background:rgba(200,16,46,.05);border-color:rgba(200,16,46,.4)}
+.don-btn-sub{width:100%;background:var(--g);color:var(--n);border:none;padding:17px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:var(--t);margin-top:14px}
+.don-btn-sub:hover{background:var(--gl);transform:translateY(-2px)}
+.don-sec{text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:14px;line-height:1.7;letter-spacing:.5px}
 
 /* CTA BAND */
 .cta-band{background:var(--n);border-top:1px solid rgba(200,16,46,.15);border-bottom:1px solid rgba(200,16,46,.15);padding:90px 6%;text-align:center;position:relative;overflow:hidden}
@@ -277,7 +299,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   .hero-img-side{display:none}
   .hero-video-bg::before{background:rgba(6,6,6,.88)}
   .hero-stat-strip{grid-template-columns:repeat(2,1fr);position:relative}
-  .about-grid,.eng-wrap,.ct-wrap,.actu-wrap,.ft-grid{grid-template-columns:1fr}
+  .about-grid,.tl-wrap,.eng-wrap,.ct-wrap,.actu-wrap,.ft-grid{grid-template-columns:1fr}
   .tl-wrap::before{left:24px}
   .tl-item{grid-template-columns:48px 1fr}
   .tl-item:nth-child(odd) .tl-card,.tl-item:nth-child(even) .tl-card{grid-column:2;text-align:left}
@@ -286,58 +308,21 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   .prog-grid{grid-template-columns:1fr}
   .gal-grid{grid-template-columns:repeat(2,1fr)}
   .gi:first-child{grid-column:span 2}
+  .don-amts{grid-template-columns:repeat(3,1fr)}
   .about-badge{display:none}
-  .eng-form{padding:28px}
-  .ct-form{padding:28px}
-  #about,#parcours,#programme,#galerie,#actu,#engagement,#contact{padding:80px 5%}
-  .prog-hero{padding:36px 28px}
 }
 @media(max-width:600px){
-  section,.about-grid,.prog-wrap,.ct-wrap{padding-left:4%;padding-right:4%}
+  section,.about-grid,.prog-wrap,.don-wrap,.ct-wrap{padding-left:4%;padding-right:4%}
   #hero{padding-left:4%;padding-right:4%}
-  #about,#parcours,#programme,#galerie,#actu,#engagement,#contact{padding:60px 4%}
-  .hero-content{padding:120px 4% 80px}
   .hero-btns{flex-direction:column;align-items:flex-start}
-  .hero-btns .btn{width:100%;justify-content:center}
-  .hero-stat-strip{grid-template-columns:1fr 1fr;position:relative}
-  .hstat{padding:16px 18px}
-  .hstat-num{font-size:28px}
-  .ft-grid{grid-template-columns:1fr}
-  .fg2{grid-template-columns:1fr}
+  .hero-stat-strip{grid-template-columns:repeat(2,1fr)}
+  .ft-grid{grid-template-columns:1fr 1fr}
+  .don-amts{grid-template-columns:repeat(2,1fr)}
+  .fg2,.don-card .fg2{grid-template-columns:1fr}
   .cta-btns{flex-direction:column;align-items:center}
-  .cta-btns .btn{width:100%;max-width:320px;justify-content:center}
-  .prog-hero{grid-template-columns:1fr;padding:28px 22px}
+  .prog-hero{grid-template-columns:1fr}
   .prog-hero-big{display:none}
-  .prog-card{padding:24px 18px}
-  .gal-grid{grid-template-columns:1fr 1fr}
-  .gal-slider{border-radius:4px}
-  .gal-cap{padding:30px 20px 18px}
-  .gal-cap h3{font-size:18px}
-  .tl-card{padding:0 16px}
-  .tl-title{font-size:18px}
-  .actu-wrap{grid-template-columns:1fr}
-  .actu-feat-body{padding:20px}
-  .actu-feat-title{font-size:20px}
-  .ct-wrap{gap:40px}
-  .ct-form{padding:22px 18px}
-  .eng-form{padding:22px 18px}
-  .form-title{font-size:22px}
-  footer{padding:50px 4% 24px}
-  .ft-bottom{flex-direction:column;text-align:center}
-  .ft-legal{flex-wrap:wrap;justify-content:center}
-  .lmodal{margin:10px}
-  .lmodal-body{padding:16px 18px}
-  .mob-nav a{font-size:28px}
-  .about-intro{font-size:16px}
-  .about-body{font-size:14px}
-  .stitle{line-height:1.1}
-}
-@media(max-width:380px){
-  .hero-stat-strip{grid-template-columns:1fr}
-  .hstat{border-right:none;border-bottom:1px solid rgba(255,255,255,.06)}
-  .ft-grid{grid-template-columns:1fr}
-  .gal-grid{grid-template-columns:1fr}
-  .gi:first-child{grid-column:span 1}
+  .gal-grid{grid-template-columns:repeat(2,1fr)}
 }
 
 /* MOBILE NAV */
@@ -346,21 +331,6 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .mob-nav a{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--w);text-decoration:none;letter-spacing:2px;transition:var(--t)}
 .mob-nav a:hover{color:var(--r)}
 .mob-close{position:absolute;top:25px;right:25px;background:none;border:none;color:var(--w);font-size:28px;cursor:pointer}
-
-/* MODALES LÉGALES */
-.lmodal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(6px);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .3s}
-.lmodal-overlay.open{opacity:1;pointer-events:all}
-.lmodal{background:var(--n2);border:1px solid rgba(200,16,46,.2);border-radius:10px;max-width:700px;width:100%;max-height:85vh;display:flex;flex-direction:column;transform:translateY(20px);transition:transform .3s}
-.lmodal-overlay.open .lmodal{transform:translateY(0)}
-.lmodal-head{display:flex;align-items:center;justify-content:space-between;padding:24px 28px;border-bottom:1px solid rgba(255,255,255,.07);flex-shrink:0}
-.lmodal-head h3{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--w)}
-.lmodal-close{background:none;border:none;color:rgba(255,255,255,.4);font-size:22px;cursor:pointer;line-height:1;transition:color .2s}
-.lmodal-close:hover{color:var(--w)}
-.lmodal-body{padding:24px 28px;overflow-y:auto;font-size:14px;line-height:1.85;color:rgba(255,255,255,.6)}
-.lmodal-body h4{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--r);margin:22px 0 8px}
-.lmodal-body h4:first-child{margin-top:0}
-.lmodal-body p{margin-bottom:12px}
-.lmodal-body strong{color:rgba(255,255,255,.85)}
 </style>
 </head>
 <body>
@@ -396,6 +366,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <a href="#galerie" onclick="cMob()">Galerie</a>
   <a href="#actu" onclick="cMob()">Actualités</a>
   <a href="#engagement" onclick="cMob()">Soutenir</a>
+  <a href="#don" onclick="cMob()">Faire un don</a>
   <a href="#contact" onclick="cMob()">Contact</a>
 </div>
 
@@ -404,7 +375,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <div class="hero-video-bg"></div>
   <div class="hero-noise"></div>
   <div class="hero-img-side">
-    <img src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA">
+    <img src="images/bininga.jpg" alt="Aimé Ange Wilfrid BININGA">
   </div>
   <div class="hero-content">
     <div class="hero-eyebrow">
@@ -412,7 +383,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <span class="hero-eyebrow-txt">Campagne législative · République du Congo</span>
     </div>
     <h1 class="hero-name">
-      Ange Aimé Wilfrid
+      Aimé Ange Wilfrid
       <span>BININGA</span>
     </h1>
     <div class="hero-rule"></div>
@@ -424,6 +395,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <p class="hero-sub">Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.</p>
     <div class="hero-btns">
       <a href="#engagement" class="btn btn-r">🤝 Rejoindre la campagne</a>
+      <a href="#don" class="btn btn-g">💛 Faire un don</a>
       <a href="#programme" class="btn btn-o">Notre programme</a>
     </div>
   </div>
@@ -433,12 +405,20 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   </a>
   <div class="hero-stat-strip">
     <div class="hstat">
+      <div class="hstat-num" data-c="8">0</div>
+      <div class="hstat-txt">Ans<br>de mandat</div>
+    </div>
+    <div class="hstat">
       <div class="hstat-num" data-c="2">0</div>
       <div class="hstat-txt">Ministères<br>dirigés</div>
     </div>
     <div class="hstat">
-      <div class="hstat-num" data-c="2">0</div>
+      <div class="hstat-num" data-c="3">0</div>
       <div class="hstat-txt">Mandats<br>de Député</div>
+    </div>
+    <div class="hstat">
+      <div class="hstat-num" data-c="1">0</div>
+      <div class="hstat-txt">Circonscription<br>Ewo</div>
     </div>
   </div>
 </section>
@@ -509,27 +489,27 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
       <div class="tl-item rev">
         <div class="tl-card">
-          <div class="tl-year">2016</div>
-          <div class="tl-title">Ministre de la Fonction publique et de la Réforme de l'État</div>
-          <div class="tl-desc">Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale.</div>
-          <span class="tl-tag">🏛️ Ministère de la Fonction publique</span>
-        </div>
-        <div class="tl-dot">👷</div>
-        <div class="tl-empty"></div>
-      </div>
-      <div class="tl-item rev">
-        <div class="tl-empty"></div>
-        <div class="tl-dot">🗳️</div>
-        <div class="tl-card">
           <div class="tl-year">19 août 2017</div>
           <div class="tl-title">Élu Député de la 1re circonscription d'Ewo</div>
           <div class="tl-desc">Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo.</div>
           <span class="tl-tag">🗳️ Assemblée Nationale</span>
         </div>
+        <div class="tl-dot">🗳️</div>
+        <div class="tl-empty"></div>
+      </div>
+      <div class="tl-item rev">
+        <div class="tl-empty"></div>
+        <div class="tl-dot">👷</div>
+        <div class="tl-card">
+          <div class="tl-year">2016</div>
+          <div class="tl-title">Ministre de la Fonction publique et de la Réforme de l'État</div>
+          <div class="tl-desc">Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale.</div>
+          <span class="tl-tag">🏛️ Ministère du Travail</span>
+        </div>
       </div>
       <div class="tl-item rev">
         <div class="tl-card">
-          <div class="tl-year">2018</div>
+          <div class="tl-year">Assemblée Nationale</div>
           <div class="tl-title">Ministre de la Justice & Haute Autorité anti-corruption</div>
           <div class="tl-desc">En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires.</div>
           <span class="tl-tag">📈 Confiance renouvelée</span>
@@ -549,8 +529,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
       <div class="tl-item rev">
         <div class="tl-card">
-          <div class="tl-year">Législatives 2027</div>
-          <div class="tl-title">Candidat pour Ewo · Campagne 2027</div>
+          <div class="tl-year">Élections à venir</div>
+          <div class="tl-title">Candidat pour Ewo · Campagne 2025</div>
           <div class="tl-desc">Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo.</div>
           <span class="tl-tag">🚀 Campagne en cours</span>
         </div>
@@ -566,7 +546,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag">Notre vision</span>
-      <h2 class="stitle">Programme <span class="r">2027–2032</span></h2>
+      <h2 class="stitle">Programme <span class="r">2025–2030</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
       <p style="font-size:16px;color:rgba(255,255,255,.45);max-width:600px;margin:20px auto 0;font-weight:300;line-height:1.9">Six axes stratégiques pour transformer Ewo et renforcer le Congo.</p>
     </div>
@@ -576,7 +556,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           <h3 class="prog-hero-title">Un programme construit<br>avec les citoyens d'Ewo</h3>
           <p class="prog-hero-sub">Chaque engagement de ce programme est issu d'échanges directs avec les habitants d'Ewo, les chefs de village, les jeunes, les femmes entrepreneurs et les professionnels de santé et d'éducation.</p>
         </div>
-        <div class="prog-hero-big">2032</div>
+        <div class="prog-hero-big">2030</div>
       </div>
       <div class="prog-grid">
         <div class="prog-card rev">
@@ -594,7 +574,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           <div class="prog-num">02</div>
           <span class="prog-icon">👷</span>
           <h3 class="prog-title">Emploi & Travail décent</h3>
-          <p class="prog-txt">Fort de son expérience au Ministère de la Fonction publique, il porte un plan ambitieux pour l'emploi des jeunes et la dignité des travailleurs d'Ewo.</p>
+          <p class="prog-txt">Fort de son expérience au Ministère du Travail, il porte un plan ambitieux pour l'emploi des jeunes et la dignité des travailleurs d'Ewo.</p>
           <ul class="prog-pts">
             <li>Centre de formation professionnelle</li>
             <li>Microcrédit pour jeunes entrepreneurs</li>
@@ -665,24 +645,27 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
             <img src="images/bininga.jpg" alt="Aimé BININGA — Portrait officiel" style="object-position:top center">
             <div class="gal-cap">
               <h3>Portrait officiel — Ministre de la Justice</h3>
-              <p>Ange Aimé Wilfrid BININGA, Ministre de la Justice, Député d'Ewo</p>
+              <p>Aimé Ange Wilfrid BININGA, Ministre de la Justice, Député d'Ewo</p>
             </div>
           </div>
           <div class="gal-slide">
-            <img src="images/Darmanin.jpeg" alt="BININGA et Darmanin — Place Vendôme, Paris" style="object-position:center center">
+            <div class="gal-slide-placeholder">
+              <div style="font-size:50px">🤝</div>
+              <p style="color:rgba(255,255,255,.3);font-size:14px">Ajoutez vos photos de terrain ici</p>
+            </div>
             <div class="gal-cap">
-              <h3>Rencontre Place Vendôme — BININGA & Darmanin</h3>
-              <p>Coopération judiciaire Congo–France, 18 Février 2026</p>
+              <h3>Rencontre avec les citoyens d'Ewo</h3>
+              <p>À l'écoute des préoccupations de la population</p>
             </div>
           </div>
           <div class="gal-slide">
             <div class="gal-slide-placeholder">
               <div style="font-size:50px">🏛️</div>
-              <p style="color:rgba(255,255,255,.3);font-size:14px">Photo officielle Ministère de la Fonction publique</p>
+              <p style="color:rgba(255,255,255,.3);font-size:14px">Photo officielle Ministère du Travail</p>
             </div>
             <div class="gal-cap">
-              <h3>Au Ministère de la Fonction publique et de la Réforme de l'État</h3>
-              <p>Modernisation de l'administration et dialogue social</p>
+              <h3>Au Ministère du Travail et de l'Emploi</h3>
+              <p>Réforme du Code du travail et dialogue social</p>
             </div>
           </div>
           <div class="gal-slide">
@@ -692,7 +675,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
             </div>
             <div class="gal-cap">
               <h3>Grand meeting populaire à Ewo</h3>
-              <p>Lancement officiel de la campagne législative 2027</p>
+              <p>Lancement officiel de la campagne législative 2025</p>
             </div>
           </div>
         </div>
@@ -707,7 +690,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
       <div class="gal-grid rev">
         <div class="gi"><img src="images/bininga.jpg" alt="BININGA portrait"><div class="gi-ov">🔍</div></div>
-        <div class="gi"><img src="images/Darmanin.jpeg" alt="BININGA et Darmanin"><div class="gi-ov">🔍</div></div>
+        <div class="gi"><div class="gi-ph">🤝</div><div class="gi-ov">🔍</div></div>
         <div class="gi"><div class="gi-ph">⚖️</div><div class="gi-ov">🔍</div></div>
         <div class="gi"><div class="gi-ph">🏗️</div><div class="gi-ov">🔍</div></div>
         <div class="gi"><div class="gi-ph">📚</div><div class="gi-ov">🔍</div></div>
@@ -729,27 +712,23 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <div class="actu-wrap">
       <div class="actu-feat rev-l">
         <div class="actu-feat-img">
-          <img src="images/Darmanin.jpeg" alt="Ange Aimé Wilfrid BININGA et Gérald Darmanin — Place Vendôme, Paris" style="object-position:center center;">
-          <div class="actu-chip">Diplomatie</div>
+          <img src="images/bininga.jpg" alt="BININGA" style="object-position:top center;filter:brightness(.7)">
+          <div class="actu-chip">À la une</div>
         </div>
         <div class="actu-feat-body">
-          <div class="actu-feat-date">📅 18 Février 2026 — Paris</div>
-          <h3 class="actu-feat-title">Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France</h3>
-          <p class="actu-feat-txt">Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, a été reçu place Vendôme par son homologue français Gérald Darmanin. L'objet : la révision de la convention de coopération judiciaire liant les deux pays depuis 1974. Trois nouvelles conventions portant sur l'entraide judiciaire, les extraditions et les transfèrements sont en cours de négociation, avec pour objectif une signature à l'été 2026. Une nouvelle dynamique diplomatique saluée par les deux ministères.</p>
+          <div class="actu-feat-date">📅 Janvier 2025</div>
+          <h3 class="actu-feat-title">Lancement officiel de la campagne législative d'Aimé BININGA à Ewo</h3>
+          <p class="actu-feat-txt">Dans une ambiance de grande ferveur populaire, Aimé Ange Wilfrid BININGA a officiellement lancé sa campagne pour les prochaines élections législatives. Entouré de milliers de partisans, il a présenté son programme en 6 axes pour Ewo et rappelé son bilan : deux ministères conduits avec rigueur, trois mandats de Député, et une vie entière au service de la Cuvette-Ouest.</p>
         </div>
       </div>
       <div class="actu-list rev-r">
-        <div class="actu-item">
-          <div class="actu-date-box"><div class="actu-day">18</div><span class="actu-mon">FÉV</span></div>
-          <div><div class="actu-item-title">Place Vendôme : rencontre avec Gérald Darmanin</div><div class="actu-item-desc">Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026.</div></div>
-        </div>
         <div class="actu-item">
           <div class="actu-date-box"><div class="actu-day">15</div><span class="actu-mon">DÉC</span></div>
           <div><div class="actu-item-title">Inauguration du tribunal de proximité d'Ewo</div><div class="actu-item-desc">Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens.</div></div>
         </div>
         <div class="actu-item">
           <div class="actu-date-box"><div class="actu-day">08</div><span class="actu-mon">NOV</span></div>
-          <div><div class="actu-item-title">Accord de dialogue social signé avec les syndicats</div><div class="actu-item-desc">Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais.</div></div>
+          <div><div class="actu-item-title">Accord de dialogue social signé avec les syndicats</div><div class="actu-item-desc">Fort de son expérience au Ministère du Travail, il facilite un accord historique pour les travailleurs congolais.</div></div>
         </div>
         <div class="actu-item">
           <div class="actu-date-box"><div class="actu-day">22</div><span class="actu-mon">OCT</span></div>
@@ -842,16 +821,16 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--w);margin-bottom:24px">Envoyez un message</h3>
         <form onsubmit="fCt(event,this)">
           <div class="fg2">
-            <div class="fgrp"><label>Prénom</label><input type="text" name="prenom" placeholder="Prénom" required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
-            <div class="fgrp"><label>Nom</label><input type="text" name="nom" placeholder="Nom" required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
+            <div class="fgrp"><label>Prénom</label><input type="text" placeholder="Prénom" style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
+            <div class="fgrp"><label>Nom</label><input type="text" placeholder="Nom" style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
           </div>
-          <div class="fgrp"><label>Email</label><input type="email" name="email" placeholder="votre@email.com" required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
+          <div class="fgrp"><label>Email</label><input type="email" placeholder="votre@email.com" style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
           <div class="fgrp"><label>Sujet</label>
-            <select name="sujet" style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)">
+            <select style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)">
               <option>Question générale</option><option>Demande de rencontre</option><option>Prise de parole</option><option>Presse / Journaliste</option><option>Partenariat</option>
             </select>
           </div>
-          <div class="fgrp"><label>Message</label><textarea name="message" rows="4" placeholder="Votre message..." required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></textarea></div>
+          <div class="fgrp"><label>Message</label><textarea rows="4" placeholder="Votre message..." style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w);placeholder-color:rgba(255,255,255,.2)"></textarea></div>
           <button type="submit" class="btn-form">📨 Envoyer le message</button>
         </form>
       </div>
@@ -877,12 +856,12 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
     </div>
     <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="#" onclick="event.preventDefault();openLegal('financement')">Financement</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#don">Faire un don</a></li><li><a href="#contact">Presse</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#">Mentions légales</a></li><li><a href="#">Confidentialité</a></li><li><a href="#">Financement</a></li><li><a href="#">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
-    <p>© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
-    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a></div>
+    <p>© 2025 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
+    <div class="ft-legal"><a href="#">Mentions légales</a><a href="#">Confidentialité</a><a href="#">Cookies</a></div>
   </div>
 </footer>
 
@@ -928,170 +907,14 @@ document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
 const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");rObs.unobserve(e.target)}})},{threshold:.12});
 document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
 
-// ── Configuration Formspree ──────────────────────────────────────────
-// Créez un compte sur formspree.io, ajoutez deux formulaires et
-// remplacez les IDs ci-dessous par vos vrais endpoints.
-const FORMSPREE = {
-  audience: "https://formspree.io/f/xbdzlopl",
-  contact:  "https://formspree.io/f/xojkvdkz"
-};
+// don
+function selAmt(b,v){document.querySelectorAll(".don-btn").forEach(x=>x.classList.remove("a"));b.classList.add("a");document.getElementById("dAmt").value=v;document.getElementById("dDisp").textContent=v.toLocaleString("fr-FR")}
+document.getElementById("dAmt").addEventListener("input",function(){const v=+this.value||0;document.getElementById("dDisp").textContent=v.toLocaleString("fr-FR");document.querySelectorAll(".don-btn").forEach(x=>x.classList.remove("a"))});
+function fDon(e){e.preventDefault();const b=document.getElementById("donBtn");b.textContent="✅ Don confirmé — Merci pour votre soutien à BININGA !";b.style.background="#2ecc71";b.disabled=true}
 
-// Sauvegarde en localStorage et envoi vers Formspree
-async function sendForm(storageKey, endpoint, formData, btn, successMsg) {
-  btn.textContent = "⏳ Envoi en cours…";
-  btn.disabled = true;
-
-  // 1. Sauvegarde locale (accessible depuis l'admin)
-  const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
-  const entry = {};
-  formData.forEach((v, k) => { entry[k] = v; });
-  entry._date = new Date().toLocaleString("fr-FR");
-  list.unshift(entry);
-  localStorage.setItem(storageKey, JSON.stringify(list));
-
-  // 2. Envoi Formspree
-  try {
-    const res = await fetch(endpoint, {
-      method: "POST",
-      body: formData,
-      headers: { Accept: "application/json" }
-    });
-    if (!res.ok) throw new Error();
-  } catch (_) {
-    // Formspree non configuré → les données sont quand même en localStorage
-  }
-
-  btn.textContent = successMsg;
-  btn.style.background = "#2ecc71";
-}
-
-function fSub(e, f) {
-  e.preventDefault();
-  sendForm("bininga_audiences", FORMSPREE.audience, new FormData(f),
-    f.querySelector("button"),
-    "✅ Demande enregistrée — Réponse sous 48h");
-}
-
-function fCt(e, f) {
-  e.preventDefault();
-  sendForm("bininga_contacts", FORMSPREE.contact, new FormData(f),
-    f.querySelector("button"),
-    "✅ Message envoyé — Réponse sous 24h");
-}
+// forms
+function fSub(e,f){e.preventDefault();const b=f.querySelector("button");b.textContent="✅ Inscription enregistrée ! Bienvenue dans l'équipe";b.style.background="#2ecc71";b.disabled=true}
+function fCt(e,f){e.preventDefault();const b=f.querySelector("button");b.textContent="✅ Message envoyé — Réponse sous 24h";b.style.background="#2ecc71";b.disabled=true}
 
 // smooth scroll
-document.querySelectorAll("a[href^='#']").forEach(a=>a.addEventListener("click",e=>{const t=document.querySelector(a.getAttribute("href"));if(t){e.preventDefault();t.scrollIntoView({behavior:"smooth"})}}));
-
-// modales légales
-function openLegal(id){document.getElementById("modal-"+id).classList.add("open");document.body.style.overflow="hidden"}
-function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
-document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
-document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
-
-// admin secret trigger (4 clics)
-let _ac=0,_at=null;
-document.getElementById("adminTrigger").addEventListener("click",()=>{
-  _ac++;clearTimeout(_at);
-  _at=setTimeout(()=>{_ac=0},2000);
-  if(_ac>=4){_ac=0;window.location.href="admin.html";}
-});
-</script>
-
-<!-- Bouton admin caché -->
-<div id="adminTrigger" style="position:fixed;bottom:0;right:0;width:40px;height:40px;z-index:99999;cursor:default;opacity:0;"></div>
-
-<!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
-
-<!-- Mentions légales -->
-<div class="lmodal-overlay" id="modal-mentions">
-  <div class="lmodal">
-    <div class="lmodal-head">
-      <h3>Mentions légales</h3>
-      <button class="lmodal-close" onclick="closeLegal('mentions')">✕</button>
-    </div>
-    <div class="lmodal-body">
-      <h4>Éditeur du site</h4>
-      <p>Ce site est édité par la <strong>Cellule de communication de la campagne d'Ange Aimé Wilfrid BININGA</strong>, candidat aux élections législatives de 2027 pour la 1re circonscription d'Ewo (Cuvette-Ouest), République du Congo.</p>
-      <h4>Responsable de la publication</h4>
-      <p><strong>Ange Aimé Wilfrid BININGA</strong> — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo depuis le 19 août 2017. Membre du Parti Congolais du Travail (PCT).</p>
-      <h4>Contact</h4>
-      <p>Ewo, département de la Cuvette-Ouest, République du Congo.<br>Pour toute demande : via le formulaire de contact disponible sur ce site.</p>
-      <h4>Hébergement</h4>
-      <p>Ce site est hébergé par un prestataire tiers. Les informations relatives à l'hébergeur sont disponibles sur simple demande auprès de la cellule de communication.</p>
-      <h4>Propriété intellectuelle</h4>
-      <p>L'ensemble des contenus de ce site (textes, photos, graphismes) est la propriété exclusive de la campagne Aimé BININGA ou de leurs auteurs respectifs. Toute reproduction sans autorisation préalable est interdite.</p>
-      <h4>Limitation de responsabilité</h4>
-      <p>Les informations publiées sur ce site sont fournies à titre indicatif. La campagne ne saurait être tenue responsable des inexactitudes ou omissions qui pourraient y figurer.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Confidentialité -->
-<div class="lmodal-overlay" id="modal-confidentialite">
-  <div class="lmodal">
-    <div class="lmodal-head">
-      <h3>Politique de confidentialité</h3>
-      <button class="lmodal-close" onclick="closeLegal('confidentialite')">✕</button>
-    </div>
-    <div class="lmodal-body">
-      <h4>Données collectées</h4>
-      <p>Ce site collecte des données personnelles uniquement via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message).</p>
-      <h4>Finalité du traitement</h4>
-      <p>Les données collectées sont utilisées exclusivement pour <strong>répondre à vos demandes</strong> et assurer le suivi de votre contact avec l'équipe du Député. Elles ne font l'objet d'aucune cession à des tiers ni d'aucune utilisation commerciale.</p>
-      <h4>Stockage des données</h4>
-      <p>Les soumissions sont conservées dans l'espace d'administration sécurisé du site. Elles ne sont accessibles qu'aux membres habilités de la cellule de communication.</p>
-      <h4>Durée de conservation</h4>
-      <p>Les données sont conservées pour la durée nécessaire au traitement de votre demande, et au maximum <strong>12 mois</strong> à compter de la soumission.</p>
-      <h4>Vos droits</h4>
-      <p>Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous via le formulaire du site.</p>
-      <h4>Cookies</h4>
-      <p>Ce site n'utilise pas de cookies de suivi ou publicitaires. Des cookies techniques essentiels au fonctionnement du site peuvent être utilisés.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Financement -->
-<div class="lmodal-overlay" id="modal-financement">
-  <div class="lmodal">
-    <div class="lmodal-head">
-      <h3>Financement de la campagne</h3>
-      <button class="lmodal-close" onclick="closeLegal('financement')">✕</button>
-    </div>
-    <div class="lmodal-body">
-      <h4>Transparence financière</h4>
-      <p>La campagne d'Ange Aimé Wilfrid BININGA est conduite dans le respect des dispositions légales régissant le financement des campagnes électorales en République du Congo.</p>
-      <h4>Sources de financement</h4>
-      <p>La campagne est financée par :</p>
-      <p>— Les contributions personnelles du candidat ;<br>— Les dons et soutiens de sympathisants congolais conformément à la législation en vigueur ;<br>— Le soutien logistique du <strong>Parti Congolais du Travail (PCT)</strong>.</p>
-      <h4>Conformité légale</h4>
-      <p>Tous les financements reçus sont conformes aux dispositions de la loi électorale congolaise. Aucun financement étranger n'est accepté. Les comptes de campagne sont soumis au contrôle des autorités compétentes.</p>
-      <h4>Contact</h4>
-      <p>Pour toute question relative au financement, adressez-vous à la cellule de communication de la campagne via le formulaire de contact du site.</p>
-    </div>
-  </div>
-</div>
-
-<!-- Cookies -->
-<div class="lmodal-overlay" id="modal-cookies">
-  <div class="lmodal">
-    <div class="lmodal-head">
-      <h3>Gestion des cookies</h3>
-      <button class="lmodal-close" onclick="closeLegal('cookies')">✕</button>
-    </div>
-    <div class="lmodal-body">
-      <h4>Qu'est-ce qu'un cookie ?</h4>
-      <p>Un cookie est un petit fichier déposé sur votre terminal lors de la visite d'un site. Il permet de mémoriser des informations relatives à votre navigation.</p>
-      <h4>Cookies utilisés sur ce site</h4>
-      <p><strong>Cookies techniques (essentiels) :</strong> nécessaires au fonctionnement du site (navigation, sécurité). Ils ne peuvent pas être désactivés.</p>
-      <p><strong>Cookies de mesure d'audience :</strong> ce site n'utilise pas de cookies de mesure d'audience ou d'analyse de comportement.</p>
-      <p><strong>Cookies publicitaires :</strong> ce site ne dépose aucun cookie publicitaire ou de reciblage.</p>
-      <h4>Données stockées localement</h4>
-      <p>Ce site utilise le <strong>stockage local (localStorage)</strong> de votre navigateur uniquement pour la gestion interne de l'administration du site. Ces données ne sont pas transmises à des tiers.</p>
-      <h4>Vos choix</h4>
-      <p>Vous pouvez à tout moment supprimer les données stockées via les paramètres de votre navigateur (<em>Outils → Confidentialité → Effacer les données de navigation</em>).</p>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
+document.querySelec
