@@ -448,6 +448,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
           <div class="form-group"><label>Date affichée (ex: 18 Février 2026 — Paris)</label><input type="text" id="feat-date" placeholder="18 Février 2026 — Paris"></div>
           <div class="form-group"><label>Titre de l'article</label><input type="text" id="feat-title" placeholder="Titre de l'article principal"></div>
           <div class="form-group"><label>Texte complet</label><textarea id="feat-text" style="min-height:130px" placeholder="Contenu de l'article..."></textarea></div>
+          <div class="form-group">
+            <label>Photo de l'article</label>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 13px">
+              <span id="feat-img-path" style="font-size:12px;color:rgba(255,255,255,.4);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Aucune photo</span>
+              <button class="sbtn sbtn-progress" style="flex-shrink:0" onclick="uploadFeaturedImage()">📷 Changer la photo</button>
+            </div>
+          </div>
         </div>
 
         <!-- Petites actualités -->
@@ -650,6 +657,17 @@ function uploadForGrid(i) {
   });
 }
 
+function uploadFeaturedImage() {
+  uploadImage(path => {
+    if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
+    if (!siteData.actus.featured) siteData.actus.featured = {};
+    siteData.actus.featured.image = path;
+    const el = document.getElementById("feat-img-path");
+    if (el) el.textContent = path;
+    showToast("Photo de l'article mise à jour !");
+  });
+}
+
 // ── CRUD Slides ────────────────────────────────────────────────────────────
 function updSlide(i, field, val) {
   if (siteData.gallery && siteData.gallery.slides[i])
@@ -701,6 +719,8 @@ function renderActus() {
   document.getElementById("feat-date").value  = f.date     || "";
   document.getElementById("feat-title").value = f.title    || "";
   document.getElementById("feat-text").value  = f.text     || "";
+  const featImgEl = document.getElementById("feat-img-path");
+  if (featImgEl) featImgEl.textContent = f.image || "Aucune photo";
 
   // Petites actualités
   renderActuItems();
@@ -778,7 +798,7 @@ function collectActus() {
 function loadSiteData() {
   fetch("/api/load")
     .then(r => r.json())
-    .then(d => { siteData = d; populateForm(); renderStats(); })
+    .then(d => { siteData = d; populateForm(); renderStats(); renderActus(); renderGalerie(); })
     .catch(() => {}); // GitHub Pages statique : pas de serveur
 }
 
