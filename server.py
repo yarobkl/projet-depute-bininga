@@ -12,18 +12,50 @@ from datetime import datetime
 # ── Configuration ──────────────────────────────────────────
 DATA_FILE  = "data.json"
 AUDIT_FILE = "audit.log"
+USERS_FILE = "users.json"
 ADMIN_USER = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS = os.environ.get("BININGA_PASS", "bininga2025")
 
-# Token de session généré aléatoirement au démarrage (64 caractères hex)
-# Change à chaque redémarrage — jamais visible dans le code source
-SESSION_TOKEN = secrets.token_hex(32)
+# Sessions actives : token → {username, role, nom}
+ACTIVE_SESSIONS = {}
 
 def _hash(val):
     return hashlib.sha256(val.encode()).hexdigest()
 
-H_USER = _hash(ADMIN_USER)
-H_PASS = _hash(ADMIN_PASS)
+# ── Utilisateurs ────────────────────────────────────────────
+def load_users():
+    if not os.path.exists(USERS_FILE):
+        return []
+    try:
+        with open(USERS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_users(users):
+    with open(USERS_FILE, "w", encoding="utf-8") as f:
+        json.dump(users, f, indent=2, ensure_ascii=False)
+
+def init_users():
+    """Crée users.json par défaut si inexistant."""
+    if not os.path.exists(USERS_FILE):
+        save_users([{
+            "username": ADMIN_USER,
+            "password_hash": _hash(ADMIN_PASS),
+            "role": "admin",
+            "nom": "Administrateur"
+        }])
+        print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
+
+def find_user(username):
+    return next((u for u in load_users() if u["username"] == username), None)
+
+def get_session(token):
+    return ACTIVE_SESSIONS.get(token)
+
+def has_role(token, *roles):
+    s = get_session(token)
+    return s is not None and s["role"] in roles
 
 # ── Audit ──────────────────────────────────────────────────
 def audit_log(action, ip="", detail=""):
@@ -77,6 +109,9 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
+# ── Init au chargement du module ───────────────────────────
+init_users()
+
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
@@ -96,10 +131,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
-            if token != SESSION_TOKEN:
+            if not has_role(token, "admin"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             self._json({"ok": True, "logs": load_audit()})
+            return
+
+        if path == "/api/users":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
+                     for u in load_users()]
+            self._json({"ok": True, "users": users})
             return
 
         if path == "/" or path == "":
@@ -132,16 +177,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/login":
             try:
                 creds = json.loads(body.decode("utf-8"))
-                u = _hash(creds.get("username", ""))
-                p = _hash(creds.get("password", ""))
+                username = creds.get("username", "")
+                password = creds.get("password", "")
                 ip = self.client_address[0]
-                if u == H_USER and p == H_PASS:
-                    print(f"[BININGA] 🔓 Connexion admin — {datetime.now().strftime('%H:%M:%S')}")
-                    audit_log("LOGIN_OK", ip, "Connexion admin réussie")
-                    self._json({"ok": True, "token": SESSION_TOKEN})
+                user = find_user(username)
+                if user and user.get("password_hash") == _hash(password):
+                    token = secrets.token_hex(32)
+                    ACTIVE_SESSIONS[token] = {
+                        "username": user["username"],
+                        "role":     user["role"],
+                        "nom":      user.get("nom", user["username"])
+                    }
+                    print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
+                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
+                    self._json({"ok": True, "token": token,
+                                "role": user["role"], "nom": user.get("nom", username)})
                 else:
-                    print(f"[BININGA] ⛔ Tentative de connexion échouée — {datetime.now().strftime('%H:%M:%S')}")
-                    audit_log("LOGIN_FAIL", ip, "Identifiant ou mot de passe incorrect")
+                    print(f"[BININGA] ⛔ Tentative échouée : {username} — {datetime.now().strftime('%H:%M:%S')}")
+                    audit_log("LOGIN_FAIL", ip, f"Identifiant ou mot de passe incorrect (user: {username})")
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -149,12 +202,71 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── Vérification token pour les routes protégées ──
         token = self.headers.get("X-Admin-Token", "")
-        if token != SESSION_TOKEN:
+        if not get_session(token):
             self._json({"ok": False, "message": "Non autorisé"}, 401)
+            return
+
+        # ── /api/users/upsert ──
+        if path == "/api/users/upsert":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data = json.loads(body.decode("utf-8"))
+                uname = data.get("username", "").strip()
+                nom   = data.get("nom", "").strip()
+                role  = data.get("role", "lecteur")
+                pwd   = data.get("password", "").strip()
+                if not uname or role not in ("admin", "editeur", "lecteur"):
+                    self._json({"ok": False, "message": "Données invalides"}, 400)
+                    return
+                users = load_users()
+                existing = next((u for u in users if u["username"] == uname), None)
+                if existing:
+                    existing["nom"]  = nom or existing["nom"]
+                    existing["role"] = role
+                    if pwd:
+                        existing["password_hash"] = _hash(pwd)
+                else:
+                    if not pwd:
+                        self._json({"ok": False, "message": "Mot de passe requis"}, 400)
+                        return
+                    users.append({"username": uname, "password_hash": _hash(pwd), "role": role, "nom": nom or uname})
+                save_users(users)
+                ip = self.client_address[0]
+                action = "Modification" if existing else "Création"
+                audit_log("USER_UPSERT", ip, f"{action} utilisateur : {uname} ({role})")
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/users/delete ──
+        if path == "/api/users/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data  = json.loads(body.decode("utf-8"))
+                uname = data.get("username", "")
+                session = get_session(token)
+                if uname == session["username"]:
+                    self._json({"ok": False, "message": "Impossible de supprimer son propre compte"}, 400)
+                    return
+                users = [u for u in load_users() if u["username"] != uname]
+                save_users(users)
+                ip = self.client_address[0]
+                audit_log("USER_DELETE", ip, f"Suppression utilisateur : {uname}")
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
             return
 
         # ── /api/upload ──
         if path == "/api/upload":
+            if not has_role(token, "admin", "editeur"):
+                self._json({"ok": False, "message": "Accès refusé"}, 403)
+                return
             content_type = self.headers.get("Content-Type", "")
             if "multipart/form-data" not in content_type:
                 self._json({"ok": False, "message": "Format invalide"}, 400)
@@ -191,12 +303,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/save ──
         if path == "/api/save":
+            if not has_role(token, "admin", "editeur"):
+                self._json({"ok": False, "message": "Accès refusé"}, 403)
+                return
             try:
                 data = json.loads(body.decode("utf-8"))
                 ip = self.client_address[0]
                 save_data(data)
                 print(f"[BININGA] ✅ Données sauvegardées — {datetime.now().strftime('%H:%M:%S')}")
-                audit_log("SAVE", ip, "data.json sauvegardé")
+                session = get_session(token)
+                who = session["username"] if session else "?"
+                audit_log("SAVE", ip, f"data.json sauvegardé par {who}")
                 self._json({"ok": True, "message": "Données sauvegardées"})
             except Exception as e:
                 print(f"[BININGA] ❌ Erreur sauvegarde : {e}")
@@ -243,6 +360,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
 # ── Lancement ──────────────────────────────────────────────
 if __name__ == "__main__":
+    init_users()
     PORT     = int(os.environ.get("PORT", 8080))
     USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem")
     protocol = "https" if USE_SSL else "http"

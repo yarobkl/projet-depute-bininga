@@ -159,6 +159,27 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 #toast.show{transform:translateY(0);opacity:1}
 #toast.err{background:var(--err)}
 
+/* ── USERS ── */
+.user-list{display:flex;flex-direction:column;gap:8px}
+.user-item{display:flex;align-items:center;gap:12px;background:var(--n3);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px 16px}
+.user-item:hover{border-color:rgba(255,255,255,.12)}
+.user-avatar{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0}
+.user-avatar.admin{background:rgba(200,16,46,.2);color:#ff6b6b}
+.user-avatar.editeur{background:rgba(52,152,219,.2);color:#3498db}
+.user-avatar.lecteur{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5)}
+.user-info{flex:1;min-width:0}
+.user-name{font-weight:700;font-size:13px;margin-bottom:2px}
+.user-meta{font-size:11px;color:rgba(255,255,255,.3)}
+.role-badge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.role-badge.admin{background:rgba(200,16,46,.15);color:#ff6b6b;border:1px solid rgba(200,16,46,.25)}
+.role-badge.editeur{background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.role-badge.lecteur{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1)}
+.user-form{background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:20px;margin-bottom:18px}
+.user-form-title{font-size:13px;font-weight:700;margin-bottom:16px;color:rgba(255,255,255,.7)}
+.user-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+select.form-input{width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:14px;font-family:inherit;outline:none;transition:var(--t)}
+select.form-input:focus{border-color:var(--r)}
+
 /* ── AUDIT LOGS ── */
 .log-list{display:flex;flex-direction:column;gap:6px}
 .log-item{display:flex;align-items:flex-start;gap:12px;background:var(--n3);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px 14px;font-size:12px}
@@ -230,34 +251,37 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <span class="sb-badge" id="badge-ct" style="display:none"></span>
       </div>
 
-      <div class="sb-section">Contenu du site</div>
-      <div class="sb-item" onclick="showPanel('hero',this)">
+      <div class="sb-section role-editeur" style="display:none">Contenu du site</div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('hero',this)">
         <span class="icon">🏠</span> Hero
       </div>
-      <div class="sb-item" onclick="showPanel('about',this)">
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('about',this)">
         <span class="icon">👤</span> À propos
       </div>
-      <div class="sb-item" onclick="showPanel('stats',this)">
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('stats',this)">
         <span class="icon">📈</span> Statistiques
       </div>
-      <div class="sb-item" onclick="showPanel('galerie',this)">
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('galerie',this)">
         <span class="icon">🖼️</span> Galerie
       </div>
-      <div class="sb-item" onclick="showPanel('actus',this)">
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('actus',this)">
         <span class="icon">📰</span> Actualités
       </div>
-      <div class="sb-item" onclick="showPanel('seo',this)">
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('seo',this)">
         <span class="icon">🔍</span> SEO
       </div>
 
-      <div class="sb-section">Système</div>
-      <div class="sb-item" onclick="showPanel('logs',this)">
+      <div class="sb-section role-admin" style="display:none">Système</div>
+      <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
         <span class="icon">📜</span> Journaux d'audit
+      </div>
+      <div class="sb-item role-admin" style="display:none" onclick="showPanel('users',this)">
+        <span class="icon">👥</span> Utilisateurs
       </div>
     </nav>
 
     <div class="sb-footer">
-      <button class="sb-btn sb-btn-primary" onclick="saveData()">💾 Enregistrer le contenu</button>
+      <button class="sb-btn sb-btn-primary role-editeur" id="btn-save" style="display:none" onclick="saveData()">💾 Enregistrer le contenu</button>
       <button class="sb-btn sb-btn-ghost" onclick="logout()">↩ Déconnexion</button>
     </div>
   </div>
@@ -266,7 +290,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
   <div class="main">
     <div class="topbar">
       <div class="topbar-title" id="topbar-title">Tableau de bord</div>
-      <div class="topbar-info">Connecté · <span id="last-login">—</span></div>
+      <div class="topbar-info"><span id="topbar-user">—</span> · <span id="last-login">—</span></div>
     </div>
 
     <div class="content">
@@ -489,6 +513,87 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
       </div>
 
+      <!-- ── UTILISATEURS ── -->
+      <div class="panel" id="panel-users">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">👥 Gestion des utilisateurs</div>
+          </div>
+
+          <!-- Formulaire ajout / modification -->
+          <div class="user-form">
+            <div class="user-form-title" id="user-form-title">Ajouter un utilisateur</div>
+            <div class="user-form-grid">
+              <div class="form-group" style="margin:0">
+                <label>Identifiant</label>
+                <input type="text" id="uf-username" placeholder="ex: secretaire">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Nom affiché</label>
+                <input type="text" id="uf-nom" placeholder="ex: Secrétaire">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Mot de passe <span style="color:rgba(255,255,255,.3);font-size:9px">(laisser vide = inchangé)</span></label>
+                <input type="password" id="uf-password" placeholder="••••••••">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label>Rôle</label>
+                <select id="uf-role" class="form-input">
+                  <option value="lecteur">Lecteur — messages uniquement</option>
+                  <option value="editeur">Éditeur — contenu + messages</option>
+                  <option value="admin">Admin — accès complet</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="sbtn sbtn-progress" onclick="submitUserForm()">💾 Enregistrer</button>
+              <button class="sbtn sbtn-wait" onclick="resetUserForm()">✕ Annuler</button>
+            </div>
+          </div>
+
+          <!-- Liste des utilisateurs -->
+          <div class="card-title" style="margin-bottom:12px">Comptes existants</div>
+          <div class="user-list" id="user-list">
+            <div class="msg-empty">Chargement…</div>
+          </div>
+        </div>
+
+        <!-- Légende des rôles -->
+        <div class="card" style="margin-top:0">
+          <div class="card-title" style="margin-bottom:14px">Permissions par rôle</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            ${['admin','editeur','lecteur'].map ? '' : ''}
+            <div style="background:var(--n3);border-radius:8px;padding:14px">
+              <div class="role-badge admin" style="margin-bottom:10px">Admin</div>
+              <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
+                <li>Modifier le contenu</li>
+                <li>Voir les messages</li>
+                <li>Journaux d'audit</li>
+                <li>Gérer les utilisateurs</li>
+              </ul>
+            </div>
+            <div style="background:var(--n3);border-radius:8px;padding:14px">
+              <div class="role-badge editeur" style="margin-bottom:10px">Éditeur</div>
+              <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
+                <li>Modifier le contenu</li>
+                <li>Voir les messages</li>
+                <li style="color:rgba(255,255,255,.2)">Journaux d'audit ✗</li>
+                <li style="color:rgba(255,255,255,.2)">Gérer utilisateurs ✗</li>
+              </ul>
+            </div>
+            <div style="background:var(--n3);border-radius:8px;padding:14px">
+              <div class="role-badge lecteur" style="margin-bottom:10px">Lecteur</div>
+              <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
+                <li>Voir les messages</li>
+                <li style="color:rgba(255,255,255,.2)">Modifier contenu ✗</li>
+                <li style="color:rgba(255,255,255,.2)">Journaux d'audit ✗</li>
+                <li style="color:rgba(255,255,255,.2)">Gérer utilisateurs ✗</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── LOGS D'AUDIT ── -->
       <div class="panel" id="panel-logs">
         <div class="card">
@@ -518,8 +623,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 //  SÉCURITÉ — Authentification par hachage SHA-256 (WebCrypto)
 //  Les identifiants ne sont jamais stockés en clair dans le code.
 // ══════════════════════════════════════════════════════════════════════════
-// Token reçu du serveur après login — jamais codé en dur ici
+// Session — jamais codée en dur ici
 let SESSION_TOKEN = "";
+let SESSION_ROLE  = "";
+let SESSION_NOM   = "";
 
 async function doLogin() {
   const u = document.getElementById("u").value.trim();
@@ -536,9 +643,13 @@ async function doLogin() {
     const data = await res.json();
     if (data.ok) {
       SESSION_TOKEN = data.token;
+      SESSION_ROLE  = data.role;
+      SESSION_NOM   = data.nom;
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
+      document.getElementById("topbar-user").textContent = data.nom + " · " + data.role;
+      applyRoleUI(data.role);
       init();
     } else {
       const errEl = document.getElementById("err");
@@ -557,6 +668,8 @@ async function doLogin() {
 
 function logout() {
   SESSION_TOKEN = "";
+  SESSION_ROLE  = "";
+  SESSION_NOM   = "";
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
@@ -566,6 +679,114 @@ function logout() {
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
 });
+
+// ══════════════════════════════════════════════════════════════════════════
+//  RÔLES — Affichage selon les permissions
+// ══════════════════════════════════════════════════════════════════════════
+function applyRoleUI(role) {
+  // .role-editeur = visible pour editeur ET admin
+  const canEdit = role === "admin" || role === "editeur";
+  document.querySelectorAll(".role-editeur").forEach(el => {
+    el.style.display = canEdit ? "" : "none";
+  });
+  // .role-admin = visible pour admin seulement
+  document.querySelectorAll(".role-admin").forEach(el => {
+    el.style.display = role === "admin" ? "" : "none";
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  GESTION DES UTILISATEURS
+// ══════════════════════════════════════════════════════════════════════════
+let _editingUser = null;
+
+async function loadUsers() {
+  const el = document.getElementById("user-list");
+  el.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  try {
+    const res  = await fetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok || !data.users.length) {
+      el.innerHTML = '<div class="msg-empty">Aucun utilisateur.</div>';
+      return;
+    }
+    const roleLabels = { admin: "Admin", editeur: "Éditeur", lecteur: "Lecteur" };
+    const initials   = u => (u.nom || u.username).charAt(0).toUpperCase();
+    el.innerHTML = data.users.map(u => `
+      <div class="user-item">
+        <div class="user-avatar ${u.role}">${initials(u)}</div>
+        <div class="user-info">
+          <div class="user-name">${esc(u.nom || u.username)}</div>
+          <div class="user-meta">${esc(u.username)}</div>
+        </div>
+        <span class="role-badge ${u.role}">${roleLabels[u.role] || u.role}</span>
+        <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(esc(u.username))},${JSON.stringify(esc(u.nom))},${JSON.stringify(u.role)})">✏️ Modifier</button>
+        <button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(esc(u.username))})">🗑</button>
+      </div>
+    `).join("");
+  } catch {
+    el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
+  }
+}
+
+function editUser(username, nom, role) {
+  _editingUser = username;
+  document.getElementById("uf-username").value  = username;
+  document.getElementById("uf-username").disabled = true;
+  document.getElementById("uf-nom").value       = nom;
+  document.getElementById("uf-password").value  = "";
+  document.getElementById("uf-role").value      = role;
+  document.getElementById("user-form-title").textContent = "Modifier l'utilisateur";
+}
+
+function resetUserForm() {
+  _editingUser = null;
+  document.getElementById("uf-username").value  = "";
+  document.getElementById("uf-username").disabled = false;
+  document.getElementById("uf-nom").value       = "";
+  document.getElementById("uf-password").value  = "";
+  document.getElementById("uf-role").value      = "lecteur";
+  document.getElementById("user-form-title").textContent = "Ajouter un utilisateur";
+}
+
+async function submitUserForm() {
+  const payload = {
+    username: document.getElementById("uf-username").value.trim(),
+    nom:      document.getElementById("uf-nom").value.trim(),
+    password: document.getElementById("uf-password").value,
+    role:     document.getElementById("uf-role").value,
+  };
+  if (!payload.username) { showToast("L'identifiant est requis", true); return; }
+  try {
+    const res  = await fetch("/api/users/upsert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(_editingUser ? "Utilisateur modifié !" : "Utilisateur créé !");
+      resetUserForm();
+      loadUsers();
+    } else {
+      showToast(data.message || "Erreur", true);
+    }
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+async function deleteUser(username) {
+  if (!confirm(`Supprimer l'utilisateur « ${username} » ?`)) return;
+  try {
+    const res  = await fetch("/api/users/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
+      body: JSON.stringify({ username })
+    });
+    const data = await res.json();
+    if (data.ok) { showToast("Utilisateur supprimé"); loadUsers(); }
+    else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 //  INITIALISATION
@@ -1140,7 +1361,7 @@ const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos", actus:"Actualités", seo:"SEO",
-  logs:"Journaux d'audit"
+  logs:"Journaux d'audit", users:"Gestion des utilisateurs"
 };
 
 function showPanel(name, el) {
@@ -1157,6 +1378,7 @@ function showPanel(name, el) {
   if (name === "galerie")      renderGalerie();
   if (name === "actus")        renderActus();
   if (name === "logs")         loadAuditLogs();
+  if (name === "users")        loadUsers();
 }
 
 // ══════════════════════════════════════════════════════════════════════════

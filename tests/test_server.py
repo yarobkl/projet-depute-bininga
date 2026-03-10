@@ -94,7 +94,6 @@ def test_login_mauvais_mot_de_passe():
 
 
 def test_login_correct():
-    import server as srv
     # Utilise les credentials par défaut du serveur
     user = os.environ.get("BININGA_USER", "admin")
     pwd  = os.environ.get("BININGA_PASS", "bininga2025")
@@ -102,6 +101,9 @@ def test_login_correct():
     assert status == 200, f"Login correct doit retourner 200, reçu {status}"
     assert body.get("ok") == True, "Login correct doit retourner ok=True"
     assert "token" in body, "Login correct doit retourner un token"
+    assert "role" in body, "Login doit retourner le rôle"
+    assert "nom" in body, "Login doit retourner le nom"
+    assert body["role"] == "admin", "Le compte admin doit avoir le rôle admin"
     print("✅ test_login_correct")
     return body["token"]
 
@@ -118,12 +120,15 @@ def test_logs_sans_token():
     print("✅ test_logs_sans_token")
 
 
-def test_logs_avec_token():
+def _get_admin_token():
     user = os.environ.get("BININGA_USER", "admin")
     pwd  = os.environ.get("BININGA_PASS", "bininga2025")
-    _, login_body = post("/api/login", {"username": user, "password": pwd})
-    token = login_body.get("token", "")
+    _, body = post("/api/login", {"username": user, "password": pwd})
+    return body.get("token", "")
 
+
+def test_logs_avec_token():
+    token = _get_admin_token()
     url = f"http://127.0.0.1:{PORT}/api/logs"
     req = urllib.request.Request(url)
     req.add_header("X-Admin-Token", token)
@@ -132,10 +137,61 @@ def test_logs_avec_token():
     assert data.get("ok") == True, "/api/logs doit retourner ok=True"
     assert "logs" in data, "/api/logs doit retourner une clé 'logs'"
     assert isinstance(data["logs"], list), "logs doit être une liste"
-    # Vérifie qu'au moins le login précédent est dans les logs
     actions = [e["action"] for e in data["logs"]]
     assert "LOGIN_OK" in actions, "Le login réussi doit apparaître dans les logs"
     print("✅ test_logs_avec_token")
+
+
+def test_users_list():
+    token = _get_admin_token()
+    url = f"http://127.0.0.1:{PORT}/api/users"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    assert data.get("ok") == True, "/api/users doit retourner ok=True"
+    assert "users" in data, "/api/users doit retourner une clé 'users'"
+    usernames = [u["username"] for u in data["users"]]
+    admin_user = os.environ.get("BININGA_USER", "admin")
+    assert admin_user in usernames, "Le compte admin doit être dans la liste"
+    # Vérifier qu'aucun mot de passe n'est exposé
+    for u in data["users"]:
+        assert "password_hash" not in u, "Les hashs de mots de passe ne doivent pas être exposés"
+    print("✅ test_users_list")
+
+
+def test_users_sans_token():
+    status, _ = get("/api/users")
+    assert status == 401, f"/api/users sans token doit retourner 401, reçu {status}"
+    print("✅ test_users_sans_token")
+
+
+def test_users_upsert_et_delete():
+    token = _get_admin_token()
+    # Créer un utilisateur test
+    status, body = post("/api/users/upsert", {
+        "username": "test_user_tmp",
+        "nom":      "Utilisateur Test",
+        "password": "test1234",
+        "role":     "lecteur"
+    }, token=token)
+    assert status == 200 and body.get("ok"), "Création utilisateur doit réussir"
+    # Vérifier qu'il apparaît dans la liste
+    url = f"http://127.0.0.1:{PORT}/api/users"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        users_data = json.loads(r.read().decode("utf-8"))
+    usernames = [u["username"] for u in users_data["users"]]
+    assert "test_user_tmp" in usernames, "L'utilisateur créé doit apparaître dans la liste"
+    # Se connecter avec ce compte
+    status2, body2 = post("/api/login", {"username": "test_user_tmp", "password": "test1234"})
+    assert status2 == 200 and body2.get("ok"), "Connexion avec le nouveau compte doit réussir"
+    assert body2["role"] == "lecteur", "Le rôle doit être lecteur"
+    # Supprimer l'utilisateur
+    status3, body3 = post("/api/users/delete", {"username": "test_user_tmp"}, token=token)
+    assert status3 == 200 and body3.get("ok"), "Suppression utilisateur doit réussir"
+    print("✅ test_users_upsert_et_delete")
 
 
 def test_data_json_structure():
@@ -167,6 +223,9 @@ if __name__ == "__main__":
         test_save_sans_token()
         test_logs_sans_token()
         test_logs_avec_token()
+        test_users_sans_token()
+        test_users_list()
+        test_users_upsert_et_delete()
     finally:
         srv.shutdown()
 
