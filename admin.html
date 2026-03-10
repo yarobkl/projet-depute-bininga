@@ -159,6 +159,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 #toast.show{transform:translateY(0);opacity:1}
 #toast.err{background:var(--err)}
 
+/* ── AUDIT LOGS ── */
+.log-list{display:flex;flex-direction:column;gap:6px}
+.log-item{display:flex;align-items:flex-start;gap:12px;background:var(--n3);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:12px 14px;font-size:12px}
+.log-item:hover{border-color:rgba(255,255,255,.12)}
+.log-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.log-body{flex:1;min-width:0}
+.log-action{font-weight:700;font-size:13px;margin-bottom:3px}
+.log-action.ok{color:var(--success)}
+.log-action.fail{color:#ff6b6b}
+.log-action.save{color:var(--info)}
+.log-action.upload{color:var(--g)}
+.log-meta{color:rgba(255,255,255,.3);font-size:11px}
+.log-detail{color:rgba(255,255,255,.45);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 @media(max-width:900px){
   .sidebar{width:220px}
   .main{margin-left:220px}
@@ -234,6 +248,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       </div>
       <div class="sb-item" onclick="showPanel('seo',this)">
         <span class="icon">🔍</span> SEO
+      </div>
+
+      <div class="sb-section">Système</div>
+      <div class="sb-item" onclick="showPanel('logs',this)">
+        <span class="icon">📜</span> Journaux d'audit
       </div>
     </nav>
 
@@ -468,6 +487,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
           <div id="actu-items-list"></div>
         </div>
 
+      </div>
+
+      <!-- ── LOGS D'AUDIT ── -->
+      <div class="panel" id="panel-logs">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📜 Journaux d'audit</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="loadAuditLogs()">🔄 Actualiser</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:16px">
+            Historique des 100 dernières actions — connexions, sauvegardes, uploads.
+          </p>
+          <div class="log-list" id="log-list">
+            <div class="msg-empty">Chargement…</div>
+          </div>
+        </div>
       </div>
 
     </div><!-- /content -->
@@ -1064,12 +1101,46 @@ function setStatus(storageKey, idx, status) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  JOURNAUX D'AUDIT
+// ══════════════════════════════════════════════════════════════════════════
+async function loadAuditLogs() {
+  const el = document.getElementById("log-list");
+  el.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  try {
+    const res = await fetch("/api/logs", {
+      headers: { "X-Admin-Token": SESSION_TOKEN }
+    });
+    const data = await res.json();
+    if (!data.ok) { el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
+    if (!data.logs.length) { el.innerHTML = '<div class="msg-empty">Aucune entrée pour le moment.</div>'; return; }
+
+    const icons  = { LOGIN_OK:"🔓", LOGIN_FAIL:"⛔", SAVE:"💾", UPLOAD:"📷" };
+    const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", UPLOAD:"Upload image" };
+    const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", UPLOAD:"upload" };
+
+    el.innerHTML = data.logs.map(log => `
+      <div class="log-item">
+        <div class="log-icon">${icons[log.action] || "📋"}</div>
+        <div class="log-body">
+          <div class="log-action ${cls[log.action] || ''}">${labels[log.action] || esc(log.action)}</div>
+          ${log.detail ? `<div class="log-detail">${esc(log.detail)}</div>` : ''}
+          <div class="log-meta">${esc(log.ts)} &nbsp;·&nbsp; IP : ${esc(log.ip)}</div>
+        </div>
+      </div>
+    `).join("");
+  } catch {
+    el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════════════════════
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
-  hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos", actus:"Actualités", seo:"SEO"
+  hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos", actus:"Actualités", seo:"SEO",
+  logs:"Journaux d'audit"
 };
 
 function showPanel(name, el) {
@@ -1085,6 +1156,7 @@ function showPanel(name, el) {
   if (name === "stats")        renderStats();
   if (name === "galerie")      renderGalerie();
   if (name === "actus")        renderActus();
+  if (name === "logs")         loadAuditLogs();
 }
 
 // ══════════════════════════════════════════════════════════════════════════

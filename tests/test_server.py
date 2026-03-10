@@ -112,6 +112,32 @@ def test_save_sans_token():
     print("✅ test_save_sans_token")
 
 
+def test_logs_sans_token():
+    status, body = get("/api/logs")
+    assert status == 401, f"/api/logs sans token doit retourner 401, reçu {status}"
+    print("✅ test_logs_sans_token")
+
+
+def test_logs_avec_token():
+    user = os.environ.get("BININGA_USER", "admin")
+    pwd  = os.environ.get("BININGA_PASS", "bininga2025")
+    _, login_body = post("/api/login", {"username": user, "password": pwd})
+    token = login_body.get("token", "")
+
+    url = f"http://127.0.0.1:{PORT}/api/logs"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    assert data.get("ok") == True, "/api/logs doit retourner ok=True"
+    assert "logs" in data, "/api/logs doit retourner une clé 'logs'"
+    assert isinstance(data["logs"], list), "logs doit être une liste"
+    # Vérifie qu'au moins le login précédent est dans les logs
+    actions = [e["action"] for e in data["logs"]]
+    assert "LOGIN_OK" in actions, "Le login réussi doit apparaître dans les logs"
+    print("✅ test_logs_avec_token")
+
+
 def test_data_json_structure():
     with open("data.json", "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -139,6 +165,8 @@ if __name__ == "__main__":
         test_login_mauvais_mot_de_passe()
         test_login_correct()
         test_save_sans_token()
+        test_logs_sans_token()
+        test_logs_avec_token()
     finally:
         srv.shutdown()
 

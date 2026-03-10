@@ -11,6 +11,7 @@ from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
 DATA_FILE  = "data.json"
+AUDIT_FILE = "audit.log"
 ADMIN_USER = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS = os.environ.get("BININGA_PASS", "bininga2025")
 
@@ -23,6 +24,35 @@ def _hash(val):
 
 H_USER = _hash(ADMIN_USER)
 H_PASS = _hash(ADMIN_PASS)
+
+# ── Audit ──────────────────────────────────────────────────
+def audit_log(action, ip="", detail=""):
+    """Écrit une entrée dans audit.log (format JSON Lines)."""
+    entry = json.dumps({
+        "ts":     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "action": action,
+        "ip":     ip,
+        "detail": detail
+    }, ensure_ascii=False)
+    with open(AUDIT_FILE, "a", encoding="utf-8") as f:
+        f.write(entry + "\n")
+
+def load_audit(limit=100):
+    """Retourne les <limit> dernières entrées du fichier audit.log."""
+    if not os.path.exists(AUDIT_FILE):
+        return []
+    try:
+        with open(AUDIT_FILE, "r", encoding="utf-8") as f:
+            lines = [l.strip() for l in f.readlines() if l.strip()]
+        entries = []
+        for line in lines[-limit:]:
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+        return list(reversed(entries))  # Plus récent en premier
+    except Exception:
+        return []
 
 # ── Données ────────────────────────────────────────────────
 def load_data():
@@ -64,6 +94,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json(load_data())
             return
 
+        if path == "/api/logs":
+            token = self.headers.get("X-Admin-Token", "")
+            if token != SESSION_TOKEN:
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            self._json({"ok": True, "logs": load_audit()})
+            return
+
         if path == "/" or path == "":
             path = "index.html"
         elif path.startswith("/"):
@@ -96,11 +134,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 creds = json.loads(body.decode("utf-8"))
                 u = _hash(creds.get("username", ""))
                 p = _hash(creds.get("password", ""))
+                ip = self.client_address[0]
                 if u == H_USER and p == H_PASS:
                     print(f"[BININGA] 🔓 Connexion admin — {datetime.now().strftime('%H:%M:%S')}")
+                    audit_log("LOGIN_OK", ip, "Connexion admin réussie")
                     self._json({"ok": True, "token": SESSION_TOKEN})
                 else:
                     print(f"[BININGA] ⛔ Tentative de connexion échouée — {datetime.now().strftime('%H:%M:%S')}")
+                    audit_log("LOGIN_FAIL", ip, "Identifiant ou mot de passe incorrect")
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -142,7 +183,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             os.makedirs("images", exist_ok=True)
             with open(os.path.join("images", safe_name), "wb") as f:
                 f.write(data_bytes)
+            ip = self.client_address[0]
             print(f"[BININGA] 📷 Image uploadée : {safe_name}")
+            audit_log("UPLOAD", ip, f"Image uploadée : {safe_name}")
             self._json({"ok": True, "path": "images/" + safe_name})
             return
 
@@ -150,8 +193,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/save":
             try:
                 data = json.loads(body.decode("utf-8"))
+                ip = self.client_address[0]
                 save_data(data)
                 print(f"[BININGA] ✅ Données sauvegardées — {datetime.now().strftime('%H:%M:%S')}")
+                audit_log("SAVE", ip, "data.json sauvegardé")
                 self._json({"ok": True, "message": "Données sauvegardées"})
             except Exception as e:
                 print(f"[BININGA] ❌ Erreur sauvegarde : {e}")
