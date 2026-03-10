@@ -970,6 +970,7 @@ function loadContent() {
             </div>
           </div>
           <div class="actu-list rev-r">${itemsHtml}</div>`;
+        actuWrap.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
       }
 
       // SEO
