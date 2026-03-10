@@ -1,0 +1,63 @@
+name: CI — Tests automatiques
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  test:
+    name: Tests & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 1. Syntaxe Python ──────────────────────────────────
+      - name: Vérification syntaxe Python
+        run: |
+          python -m py_compile server.py
+          echo "✅ server.py — syntaxe OK"
+
+      # ── 2. Validation JSON ─────────────────────────────────
+      - name: Validation data.json
+        run: |
+          python -c "
+          import json, sys
+          try:
+              with open('data.json', 'r', encoding='utf-8') as f:
+                  data = json.load(f)
+              required = ['hero', 'about', 'stats', 'actus', 'gallery', 'seo']
+              missing = [k for k in required if k not in data]
+              if missing:
+                  print(f'❌ Clés manquantes dans data.json: {missing}')
+                  sys.exit(1)
+              print('✅ data.json — structure valide')
+          except json.JSONDecodeError as e:
+              print(f'❌ data.json invalide: {e}')
+              sys.exit(1)
+          "
+
+      # ── 3. Fichiers essentiels présents ───────────────────
+      - name: Vérification des fichiers requis
+        run: |
+          python -c "
+          import os, sys
+          required = ['index.html', 'admin.html', 'server.py', 'data.json']
+          missing = [f for f in required if not os.path.isfile(f)]
+          if missing:
+              print(f'❌ Fichiers manquants: {missing}')
+              sys.exit(1)
+          print('✅ Tous les fichiers requis sont présents')
+          "
+
+      # ── 4. Tests serveur HTTP ─────────────────────────────
+      - name: Tests du serveur HTTP
+        run: python tests/test_server.py
