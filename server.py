@@ -206,13 +206,47 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": str(e)}, 400)
             return
 
+        # ── /api/upload-sinistre (public — photo de réclamation citoyenne) ──
+        if path == "/api/upload-sinistre":
+            content_type = self.headers.get("Content-Type", "")
+            if "multipart/form-data" not in content_type:
+                self._json({"ok": False, "message": "Format invalide"}, 400)
+                return
+            environ = {
+                "REQUEST_METHOD": "POST",
+                "CONTENT_TYPE": content_type,
+                "CONTENT_LENGTH": str(length),
+            }
+            form = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
+            if "file" not in form:
+                self._json({"ok": False, "message": "Pas de fichier"}, 400)
+                return
+            file_item = form["file"]
+            raw_name  = os.path.basename(file_item.filename or "sinistre.jpg")
+            safe_name = "".join(c for c in raw_name if c.isalnum() or c in ".-_") or "sinistre.jpg"
+            if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")):
+                self._json({"ok": False, "message": "Type de fichier non autorisé (jpg/png/webp uniquement)"}, 400)
+                return
+            data_bytes = file_item.file.read()
+            if len(data_bytes) > 3 * 1024 * 1024:
+                self._json({"ok": False, "message": "Fichier trop volumineux (max 3 Mo)"}, 400)
+                return
+            uid = secrets.token_hex(6)
+            ts  = datetime.now().strftime("%Y%m%d_%H%M%S")
+            fname = f"{ts}_{uid}.jpg"
+            os.makedirs(os.path.join("images", "sinistres"), exist_ok=True)
+            with open(os.path.join("images", "sinistres", fname), "wb") as f:
+                f.write(data_bytes)
+            ip = self.client_address[0]
+            audit_log("SINISTRE_PHOTO", ip, f"Photo sinistre reçue : {fname}")
+            self._json({"ok": True, "path": "images/sinistres/" + fname})
+            return
+
         # ── Vérification token pour les routes protégées ──
         token = self.headers.get("X-Admin-Token", "")
         if not get_session(token):
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
-
-        # ── /api/users/upsert ──
         if path == "/api/users/upsert":
             if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Réservé à l'admin ou au ministre"}, 403)
@@ -275,42 +309,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
-            return
-
-        # ── /api/upload-sinistre (public — photo de réclamation citoyenne) ──
-        if path == "/api/upload-sinistre":
-            content_type = self.headers.get("Content-Type", "")
-            if "multipart/form-data" not in content_type:
-                self._json({"ok": False, "message": "Format invalide"}, 400)
-                return
-            environ = {
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": content_type,
-                "CONTENT_LENGTH": str(length),
-            }
-            form = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
-            if "file" not in form:
-                self._json({"ok": False, "message": "Pas de fichier"}, 400)
-                return
-            file_item = form["file"]
-            raw_name  = os.path.basename(file_item.filename or "sinistre.jpg")
-            safe_name = "".join(c for c in raw_name if c.isalnum() or c in ".-_") or "sinistre.jpg"
-            if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")):
-                self._json({"ok": False, "message": "Type de fichier non autorisé (jpg/png/webp uniquement)"}, 400)
-                return
-            data_bytes = file_item.file.read()
-            if len(data_bytes) > 3 * 1024 * 1024:
-                self._json({"ok": False, "message": "Fichier trop volumineux (max 3 Mo)"}, 400)
-                return
-            uid = secrets.token_hex(6)
-            ts  = datetime.now().strftime("%Y%m%d_%H%M%S")
-            fname = f"{ts}_{uid}.jpg"
-            os.makedirs(os.path.join("images", "sinistres"), exist_ok=True)
-            with open(os.path.join("images", "sinistres", fname), "wb") as f:
-                f.write(data_bytes)
-            ip = self.client_address[0]
-            audit_log("SINISTRE_PHOTO", ip, f"Photo sinistre reçue : {fname}")
-            self._json({"ok": True, "path": "images/sinistres/" + fname})
             return
 
         # ── /api/upload ──
