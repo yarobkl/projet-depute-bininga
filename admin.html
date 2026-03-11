@@ -549,12 +549,13 @@ select.form-input:focus{border-color:var(--r)}
         <!-- Petites actualités -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📋 Petites actualités</div>
+            <div class="card-title">📋 Petites actualités <span id="actu-count" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:400;margin-left:6px"></span></div>
             <div class="card-actions">
+              <button class="sbtn" style="background:rgba(255,255,255,.04);color:rgba(255,255,255,.5)" onclick="loadSiteData()">🔄</button>
               <button class="sbtn sbtn-progress" onclick="addActuItem()">+ Ajouter</button>
             </div>
           </div>
-          <div id="actu-items-list"></div>
+          <div id="actu-items-list"><div class="msg-empty">Chargement…</div></div>
         </div>
 
       </div>
@@ -1117,6 +1118,8 @@ function renderActus() {
 function renderActuItems() {
   const items = (siteData.actus && siteData.actus.items) || [];
   const list = document.getElementById("actu-items-list");
+  const counter = document.getElementById("actu-count");
+  if (counter) counter.textContent = items.length ? `(${items.length})` : "";
   if (!items.length) {
     list.innerHTML = '<div class="msg-empty">Aucune actualité. Cliquez sur "+ Ajouter".</div>';
     return;
@@ -1198,12 +1201,8 @@ function loadSiteData() {
 
 function applyData(d) {
   siteData = d;
-  populateForm();
-  renderStats();
-  renderActus();
-  renderGalerie();
-  renderParcours();
-  renderProgramme();
+  [populateForm, renderStats, renderActus, renderGalerie, renderParcours, renderProgramme]
+    .forEach(fn => { try { fn(); } catch(e) { console.error(fn.name, e); } });
 }
 
 function populateForm() {
