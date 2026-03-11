@@ -1101,9 +1101,31 @@ function addGridPhoto() {
 // ══════════════════════════════════════════════════════════════════════════
 //  ACTUALITÉS
 // ══════════════════════════════════════════════════════════════════════════
+// Articles par défaut (issus du HTML statique de index.html)
+const ACTUS_DEFAULT = {
+  featured: {
+    category: "Diplomatie",
+    date: "18 Février 2026 — Paris",
+    title: "Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France",
+    text: "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis 1974 — un accord vieux de plus de 50 ans.",
+    image: "images/Darmanin.jpeg"
+  },
+  items: [
+    { day: "18", month: "FÉV", title: "Place Vendôme : rencontre avec Gérald Darmanin", desc: "Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026." },
+    { day: "15", month: "DÉC", title: "Inauguration du tribunal de proximité d'Ewo", desc: "Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens." },
+    { day: "08", month: "NOV", title: "Accord de dialogue social signé avec les syndicats", desc: "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais." },
+    { day: "22", month: "OCT", title: "Remise de 50 bourses d'études à des étudiants d'Ewo", desc: "Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest." },
+    { day: "05", month: "SEP", title: "Forum sur l'emploi des jeunes de la Cuvette-Ouest", desc: "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région." },
+    { day: "14", month: "JUL", title: "Mission diplomatique à l'AIEA — Représentation du Congo", desc: "Aimé BININGA représente la République du Congo dans des instances internationales." }
+  ]
+};
+
 function renderActus() {
-  // Article mis en avant
-  const f = (siteData.actus && siteData.actus.featured) || {};
+  // Si pas d'actus dans data.json, on précharge les articles du site statique
+  if (!siteData.actus || (!siteData.actus.featured && !siteData.actus.items?.length)) {
+    siteData.actus = JSON.parse(JSON.stringify(ACTUS_DEFAULT));
+  }
+  const f = siteData.actus.featured;
   document.getElementById("feat-cat").value   = f.category || "";
   document.getElementById("feat-date").value  = f.date     || "";
   document.getElementById("feat-title").value = f.title    || "";
@@ -1111,7 +1133,6 @@ function renderActus() {
   const featImgEl = document.getElementById("feat-img-path");
   if (featImgEl) featImgEl.textContent = f.image || "Aucune photo";
 
-  // Petites actualités
   renderActuItems();
 }
 
