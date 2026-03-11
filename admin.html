@@ -1121,8 +1121,8 @@ const ACTUS_DEFAULT = {
 };
 
 function renderActus() {
-  // Si pas d'actus dans data.json, on précharge les articles du site statique
-  if (!siteData.actus || (!siteData.actus.featured && !siteData.actus.items?.length)) {
+  // Si actus vide OU featured sans titre → on précharge depuis le site statique
+  if (!siteData.actus || !siteData.actus.featured || !siteData.actus.featured.title) {
     siteData.actus = JSON.parse(JSON.stringify(ACTUS_DEFAULT));
   }
   const f = siteData.actus.featured;
