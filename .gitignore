@@ -18,6 +18,9 @@ logs/
 images/sinistres/*
 !images/sinistres/.gitkeep
 
+# Sessions runtime
+sessions.json
+
 # OS
 .DS_Store
 Thumbs.db
