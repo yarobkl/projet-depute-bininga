@@ -1186,8 +1186,24 @@ function collectActus() {
 function loadSiteData() {
   fetch("/api/load")
     .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-    .then(d => { siteData = d; populateForm(); renderStats(); renderActus(); renderGalerie(); renderParcours(); renderProgramme(); showToast("Données chargées ✓"); })
-    .catch(err => { showToast("⚠️ Serveur injoignable — démarrez server.py", true); console.error("loadSiteData:", err); });
+    .then(applyData)
+    .catch(() => {
+      // Fallback : lecture directe de data.json (sans serveur)
+      fetch("data.json?t=" + Date.now())
+        .then(r => r.json())
+        .then(applyData)
+        .catch(() => showToast("⚠️ Impossible de charger les données", true));
+    });
+}
+
+function applyData(d) {
+  siteData = d;
+  populateForm();
+  renderStats();
+  renderActus();
+  renderGalerie();
+  renderParcours();
+  renderProgramme();
 }
 
 function populateForm() {
