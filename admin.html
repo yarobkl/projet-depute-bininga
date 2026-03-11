@@ -131,6 +131,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .badge-recl{background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25)}
 .badge-unread{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25)}
 .badge-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08)}
+.badge-pinged{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.35);animation:pulse-red 2s infinite}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 4px rgba(231,76,60,0)}}
 
 /* ── STATUS BUTTONS ── */
 .sbtn{padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--t);font-family:inherit}
@@ -142,6 +144,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .sbtn-done:hover{background:rgba(46,204,113,.25)}
 .sbtn-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
 .sbtn-read:hover{background:rgba(255,255,255,.12);color:var(--w)}
+
+/* ── NOTES INTERNES ── */
+.notes-section{margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:12px}
+.notes-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;font-weight:600}
+.note-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:9px 12px;margin-bottom:7px}
+.note-meta{font-size:10px;color:rgba(255,255,255,.3);margin-bottom:4px}
+.note-meta strong{color:rgba(255,255,255,.5)}
+.note-text{font-size:13px;color:rgba(255,255,255,.7);white-space:pre-wrap}
+.note-form{display:flex;gap:8px;margin-top:8px}
+.note-form textarea{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:12px;font-family:inherit;padding:8px 10px;resize:none;min-height:54px;outline:none;transition:var(--t)}
+.note-form textarea:focus{border-color:var(--r)}
+.note-form button{align-self:flex-end;padding:8px 14px;background:rgba(200,16,46,.12);color:var(--r);border:1px solid rgba(200,16,46,.2);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
+.note-form button:hover{background:rgba(200,16,46,.25)}
 
 /* ── DANGER BUTTON ── */
 .btn-danger{background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);font-family:inherit}
@@ -1373,10 +1388,14 @@ function renderMsgList(containerId, list, storageKey, mode) {
   const allData = getAll(storageKey);
 
   el.innerHTML = list.map(m => {
-    const realIdx = allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
+    // Identifiant stable : _id si présent, sinon fallback _date+prenom+nom
+    const msgKey  = m._id || null;
+    const realIdx = msgKey
+      ? allData.findIndex(x => x._id === msgKey)
+      : allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
     const status  = m._status || (mode === "status2" ? "non_lu" : "en_attente");
     const badge   = buildBadge(status, m.objet);
-    const geoSkip = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
+    const geoSkip = new Set(["_date","_status","_reply","_reply_date","_pinged","_pinged_date","_notes","_id","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
     const fields  = Object.entries(m)
       .filter(([k]) => !geoSkip.has(k))
       .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
@@ -1418,19 +1437,30 @@ function renderMsgList(containerId, list, storageKey, mode) {
       ? `<a class="sbtn sbtn-progress" href="mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">📧 Répondre</a>`
       : (m.telephone ? `<span class="sbtn" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:default">📞 ${esc(m.telephone)}</span>` : "");
 
+    // Identifiant HTML-safe pour les boutons
+    const btnId = msgKey ? encodeURIComponent(msgKey) : String(realIdx);
+    // Bouton ping Député (dossiers graves = réclamations + audiences non traitées)
+    const isGrave  = m.objet === "Réclamation" || (!m._status || m._status === "en_attente");
+    const pingBtn  = isGrave
+      ? (m._pinged
+          ? `<span class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</span>`
+          : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${btnId}')">🚨 Alerter le Député</button>`)
+      : "";
     let actions = "";
     if (mode === "status3") {
       actions = `
-        <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}',${realIdx},'en_attente')">⏳ En attente</button>
-        <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}',${realIdx},'en_cours')">🔄 En cours</button>
-        <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}',${realIdx},'traite')">✅ Traité</button>
+        <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${btnId}','en_attente')">⏳ En attente</button>
+        <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${btnId}','en_cours')">🔄 En cours</button>
+        <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${btnId}','traite')">✅ Traité</button>
         ${replyBtn}
+        ${pingBtn}
       `;
     } else {
-      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}',${realIdx},'lu')">✅ Marquer comme lu</button>${replyBtn}`;
+      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${btnId}','lu')">✅ Marquer comme lu</button>${replyBtn}${pingBtn}`;
     }
 
     const hasSinistre = !!(m.geo_lat || m.photo_url || m.description);
+    const pingBadge   = m._pinged ? `<span class="badge badge-pinged">🚨 Député alerté</span>` : "";
 
     return `<div class="msg-item${hasSinistre ? " msg-sinistre" : ""}">
       <div class="msg-top">
@@ -1438,13 +1468,14 @@ function renderMsgList(containerId, list, storageKey, mode) {
           <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
           <div class="msg-date">📅 ${m._date||""}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
         </div>
-        ${badge}
+        <div style="display:flex;gap:6px;align-items:center">${pingBadge}${badge}</div>
       </div>
       <div class="msg-fields">${fields}</div>
       ${raisonHtml}
       ${descHtml}
       ${geoHtml}
       ${photoHtml}
+      ${buildNotesSection(m, storageKey, btnId)}
       <div class="msg-footer">${actions}</div>
     </div>`;
   }).join("");
@@ -1462,9 +1493,21 @@ function buildBadge(status, objet) {
   return map[status] || map.en_attente;
 }
 
-function setStatus(storageKey, idx, status) {
+function setStatus(storageKey, idOrIdx, status) {
   const all = getAll(storageKey);
-  if (all[idx]) {
+  // idOrIdx peut être un _id encodé (string) ou un index numérique (legacy)
+  let idx = -1;
+  const decoded = decodeURIComponent(String(idOrIdx));
+  // Si ça ressemble à un _id (contient "-"), chercher par _id
+  if (decoded.includes("-")) {
+    idx = all.findIndex(x => x._id === decoded);
+  }
+  // Fallback : index numérique
+  if (idx === -1) {
+    const n = parseInt(idOrIdx, 10);
+    if (!isNaN(n) && all[n]) idx = n;
+  }
+  if (idx !== -1) {
     all[idx]._status = status;
     saveAll(storageKey, all);
   }
@@ -1476,6 +1519,71 @@ function setStatus(storageKey, idx, status) {
     renderContacts();
   }
   showToast("Statut mis à jour");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NOTES INTERNES
+// ══════════════════════════════════════════════════════════════════════════
+function buildNotesSection(m, storageKey, btnId) {
+  const notes = m._notes || [];
+  const notesHtml = notes.map(n => `
+    <div class="note-item">
+      <div class="note-meta"><strong>${esc(n.auteur||"Admin")}</strong> · ${esc(n.date||"")}</div>
+      <div class="note-text">${esc(n.texte)}</div>
+    </div>`).join("");
+  return `
+    <div class="notes-section">
+      <div class="notes-title">💬 Notes internes (admin ↔ ministre)</div>
+      ${notesHtml || '<div style="font-size:11px;color:rgba(255,255,255,.2);margin-bottom:6px">Aucune note pour l\'instant</div>'}
+      <div class="note-form">
+        <textarea id="note-ta-${btnId}" placeholder="Ajouter une note interne…" rows="2"></textarea>
+        <button onclick="addNote('${storageKey}','${btnId}')">💬 Ajouter</button>
+      </div>
+    </div>`;
+}
+
+function addNote(storageKey, idOrIdx) {
+  const ta = document.getElementById("note-ta-" + idOrIdx);
+  const texte = ta ? ta.value.trim() : "";
+  if (!texte) { showToast("Note vide.", true); return; }
+
+  const all = getAll(storageKey);
+  let idx = -1;
+  const decoded = decodeURIComponent(String(idOrIdx));
+  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
+  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+
+  if (!all[idx]._notes) all[idx]._notes = [];
+  all[idx]._notes.push({ auteur: "Admin", texte, date: new Date().toLocaleString("fr-FR") });
+  saveAll(storageKey, all);
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Note ajoutée");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PING DÉPUTÉ
+// ══════════════════════════════════════════════════════════════════════════
+function pingDepute(storageKey, idOrIdx) {
+  const all = getAll(storageKey);
+  let idx = -1;
+  const decoded = decodeURIComponent(String(idOrIdx));
+  if (decoded.includes("-")) {
+    idx = all.findIndex(x => x._id === decoded);
+  }
+  if (idx === -1) {
+    const n = parseInt(idOrIdx, 10);
+    if (!isNaN(n) && all[n]) idx = n;
+  }
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+  all[idx]._pinged      = true;
+  all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
+  saveAll(storageKey, all);
+  refreshDashboard();
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("🚨 Le Député a été alerté sur ce dossier !");
 }
 
 // ══════════════════════════════════════════════════════════════════════════

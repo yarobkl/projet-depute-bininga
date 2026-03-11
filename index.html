@@ -1240,6 +1240,7 @@ async function sendForm(storageKey, endpoint, formData, btn, successMsg) {
   const entry = {};
   formData.forEach((v, k) => { entry[k] = v; });
   entry._date = new Date().toLocaleString("fr-FR");
+  entry._id   = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
   list.unshift(entry);
   localStorage.setItem(storageKey, JSON.stringify(list));
 
