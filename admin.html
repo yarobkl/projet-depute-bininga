@@ -105,6 +105,23 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .msg-field strong{color:rgba(255,255,255,.7);margin-right:4px}
 .msg-footer{display:flex;align-items:center;justify-content:flex-end;gap:6px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)}
 .msg-empty{color:rgba(255,255,255,.2);text-align:center;padding:50px 0;font-size:14px}
+/* ── SINISTRE GÉO ── */
+.msg-sinistre{border-left:3px solid #e74c3c}
+.sinistre-chip{background:rgba(52,152,219,.15);color:#6bbeff;border-radius:3px;font-size:10px;font-weight:700;padding:2px 7px;margin-left:6px;vertical-align:middle}
+.sinistre-desc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:10px 14px;margin:10px 0;font-size:13px;color:rgba(255,255,255,.65);line-height:1.5}
+.sinistre-desc span{display:block;font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:5px}
+.sinistre-geo{background:rgba(52,152,219,.06);border:1px solid rgba(52,152,219,.2);border-radius:8px;padding:12px 14px;margin:10px 0}
+.sinistre-geo-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap}
+.sinistre-geo-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#6bbeff}
+.btn-maps{background:#1a73e8;color:#fff;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;transition:background .2s}
+.btn-maps:hover{background:#1558b0}
+.sinistre-addr{font-size:11px;color:rgba(255,255,255,.45);margin-bottom:8px;font-style:italic;line-height:1.4}
+.sinistre-map{width:100%;height:200px;border:none;border-radius:6px;display:block}
+.sinistre-coords{font-size:10px;color:rgba(255,255,255,.2);margin-top:6px;font-family:monospace}
+.sinistre-photo-wrap{margin:10px 0}
+.sinistre-photo-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px}
+.sinistre-photo{max-width:100%;max-height:280px;border-radius:7px;cursor:zoom-in;object-fit:cover;transition:all .3s;border:1px solid rgba(255,255,255,.08)}
+.sinistre-photo.full{max-height:600px;cursor:zoom-out}
 
 /* ── BADGES ── */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
@@ -1276,15 +1293,42 @@ function renderMsgList(containerId, list, storageKey, mode) {
   const allData = getAll(storageKey);
 
   el.innerHTML = list.map(m => {
-    // Retrouver l'index réel dans le tableau complet
     const realIdx = allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
     const status  = m._status || (mode === "status2" ? "non_lu" : "en_attente");
     const badge   = buildBadge(status, m.objet);
-    const skip    = new Set(["_date","_status"]);
+    const geoSkip = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description"]);
     const fields  = Object.entries(m)
-      .filter(([k]) => !skip.has(k))
+      .filter(([k]) => !geoSkip.has(k))
       .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
       .join("");
+
+    // Description sinistre
+    const descHtml = m.description ? `<div class="sinistre-desc"><span>📝 Description</span>${esc(m.description)}</div>` : "";
+
+    // Bloc géolocalisation
+    let geoHtml = "";
+    if (m.geo_lat && m.geo_lng) {
+      const lat = parseFloat(m.geo_lat), lng = parseFloat(m.geo_lng);
+      const δ = 0.008;
+      const mapsUrl = m.geo_maps_url || `https://www.google.com/maps?q=${lat},${lng}&z=16`;
+      geoHtml = `<div class="sinistre-geo">
+        <div class="sinistre-geo-header">
+          <span class="sinistre-geo-label">📍 Zone du sinistre</span>
+          <a href="${esc(mapsUrl)}" target="_blank" class="btn-maps">🗺️ Ouvrir Google Maps</a>
+        </div>
+        ${m.geo_label ? `<div class="sinistre-addr">${esc(m.geo_label)}</div>` : ""}
+        <iframe class="sinistre-map"
+          src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
+          allowfullscreen loading="lazy"></iframe>
+        <div class="sinistre-coords">🌐 ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+      </div>`;
+    }
+
+    // Photo sinistre
+    const photoHtml = m.photo_url ? `<div class="sinistre-photo-wrap">
+      <div class="sinistre-photo-label">📷 Photo du sinistre</div>
+      <img src="${esc(m.photo_url)}" class="sinistre-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
+    </div>` : "";
 
     let actions = "";
     if (mode === "status3") {
@@ -1297,15 +1341,20 @@ function renderMsgList(containerId, list, storageKey, mode) {
       actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}',${realIdx},'lu')">✅ Marquer comme lu</button>`;
     }
 
-    return `<div class="msg-item">
+    const hasSinistre = !!(m.geo_lat || m.photo_url || m.description);
+
+    return `<div class="msg-item${hasSinistre ? " msg-sinistre" : ""}">
       <div class="msg-top">
         <div>
           <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
-          <div class="msg-date">📅 ${m._date||""}</div>
+          <div class="msg-date">📅 ${m._date||""}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
         </div>
         ${badge}
       </div>
       <div class="msg-fields">${fields}</div>
+      ${descHtml}
+      ${geoHtml}
+      ${photoHtml}
       <div class="msg-footer">${actions}</div>
     </div>`;
   }).join("");

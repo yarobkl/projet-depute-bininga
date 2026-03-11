@@ -193,6 +193,21 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .reply-edit-btn{font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;transition:var(--t)}
 .reply-edit-btn:hover{color:var(--w)}
 
+/* ── SINISTRE GÉO ── */
+.sin-desc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;color:rgba(255,255,255,.65);line-height:1.55}
+.sin-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px}
+.sin-geo{background:rgba(52,152,219,.07);border:1px solid rgba(52,152,219,.2);border-radius:10px;padding:14px 16px;margin:10px 0}
+.sin-geo-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.sin-geo-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6bbeff}
+.btn-gmaps{background:#1a73e8;color:#fff;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:700;text-decoration:none;transition:background .2s;white-space:nowrap}
+.btn-gmaps:hover{background:#1558b0}
+.sin-addr{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;font-style:italic;line-height:1.4}
+.sin-map{width:100%;height:210px;border:none;border-radius:7px;display:block}
+.sin-coords{font-size:10px;color:rgba(255,255,255,.2);margin-top:6px;font-family:monospace}
+.sin-photo-wrap{margin:10px 0}
+.sin-photo{max-width:100%;max-height:300px;border-radius:8px;cursor:zoom-in;object-fit:cover;transition:all .3s;border:1px solid rgba(255,255,255,.08)}
+.sin-photo.full{max-height:620px;cursor:zoom-out}
+
 /* ── EMPTY ── */
 .empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,.2)}
 .empty-icon{font-size:40px;margin-bottom:14px}
@@ -669,12 +684,42 @@ function buildCard(m, storageKey, mode) {
   const isRecl   = m.objet === "Réclamation";
   const status   = m._status || (mode === "status2" ? "non_lu" : "en_attente");
   const hasReply = !!m._reply;
+  const hasGeo   = !!(m.geo_lat && m.geo_lng);
+  const hasPhoto = !!m.photo_url;
   const initials = ((m.prenom||"?").charAt(0) + (m.nom||"?").charAt(0)).toUpperCase();
-  const skip     = new Set(["_date","_status","_reply","_reply_date"]);
+  const geoSkip  = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description"]);
   const fields   = Object.entries(m)
-    .filter(([k]) => !skip.has(k))
+    .filter(([k]) => !geoSkip.has(k))
     .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
     .join("");
+
+  // Description sinistre
+  const descHtml = m.description ? `<div class="sin-desc"><div class="sin-label">📝 Description du sinistre</div>${esc(m.description)}</div>` : "";
+
+  // Bloc géolocalisation
+  let geoHtml = "";
+  if (hasGeo) {
+    const lat = parseFloat(m.geo_lat), lng = parseFloat(m.geo_lng);
+    const δ = 0.008;
+    const mapsUrl = m.geo_maps_url || `https://www.google.com/maps?q=${lat},${lng}&z=16`;
+    geoHtml = `<div class="sin-geo">
+      <div class="sin-geo-hdr">
+        <span class="sin-geo-lbl">📍 Zone du sinistre — géolocalisée</span>
+        <a href="${esc(mapsUrl)}" target="_blank" class="btn-gmaps">🗺️ Google Maps</a>
+      </div>
+      ${m.geo_label ? `<div class="sin-addr">${esc(m.geo_label)}</div>` : ""}
+      <iframe class="sin-map"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
+        allowfullscreen loading="lazy"></iframe>
+      <div class="sin-coords">🌐 ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+    </div>`;
+  }
+
+  // Photo
+  const photoHtml = hasPhoto ? `<div class="sin-photo-wrap">
+    <div class="sin-label">📷 Photo du sinistre</div>
+    <img src="${esc(m.photo_url)}" class="sin-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
+  </div>` : "";
 
   let statusBadge = "";
   if (mode === "status3") {
@@ -730,9 +775,10 @@ function buildCard(m, storageKey, mode) {
     ? `<button class="sbtn sbtn-reply${hasReply?" active":""}" onclick="toggleReply('${safeId}')">✉️ ${hasReply?"Voir réponse":"Répondre"}</button>`
     : "";
 
-  // Preview (first field value)
-  const firstVal = Object.entries(m).filter(([k]) => !skip.has(k) && k !== "nom" && k !== "prenom")[0];
-  const preview  = firstVal ? firstVal[1] : "";
+  // Preview
+  const firstVal = Object.entries(m).filter(([k]) => !geoSkip.has(k) && k !== "nom" && k !== "prenom")[0];
+  const preview  = m.description || (firstVal ? firstVal[1] : "");
+  const geoBadge = hasGeo ? `<span class="badge" style="background:rgba(52,152,219,.12);color:#6bbeff;border:1px solid rgba(52,152,219,.2)">📍 Géolocalisé</span>` : "";
 
   return `<div class="msg-card${hasReply?" has-reply":""}${isRecl?" priority":""}" id="mc-${safeId}">
     <div class="msg-top" onclick="toggleCard('${safeId}')">
@@ -740,7 +786,7 @@ function buildCard(m, storageKey, mode) {
       <div class="msg-header">
         <div class="msg-name">
           ${esc(m.prenom||"")} ${esc(m.nom||"")}
-          ${statusBadge} ${replyBadge}
+          ${statusBadge} ${replyBadge} ${geoBadge}
         </div>
         <div class="msg-date-line">📅 ${esc(m._date||"")}</div>
         <div class="msg-preview">${esc(preview)}</div>
@@ -752,6 +798,9 @@ function buildCard(m, storageKey, mode) {
     </div>
     <div class="msg-body" id="mb-${safeId}">
       <div class="msg-fields">${fields}</div>
+      ${descHtml}
+      ${geoHtml}
+      ${photoHtml}
       ${statusBtns ? `<div class="msg-status-row">${statusBtns}</div>` : ""}
       ${replySection}
     </div>
