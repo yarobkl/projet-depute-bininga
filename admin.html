@@ -1439,13 +1439,10 @@ function renderMsgList(containerId, list, storageKey, mode) {
 
     // Identifiant HTML-safe pour les boutons
     const btnId = msgKey ? encodeURIComponent(msgKey) : String(realIdx);
-    // Bouton ping Député (dossiers graves = réclamations + audiences non traitées)
-    const isGrave  = m.objet === "Réclamation" || (!m._status || m._status === "en_attente");
-    const pingBtn  = isGrave
-      ? (m._pinged
-          ? `<span class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</span>`
-          : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${btnId}')">🚨 Alerter le Député</button>`)
-      : "";
+    // Bouton ping Député (visible sur tous les messages)
+    const pingBtn  = m._pinged
+      ? `<span class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</span>`
+      : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${btnId}')">🚨 Alerter le Député</button>`;
     let actions = "";
     if (mode === "status3") {
       actions = `
