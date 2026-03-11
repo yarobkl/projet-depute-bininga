@@ -10,11 +10,12 @@ from urllib.parse import urlparse
 from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
-DATA_FILE  = "data.json"
-AUDIT_FILE = "audit.log"
-USERS_FILE = "users.json"
-ADMIN_USER = os.environ.get("BININGA_USER", "admin")
-ADMIN_PASS = os.environ.get("BININGA_PASS", "bininga2025")
+DATA_FILE       = "data.json"
+AUDIT_FILE      = "audit.log"
+USERS_FILE      = "users.json"
+ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
+ADMIN_PASS      = os.environ.get("BININGA_PASS", "bininga2025")
+PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")  # compte intouchable par le ministre
 
 # Sessions actives : token → {username, role, nom}
 ACTIVE_SESSIONS = {}
@@ -139,11 +140,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path == "/api/users":
             token = self.headers.get("X-Admin-Token", "")
-            if not has_role(token, "admin"):
+            if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
+            session = get_session(token)
+            all_users = load_users()
+            # Le ministre ne voit pas le compte protégé (Rodrin)
+            if session and session["role"] == "ministre":
+                all_users = [u for u in all_users if u["username"] != PROTECTED_USER]
             users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
-                     for u in load_users()]
+                     for u in all_users]
             self._json({"ok": True, "users": users})
             return
 
@@ -208,8 +214,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/users/upsert ──
         if path == "/api/users/upsert":
-            if not has_role(token, "admin"):
-                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Réservé à l'admin ou au ministre"}, 403)
                 return
             try:
                 data = json.loads(body.decode("utf-8"))
@@ -219,6 +225,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 pwd   = data.get("password", "").strip()
                 if not uname or role not in ("admin", "editeur", "lecteur", "ministre"):
                     self._json({"ok": False, "message": "Données invalides"}, 400)
+                    return
+                # Le ministre ne peut pas toucher au compte protégé
+                session = get_session(token)
+                if session and session["role"] == "ministre" and uname == PROTECTED_USER:
+                    self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être modifié"}, 403)
                     return
                 users = load_users()
                 existing = next((u for u in users if u["username"] == uname), None)
@@ -243,8 +254,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/users/delete ──
         if path == "/api/users/delete":
-            if not has_role(token, "admin"):
-                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Réservé à l'admin ou au ministre"}, 403)
                 return
             try:
                 data  = json.loads(body.decode("utf-8"))
@@ -252,6 +263,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 session = get_session(token)
                 if uname == session["username"]:
                     self._json({"ok": False, "message": "Impossible de supprimer son propre compte"}, 400)
+                    return
+                # Le ministre ne peut pas supprimer le compte protégé
+                if session and session["role"] == "ministre" and uname == PROTECTED_USER:
+                    self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être supprimé"}, 403)
                     return
                 users = [u for u in load_users() if u["username"] != uname]
                 save_users(users)
