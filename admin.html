@@ -284,6 +284,12 @@ select.form-input:focus{border-color:var(--r)}
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('actus',this)">
         <span class="icon">📰</span> Actualités
       </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('parcours',this)">
+        <span class="icon">⏳</span> Parcours
+      </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('programme',this)">
+        <span class="icon">📋</span> Programme
+      </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('seo',this)">
         <span class="icon">🔍</span> SEO
       </div>
@@ -388,6 +394,7 @@ select.form-input:focus{border-color:var(--r)}
           <div class="card-header">
             <div class="card-title">📋 Demandes d'audience</div>
             <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
               <button class="btn-danger" onclick="clearAll('bininga_audiences','audiences')">🗑️ Tout effacer</button>
             </div>
           </div>
@@ -406,6 +413,9 @@ select.form-input:focus{border-color:var(--r)}
         <div class="card">
           <div class="card-header">
             <div class="card-title">⚠️ Réclamations</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
+            </div>
           </div>
           <div class="tabs">
             <button class="tab active" onclick="filterRecl('all',this)">Toutes</button>
@@ -423,6 +433,7 @@ select.form-input:focus{border-color:var(--r)}
           <div class="card-header">
             <div class="card-title">✉️ Messages de contact</div>
             <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
               <button class="btn-danger" onclick="clearAll('bininga_contacts','contacts')">🗑️ Tout effacer</button>
             </div>
           </div>
@@ -617,6 +628,48 @@ select.form-input:focus{border-color:var(--r)}
         </div>
       </div>
 
+      <!-- ── PARCOURS ── -->
+      <div class="panel" id="panel-parcours">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⏳ Parcours (Timeline)</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addParcoursItem()">+ Ajouter une étape</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:16px">
+            Les étapes apparaissent en alternance gauche/droite sur la timeline du site public.
+          </p>
+          <div id="parcours-list"></div>
+        </div>
+      </div>
+
+      <!-- ── PROGRAMME ── -->
+      <div class="panel" id="panel-programme">
+        <!-- Bannière -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🏆 Bannière du programme</div></div>
+          <div class="form-group">
+            <label>Titre (utilisez \n pour les sauts de ligne)</label>
+            <textarea id="prog-heroTitle" style="min-height:60px" placeholder="Un programme construit&#10;avec les citoyens d'Ewo"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Texte de présentation</label>
+            <textarea id="prog-heroText" style="min-height:80px" placeholder="Description du programme..."></textarea>
+          </div>
+        </div>
+        <!-- Axes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🗂️ Les axes stratégiques</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addAxe()">+ Ajouter un axe</button>
+            </div>
+          </div>
+          <div id="axes-list"></div>
+        </div>
+      </div>
+
       <!-- ── LOGS D'AUDIT ── -->
       <div class="panel" id="panel-logs">
         <div class="card">
@@ -712,7 +765,10 @@ async function doLogin() {
   }
 }
 
-function logout() {
+async function logout() {
+  try {
+    await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
+  } catch (_) {}
   SESSION_TOKEN = "";
   SESSION_ROLE  = "";
   SESSION_NOM   = "";
@@ -1114,7 +1170,7 @@ function collectActus() {
 function loadSiteData() {
   fetch("/api/load")
     .then(r => r.json())
-    .then(d => { siteData = d; populateForm(); renderStats(); renderActus(); renderGalerie(); })
+    .then(d => { siteData = d; populateForm(); renderStats(); renderActus(); renderGalerie(); renderParcours(); renderProgramme(); })
     .catch(() => {}); // GitHub Pages statique : pas de serveur
 }
 
@@ -1162,6 +1218,7 @@ function collectForm() {
 function saveData() {
   collectForm();
   collectActus();
+  collectProgramme();
   fetch("/api/save", {
     method: "POST",
     headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
@@ -1353,15 +1410,21 @@ function renderMsgList(containerId, list, storageKey, mode) {
       <img src="${esc(m.photo_url)}" class="sinistre-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
     </div>` : "";
 
+    // Bouton Répondre (uniquement si email disponible)
+    const replyBtn = m.email
+      ? `<a class="sbtn sbtn-progress" href="mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">📧 Répondre</a>`
+      : (m.telephone ? `<span class="sbtn" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:default">📞 ${esc(m.telephone)}</span>` : "");
+
     let actions = "";
     if (mode === "status3") {
       actions = `
         <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}',${realIdx},'en_attente')">⏳ En attente</button>
         <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}',${realIdx},'en_cours')">🔄 En cours</button>
         <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}',${realIdx},'traite')">✅ Traité</button>
+        ${replyBtn}
       `;
     } else {
-      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}',${realIdx},'lu')">✅ Marquer comme lu</button>`;
+      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}',${realIdx},'lu')">✅ Marquer comme lu</button>${replyBtn}`;
     }
 
     const hasSinistre = !!(m.geo_lat || m.photo_url || m.description);
@@ -1450,7 +1513,8 @@ async function loadAuditLogs() {
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
-  hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos", actus:"Actualités", seo:"SEO",
+  hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
+  actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs"
 };
 
@@ -1467,6 +1531,8 @@ function showPanel(name, el) {
   if (name === "stats")        renderStats();
   if (name === "galerie")      renderGalerie();
   if (name === "actus")        renderActus();
+  if (name === "parcours")     renderParcours();
+  if (name === "programme")    renderProgramme();
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
 }
@@ -1487,6 +1553,207 @@ function clearAll(storageKey, panel) {
   if (panel === "audiences") { renderAudiences(); renderReclamations(); }
   if (panel === "contacts")  renderContacts();
   showToast("Messages supprimés");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  EXPORT CSV
+// ══════════════════════════════════════════════════════════════════════════
+function exportCSV(storageKey, type) {
+  const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  let rows = data;
+  if (type === "audiences")    rows = data.filter(m => m.objet !== "Réclamation");
+  if (type === "reclamations") rows = data.filter(m => m.objet === "Réclamation");
+  if (!rows.length) { showToast("Aucune donnée à exporter", true); return; }
+  const keys = [...new Set(rows.flatMap(Object.keys))];
+  const lines = [keys.join(";")];
+  rows.forEach(item => {
+    lines.push(keys.map(k => {
+      const val = String(item[k] || "").replace(/"/g, '""').replace(/[\r\n]+/g, " ");
+      return `"${val}"`;
+    }).join(";"));
+  });
+  const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `bininga_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Export CSV téléchargé !");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PARCOURS (TIMELINE)
+// ══════════════════════════════════════════════════════════════════════════
+function renderParcours() {
+  const items = (siteData.parcours || []);
+  const list  = document.getElementById("parcours-list");
+  if (!items.length) {
+    list.innerHTML = '<div class="msg-empty">Aucune étape. Cliquez sur "+ Ajouter".</div>';
+    return;
+  }
+  list.innerHTML = items.map((p, i) => `
+    <div class="stats-row" style="grid-template-columns:80px 80px 1fr 1fr auto;gap:10px;align-items:start;padding:14px 0">
+      <div class="form-group" style="margin:0">
+        <label>Côté</label>
+        <select oninput="updParcours(${i},'side',this.value)" style="width:100%;padding:9px 8px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:13px;font-family:inherit;outline:none">
+          <option value="left"  ${p.side==="left" ?"selected":""}>← Gauche</option>
+          <option value="right" ${p.side==="right"?"selected":""}>→ Droite</option>
+        </select>
+        <label style="margin-top:8px">Emoji</label>
+        <input type="text" value="${esc(p.emoji||'')}" placeholder="📚" oninput="updParcours(${i},'emoji',this.value)" style="width:60px;text-align:center;font-size:18px">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Année / Période</label>
+        <input type="text" value="${esc(p.year||'')}" placeholder="2016" oninput="updParcours(${i},'year',this.value)">
+        <label style="margin-top:8px">Tag</label>
+        <input type="text" value="${esc(p.tag||'')}" placeholder="🏛️ Ministre" oninput="updParcours(${i},'tag',this.value)" style="font-size:12px">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Titre</label>
+        <input type="text" value="${esc(p.title||'')}" placeholder="Titre de l'étape" oninput="updParcours(${i},'title',this.value)">
+      </div>
+      <div class="form-group" style="margin:0">
+        <label>Description</label>
+        <textarea oninput="updParcours(${i},'desc',this.value)" style="min-height:80px">${esc(p.desc||'')}</textarea>
+      </div>
+      <div style="padding-top:22px;display:flex;flex-direction:column;gap:6px">
+        <button class="btn-danger" onclick="delParcoursItem(${i})" title="Supprimer">🗑</button>
+        ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveParcours(${i},-1)" title="Monter">↑</button>` : ""}
+        ${i < items.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveParcours(${i},1)" title="Descendre">↓</button>` : ""}
+      </div>
+    </div>
+  `).join('<div style="border-bottom:1px solid rgba(255,255,255,.05)"></div>');
+}
+
+function updParcours(i, field, val) {
+  if (!siteData.parcours) siteData.parcours = [];
+  if (siteData.parcours[i]) siteData.parcours[i][field] = val;
+}
+function addParcoursItem() {
+  if (!siteData.parcours) siteData.parcours = [];
+  const side = siteData.parcours.length % 2 === 0 ? "left" : "right";
+  siteData.parcours.push({ side, emoji: "📌", year: "", title: "", desc: "", tag: "" });
+  renderParcours();
+}
+function delParcoursItem(i) {
+  if (!confirm("Supprimer cette étape du parcours ?")) return;
+  siteData.parcours.splice(i, 1);
+  renderParcours();
+  showToast("Étape supprimée");
+}
+function moveParcours(i, dir) {
+  const arr = siteData.parcours;
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  renderParcours();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  PROGRAMME (6 AXES)
+// ══════════════════════════════════════════════════════════════════════════
+function renderProgramme() {
+  const prog = siteData.programme || {};
+  const titleEl = document.getElementById("prog-heroTitle");
+  const textEl  = document.getElementById("prog-heroText");
+  if (titleEl) titleEl.value = prog.heroTitle || "";
+  if (textEl)  textEl.value  = prog.heroText  || "";
+  renderAxes();
+}
+
+function renderAxes() {
+  const axes = (siteData.programme && siteData.programme.axes) || [];
+  const list  = document.getElementById("axes-list");
+  if (!axes.length) {
+    list.innerHTML = '<div class="msg-empty">Aucun axe. Cliquez sur "+ Ajouter".</div>';
+    return;
+  }
+  list.innerHTML = axes.map((ax, i) => `
+    <div style="background:var(--n3);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:18px;margin-bottom:12px">
+      <div style="display:grid;grid-template-columns:50px 1fr 1fr auto;gap:10px;align-items:start;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label>Icône</label>
+          <input type="text" value="${esc(ax.icon||'')}" placeholder="⚖️" oninput="updAxe(${i},'icon',this.value)" style="width:50px;text-align:center;font-size:20px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Titre de l'axe</label>
+          <input type="text" value="${esc(ax.title||'')}" placeholder="Justice accessible" oninput="updAxe(${i},'title',this.value)">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Description</label>
+          <textarea oninput="updAxe(${i},'text',this.value)" style="min-height:64px">${esc(ax.text||'')}</textarea>
+        </div>
+        <div style="padding-top:22px;display:flex;flex-direction:column;gap:4px">
+          <button class="btn-danger" onclick="delAxe(${i})" title="Supprimer">🗑</button>
+          ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveAxe(${i},-1)">↑</button>` : ""}
+          ${i < axes.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveAxe(${i},1)">↓</button>` : ""}
+        </div>
+      </div>
+      <div>
+        <label style="font-size:10px;color:rgba(255,255,255,.35);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600">Points clés</label>
+        <div style="display:flex;flex-direction:column;gap:6px" id="pts-${i}">
+          ${(ax.points||[]).map((pt, j) => `
+            <div style="display:flex;gap:6px;align-items:center">
+              <input type="text" value="${esc(pt)}" placeholder="Point clé…" oninput="updAxePoint(${i},${j},this.value)"
+                style="flex:1;padding:8px 10px;background:var(--n2);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--w);font-size:13px;font-family:inherit;outline:none">
+              <button class="btn-danger" style="padding:5px 8px" onclick="delAxePoint(${i},${j})">✕</button>
+            </div>`).join("")}
+        </div>
+        <button class="sbtn sbtn-wait" style="margin-top:8px;font-size:11px" onclick="addAxePoint(${i})">+ Point clé</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function updAxe(i, field, val) {
+  if (!siteData.programme) siteData.programme = { heroTitle: "", heroText: "", axes: [] };
+  if (siteData.programme.axes[i]) siteData.programme.axes[i][field] = val;
+}
+function addAxe() {
+  if (!siteData.programme) siteData.programme = { heroTitle: "", heroText: "", axes: [] };
+  if (!siteData.programme.axes) siteData.programme.axes = [];
+  siteData.programme.axes.push({ icon: "📌", title: "", text: "", points: [] });
+  renderAxes();
+}
+function delAxe(i) {
+  if (!confirm("Supprimer cet axe ?")) return;
+  siteData.programme.axes.splice(i, 1);
+  renderAxes();
+  showToast("Axe supprimé");
+}
+function moveAxe(i, dir) {
+  const arr = siteData.programme.axes;
+  const j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  renderAxes();
+}
+function updAxePoint(i, j, val) {
+  if (siteData.programme && siteData.programme.axes[i] && siteData.programme.axes[i].points)
+    siteData.programme.axes[i].points[j] = val;
+}
+function addAxePoint(i) {
+  if (siteData.programme && siteData.programme.axes[i]) {
+    if (!siteData.programme.axes[i].points) siteData.programme.axes[i].points = [];
+    siteData.programme.axes[i].points.push("");
+    renderAxes();
+  }
+}
+function delAxePoint(i, j) {
+  if (siteData.programme && siteData.programme.axes[i] && siteData.programme.axes[i].points) {
+    siteData.programme.axes[i].points.splice(j, 1);
+    renderAxes();
+  }
+}
+
+function collectProgramme() {
+  if (!siteData.programme) siteData.programme = { heroTitle: "", heroText: "", axes: [] };
+  const titleEl = document.getElementById("prog-heroTitle");
+  const textEl  = document.getElementById("prog-heroText");
+  if (titleEl) siteData.programme.heroTitle = titleEl.value;
+  if (textEl)  siteData.programme.heroText  = textEl.value;
+  // Les axes sont déjà mis à jour via oninput
 }
 
 function showToast(msg, err=false) {

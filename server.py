@@ -16,18 +16,24 @@ from datetime import datetime
 DATA_FILE       = "data.json"
 AUDIT_FILE      = "audit.log"
 USERS_FILE      = "users.json"
+SESSIONS_FILE   = "sessions.json"
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "bininga2025")
 PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
 BASE_DIR        = os.path.realpath(os.getcwd())
 
-# Sessions actives : token → {username, role, nom}
+# Sessions actives : token → {username, role, nom, created_at}
 ACTIVE_SESSIONS = {}
+SESSION_TTL     = 86400  # 24 heures
 
 # Rate limiting : ip → {count, blocked_until}
 LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 300  # 5 minutes
+
+# Rotation des logs
+MAX_LOG_SIZE     = 500 * 1024   # 500 Ko
+MAX_LOG_ARCHIVES = 5
 
 # ── Sécurité — mots de passe ────────────────────────────────
 def _hash_new(password: str) -> str:
@@ -123,9 +129,56 @@ def has_role(token, *roles):
     s = get_session(token)
     return s is not None and s["role"] in roles
 
+# ── Sessions persistantes ───────────────────────────────────
+def save_sessions():
+    """Persiste les sessions actives dans sessions.json."""
+    try:
+        with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
+            json.dump(ACTIVE_SESSIONS, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+def load_sessions():
+    """Recharge les sessions au démarrage et expurge les expirées."""
+    global ACTIVE_SESSIONS
+    if not os.path.exists(SESSIONS_FILE):
+        return
+    try:
+        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
+            stored = json.load(f)
+        now = time.time()
+        ACTIVE_SESSIONS = {
+            token: sess for token, sess in stored.items()
+            if now - sess.get("created_at", 0) < SESSION_TTL
+        }
+        if len(ACTIVE_SESSIONS) != len(stored):
+            save_sessions()  # Réécrire sans les sessions expirées
+    except Exception:
+        pass
+
 # ── Audit ──────────────────────────────────────────────────
+def _rotate_audit_if_needed():
+    """Archive audit.log si > MAX_LOG_SIZE et garde MAX_LOG_ARCHIVES fichiers."""
+    if not os.path.exists(AUDIT_FILE):
+        return
+    if os.path.getsize(AUDIT_FILE) < MAX_LOG_SIZE:
+        return
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    archive = AUDIT_FILE.replace(".log", f"_{ts}.log")
+    try:
+        os.rename(AUDIT_FILE, archive)
+    except Exception:
+        return
+    archives = sorted(f for f in os.listdir(".") if f.startswith("audit_") and f.endswith(".log"))
+    for old in archives[:-MAX_LOG_ARCHIVES]:
+        try:
+            os.remove(old)
+        except Exception:
+            pass
+
 def audit_log(action, ip="", detail=""):
-    """Écrit une entrée dans audit.log (format JSON Lines)."""
+    """Écrit une entrée dans audit.log (format JSON Lines) avec rotation automatique."""
+    _rotate_audit_if_needed()
     entry = json.dumps({
         "ts":     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "action": action,
@@ -180,6 +233,7 @@ def save_data(data):
 
 # ── Init au chargement du module ───────────────────────────
 init_users()
+load_sessions()
 
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
@@ -272,10 +326,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     _reset_login_attempts(ip)
                     token = secrets.token_hex(32)
                     ACTIVE_SESSIONS[token] = {
-                        "username": user["username"],
-                        "role":     user["role"],
-                        "nom":      user.get("nom", user["username"])
+                        "username":   user["username"],
+                        "role":       user["role"],
+                        "nom":        user.get("nom", user["username"]),
+                        "created_at": time.time()
                     }
+                    save_sessions()
                     print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
                     self._json({"ok": True, "token": token,
@@ -288,6 +344,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/logout ──
+        if path == "/api/logout":
+            token_out = self.headers.get("X-Admin-Token", "")
+            ACTIVE_SESSIONS.pop(token_out, None)
+            save_sessions()
+            audit_log("LOGOUT", ip, "Déconnexion")
+            self._json({"ok": True})
             return
 
         # ── /api/upload-sinistre (public — photo de réclamation citoyenne) ──

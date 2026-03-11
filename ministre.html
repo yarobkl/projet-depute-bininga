@@ -367,6 +367,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterAud('en_cours',this)">🔄 En cours</button>
         <button class="filter-btn" onclick="filterAud('traite',this)">✅ Traitées</button>
         <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
         <span class="msg-count" id="aud-count"></span>
       </div>
       <div class="msg-list" id="list-audiences"></div>
@@ -380,6 +381,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
         <button class="filter-btn" onclick="filterRecl('traite',this)">✅ Traitées</button>
         <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
         <span class="msg-count" id="recl-count"></span>
       </div>
       <div class="msg-list" id="list-reclamations"></div>
@@ -392,6 +394,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
         <button class="filter-btn" onclick="filterCt('lu',this)">✓ Lus</button>
         <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
         <span class="msg-count" id="ct-count"></span>
       </div>
       <div class="msg-list" id="list-contacts"></div>
@@ -463,7 +466,10 @@ function showErr(msg) {
   setTimeout(() => el.textContent = "", 3500);
 }
 
-function logout() {
+async function logout() {
+  try {
+    await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
+  } catch (_) {}
   SESSION_TOKEN = "";
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
@@ -924,6 +930,23 @@ function showToast(msg, err=false, gold=false) {
   t.className = "show" + (err ? " err" : gold ? " gold" : "");
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.className = "", 3500);
+}
+
+function exportCSV(storageKey, type) {
+  const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  let rows = data;
+  if (type === "audiences")    rows = data.filter(m => m.objet !== "Réclamation");
+  if (type === "reclamations") rows = data.filter(m => m.objet === "Réclamation");
+  if (!rows.length) { showToast("Aucune donnée à exporter", true); return; }
+  const keys = [...new Set(rows.flatMap(Object.keys))];
+  const lines = [keys.join(";")];
+  rows.forEach(item => lines.push(keys.map(k => `"${String(item[k]||"").replace(/"/g,'""').replace(/[\r\n]+/g," ")}"`).join(";")));
+  const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `bininga_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast("Export CSV téléchargé !");
 }
 </script>
 </body>

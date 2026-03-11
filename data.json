@@ -136,6 +136,106 @@
       }
     ]
   },
+  "parcours": [
+    {
+      "side": "left",
+      "emoji": "📚",
+      "year": "Formation",
+      "title": "Doctorat en droit & Inspecteur principal du Trésor",
+      "desc": "Docteur en droit, Ange Aimé Wilfrid BININGA bâtit une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre celle de la Santé comme conseiller stratégique du ministre.",
+      "tag": "📚 Juriste"
+    },
+    {
+      "side": "right",
+      "emoji": "🌱",
+      "year": "Engagement politique",
+      "title": "Adhésion au PCT & premières actions",
+      "desc": "Militant du Parti Congolais du Travail, il s'engage activement dans la vie politique d'Ewo et de la Cuvette-Ouest, portant les aspirations de sa communauté.",
+      "tag": "🔴 PCT"
+    },
+    {
+      "side": "left",
+      "emoji": "👷",
+      "year": "2016",
+      "title": "Ministre de la Fonction publique et de la Réforme de l'État",
+      "desc": "Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale.",
+      "tag": "🏛️ Ministère de la Fonction publique"
+    },
+    {
+      "side": "right",
+      "emoji": "🗳️",
+      "year": "19 août 2017",
+      "title": "Élu Député de la 1re circonscription d'Ewo",
+      "desc": "Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo.",
+      "tag": "🗳️ Assemblée Nationale"
+    },
+    {
+      "side": "left",
+      "emoji": "📈",
+      "year": "2018",
+      "title": "Ministre de la Justice & Haute Autorité anti-corruption",
+      "desc": "En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires.",
+      "tag": "📈 Confiance renouvelée"
+    },
+    {
+      "side": "right",
+      "emoji": "⚖️",
+      "year": "Aujourd'hui",
+      "title": "Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones",
+      "desc": "À ce poste clé du gouvernement, il incarne la diplomatie judiciaire du Congo, notamment avec la renégociation en février 2026 à Paris de la convention de coopération judiciaire Congo-France — accord vieux de plus de 50 ans, renouvelé sur de nouvelles bases modernes.",
+      "tag": "⚖️ Ministère de la Justice"
+    },
+    {
+      "side": "left",
+      "emoji": "🚀",
+      "year": "Législatives 2027",
+      "title": "Candidat pour Ewo · Campagne 2027",
+      "desc": "Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo.",
+      "tag": "🚀 Campagne en cours"
+    }
+  ],
+  "programme": {
+    "heroTitle": "Un programme construit\navec les citoyens d'Ewo",
+    "heroText": "Chaque engagement de ce programme est issu d'échanges directs avec les habitants d'Ewo, les chefs de village, les jeunes, les femmes entrepreneurs et les professionnels de santé et d'éducation.",
+    "axes": [
+      {
+        "icon": "⚖️",
+        "title": "Justice accessible",
+        "text": "Étendre la justice au cœur de la Cuvette-Ouest. Chaque citoyen doit pouvoir accéder à un tribunal, un avocat, une décision équitable.",
+        "points": ["Tribunal de proximité à Ewo", "Aide juridictionnelle gratuite", "Formation de médiateurs locaux"]
+      },
+      {
+        "icon": "👷",
+        "title": "Emploi & Travail décent",
+        "text": "Fort de son expérience au Ministère de la Fonction publique, il porte un plan ambitieux pour l'emploi des jeunes et la dignité des travailleurs d'Ewo.",
+        "points": ["Centre de formation professionnelle", "Microcrédit pour jeunes entrepreneurs", "Protection des travailleurs informels"]
+      },
+      {
+        "icon": "🏗️",
+        "title": "Infrastructures & Routes",
+        "text": "Désenclaver la Cuvette-Ouest. Des routes, des ponts, de l'électricité — les bases d'un développement économique durable.",
+        "points": ["Routes bitumées Ewo–Oyo", "Électrification rurale", "Eau potable dans chaque village"]
+      },
+      {
+        "icon": "📚",
+        "title": "Éducation & Jeunesse",
+        "text": "La jeunesse d'Ewo est l'avenir du Congo. Investir dans l'éducation, c'est bâtir la nation de demain.",
+        "points": ["Construction d'écoles modernes", "Bourses aux étudiants méritants", "Accès au numérique dans les lycées"]
+      },
+      {
+        "icon": "🏥",
+        "title": "Santé pour tous",
+        "text": "Un accès aux soins de qualité dans toute la circonscription. La santé est un droit, pas un privilège.",
+        "points": ["Modernisation de l'hôpital d'Ewo", "Santé maternelle et néonatale", "Médecins spécialistes en rotation"]
+      },
+      {
+        "icon": "🌱",
+        "title": "Agriculture & Économie",
+        "text": "Valoriser les richesses naturelles de la Cuvette-Ouest. Soutenir les agriculteurs et créer une économie locale forte et résiliente.",
+        "points": ["Coopératives agricoles soutenues", "Unité de transformation locale", "Soutien aux femmes entrepreneures"]
+      }
+    ]
+  },
   "seo": {
     "title": "Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo",
     "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"
