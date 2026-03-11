@@ -862,8 +862,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
     </div>
     <div class="eng-form rev">
-      <h3 class="form-title" id="form-title-aud">Signalement officiel au Député</h3>
-      <p class="form-sub" id="form-sub-aud">Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement</p>
+      <h3 class="form-title" id="form-title-aud">Demande d'audience auprès du Député</h3>
+      <p class="form-sub" id="form-sub-aud">Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h</p>
       <form onsubmit="fSub(event,this)" id="form-aud">
         <div class="fg2">
           <div class="fgrp"><label>Prénom *</label><input type="text" name="prenom" placeholder="Votre prénom" required></div>
@@ -873,15 +873,15 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <div class="fgrp"><label>Téléphone *</label><input type="tel" name="telephone" placeholder="+242 XX XXX XXXX" required></div>
         <div class="fgrp"><label>Objet de la demande *</label>
           <select name="objet" id="sel-objet" onchange="toggleGeoFields(this)">
-            <option value="Demande d'audience">Demande d'audience</option>
-            <option value="Réclamation" selected>Réclamation / Signalement</option>
+            <option value="Demande d'audience" selected>Demande d'audience</option>
+            <option value="Réclamation">Réclamation / Signalement</option>
             <option value="Question au Député">Question au Député</option>
             <option value="Autre">Autre</option>
           </select>
         </div>
 
         <!-- CHAMPS DEMANDE (audience / question / autre) -->
-        <div id="aud-reason" style="display:none">
+        <div id="aud-reason">
           <div class="fgrp">
             <label>Raison de la demande *</label>
             <textarea name="raison" id="raison-text" rows="5" placeholder="Rédigez ici votre requête. Expliquez l'objet de votre demande, votre situation, et ce que vous attendez du Député…" style="resize:vertical"></textarea>
@@ -889,7 +889,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         </div>
 
         <!-- CHAMPS RÉCLAMATION (cachés par défaut) -->
-        <div id="geo-extras">
+        <div id="geo-extras" style="display:none">
           <div class="recl-badge">⚠️ Signalement officiel</div>
           <div class="fgrp">
             <label>Description du sinistre / problème *</label>
@@ -920,7 +920,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           </div>
         </div>
 
-        <button type="submit" class="btn-form" id="btn-form-aud">⚠️ Envoyer le signalement</button>
+        <button type="submit" class="btn-form" id="btn-form-aud">📨 Soumettre ma demande</button>
       </form>
     </div>
   </div>
