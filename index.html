@@ -271,7 +271,7 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .btn-form{width:100%;background:var(--r);color:var(--w);border:none;padding:16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:var(--t);margin-top:8px}
 .btn-form:hover{background:var(--rd);transform:translateY(-2px)}
 /* ── GÉO-SINISTRE ── */
-#geo-extras{display:none;margin-top:4px;border-top:1px dashed #e0e0e0;padding-top:16px}
+#geo-extras{display:block;margin-top:4px;border-top:1px dashed #e0e0e0;padding-top:16px}
 .geo-box{background:#f3f8ff;border:1px solid #c8daf7;border-radius:6px;padding:16px;margin-bottom:14px}
 .geo-box-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#3a6fd8;margin-bottom:10px}
 .geo-status{font-size:12px;color:#555;margin-bottom:10px;min-height:18px;display:flex;align-items:center;gap:6px}
@@ -1005,8 +1005,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
     </div>
     <div class="eng-form rev">
-      <h3 class="form-title" id="form-title-aud">Faire une demande d'audience</h3>
-      <p class="form-sub" id="form-sub-aud">Remplissez le formulaire ci-dessous, notre équipe vous contactera sous 48h</p>
+      <h3 class="form-title" id="form-title-aud">Signalement officiel au Député</h3>
+      <p class="form-sub" id="form-sub-aud">Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement</p>
       <form onsubmit="fSub(event,this)" id="form-aud">
         <div class="fg2">
           <div class="fgrp"><label>Prénom *</label><input type="text" name="prenom" placeholder="Votre prénom" required></div>
@@ -1017,7 +1017,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <div class="fgrp"><label>Objet de la demande *</label>
           <select name="objet" id="sel-objet" onchange="toggleGeoFields(this)">
             <option value="Demande d'audience">Demande d'audience</option>
-            <option value="Réclamation">Réclamation / Signalement</option>
+            <option value="Réclamation" selected>Réclamation / Signalement</option>
             <option value="Question au Député">Question au Député</option>
             <option value="Autre">Autre</option>
           </select>
@@ -1055,7 +1055,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           </div>
         </div>
 
-        <button type="submit" class="btn-form" id="btn-form-aud">📨 Soumettre ma demande</button>
+        <button type="submit" class="btn-form" id="btn-form-aud">⚠️ Envoyer le signalement</button>
       </form>
     </div>
   </div>
