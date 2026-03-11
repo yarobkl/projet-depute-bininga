@@ -131,7 +131,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
-            if not has_role(token, "admin"):
+            if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             self._json({"ok": True, "logs": load_audit()})
@@ -217,7 +217,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 nom   = data.get("nom", "").strip()
                 role  = data.get("role", "lecteur")
                 pwd   = data.get("password", "").strip()
-                if not uname or role not in ("admin", "editeur", "lecteur"):
+                if not uname or role not in ("admin", "editeur", "lecteur", "ministre"):
                     self._json({"ok": False, "message": "Données invalides"}, 400)
                     return
                 users = load_users()
@@ -264,7 +264,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/upload ──
         if path == "/api/upload":
-            if not has_role(token, "admin", "editeur"):
+            if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Accès refusé"}, 403)
                 return
             content_type = self.headers.get("Content-Type", "")
@@ -303,7 +303,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/save ──
         if path == "/api/save":
-            if not has_role(token, "admin", "editeur"):
+            if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Accès refusé"}, 403)
                 return
             try:
