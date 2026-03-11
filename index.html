@@ -880,6 +880,14 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
           </select>
         </div>
 
+        <!-- CHAMPS DEMANDE (audience / question / autre) -->
+        <div id="aud-reason" style="display:none">
+          <div class="fgrp">
+            <label>Raison de la demande *</label>
+            <textarea name="raison" id="raison-text" rows="5" placeholder="Rédigez ici votre requête. Expliquez l'objet de votre demande, votre situation, et ce que vous attendez du Député…" style="resize:vertical"></textarea>
+          </div>
+        </div>
+
         <!-- CHAMPS RÉCLAMATION (cachés par défaut) -->
         <div id="geo-extras">
           <div class="recl-badge">⚠️ Signalement officiel</div>
@@ -1256,10 +1264,12 @@ function fSub(e, f) {
   const objet = document.getElementById("sel-objet").value;
   const isRecl = objet === "Réclamation";
 
-  // Vérification champs réclamation
   if (isRecl) {
     const desc = document.getElementById("desc-sinistre").value.trim();
     if (!desc) { alert("Veuillez décrire le sinistre ou problème à signaler."); return; }
+  } else {
+    const raison = document.getElementById("raison-text").value.trim();
+    if (!raison) { alert("Veuillez rédiger la raison de votre demande."); return; }
   }
 
   const fd = new FormData(f);
@@ -1275,13 +1285,30 @@ function fSub(e, f) {
 // ── GÉO-SINISTRE ────────────────────────────────────────────
 function toggleGeoFields(sel) {
   const extras = document.getElementById("geo-extras");
+  const reason = document.getElementById("aud-reason");
+  const raison = document.getElementById("raison-text");
   const isRecl = sel.value === "Réclamation";
   extras.style.display = isRecl ? "block" : "none";
-  document.getElementById("form-title-aud").textContent = isRecl
-    ? "Signalement officiel au Député" : "Faire une demande d'audience";
-  document.getElementById("form-sub-aud").textContent = isRecl
-    ? "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement"
-    : "Remplissez le formulaire ci-dessous, notre équipe vous contactera sous 48h";
+  reason.style.display = isRecl ? "none" : "block";
+  if (raison) raison.required = !isRecl;
+
+  const titles = {
+    "Demande d'audience":  ["Demande d'audience auprès du Député", "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h"],
+    "Réclamation":         ["Signalement officiel au Député", "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement"],
+    "Question au Député":  ["Poser une question au Député", "Rédigez votre question, le Député ou son équipe vous répondra directement"],
+    "Autre":               ["Autre demande", "Décrivez votre demande, notre équipe l'étudiera avec attention"]
+  };
+  const [t, s] = titles[sel.value] || titles["Demande d'audience"];
+  document.getElementById("form-title-aud").textContent = t;
+  document.getElementById("form-sub-aud").textContent = s;
+
+  const placeholders = {
+    "Demande d'audience":  "Expliquez pourquoi vous souhaitez rencontrer le Député, votre situation et l'objet précis de votre demande…",
+    "Question au Député":  "Rédigez votre question pour le Député d'Ewo…",
+    "Autre":               "Décrivez votre demande ou votre situation…"
+  };
+  if (raison) raison.placeholder = placeholders[sel.value] || placeholders["Demande d'audience"];
+
   document.getElementById("btn-form-aud").textContent = isRecl
     ? "⚠️ Envoyer le signalement" : "📨 Soumettre ma demande";
 }

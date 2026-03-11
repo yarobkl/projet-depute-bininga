@@ -1376,11 +1376,14 @@ function renderMsgList(containerId, list, storageKey, mode) {
     const realIdx = allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
     const status  = m._status || (mode === "status2" ? "non_lu" : "en_attente");
     const badge   = buildBadge(status, m.objet);
-    const geoSkip = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description"]);
+    const geoSkip = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
     const fields  = Object.entries(m)
       .filter(([k]) => !geoSkip.has(k))
       .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
       .join("");
+
+    // Raison demande d'audience / question
+    const raisonHtml = m.raison ? `<div class="sinistre-desc"><span>📝 Requête</span>${esc(m.raison)}</div>` : "";
 
     // Description sinistre
     const descHtml = m.description ? `<div class="sinistre-desc"><span>📝 Description</span>${esc(m.description)}</div>` : "";
@@ -1438,6 +1441,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
         ${badge}
       </div>
       <div class="msg-fields">${fields}</div>
+      ${raisonHtml}
       ${descHtml}
       ${geoHtml}
       ${photoHtml}

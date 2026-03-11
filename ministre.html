@@ -700,11 +700,14 @@ function buildCard(m, storageKey, mode) {
   const hasGeo   = !!(m.geo_lat && m.geo_lng);
   const hasPhoto = !!m.photo_url;
   const initials = ((m.prenom||"?").charAt(0) + (m.nom||"?").charAt(0)).toUpperCase();
-  const geoSkip  = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description"]);
+  const geoSkip  = new Set(["_date","_status","_reply","_reply_date","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
   const fields   = Object.entries(m)
     .filter(([k]) => !geoSkip.has(k))
     .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
     .join("");
+
+  // Raison demande d'audience / question
+  const raisonHtml = m.raison ? `<div class="sin-desc"><div class="sin-label">📝 Requête</div>${esc(m.raison)}</div>` : "";
 
   // Description sinistre
   const descHtml = m.description ? `<div class="sin-desc"><div class="sin-label">📝 Description du sinistre</div>${esc(m.description)}</div>` : "";
@@ -811,6 +814,7 @@ function buildCard(m, storageKey, mode) {
     </div>
     <div class="msg-body" id="mb-${safeId}">
       <div class="msg-fields">${fields}</div>
+      ${raisonHtml}
       ${descHtml}
       ${geoHtml}
       ${photoHtml}
