@@ -203,6 +203,210 @@ def test_data_json_structure():
     print("✅ test_data_json_structure")
 
 
+# ── Tests sur les modifications de l'interface admin ──────────
+
+def _get_editeur_token():
+    """Crée un compte éditeur temporaire et retourne son token."""
+    admin_token = _get_admin_token()
+    post("/api/users/upsert", {
+        "username": "tmp_editeur",
+        "nom":      "Editeur Temp",
+        "password": "editeur1234",
+        "role":     "editeur"
+    }, token=admin_token)
+    _, body = post("/api/login", {"username": "tmp_editeur", "password": "editeur1234"})
+    return body.get("token", ""), admin_token
+
+
+def _cleanup_user(username, admin_token):
+    post("/api/users/delete", {"username": username}, token=admin_token)
+
+
+def test_upsert_modification_utilisateur():
+    """Modifier le nom et le rôle d'un utilisateur existant."""
+    admin_token = _get_admin_token()
+    # Créer
+    post("/api/users/upsert", {
+        "username": "tmp_mod",
+        "nom":      "Nom Original",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    # Modifier
+    status, body = post("/api/users/upsert", {
+        "username": "tmp_mod",
+        "nom":      "Nom Modifié",
+        "role":     "editeur"
+    }, token=admin_token)
+    assert status == 200 and body.get("ok"), "La modification d'un utilisateur existant doit réussir"
+    # Vérifier
+    url = f"http://127.0.0.1:{PORT}/api/users"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", admin_token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        users = json.loads(r.read().decode("utf-8"))["users"]
+    user = next((u for u in users if u["username"] == "tmp_mod"), None)
+    assert user is not None, "L'utilisateur modifié doit exister"
+    assert user["nom"] == "Nom Modifié", f"Le nom doit être 'Nom Modifié', reçu '{user['nom']}'"
+    assert user["role"] == "editeur", f"Le rôle doit être 'editeur', reçu '{user['role']}'"
+    _cleanup_user("tmp_mod", admin_token)
+    print("✅ test_upsert_modification_utilisateur")
+
+
+def test_upsert_modification_mot_de_passe():
+    """Changer le mot de passe d'un utilisateur existant."""
+    admin_token = _get_admin_token()
+    post("/api/users/upsert", {
+        "username": "tmp_pwd",
+        "nom":      "Test MDP",
+        "password": "ancien1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    # Changer le mot de passe
+    status, body = post("/api/users/upsert", {
+        "username": "tmp_pwd",
+        "nom":      "Test MDP",
+        "password": "nouveau5678",
+        "role":     "lecteur"
+    }, token=admin_token)
+    assert status == 200 and body.get("ok"), "Le changement de mot de passe doit réussir"
+    # L'ancien mot de passe ne doit plus fonctionner
+    s1, b1 = post("/api/login", {"username": "tmp_pwd", "password": "ancien1234"})
+    assert s1 == 401 and not b1.get("ok"), "L'ancien mot de passe ne doit plus fonctionner"
+    # Le nouveau mot de passe doit fonctionner
+    s2, b2 = post("/api/login", {"username": "tmp_pwd", "password": "nouveau5678"})
+    assert s2 == 200 and b2.get("ok"), "Le nouveau mot de passe doit fonctionner"
+    _cleanup_user("tmp_pwd", admin_token)
+    print("✅ test_upsert_modification_mot_de_passe")
+
+
+def test_upsert_nouveau_sans_mot_de_passe():
+    """Créer un utilisateur sans mot de passe doit échouer."""
+    admin_token = _get_admin_token()
+    status, body = post("/api/users/upsert", {
+        "username": "tmp_nopwd",
+        "nom":      "Sans Mot de Passe",
+        "password": "",
+        "role":     "lecteur"
+    }, token=admin_token)
+    assert status == 400, f"Création sans mot de passe doit retourner 400, reçu {status}"
+    assert not body.get("ok"), "ok doit être False"
+    print("✅ test_upsert_nouveau_sans_mot_de_passe")
+
+
+def test_upsert_role_invalide():
+    """Créer un utilisateur avec un rôle invalide doit échouer."""
+    admin_token = _get_admin_token()
+    status, body = post("/api/users/upsert", {
+        "username": "tmp_badrole",
+        "nom":      "Mauvais Rôle",
+        "password": "pass1234",
+        "role":     "superadmin"
+    }, token=admin_token)
+    assert status == 400, f"Rôle invalide doit retourner 400, reçu {status}"
+    assert not body.get("ok"), "ok doit être False"
+    print("✅ test_upsert_role_invalide")
+
+
+def test_upsert_identifiant_vide():
+    """Créer un utilisateur avec identifiant vide doit échouer."""
+    admin_token = _get_admin_token()
+    status, body = post("/api/users/upsert", {
+        "username": "",
+        "nom":      "Vide",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    assert status == 400, f"Identifiant vide doit retourner 400, reçu {status}"
+    assert not body.get("ok"), "ok doit être False"
+    print("✅ test_upsert_identifiant_vide")
+
+
+def test_delete_son_propre_compte():
+    """Un admin ne peut pas supprimer son propre compte."""
+    admin_token = _get_admin_token()
+    admin_user = os.environ.get("BININGA_USER", "admin")
+    status, body = post("/api/users/delete", {"username": admin_user}, token=admin_token)
+    assert status == 400, f"Suppression du compte propre doit retourner 400, reçu {status}"
+    assert not body.get("ok"), "ok doit être False"
+    assert "propre" in body.get("message", "").lower() or "impossible" in body.get("message", "").lower(), \
+        f"Message d'erreur attendu, reçu : {body.get('message')}"
+    print("✅ test_delete_son_propre_compte")
+
+
+def test_upsert_interdit_pour_editeur():
+    """Un éditeur ne peut pas créer ou modifier des utilisateurs."""
+    edit_token, admin_token = _get_editeur_token()
+    status, body = post("/api/users/upsert", {
+        "username": "tmp_inedit",
+        "nom":      "Test",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=edit_token)
+    assert status == 403, f"Un éditeur ne peut pas créer d'utilisateur (attendu 403, reçu {status})"
+    assert not body.get("ok"), "ok doit être False"
+    _cleanup_user("tmp_editeur", admin_token)
+    print("✅ test_upsert_interdit_pour_editeur")
+
+
+def test_delete_interdit_pour_editeur():
+    """Un éditeur ne peut pas supprimer des utilisateurs."""
+    edit_token, admin_token = _get_editeur_token()
+    # Créer une cible
+    post("/api/users/upsert", {
+        "username": "tmp_cible",
+        "nom":      "Cible",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    status, body = post("/api/users/delete", {"username": "tmp_cible"}, token=edit_token)
+    assert status == 403, f"Un éditeur ne peut pas supprimer d'utilisateur (attendu 403, reçu {status})"
+    assert not body.get("ok"), "ok doit être False"
+    _cleanup_user("tmp_cible", admin_token)
+    _cleanup_user("tmp_editeur", admin_token)
+    print("✅ test_delete_interdit_pour_editeur")
+
+
+def test_logs_contiennent_user_upsert():
+    """L'action USER_UPSERT doit apparaître dans les logs après une création."""
+    admin_token = _get_admin_token()
+    post("/api/users/upsert", {
+        "username": "tmp_audit_upsert",
+        "nom":      "Audit Test",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    url = f"http://127.0.0.1:{PORT}/api/logs"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", admin_token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    actions = [e["action"] for e in data["logs"]]
+    assert "USER_UPSERT" in actions, "USER_UPSERT doit apparaître dans les journaux d'audit"
+    _cleanup_user("tmp_audit_upsert", admin_token)
+    print("✅ test_logs_contiennent_user_upsert")
+
+
+def test_logs_contiennent_user_delete():
+    """L'action USER_DELETE doit apparaître dans les logs après une suppression."""
+    admin_token = _get_admin_token()
+    post("/api/users/upsert", {
+        "username": "tmp_audit_del",
+        "nom":      "Audit Delete",
+        "password": "pass1234",
+        "role":     "lecteur"
+    }, token=admin_token)
+    post("/api/users/delete", {"username": "tmp_audit_del"}, token=admin_token)
+    url = f"http://127.0.0.1:{PORT}/api/logs"
+    req = urllib.request.Request(url)
+    req.add_header("X-Admin-Token", admin_token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        data = json.loads(r.read().decode("utf-8"))
+    actions = [e["action"] for e in data["logs"]]
+    assert "USER_DELETE" in actions, "USER_DELETE doit apparaître dans les journaux d'audit"
+    print("✅ test_logs_contiennent_user_delete")
+
+
 # ── Lancement ─────────────────────────────────────────────────
 
 if __name__ == "__main__":
@@ -226,6 +430,17 @@ if __name__ == "__main__":
         test_users_sans_token()
         test_users_list()
         test_users_upsert_et_delete()
+        # Tests ajoutés pour l'interface admin améliorée
+        test_upsert_modification_utilisateur()
+        test_upsert_modification_mot_de_passe()
+        test_upsert_nouveau_sans_mot_de_passe()
+        test_upsert_role_invalide()
+        test_upsert_identifiant_vide()
+        test_delete_son_propre_compte()
+        test_upsert_interdit_pour_editeur()
+        test_delete_interdit_pour_editeur()
+        test_logs_contiennent_user_upsert()
+        test_logs_contiennent_user_delete()
     finally:
         srv.shutdown()
 
