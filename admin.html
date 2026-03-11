@@ -321,6 +321,7 @@ select.form-input:focus{border-color:var(--r)}
 
     <div class="sb-footer">
       <button class="sb-btn sb-btn-primary role-editeur" id="btn-save" style="display:none" onclick="saveData()">💾 Enregistrer le contenu</button>
+      <button class="sb-btn role-editeur" style="display:none;background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);margin-bottom:4px" onclick="loadSiteData();showToast('Données rechargées !')">🔄 Recharger les données</button>
       <a href="ministre.html" class="sb-btn role-admin" id="btn-ministre" style="display:none;background:rgba(184,151,58,.12);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;margin-bottom:8px">🏛️ Espace du Député</a>
       <button class="sb-btn sb-btn-ghost" onclick="logout()">↩ Déconnexion</button>
     </div>
