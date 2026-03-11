@@ -173,25 +173,77 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .gi:hover .gi-ov{opacity:1}
 
 /* ACTU */
-#actu{padding:120px 6%;background:var(--n2)}
-.actu-wrap{max-width:1300px;margin:60px auto 0;display:grid;grid-template-columns:1.4fr 1fr;gap:24px}
-.actu-feat{background:var(--n3);border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.05);transition:var(--t)}
-.actu-feat:hover{transform:translateY(-5px);border-color:rgba(200,16,46,.2)}
-.actu-feat-img{aspect-ratio:16/9;background:linear-gradient(135deg,#111,#1c1c1c);display:flex;align-items:center;justify-content:center;font-size:50px;position:relative}
-.actu-feat-img img{width:100%;height:100%;object-fit:cover}
-.actu-chip{position:absolute;top:16px;left:16px;background:var(--r);padding:5px 14px;font-size:10px;letter-spacing:2px;font-weight:700;text-transform:uppercase;border-radius:2px}
-.actu-feat-body{padding:32px}
-.actu-feat-date{font-size:11px;color:var(--r);letter-spacing:3px;font-weight:600;text-transform:uppercase;margin-bottom:10px}
-.actu-feat-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;line-height:1.3;margin-bottom:12px}
-.actu-feat-txt{font-size:14px;color:rgba(255,255,255,.5);line-height:1.8;font-weight:300}
-.actu-list{display:flex;flex-direction:column;gap:12px}
-.actu-item{background:var(--n3);border:1px solid rgba(255,255,255,.05);border-left:2px solid var(--r);border-radius:4px;padding:20px 22px;display:flex;gap:18px;align-items:flex-start;transition:var(--t);cursor:default}
-.actu-item:hover{background:rgba(200,16,46,.06);border-left-color:var(--g);transform:translateX(5px)}
-.actu-date-box{min-width:44px;text-align:center}
-.actu-day{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:var(--r);line-height:1}
-.actu-mon{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:2px;display:block;margin-top:2px}
-.actu-item-title{font-weight:600;font-size:14px;color:var(--w);margin-bottom:4px;line-height:1.4}
-.actu-item-desc{font-size:12px;color:rgba(255,255,255,.4);line-height:1.6;font-weight:300}
+/* ── ACTU REDESIGN ─────────────────────────────────────── */
+#actu{padding:0 0 140px;background:var(--n2)}
+
+/* Hero Slideshow */
+.actu-hero{position:relative;height:75vh;min-height:520px;overflow:hidden;background:var(--n)}
+.actu-hero-track{display:flex;height:100%;transition:transform .9s cubic-bezier(.25,.46,.45,.94)}
+.actu-hero-slide{min-width:100%;height:100%;position:relative;overflow:hidden}
+.actu-hero-slide img{width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.06);transition:transform 7s ease}
+.actu-hero-slide.hs-active img{transform:scale(1)}
+.actu-hero-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(6,6,6,.92) 0%,rgba(6,6,6,.45) 45%,rgba(6,6,6,.1) 100%)}
+.actu-hero-content{position:absolute;bottom:0;left:0;right:0;padding:0 6% 60px;max-width:900px}
+.actu-hero-chip{background:var(--r);color:#fff;font-size:9px;letter-spacing:3px;font-weight:700;text-transform:uppercase;padding:5px 14px;border-radius:2px;display:inline-block;margin-bottom:14px}
+.actu-hero-date{font-size:11px;color:var(--g);letter-spacing:3px;font-weight:600;text-transform:uppercase;margin-bottom:10px}
+.actu-hero-title{font-family:'Cormorant Garamond',serif;font-size:clamp(28px,4vw,54px);font-weight:700;line-height:1.12;margin-bottom:14px;text-shadow:0 2px 20px rgba(0,0,0,.5)}
+.actu-hero-sub{font-size:14px;color:rgba(255,255,255,.65);line-height:1.7;max-width:620px;font-weight:300}
+.actu-hero-nav{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;background:rgba(6,6,6,.5);border:1px solid rgba(255,255,255,.1);color:#fff;font-size:22px;cursor:pointer;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:var(--t);z-index:6;backdrop-filter:blur(4px)}
+.actu-hero-nav:hover{background:var(--r);border-color:var(--r)}
+.actu-hero-prev{left:24px}.actu-hero-next{right:24px}
+.actu-hero-dots{position:absolute;bottom:28px;right:6%;display:flex;gap:8px;z-index:6}
+.actu-hero-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.25);border:none;cursor:pointer;transition:all .35s}
+.actu-hero-dot.hd-active{background:var(--r);width:22px;border-radius:3px}
+.actu-hero-counter{position:absolute;top:28px;right:6%;font-size:11px;letter-spacing:3px;color:rgba(255,255,255,.3);font-weight:600;z-index:6}
+
+/* Section contenu */
+.actu-inner{max-width:1300px;margin:0 auto;padding:80px 6% 0}
+.actu-section-hd{text-align:center;margin-bottom:70px}
+
+/* Article vedette Darmanin */
+.actu-vedette{display:grid;grid-template-columns:1fr 1fr;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.06);background:var(--n3);margin-bottom:64px;transition:var(--t)}
+.actu-vedette:hover{border-color:rgba(200,16,46,.18);transform:translateY(-4px);box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.actu-vedette-img{position:relative;overflow:hidden;min-height:420px}
+.actu-vedette-img img{width:100%;height:100%;object-fit:cover;object-position:center top;transition:transform .7s ease}
+.actu-vedette:hover .actu-vedette-img img{transform:scale(1.04)}
+.actu-vedette-badge{position:absolute;top:20px;left:20px;background:var(--r);color:#fff;font-size:9px;letter-spacing:3px;font-weight:700;text-transform:uppercase;padding:6px 16px;border-radius:2px}
+.actu-vedette-body{padding:52px;display:flex;flex-direction:column;justify-content:center;gap:0}
+.actu-vedette-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--r);font-weight:700;margin-bottom:10px}
+.actu-vedette-date{font-size:11px;color:rgba(255,255,255,.35);letter-spacing:2px;margin-bottom:18px}
+.actu-vedette-title{font-family:'Cormorant Garamond',serif;font-size:clamp(22px,2.2vw,34px);font-weight:700;line-height:1.2;margin-bottom:20px}
+.actu-vedette-txt{font-size:13.5px;color:rgba(255,255,255,.55);line-height:1.9;font-weight:300;margin-bottom:16px}
+.actu-vedette-quote{border-left:3px solid var(--r);padding:12px 20px;margin:20px 0;font-style:italic;font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;background:rgba(200,16,46,.04)}
+.actu-vedette-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.actu-tag{font-size:10px;letter-spacing:1px;font-weight:700;text-transform:uppercase;color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.07);border-radius:3px;padding:4px 12px}
+
+/* Grille actions */
+.actu-grid-hd{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:rgba(255,255,255,.2);font-weight:700;margin-bottom:28px}
+.actu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.actu-card{background:var(--n3);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:28px 26px;position:relative;overflow:hidden;transition:var(--t)}
+.actu-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(to right,var(--r),var(--g));transform:scaleX(0);transform-origin:left;transition:transform .35s}
+.actu-card:hover{border-color:rgba(200,16,46,.15);transform:translateY(-5px);box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.actu-card:hover::after{transform:scaleX(1)}
+.actu-card-cat{font-size:9px;letter-spacing:3px;font-weight:700;text-transform:uppercase;color:var(--g);margin-bottom:16px}
+.actu-card-dt{display:flex;align-items:baseline;gap:8px;margin-bottom:14px}
+.actu-card-day{font-family:'Cormorant Garamond',serif;font-size:44px;font-weight:700;color:var(--r);line-height:1}
+.actu-card-mon{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.25);font-weight:700;text-transform:uppercase}
+.actu-card-title{font-size:14px;font-weight:700;line-height:1.45;margin-bottom:10px;color:var(--w)}
+.actu-card-desc{font-size:12px;color:rgba(255,255,255,.38);line-height:1.65;font-weight:300}
+.actu-card-ic{position:absolute;top:22px;right:22px;font-size:22px;opacity:.15}
+
+/* Responsive */
+@media(max-width:900px){
+  .actu-vedette{grid-template-columns:1fr}
+  .actu-vedette-img{min-height:260px}
+  .actu-vedette-body{padding:32px}
+  .actu-grid{grid-template-columns:1fr 1fr}
+  .actu-hero{height:60vh;min-height:420px}
+}
+@media(max-width:600px){
+  .actu-grid{grid-template-columns:1fr}
+  .actu-hero{height:55vh}
+  .actu-hero-title{font-size:26px}
+}
 
 /* ENGAGEMENT */
 #engagement{padding:120px 6%;background:var(--r);position:relative;overflow:hidden}
@@ -724,16 +776,159 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 
 <!-- ACTUALITÉS -->
 <section id="actu">
-  <div style="max-width:1300px;margin:0 auto;">
-    <div style="text-align:center;" class="rev">
+
+  <!-- ══ HERO SLIDESHOW ══════════════════════════════════════════════ -->
+  <div class="actu-hero" id="actu-hero">
+    <div class="actu-hero-track" id="actu-hero-track">
+
+      <!-- Slide 1 — Photo officielle Bininga -->
+      <div class="actu-hero-slide" id="hs0">
+        <img src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA, Garde des Sceaux">
+        <div class="actu-hero-overlay"></div>
+        <div class="actu-hero-content">
+          <span class="actu-hero-chip">Portrait officiel</span>
+          <div class="actu-hero-date">République du Congo — Garde des Sceaux</div>
+          <h2 class="actu-hero-title">Ange Aimé Wilfrid BININGA,<br>au service de la Justice et de son peuple</h2>
+          <p class="actu-hero-sub">Juriste, réformateur, diplomate — Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales.</p>
+        </div>
+      </div>
+
+      <!-- Slide 2 — Rencontre avec Darmanin -->
+      <div class="actu-hero-slide" id="hs1">
+        <img src="images/Darmanin.jpeg" alt="BININGA et Gérald Darmanin — Place Vendôme, Paris, Février 2026">
+        <div class="actu-hero-overlay"></div>
+        <div class="actu-hero-content">
+          <span class="actu-hero-chip">Diplomatie · Février 2026</span>
+          <div class="actu-hero-date">18 Février 2026 — Place Vendôme, Paris</div>
+          <h2 class="actu-hero-title">BININGA & Darmanin :<br>une nouvelle ère judiciaire Congo–France</h2>
+          <p class="actu-hero-sub">Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions — entraide, extraditions, transfèrements — attendues à l'été 2026.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Navigation -->
+    <button class="actu-hero-nav actu-hero-prev" id="actu-prev" aria-label="Précédent">‹</button>
+    <button class="actu-hero-nav actu-hero-next" id="actu-next" aria-label="Suivant">›</button>
+
+    <!-- Dots -->
+    <div class="actu-hero-dots">
+      <button class="actu-hero-dot" data-hs="0" aria-label="Slide 1"></button>
+      <button class="actu-hero-dot" data-hs="1" aria-label="Slide 2"></button>
+    </div>
+
+    <!-- Compteur -->
+    <div class="actu-hero-counter" id="actu-counter">01 / 02</div>
+  </div>
+
+  <!-- ══ CONTENU ÉDITORIAL ══════════════════════════════════════════ -->
+  <div class="actu-inner">
+
+    <!-- En-tête section -->
+    <div class="actu-section-hd rev">
       <span class="stag">Actualités</span>
       <h2 class="stitle">Sur le <span class="r">terrain</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
-    <div class="actu-wrap" id="actu-wrap">
-      <!-- Contenu généré dynamiquement via data.json -->
+
+    <!-- ── ARTICLE VEDETTE — Rencontre Darmanin ── -->
+    <div class="actu-vedette rev">
+      <div class="actu-vedette-img">
+        <img src="images/Darmanin.jpeg" alt="BININGA et Darmanin — Paris, Place Vendôme, 18 Février 2026">
+        <span class="actu-vedette-badge">À la une</span>
+      </div>
+      <div class="actu-vedette-body">
+        <div class="actu-vedette-tag">Diplomatie judiciaire</div>
+        <div class="actu-vedette-date">📅 18 Février 2026 · Paris, Place Vendôme</div>
+        <h3 class="actu-vedette-title">BININGA et Darmanin relancent la coopération judiciaire Congo–France</h3>
+        <p class="actu-vedette-txt">Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis <strong style="color:rgba(255,255,255,.8)">1974</strong> — un accord vieux de plus de <strong style="color:rgba(255,255,255,.8)">50 ans</strong>.</p>
+        <div class="actu-vedette-quote">
+          « Trois nouvelles conventions sont en cours de finalisation : entraide judiciaire, extraditions et transfèrements de personnes condamnées. L'objectif est une signature avant l'été 2026. »
+        </div>
+        <p class="actu-vedette-txt">Une démarche saluée par les deux Ministères de la Justice, qui ouvre un nouveau chapitre dans les relations franco-congolaises. Porté par sa vision d'une justice moderne et accessible, le Ministre BININGA inscrit cette mission diplomatique dans la continuité directe de ses réformes institutionnelles au Congo.</p>
+        <div class="actu-vedette-tags">
+          <span class="actu-tag">Diplomatie</span>
+          <span class="actu-tag">Justice</span>
+          <span class="actu-tag">Congo–France</span>
+          <span class="actu-tag">Réformes</span>
+          <span class="actu-tag">Paris 2026</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── GRILLE DES ACTIONS ── -->
+    <div class="actu-grid-hd rev">Autres actions du Député Ministre</div>
+    <div class="actu-grid">
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">Justice · Ewo</div>
+        <div class="actu-card-ic">⚖️</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">15</span>
+          <span class="actu-card-mon">Déc<br>2025</span>
+        </div>
+        <div class="actu-card-title">Inauguration du tribunal de proximité d'Ewo</div>
+        <div class="actu-card-desc">Résultat direct de son engagement au Ministère de la Justice — la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années.</div>
+      </div>
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">Dialogue social</div>
+        <div class="actu-card-ic">🤝</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">08</span>
+          <span class="actu-card-mon">Nov<br>2025</span>
+        </div>
+        <div class="actu-card-title">Accord historique avec les syndicats congolais</div>
+        <div class="actu-card-desc">Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur — une victoire pour les travailleurs congolais.</div>
+      </div>
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">Éducation · Jeunesse</div>
+        <div class="actu-card-ic">🎓</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">22</span>
+          <span class="actu-card-mon">Oct<br>2025</span>
+        </div>
+        <div class="actu-card-title">50 bourses d'études remises à des jeunes d'Ewo</div>
+        <div class="actu-card-desc">Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études.</div>
+      </div>
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">Emploi · Cuvette-Ouest</div>
+        <div class="actu-card-ic">💼</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">05</span>
+          <span class="actu-card-mon">Sep<br>2025</span>
+        </div>
+        <div class="actu-card-title">Forum pour l'emploi des jeunes de la Cuvette-Ouest</div>
+        <div class="actu-card-desc">300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain.</div>
+      </div>
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">International · AIEA</div>
+        <div class="actu-card-ic">🌍</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">14</span>
+          <span class="actu-card-mon">Jul<br>2025</span>
+        </div>
+        <div class="actu-card-title">Mission diplomatique à l'AIEA — Congo représenté</div>
+        <div class="actu-card-desc">Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise.</div>
+      </div>
+
+      <div class="actu-card rev">
+        <div class="actu-card-cat">Réforme · Anticorruption</div>
+        <div class="actu-card-ic">🏛️</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">07</span>
+          <span class="actu-card-mon">Mar<br>2018</span>
+        </div>
+        <div class="actu-card-title">Adoption de la loi instituant la HALC — 107 voix pour</div>
+        <div class="actu-card-desc">Votée à 107 voix pour, 6 contre — la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie.</div>
+      </div>
+
     </div>
   </div>
+
 </section>
 
 <!-- ENGAGEMENT -->
@@ -984,44 +1179,6 @@ function loadContent() {
 
         // Réinitialiser le slider avec le bon nombre de slides
         initSlider();
-      }
-
-      // Actualités
-      const actu = d.actus;
-      const actuWrap = document.getElementById("actu-wrap");
-      if (actu && actuWrap) {
-        const f = actu.featured || {};
-        const imgSrc = f.image || "";
-        const imgHtml = imgSrc
-          ? `<img src="${imgSrc}" alt="${escHtml(f.title||'')}" style="object-position:center center;">`
-          : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:50px;background:linear-gradient(135deg,#111,#1c1c1c)">📰</div>`;
-
-        const itemsHtml = (actu.items || []).map(it => `
-          <div class="actu-item">
-            <div class="actu-date-box">
-              <div class="actu-day">${escHtml(it.day||'')}</div>
-              <span class="actu-mon">${escHtml(it.month||'')}</span>
-            </div>
-            <div>
-              <div class="actu-item-title">${escHtml(it.title||'')}</div>
-              <div class="actu-item-desc">${escHtml(it.desc||'')}</div>
-            </div>
-          </div>`).join("");
-
-        actuWrap.innerHTML = `
-          <div class="actu-feat rev-l">
-            <div class="actu-feat-img">
-              ${imgHtml}
-              <div class="actu-chip">${escHtml(f.category||'')}</div>
-            </div>
-            <div class="actu-feat-body">
-              <div class="actu-feat-date">📅 ${escHtml(f.date||'')}</div>
-              <h3 class="actu-feat-title">${escHtml(f.title||'')}</h3>
-              <p class="actu-feat-txt">${escHtml(f.text||'')}</p>
-            </div>
-          </div>
-          <div class="actu-list rev-r">${itemsHtml}</div>`;
-        actuWrap.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
       }
 
       // SEO
@@ -1332,6 +1489,61 @@ function openLegal(id){document.getElementById("modal-"+id).classList.add("open"
 function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
 document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
+
+// ── ACTU HERO SLIDESHOW ───────────────────────────────────
+(function(){
+  const track  = document.getElementById("actu-hero-track");
+  const dots   = document.querySelectorAll(".actu-hero-dot");
+  const slides = document.querySelectorAll(".actu-hero-slide");
+  const counter= document.getElementById("actu-counter");
+  if(!track || !slides.length) return;
+
+  let cur = 0, timer;
+  const total = slides.length;
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+
+  function goTo(n) {
+    slides[cur].classList.remove("hs-active");
+    if(dots[cur]) dots[cur].classList.remove("hd-active");
+    cur = ((n % total) + total) % total;
+    slides[cur].classList.add("hs-active");
+    if(dots[cur]) dots[cur].classList.add("hd-active");
+    track.style.transform = `translateX(-${cur * 100}%)`;
+    if(counter) counter.textContent = pad(cur+1) + " / " + pad(total);
+  }
+
+  function startTimer(){ timer = setInterval(() => goTo(cur+1), 5800); }
+  function resetTimer(){ clearInterval(timer); startTimer(); }
+
+  // Initialisation
+  goTo(0);
+  startTimer();
+
+  // Navigation
+  const prev = document.getElementById("actu-prev");
+  const next  = document.getElementById("actu-next");
+  if(prev) prev.addEventListener("click", () => { goTo(cur-1); resetTimer(); });
+  if(next) next.addEventListener("click", () => { goTo(cur+1); resetTimer(); });
+
+  // Dots
+  dots.forEach((d,i) => d.addEventListener("click", () => { goTo(i); resetTimer(); }));
+
+  // Touch swipe mobile
+  let startX = 0;
+  track.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, {passive:true});
+  track.addEventListener("touchend",   e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if(Math.abs(dx) > 50){ goTo(dx < 0 ? cur+1 : cur-1); resetTimer(); }
+  }, {passive:true});
+
+  // Pause au survol
+  const hero = document.getElementById("actu-hero");
+  if(hero){
+    hero.addEventListener("mouseenter", () => clearInterval(timer));
+    hero.addEventListener("mouseleave", startTimer);
+  }
+})();
 
 // admin secret trigger (4 clics)
 let _ac=0,_at=null;
