@@ -18,18 +18,26 @@ AUDIT_FILE      = "audit.log"
 USERS_FILE      = "users.json"
 SESSIONS_FILE   = "sessions.json"
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
-ADMIN_PASS      = os.environ.get("BININGA_PASS", "bininga2025")
+ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
 PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
+
+# Origines autorisées pour CORS
+ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
+    "BININGA_ORIGINS", "http://localhost:8080,http://localhost:8443,http://127.0.0.1:8080"
+).split(",") if o.strip()]
 BASE_DIR        = os.path.realpath(os.getcwd())
 
-# Sessions actives : token → {username, role, nom, created_at}
+# Sessions actives : token → {username, role, nom, created_at, csrf_token}
 ACTIVE_SESSIONS = {}
 SESSION_TTL     = 86400  # 24 heures
+
+# Fichier de contact
+CONTACT_FILE = "contacts.json"
 
 # Rate limiting : ip → {count, blocked_until}
 LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
-LOCKOUT_SECONDS = 300  # 5 minutes
+LOCKOUT_SECONDS = 1800  # 30 minutes
 
 # Rotation des logs
 MAX_LOG_SIZE     = 500 * 1024   # 500 Ko
@@ -81,6 +89,21 @@ def _record_failed_login(ip: str):
 def _reset_login_attempts(ip: str):
     LOGIN_ATTEMPTS.pop(ip, None)
 
+# ── Validation MIME par magic bytes ────────────────────────
+def _is_valid_image(data: bytes) -> bool:
+    """Vérifie les magic bytes pour JPEG, PNG, GIF, WebP."""
+    if len(data) < 12:
+        return False
+    if data[:3] == b'\xff\xd8\xff':                          # JPEG
+        return True
+    if data[:4] == b'\x89PNG':                               # PNG
+        return True
+    if data[:6] in (b'GIF87a', b'GIF89a'):                   # GIF
+        return True
+    if data[:4] == b'RIFF' and data[8:12] == b'WEBP':       # WebP
+        return True
+    return False
+
 # ── Multipart parser (remplace cgi.FieldStorage dépréciée) ─
 def _parse_multipart(content_type: str, body: bytes) -> dict:
     """Parse multipart/form-data → dict {name: part} via email.parser."""
@@ -111,13 +134,20 @@ def save_users(users):
 def init_users():
     """Crée users.json par défaut si inexistant."""
     if not os.path.exists(USERS_FILE):
+        password = ADMIN_PASS
+        if not password:
+            password = secrets.token_urlsafe(16)
+            print(f"[BININGA] ⚠️  BININGA_PASS non défini — mot de passe généré : {password}")
+            print(f"[BININGA] ⚠️  Définissez BININGA_PASS=<votre-mot-de-passe> pour un mot de passe fixe.")
         save_users([{
             "username": ADMIN_USER,
-            "password_hash": _hash_new(ADMIN_PASS),
+            "password_hash": _hash_new(password),
             "role": "admin",
             "nom": "Rodrin Bakala"
         }])
         print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
+    elif not ADMIN_PASS:
+        print(f"[BININGA] ⚠️  BININGA_PASS non défini — définissez la variable d'environnement.")
 
 def find_user(username):
     return next((u for u in load_users() if u["username"] == username), None)
@@ -238,11 +268,24 @@ load_sessions()
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
+    def _cors_origin(self):
+        """Retourne l'origine si elle est autorisée, sinon None."""
+        origin = self.headers.get("Origin", "")
+        if origin in ALLOWED_ORIGINS:
+            return origin
+        # Fallback : accepter les requêtes sans Origin (même machine, curl, etc.)
+        if not origin:
+            return None
+        return None
+
     def do_OPTIONS(self):
+        origin = self._cors_origin()
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token, X-CSRF-Token")
         self.end_headers()
 
     def do_GET(self):
@@ -283,12 +326,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 with open(safe, "rb") as f:
                     content = f.read()
                 mime = self._mime(safe)
+                origin = self._cors_origin()
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
-                self.send_header("Access-Control-Allow-Origin", "*")
-                if mime.startswith("text/html"):
+                if origin:
+                    self.send_header("Access-Control-Allow-Origin", origin)
+                    self.send_header("Vary", "Origin")
+                if mime.startswith("text/html") or mime == "application/json":
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+                elif mime.startswith("image/") or mime in ("text/css", "text/javascript"):
+                    self.send_header("Cache-Control", "public, max-age=86400")
                 self.end_headers()
                 self.wfile.write(content)
             except Exception as e:
@@ -324,17 +372,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         save_users(users)
                         print(f"[BININGA] 🔒 Hash mis à jour (pbkdf2) pour : {username}")
                     _reset_login_attempts(ip)
-                    token = secrets.token_hex(32)
+                    token      = secrets.token_hex(32)
+                    csrf_token = secrets.token_hex(24)
                     ACTIVE_SESSIONS[token] = {
                         "username":   user["username"],
                         "role":       user["role"],
                         "nom":        user.get("nom", user["username"]),
-                        "created_at": time.time()
+                        "created_at": time.time(),
+                        "csrf_token": csrf_token,
                     }
                     save_sessions()
                     print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
-                    self._json({"ok": True, "token": token,
+                    self._json({"ok": True, "token": token, "csrf_token": csrf_token,
                                 "role": user["role"], "nom": user.get("nom", username)})
                 else:
                     _record_failed_login(ip)
@@ -375,6 +425,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not data_bytes or len(data_bytes) > 3 * 1024 * 1024:
                 self._json({"ok": False, "message": "Fichier trop volumineux (max 3 Mo)"}, 400)
                 return
+            if not _is_valid_image(data_bytes):
+                self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
+                return
             uid   = secrets.token_hex(6)
             ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
             fname = f"{ts}_{uid}.jpg"
@@ -385,11 +438,49 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "path": "images/sinistres/" + fname})
             return
 
-        # ── Vérification token pour les routes protégées ──
+        # ── /api/contact (public — formulaires du site) ──
+        if path == "/api/contact":
+            try:
+                data = json.loads(body.decode("utf-8"))
+                entry = {
+                    "ts":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ip":      ip,
+                    "type":    data.get("type", "contact"),
+                    "nom":     data.get("nom", ""),
+                    "prenom":  data.get("prenom", ""),
+                    "email":   data.get("email", ""),
+                    "message": data.get("message", ""),
+                }
+                contacts = []
+                if os.path.exists(CONTACT_FILE):
+                    try:
+                        with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                            contacts = json.load(f)
+                    except Exception:
+                        contacts = []
+                contacts.append(entry)
+                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                    json.dump(contacts, f, indent=2, ensure_ascii=False)
+                audit_log("CONTACT", ip, f"Message de {entry['nom']} {entry['prenom']} ({entry['type']})")
+                self._json({"ok": True, "message": "Message reçu"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── Vérification token + CSRF pour les routes protégées ──
         token = self.headers.get("X-Admin-Token", "")
-        if not get_session(token):
+        session = get_session(token)
+        if not session:
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
+        # Validation CSRF sur routes d'écriture
+        if path in ("/api/save", "/api/users/upsert", "/api/users/delete"):
+            csrf_received = self.headers.get("X-CSRF-Token", "")
+            csrf_expected = session.get("csrf_token", "")
+            if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
+                audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
+                self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
+                return
 
         if path == "/api/users/upsert":
             if not has_role(token, "admin", "ministre"):
@@ -477,6 +568,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not data_bytes or len(data_bytes) > 10 * 1024 * 1024:
                 self._json({"ok": False, "message": "Fichier trop volumineux (max 10 Mo)"}, 400)
                 return
+            # SVG autorisé sans vérification magic bytes (texte XML)
+            if not safe_name.lower().endswith(".svg") and not _is_valid_image(data_bytes):
+                self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
+                return
             os.makedirs("images", exist_ok=True)
             with open(os.path.join("images", safe_name), "wb") as f:
                 f.write(data_bytes)
@@ -523,9 +618,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
     def _json(self, data, status=200):
         response = json.dumps(data, ensure_ascii=False).encode("utf-8")
+        origin = self._cors_origin()
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Access-Control-Allow-Origin", "*")
+        if origin:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Vary", "Origin")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Content-Length", len(response))
         self.end_headers()
         self.wfile.write(response)

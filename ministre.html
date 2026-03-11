@@ -430,8 +430,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 //  AUTH
 // ══════════════════════════════════════════════════════════
 let SESSION_TOKEN = "";
+let SESSION_CSRF  = "";
 let SESSION_NOM   = "";
 let SESSION_ROLE  = "";
+
+function authHeaders(extra) {
+  return Object.assign({
+    "Content-Type": "application/json",
+    "X-Admin-Token": SESSION_TOKEN,
+    "X-CSRF-Token": SESSION_CSRF,
+  }, extra);
+}
 
 const SIGNATURE = () =>
   `\n\n---\nCordialement,\n${SESSION_NOM || "Ange Aimé Bininga"}\nDéputé de la Circonscription d'Ewo`;
@@ -454,13 +463,12 @@ async function doLogin() {
         return;
       }
       if (data.role === "admin") {
-        sessionStorage.setItem("bininga_token", data.token);
-        sessionStorage.setItem("bininga_nom", data.nom);
-        sessionStorage.setItem("bininga_role", data.role);
+        // Admin → rediriger vers admin.html (qui a son propre formulaire de login)
         window.location.href = "admin.html";
         return;
       }
       SESSION_TOKEN = data.token;
+      SESSION_CSRF  = data.csrf_token || "";
       SESSION_NOM   = data.nom;
       SESSION_ROLE  = data.role;
       document.getElementById("login").classList.add("hidden");
@@ -622,8 +630,8 @@ function refreshBreakdown() {
     { label:"Traitées",     count:done,    color:"#2ecc71", pct:Math.round(done/total*100) },
     { label:"Avec réponse", count:replied, color:var_g(),   pct:Math.round(replied/(total||1)*100) },
   ].map(r => `<div class="prog-row">
-    <div class="prog-label"><span>${r.label}</span><strong style="color:${r.color}">${r.count}</strong></div>
-    <div class="prog-bar"><div class="prog-fill" style="width:${r.pct}%;background:${r.color}"></div></div>
+    <div class="prog-label"><span>${esc(r.label)}</span><strong style="color:${r.color}">${Number(r.count)}</strong></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${Number(r.pct)}%;background:${r.color}"></div></div>
   </div>`).join("");
 }
 
@@ -742,7 +750,7 @@ function buildCard(m, storageKey, mode) {
       <iframe class="sin-map"
         src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
         allowfullscreen loading="lazy"></iframe>
-      <div class="sin-coords">🌐 ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+      <div class="sin-coords">🌐 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
     </div>`;
   }
 

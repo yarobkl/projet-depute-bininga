@@ -6,6 +6,7 @@
 <title>Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo</title>
 <meta name="description" content="Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -953,7 +954,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <p class="ct-txt">Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.</p>
         <div class="ct-items">
           <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl">Adresse</span><span class="ct-val">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
-          <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl">Téléphone</span><span class="ct-val">+242 XX XXX XXXX</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
           <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl">Email</span><span class="ct-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3b5854554f5a584f7b59525552555c5a16585a564b5a5c555e15585c">[email&#160;protected]</a></span></div></div>
           <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl">Réseaux sociaux</span><span class="ct-val">@AimeBiningaOfficiel</span></div></div>
         </div>
@@ -1021,7 +1022,7 @@ function loadContent() {
       // Hero — Nom
       const nameEl = document.getElementById("dyn-name");
       if (nameEl && (h.firstName || h.lastName)) {
-        nameEl.innerHTML = (h.firstName || '') + '\n<span>' + (h.lastName || '') + '</span>';
+        nameEl.innerHTML = escHtml(h.firstName || '') + '\n<span>' + escHtml(h.lastName || '') + '</span>';
       }
       // Hero — Rôle
       const roleEl = document.getElementById("dyn-role");
@@ -1042,6 +1043,11 @@ function loadContent() {
       // À propos — Introduction
       const aboutIntroEl = document.getElementById("dyn-about-intro");
       if (aboutIntroEl && a.intro) aboutIntroEl.textContent = a.intro;
+
+      // Contact — informations dynamiques
+      const ct = d.contact || {};
+      const phoneEl = document.getElementById("dyn-phone");
+      if (phoneEl && ct.phone) phoneEl.textContent = ct.phone;
 
       // Statistiques (hero strip)
       const stats = d.stats || [];
@@ -1231,39 +1237,33 @@ document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
 const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");rObs.unobserve(e.target)}})},{threshold:.12});
 document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
 
-// ── Configuration Formspree ──────────────────────────────────────────
-// Créez un compte sur formspree.io, ajoutez deux formulaires et
-// remplacez les IDs ci-dessous par vos vrais endpoints.
-const FORMSPREE = {
-  audience: "https://formspree.io/f/xbdzlopl",
-  contact:  "https://formspree.io/f/xojkvdkz"
-};
-
-// Sauvegarde en localStorage et envoi vers Formspree
-async function sendForm(storageKey, endpoint, formData, btn, successMsg) {
+// ── Envoi des formulaires vers le serveur ────────────────────────────
+async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   btn.textContent = "⏳ Envoi en cours…";
   btn.disabled = true;
 
-  // 1. Sauvegarde locale (accessible depuis l'admin)
-  const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  // Construire l'objet à envoyer
   const entry = {};
   formData.forEach((v, k) => { entry[k] = v; });
+  entry.type  = storageKey;
   entry._date = new Date().toLocaleString("fr-FR");
   entry._id   = Date.now() + "-" + Math.random().toString(36).slice(2, 8);
-  list.unshift(entry);
-  localStorage.setItem(storageKey, JSON.stringify(list));
 
-  // 2. Envoi Formspree
+  // 1. Envoi au serveur (persistance et audit)
   try {
-    const res = await fetch(endpoint, {
+    await fetch("/api/contact", {
       method: "POST",
-      body: formData,
-      headers: { Accept: "application/json" }
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry)
     });
-    if (!res.ok) throw new Error();
-  } catch (_) {
-    // Formspree non configuré → les données sont quand même en localStorage
-  }
+  } catch (_) { /* serveur non disponible — continuer */ }
+
+  // 2. Copie locale uniquement pour l'affichage admin en mode hors-ligne
+  try {
+    const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
+    list.unshift(entry);
+    localStorage.setItem(storageKey, JSON.stringify(list));
+  } catch (_) {}
 
   btn.textContent = successMsg;
   btn.style.background = "#2ecc71";

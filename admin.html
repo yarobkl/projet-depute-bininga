@@ -715,33 +715,20 @@ select.form-input:focus{border-color:var(--r)}
 //  SÉCURITÉ — Authentification par hachage SHA-256 (WebCrypto)
 //  Les identifiants ne sont jamais stockés en clair dans le code.
 // ══════════════════════════════════════════════════════════════════════════
-// Session — jamais codée en dur ici
+// Session — jamais codée en dur ici, jamais dans sessionStorage
 let SESSION_TOKEN = "";
+let SESSION_CSRF  = "";
 let SESSION_ROLE  = "";
 let SESSION_NOM   = "";
 
-// Reprise de session depuis ministre.html
-(function() {
-  const t = sessionStorage.getItem("bininga_token");
-  const n = sessionStorage.getItem("bininga_nom");
-  const r = sessionStorage.getItem("bininga_role");
-  if (t && r === "admin") {
-    sessionStorage.removeItem("bininga_token");
-    sessionStorage.removeItem("bininga_nom");
-    sessionStorage.removeItem("bininga_role");
-    SESSION_TOKEN = t;
-    SESSION_ROLE  = r;
-    SESSION_NOM   = n || "";
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("login").classList.add("hidden");
-      document.getElementById("app").classList.add("visible");
-      document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
-      document.getElementById("topbar-user").textContent = SESSION_NOM + " · " + SESSION_ROLE;
-      applyRoleUI(SESSION_ROLE);
-      init();
-    });
-  }
-})();
+// Helper : headers authentifiés avec CSRF
+function authHeaders(extra) {
+  return Object.assign({
+    "Content-Type": "application/json",
+    "X-Admin-Token": SESSION_TOKEN,
+    "X-CSRF-Token": SESSION_CSRF,
+  }, extra);
+}
 
 async function doLogin() {
   const u = document.getElementById("u").value.trim();
@@ -758,6 +745,7 @@ async function doLogin() {
     const data = await res.json();
     if (data.ok) {
       SESSION_TOKEN = data.token;
+      SESSION_CSRF  = data.csrf_token || "";
       SESSION_ROLE  = data.role;
       SESSION_NOM   = data.nom;
       document.getElementById("login").classList.add("hidden");
@@ -843,12 +831,12 @@ async function loadUsers() {
     const initials   = u => (u.nom || u.username).charAt(0).toUpperCase();
     el.innerHTML = data.users.map(u => `
       <div class="user-item">
-        <div class="user-avatar ${u.role}">${initials(u)}</div>
+        <div class="user-avatar ${esc(u.role)}">${initials(u)}</div>
         <div class="user-info">
           <div class="user-name">${esc(u.nom || u.username)}</div>
           <div class="user-meta">${esc(u.username)}</div>
         </div>
-        <span class="role-badge ${u.role}">${roleLabels[u.role] || u.role}</span>
+        <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
         <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(u.username)},${JSON.stringify(u.nom)},${JSON.stringify(u.role)})">✏️ Modifier</button>
         <button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>
       </div>
@@ -890,7 +878,7 @@ async function submitUserForm() {
   try {
     const res  = await fetch("/api/users/upsert", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
+      headers: authHeaders(),
       body: JSON.stringify(payload)
     });
     const data = await res.json();
@@ -909,7 +897,7 @@ async function deleteUser(username) {
   try {
     const res  = await fetch("/api/users/delete", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
+      headers: authHeaders(),
       body: JSON.stringify({ username })
     });
     const data = await res.json();
@@ -1018,7 +1006,7 @@ function uploadImage(callback) {
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
-        headers: { "X-Admin-Token": SESSION_TOKEN },
+        headers: { "X-Admin-Token": SESSION_TOKEN, "X-CSRF-Token": SESSION_CSRF },
         body: formData
       });
       const data = await res.json();
@@ -1272,7 +1260,7 @@ function saveData() {
   collectProgramme();
   fetch("/api/save", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "X-Admin-Token": SESSION_TOKEN },
+    headers: authHeaders(),
     body: JSON.stringify(siteData)
   })
   .then(r => r.json())
@@ -1322,8 +1310,8 @@ function refreshDashboard() {
   ].map(r => `
     <div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:12px;color:rgba(255,255,255,.55)">${r.label}</span>
-        <span style="font-size:13px;font-weight:700;color:${r.color}">${r.count}</span>
+        <span style="font-size:12px;color:rgba(255,255,255,.55)">${esc(r.label)}</span>
+        <span style="font-size:13px;font-weight:700;color:${r.color}">${Number(r.count)}</span>
       </div>
       <div class="prog-bar">
         <div class="prog-bar-fill" style="width:${r.pct}%;background:${r.color}"></div>
@@ -1350,8 +1338,8 @@ function refreshDashboard() {
     return `<div class="feed-item">
       <div class="feed-dot ${dot}"></div>
       <div>
-        <div class="feed-title">${esc(m.prenom||"")} ${esc(m.nom||"")} — ${label}</div>
-        <div class="feed-sub">${m._date||""}</div>
+        <div class="feed-title">${esc(m.prenom||"")} ${esc(m.nom||"")} — ${esc(label)}</div>
+        <div class="feed-sub">${esc(m._date||"")}</div>
       </div>
     </div>`;
   }).join("");
@@ -1458,7 +1446,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
         <iframe class="sinistre-map"
           src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
           allowfullscreen loading="lazy"></iframe>
-        <div class="sinistre-coords">🌐 ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+        <div class="sinistre-coords">🌐 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
       </div>`;
     }
 
@@ -1499,7 +1487,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
       <div class="msg-top">
         <div>
           <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
-          <div class="msg-date">📅 ${m._date||""}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
+          <div class="msg-date">📅 ${esc(m._date||"")}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">${pingBadge}${badge}</div>
       </div>
