@@ -781,8 +781,20 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <div class="actu-hero" id="actu-hero">
     <div class="actu-hero-track" id="actu-hero-track">
 
-      <!-- Slide 1 — Photo officielle Bininga -->
+      <!-- Slide 1 — Tournée de terrain Ewo (9 mars 2026) — LA PLUS RÉCENTE -->
       <div class="actu-hero-slide" id="hs0">
+        <img src="images/bininga.jpg" alt="BININGA — Tournée terrain Ewo, 9 mars 2026">
+        <div class="actu-hero-overlay" style="background:linear-gradient(to top,rgba(6,6,6,.95) 0%,rgba(6,6,6,.5) 45%,rgba(10,30,10,.2) 100%)"></div>
+        <div class="actu-hero-content">
+          <span class="actu-hero-chip" style="background:#2e7d32">🗳️ Campagne présidentielle · 9 mars 2026</span>
+          <div class="actu-hero-date">Ewo, Cuvette-Ouest — Axe Lebankaya</div>
+          <h2 class="actu-hero-title">BININGA au cœur de 13 villages —<br>la campagne Sassou Nguesso à Ewo</h2>
+          <p class="actu-hero-sub">Coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Bininga a sillonné l'axe Lebankaya pour porter le message présidentiel auprès des populations. Forte mobilisation à chaque étape.</p>
+        </div>
+      </div>
+
+      <!-- Slide 2 — Portrait officiel Bininga -->
+      <div class="actu-hero-slide" id="hs1">
         <img src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA, Garde des Sceaux">
         <div class="actu-hero-overlay"></div>
         <div class="actu-hero-content">
@@ -793,8 +805,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         </div>
       </div>
 
-      <!-- Slide 2 — Rencontre avec Darmanin -->
-      <div class="actu-hero-slide" id="hs1">
+      <!-- Slide 3 — Rencontre avec Darmanin -->
+      <div class="actu-hero-slide" id="hs2">
         <img src="images/Darmanin.jpeg" alt="BININGA et Gérald Darmanin — Place Vendôme, Paris, Février 2026">
         <div class="actu-hero-overlay"></div>
         <div class="actu-hero-content">
@@ -815,10 +827,11 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <div class="actu-hero-dots">
       <button class="actu-hero-dot" data-hs="0" aria-label="Slide 1"></button>
       <button class="actu-hero-dot" data-hs="1" aria-label="Slide 2"></button>
+      <button class="actu-hero-dot" data-hs="2" aria-label="Slide 3"></button>
     </div>
 
     <!-- Compteur -->
-    <div class="actu-hero-counter" id="actu-counter">01 / 02</div>
+    <div class="actu-hero-counter" id="actu-counter">01 / 03</div>
   </div>
 
   <!-- ══ CONTENU ÉDITORIAL ══════════════════════════════════════════ -->
@@ -831,11 +844,46 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
 
-    <!-- ── ARTICLE VEDETTE — Rencontre Darmanin ── -->
+    <!-- ══ ARTICLE VEDETTE 1 — Tournée terrain Ewo 9 mars 2026 ══ -->
+    <div class="actu-vedette rev" style="margin-bottom:32px">
+      <div class="actu-vedette-img" style="background:linear-gradient(135deg,#0a1f0a,#1a3a1a)">
+        <!-- Village ambiance CSS quand pas de photo -->
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
+          <div style="font-size:56px">🏘️</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">13 villages<br>sur l'axe Lebankaya</div>
+          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">Ewo · 9 mars 2026</div>
+          <!-- Badges villages -->
+          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">
+            <span class="actu-tag" style="color:rgba(255,255,255,.5)">Oboukou</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Oyendze</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Eti</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Ossele</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Abeke</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Okogo</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Lembessi</span>
+          </div>
+        </div>
+        <span class="actu-vedette-badge" style="background:#2e7d32">🗳️ En direct d'Ewo</span>
+      </div>
+      <div class="actu-vedette-body">
+        <div class="actu-vedette-tag" style="color:#4caf50">Campagne présidentielle · District d'Ewo</div>
+        <div class="actu-vedette-date">📅 9 mars 2026 · Axe Lebankaya, Cuvette-Ouest</div>
+        <h3 class="actu-vedette-title">BININGA sillonne 13 villages pour porter le message du Président-Candidat Denis Sassou Nguesso</h3>
+        <p class="actu-vedette-txt">En sa qualité de <strong style="color:rgba(255,255,255,.85)">coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso</strong> dans le district et la commune d'Ewo, Aimé Ange Wilfrid BININGA a effectué ce lundi une tournée de terrain sur l'axe Lebankaya, à la rencontre directe des populations de plusieurs localités de la zone.</p>
+        <div class="actu-vedette-quote" style="border-color:#4caf50">
+          Une forte mobilisation des populations venues écouter le message porté par la délégation de campagne, avec un soutien renouvelé à la candidature de Denis Sassou Nguesso.
+        </div>
+        <p class="actu-vedette-txt">Cette mission de proximité l'a conduit successivement dans les villages <strong style="color:rgba(255,255,255,.8)">Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami et Ngayi</strong>. À chaque étape, les échanges ont permis de réaffirmer l'attachement des communautés locales à la candidature présidentielle — une dynamique qui témoigne du lien profond entre BININGA et les habitants d'Ewo qu'il représente depuis 2017.</p>
+        <div class="actu-vedette-tags">
+          <span class="actu-tag">Campagne 2026</span>
+          <span class="actu-tag">Sassou Nguesso</span>
+          <span class="actu-tag">District d'Ewo</span>
+          <span class="actu-tag">Terrain</span>
+          <span class="actu-tag">13 villages</span>
+          <span class="actu-tag">Cuvette-Ouest</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ARTICLE VEDETTE 2 — Rencontre Darmanin ══ -->
     <div class="actu-vedette rev">
       <div class="actu-vedette-img">
         <img src="images/Darmanin.jpeg" alt="BININGA et Darmanin — Paris, Place Vendôme, 18 Février 2026">
-        <span class="actu-vedette-badge">À la une</span>
+        <span class="actu-vedette-badge">Diplomatie</span>
       </div>
       <div class="actu-vedette-body">
         <div class="actu-vedette-tag">Diplomatie judiciaire</div>
@@ -859,6 +907,17 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <!-- ── GRILLE DES ACTIONS ── -->
     <div class="actu-grid-hd rev">Autres actions du Député Ministre</div>
     <div class="actu-grid">
+
+      <div class="actu-card rev" style="border-color:rgba(46,125,50,.25)">
+        <div class="actu-card-cat" style="color:#4caf50">Campagne présidentielle · Ewo</div>
+        <div class="actu-card-ic">🗳️</div>
+        <div class="actu-card-dt">
+          <span class="actu-card-day">09</span>
+          <span class="actu-card-mon">Mars<br>2026</span>
+        </div>
+        <div class="actu-card-title">Coordinateur de campagne — tournée sur l'axe Lebankaya</div>
+        <div class="actu-card-desc">13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi — fort soutien aux populations.</div>
+      </div>
 
       <div class="actu-card rev">
         <div class="actu-card-cat">Justice · Ewo</div>
