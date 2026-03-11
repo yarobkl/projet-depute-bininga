@@ -277,6 +277,7 @@ select.form-input:focus{border-color:var(--r)}
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('users',this)">
         <span class="icon">👥</span> Utilisateurs
+        <span class="sb-badge" id="badge-users" style="display:none"></span>
       </div>
     </nav>
 
@@ -521,7 +522,10 @@ select.form-input:focus{border-color:var(--r)}
           </div>
 
           <!-- Formulaire ajout / modification -->
-          <div class="user-form">
+          <div class="card-actions" style="margin-bottom:16px">
+            <button class="sbtn sbtn-progress" id="btn-add-user" onclick="toggleUserForm()">+ Ajouter un utilisateur</button>
+          </div>
+          <div class="user-form" id="user-form-container" style="display:none">
             <div class="user-form-title" id="user-form-title">Ajouter un utilisateur</div>
             <div class="user-form-grid">
               <div class="form-group" style="margin:0">
@@ -549,6 +553,7 @@ select.form-input:focus{border-color:var(--r)}
               <button class="sbtn sbtn-progress" onclick="submitUserForm()">💾 Enregistrer</button>
               <button class="sbtn sbtn-wait" onclick="resetUserForm()">✕ Annuler</button>
             </div>
+          </div>
           </div>
 
           <!-- Liste des utilisateurs -->
@@ -700,12 +705,23 @@ function applyRoleUI(role) {
 // ══════════════════════════════════════════════════════════════════════════
 let _editingUser = null;
 
+function toggleUserForm(show) {
+  const container = document.getElementById("user-form-container");
+  const btn       = document.getElementById("btn-add-user");
+  const visible   = show !== undefined ? show : container.style.display === "none";
+  container.style.display = visible ? "" : "none";
+  btn.textContent = visible ? "✕ Fermer" : "+ Ajouter un utilisateur";
+  if (visible) container.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  if (!visible) resetUserForm();
+}
+
 async function loadUsers() {
   const el = document.getElementById("user-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
   try {
     const res  = await fetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
+    setBadge("badge-users", data.ok ? data.users.length : 0);
     if (!data.ok || !data.users.length) {
       el.innerHTML = '<div class="msg-empty">Aucun utilisateur.</div>';
       return;
@@ -720,8 +736,8 @@ async function loadUsers() {
           <div class="user-meta">${esc(u.username)}</div>
         </div>
         <span class="role-badge ${u.role}">${roleLabels[u.role] || u.role}</span>
-        <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(esc(u.username))},${JSON.stringify(esc(u.nom))},${JSON.stringify(u.role)})">✏️ Modifier</button>
-        <button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(esc(u.username))})">🗑</button>
+        <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(u.username)},${JSON.stringify(u.nom)},${JSON.stringify(u.role)})">✏️ Modifier</button>
+        <button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>
       </div>
     `).join("");
   } catch {
@@ -731,21 +747,22 @@ async function loadUsers() {
 
 function editUser(username, nom, role) {
   _editingUser = username;
-  document.getElementById("uf-username").value  = username;
+  document.getElementById("uf-username").value    = username;
   document.getElementById("uf-username").disabled = true;
-  document.getElementById("uf-nom").value       = nom;
-  document.getElementById("uf-password").value  = "";
-  document.getElementById("uf-role").value      = role;
-  document.getElementById("user-form-title").textContent = "Modifier l'utilisateur";
+  document.getElementById("uf-nom").value         = nom;
+  document.getElementById("uf-password").value    = "";
+  document.getElementById("uf-role").value        = role;
+  document.getElementById("user-form-title").textContent = "Modifier l'utilisateur · " + username;
+  toggleUserForm(true);
 }
 
 function resetUserForm() {
   _editingUser = null;
-  document.getElementById("uf-username").value  = "";
+  document.getElementById("uf-username").value    = "";
   document.getElementById("uf-username").disabled = false;
-  document.getElementById("uf-nom").value       = "";
-  document.getElementById("uf-password").value  = "";
-  document.getElementById("uf-role").value      = "lecteur";
+  document.getElementById("uf-nom").value         = "";
+  document.getElementById("uf-password").value    = "";
+  document.getElementById("uf-role").value        = "lecteur";
   document.getElementById("user-form-title").textContent = "Ajouter un utilisateur";
 }
 
@@ -1335,9 +1352,9 @@ async function loadAuditLogs() {
     if (!data.ok) { el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
     if (!data.logs.length) { el.innerHTML = '<div class="msg-empty">Aucune entrée pour le moment.</div>'; return; }
 
-    const icons  = { LOGIN_OK:"🔓", LOGIN_FAIL:"⛔", SAVE:"💾", UPLOAD:"📷" };
-    const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", UPLOAD:"Upload image" };
-    const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", UPLOAD:"upload" };
+    const icons  = { LOGIN_OK:"🔓", LOGIN_FAIL:"⛔", SAVE:"💾", UPLOAD:"📷", USER_UPSERT:"👤", USER_DELETE:"🗑️" };
+    const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", UPLOAD:"Upload image", USER_UPSERT:"Utilisateur créé / modifié", USER_DELETE:"Utilisateur supprimé" };
+    const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", UPLOAD:"upload", USER_UPSERT:"ok", USER_DELETE:"fail" };
 
     el.innerHTML = data.logs.map(log => `
       <div class="log-item">
