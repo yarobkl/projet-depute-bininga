@@ -43,7 +43,7 @@ def init_users():
             "username": ADMIN_USER,
             "password_hash": _hash(ADMIN_PASS),
             "role": "admin",
-            "nom": "Administrateur"
+            "nom": "Rodrin Bakala"
         }])
         print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
 
