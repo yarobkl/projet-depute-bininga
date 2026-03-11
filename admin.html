@@ -651,6 +651,29 @@ let SESSION_TOKEN = "";
 let SESSION_ROLE  = "";
 let SESSION_NOM   = "";
 
+// Reprise de session depuis ministre.html
+(function() {
+  const t = sessionStorage.getItem("bininga_token");
+  const n = sessionStorage.getItem("bininga_nom");
+  const r = sessionStorage.getItem("bininga_role");
+  if (t && r === "admin") {
+    sessionStorage.removeItem("bininga_token");
+    sessionStorage.removeItem("bininga_nom");
+    sessionStorage.removeItem("bininga_role");
+    SESSION_TOKEN = t;
+    SESSION_ROLE  = r;
+    SESSION_NOM   = n || "";
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("app").classList.add("visible");
+      document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
+      document.getElementById("topbar-user").textContent = SESSION_NOM + " · " + SESSION_ROLE;
+      applyRoleUI(SESSION_ROLE);
+      init();
+    });
+  }
+})();
+
 async function doLogin() {
   const u = document.getElementById("u").value.trim();
   const p = document.getElementById("p").value;

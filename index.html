@@ -1137,7 +1137,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   </div>
   <div class="ft-bottom">
     <p>© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
-    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a></div>
+    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a><a href="ministre.html">Connexion</a></div>
   </div>
 </footer>
 
@@ -1604,17 +1604,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelect
   }
 })();
 
-// admin secret trigger (4 clics)
-let _ac=0,_at=null;
-document.getElementById("adminTrigger").addEventListener("click",()=>{
-  _ac++;clearTimeout(_at);
-  _at=setTimeout(()=>{_ac=0},2000);
-  if(_ac>=4){_ac=0;window.location.href="admin.html";}
-});
 </script>
-
-<!-- Bouton admin caché -->
-<div id="adminTrigger" style="position:fixed;bottom:0;right:0;width:40px;height:40px;z-index:99999;cursor:default;opacity:0;"></div>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 

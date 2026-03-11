@@ -435,6 +435,13 @@ async function doLogin() {
         showErr("Accès réservé à l'espace du Député.");
         return;
       }
+      if (data.role === "admin") {
+        sessionStorage.setItem("bininga_token", data.token);
+        sessionStorage.setItem("bininga_nom", data.nom);
+        sessionStorage.setItem("bininga_role", data.role);
+        window.location.href = "admin.html";
+        return;
+      }
       SESSION_TOKEN = data.token;
       SESSION_NOM   = data.nom;
       SESSION_ROLE  = data.role;
