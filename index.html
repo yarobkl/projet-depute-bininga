@@ -1067,7 +1067,16 @@ function loadContent() {
       });
 
       // Parcours (timeline)
-      const parcours = d.parcours;
+      const PARCOURS_DEFAULT = [
+        { side:"left",  emoji:"📚", year:"Formation",        title:"Doctorat en droit & Inspecteur principal du Trésor",                                tag:"📚 Juriste",                            desc:"Docteur en droit, Ange Aimé Wilfrid BININGA bâtit une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre celle de la Santé comme conseiller stratégique du ministre." },
+        { side:"right", emoji:"🌱", year:"Engagement politique", title:"Adhésion au PCT & premières actions",                                          tag:"🔴 PCT",                                desc:"Militant du Parti Congolais du Travail, il s'engage activement dans la vie politique d'Ewo et de la Cuvette-Ouest, portant les aspirations de sa communauté." },
+        { side:"left",  emoji:"👷", year:"2016",               title:"Ministre de la Fonction publique et de la Réforme de l'État",                    tag:"🏛️ Ministère de la Fonction publique",  desc:"Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale." },
+        { side:"right", emoji:"🗳️", year:"19 août 2017",      title:"Élu Député de la 1re circonscription d'Ewo",                                    tag:"🗳️ Assemblée Nationale",               desc:"Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo." },
+        { side:"left",  emoji:"📈", year:"2018",               title:"Ministre de la Justice & Haute Autorité anti-corruption",                        tag:"📈 Confiance renouvelée",               desc:"En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires." },
+        { side:"right", emoji:"⚖️", year:"Aujourd'hui",        title:"Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones", tag:"⚖️ Ministère de la Justice", desc:"À ce poste clé du gouvernement, il incarne la diplomatie judiciaire du Congo, notamment avec la renégociation en février 2026 à Paris de la convention de coopération judiciaire Congo-France — accord vieux de plus de 50 ans, renouvelé sur de nouvelles bases modernes." },
+        { side:"left",  emoji:"🚀", year:"Législatives 2027",  title:"Candidat pour Ewo · Campagne 2027",                                             tag:"🚀 Campagne en cours",                  desc:"Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo." }
+      ];
+      const parcours = (d.parcours && d.parcours.length) ? d.parcours : PARCOURS_DEFAULT;
       const parcoursWrap = document.getElementById("dyn-parcours");
       if (parcours && parcoursWrap && parcours.length) {
         const delays = ["d1","d2","d3","d4","d5","d6"];
