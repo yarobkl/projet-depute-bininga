@@ -167,6 +167,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
                 self.send_header("Access-Control-Allow-Origin", "*")
+                if mime.startswith("text/html"):
+                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self.end_headers()
                 self.wfile.write(content)
             except Exception as e:
