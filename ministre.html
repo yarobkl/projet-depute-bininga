@@ -196,7 +196,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="login-seal">B</div>
     <h2>Circonscription d'Ewo</h2>
     <h1>Espace du Député</h1>
-    <p>Accès réservé — Rodrin Bakala</p>
+    <p>Accès réservé — Ange Aimé Bininga</p>
     <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username">
     <input class="login-field" type="password" id="p" placeholder="Mot de passe" autocomplete="current-password">
     <button class="login-btn" onclick="doLogin()">Accéder à l'espace</button>
@@ -212,7 +212,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="header-left">
       <div class="deputy-seal">B</div>
       <div>
-        <div class="deputy-name" id="hdr-nom">Rodrin Bakala</div>
+        <div class="deputy-name" id="hdr-nom">Ange Aimé Bininga</div>
         <div class="deputy-title">Député · Circonscription d'Ewo</div>
       </div>
     </div>
@@ -344,7 +344,7 @@ let SESSION_NOM   = "";
 let SESSION_ROLE  = "";
 
 const SIGNATURE = () =>
-  `\n\n---\nCordialement,\n${SESSION_NOM || "Rodrin Bakala"}\nDéputé de la Circonscription d'Ewo`;
+  `\n\n---\nCordialement,\n${SESSION_NOM || "Ange Aimé Bininga"}\nDéputé de la Circonscription d'Ewo`;
 
 async function doLogin() {
   const u   = document.getElementById("u").value.trim();
