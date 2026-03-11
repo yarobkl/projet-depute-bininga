@@ -3,9 +3,12 @@ import json
 import os
 import io
 import ssl
-import cgi
 import secrets
 import hashlib
+import time
+import threading
+from email.parser import BytesParser
+from email.policy import default as email_policy_default
 from urllib.parse import urlparse
 from datetime import datetime
 
@@ -15,13 +18,75 @@ AUDIT_FILE      = "audit.log"
 USERS_FILE      = "users.json"
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "bininga2025")
-PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")  # compte intouchable par le ministre
+PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
+BASE_DIR        = os.path.realpath(os.getcwd())
 
 # Sessions actives : token → {username, role, nom}
 ACTIVE_SESSIONS = {}
 
-def _hash(val):
-    return hashlib.sha256(val.encode()).hexdigest()
+# Rate limiting : ip → {count, blocked_until}
+LOGIN_ATTEMPTS  = {}
+MAX_ATTEMPTS    = 5
+LOCKOUT_SECONDS = 300  # 5 minutes
+
+# ── Sécurité — mots de passe ────────────────────────────────
+def _hash_new(password: str) -> str:
+    """Hash pbkdf2-sha256 avec sel aléatoire (format: pbkdf2:sha256:<salt>:<hash>)."""
+    salt = secrets.token_hex(16)
+    dk   = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), 260_000)
+    return f"pbkdf2:sha256:{salt}:{dk.hex()}"
+
+def _verify_password(password: str, stored: str) -> bool:
+    """Vérifie le mot de passe — supporte pbkdf2 (nouveau) et sha256 (legacy)."""
+    if stored.startswith("pbkdf2:sha256:"):
+        parts = stored.split(":")
+        if len(parts) != 4:
+            return False
+        _, _, salt, dk_stored = parts
+        dk = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), bytes.fromhex(salt), 260_000)
+        return secrets.compare_digest(dk.hex(), dk_stored)
+    # Legacy SHA-256 sans sel — accepté jusqu'au prochain changement de mot de passe
+    return secrets.compare_digest(hashlib.sha256(password.encode()).hexdigest(), stored)
+
+# ── Sécurité — path traversal ──────────────────────────────
+def _safe_path(relative: str):
+    """Retourne le chemin absolu seulement s'il reste dans BASE_DIR, sinon None."""
+    resolved = os.path.realpath(os.path.join(BASE_DIR, relative))
+    if resolved == BASE_DIR or resolved.startswith(BASE_DIR + os.sep):
+        return resolved
+    return None
+
+# ── Sécurité — rate limiting ───────────────────────────────
+def _is_rate_limited(ip: str) -> bool:
+    record = LOGIN_ATTEMPTS.get(ip)
+    if not record:
+        return False
+    return record.get("blocked_until", 0) > time.time()
+
+def _record_failed_login(ip: str):
+    record = LOGIN_ATTEMPTS.get(ip, {"count": 0, "blocked_until": 0})
+    record["count"] = record.get("count", 0) + 1
+    if record["count"] >= MAX_ATTEMPTS:
+        record["blocked_until"] = time.time() + LOCKOUT_SECONDS
+        record["count"] = 0
+        audit_log("BRUTE_FORCE", ip, f"IP bloquée {LOCKOUT_SECONDS}s après {MAX_ATTEMPTS} échecs")
+    LOGIN_ATTEMPTS[ip] = record
+
+def _reset_login_attempts(ip: str):
+    LOGIN_ATTEMPTS.pop(ip, None)
+
+# ── Multipart parser (remplace cgi.FieldStorage dépréciée) ─
+def _parse_multipart(content_type: str, body: bytes) -> dict:
+    """Parse multipart/form-data → dict {name: part} via email.parser."""
+    raw = f"Content-Type: {content_type}\r\n\r\n".encode() + body
+    msg = BytesParser(policy=email_policy_default).parsebytes(raw)
+    fields = {}
+    if msg.is_multipart():
+        for part in msg.iter_parts():
+            name = part.get_param("name", header="content-disposition")
+            if name:
+                fields[name] = part
+    return fields
 
 # ── Utilisateurs ────────────────────────────────────────────
 def load_users():
@@ -42,7 +107,7 @@ def init_users():
     if not os.path.exists(USERS_FILE):
         save_users([{
             "username": ADMIN_USER,
-            "password_hash": _hash(ADMIN_PASS),
+            "password_hash": _hash_new(ADMIN_PASS),
             "role": "admin",
             "nom": "Rodrin Bakala"
         }])
@@ -106,7 +171,10 @@ def save_data(data):
         # Garder uniquement les 5 derniers backups
         backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
         for old in backups[:-5]:
-            os.remove(old)
+            try:
+                os.remove(old)
+            except Exception:
+                pass
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
@@ -153,16 +221,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "users": users})
             return
 
-        if path == "/" or path == "":
-            path = "index.html"
-        elif path.startswith("/"):
-            path = path[1:]
-
-        if os.path.isfile(path):
+        # ── Fichiers statiques avec protection path traversal ──
+        relative = "index.html" if path in ("/", "") else path.lstrip("/")
+        safe = _safe_path(relative)
+        if safe and os.path.isfile(safe):
             try:
-                with open(path, "rb") as f:
+                with open(safe, "rb") as f:
                     content = f.read()
-                mime = self._mime(path)
+                mime = self._mime(safe)
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
@@ -180,16 +246,30 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         path   = urlparse(self.path).path
         length = int(self.headers.get("Content-Length", 0))
         body   = self.rfile.read(length)
+        ip     = self.client_address[0]
 
-        # ── /api/login : vérifie les credentials côté serveur ──
+        # ── /api/login ──
         if path == "/api/login":
+            # Rate limiting : bloquer si trop de tentatives
+            if _is_rate_limited(ip):
+                self._json({"ok": False, "message": "Trop de tentatives. Réessayez dans 5 minutes."}, 429)
+                return
             try:
-                creds = json.loads(body.decode("utf-8"))
+                creds    = json.loads(body.decode("utf-8"))
                 username = creds.get("username", "")
                 password = creds.get("password", "")
-                ip = self.client_address[0]
-                user = find_user(username)
-                if user and user.get("password_hash") == _hash(password):
+                user     = find_user(username)
+                if user and _verify_password(password, user.get("password_hash", "")):
+                    # Mise à niveau automatique sha256 legacy → pbkdf2
+                    if not user["password_hash"].startswith("pbkdf2:"):
+                        users = load_users()
+                        for u in users:
+                            if u["username"] == username:
+                                u["password_hash"] = _hash_new(password)
+                                break
+                        save_users(users)
+                        print(f"[BININGA] 🔒 Hash mis à jour (pbkdf2) pour : {username}")
+                    _reset_login_attempts(ip)
                     token = secrets.token_hex(32)
                     ACTIVE_SESSIONS[token] = {
                         "username": user["username"],
@@ -201,6 +281,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self._json({"ok": True, "token": token,
                                 "role": user["role"], "nom": user.get("nom", username)})
                 else:
+                    _record_failed_login(ip)
+                    remaining = MAX_ATTEMPTS - LOGIN_ATTEMPTS.get(ip, {}).get("count", 0)
                     print(f"[BININGA] ⛔ Tentative échouée : {username} — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_FAIL", ip, f"Identifiant ou mot de passe incorrect (user: {username})")
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
@@ -214,32 +296,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if "multipart/form-data" not in content_type:
                 self._json({"ok": False, "message": "Format invalide"}, 400)
                 return
-            environ = {
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": content_type,
-                "CONTENT_LENGTH": str(length),
-            }
-            form = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
-            if "file" not in form:
+            fields = _parse_multipart(content_type, body)
+            if "file" not in fields:
                 self._json({"ok": False, "message": "Pas de fichier"}, 400)
                 return
-            file_item = form["file"]
-            raw_name  = os.path.basename(file_item.filename or "sinistre.jpg")
-            safe_name = "".join(c for c in raw_name if c.isalnum() or c in ".-_") or "sinistre.jpg"
+            part      = fields["file"]
+            raw_name  = part.get_filename() or "sinistre.jpg"
+            safe_name = "".join(c for c in os.path.basename(raw_name) if c.isalnum() or c in ".-_") or "sinistre.jpg"
             if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp")):
                 self._json({"ok": False, "message": "Type de fichier non autorisé (jpg/png/webp uniquement)"}, 400)
                 return
-            data_bytes = file_item.file.read()
-            if len(data_bytes) > 3 * 1024 * 1024:
+            data_bytes = part.get_payload(decode=True)
+            if not data_bytes or len(data_bytes) > 3 * 1024 * 1024:
                 self._json({"ok": False, "message": "Fichier trop volumineux (max 3 Mo)"}, 400)
                 return
-            uid = secrets.token_hex(6)
-            ts  = datetime.now().strftime("%Y%m%d_%H%M%S")
+            uid   = secrets.token_hex(6)
+            ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
             fname = f"{ts}_{uid}.jpg"
             os.makedirs(os.path.join("images", "sinistres"), exist_ok=True)
             with open(os.path.join("images", "sinistres", fname), "wb") as f:
                 f.write(data_bytes)
-            ip = self.client_address[0]
             audit_log("SINISTRE_PHOTO", ip, f"Photo sinistre reçue : {fname}")
             self._json({"ok": True, "path": "images/sinistres/" + fname})
             return
@@ -249,12 +325,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if not get_session(token):
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
+
         if path == "/api/users/upsert":
             if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Réservé à l'admin ou au ministre"}, 403)
                 return
             try:
-                data = json.loads(body.decode("utf-8"))
+                data  = json.loads(body.decode("utf-8"))
                 uname = data.get("username", "").strip()
                 nom   = data.get("nom", "").strip()
                 role  = data.get("role", "lecteur")
@@ -267,20 +344,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if session and session["role"] == "ministre" and uname == PROTECTED_USER:
                     self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être modifié"}, 403)
                     return
-                users = load_users()
+                users    = load_users()
                 existing = next((u for u in users if u["username"] == uname), None)
                 if existing:
                     existing["nom"]  = nom or existing["nom"]
                     existing["role"] = role
                     if pwd:
-                        existing["password_hash"] = _hash(pwd)
+                        existing["password_hash"] = _hash_new(pwd)
                 else:
                     if not pwd:
                         self._json({"ok": False, "message": "Mot de passe requis"}, 400)
                         return
-                    users.append({"username": uname, "password_hash": _hash(pwd), "role": role, "nom": nom or uname})
+                    users.append({"username": uname, "password_hash": _hash_new(pwd), "role": role, "nom": nom or uname})
                 save_users(users)
-                ip = self.client_address[0]
                 action = "Modification" if existing else "Création"
                 audit_log("USER_UPSERT", ip, f"{action} utilisateur : {uname} ({role})")
                 self._json({"ok": True})
@@ -294,8 +370,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Réservé à l'admin ou au ministre"}, 403)
                 return
             try:
-                data  = json.loads(body.decode("utf-8"))
-                uname = data.get("username", "")
+                data    = json.loads(body.decode("utf-8"))
+                uname   = data.get("username", "")
                 session = get_session(token)
                 if uname == session["username"]:
                     self._json({"ok": False, "message": "Impossible de supprimer son propre compte"}, 400)
@@ -306,7 +382,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 users = [u for u in load_users() if u["username"] != uname]
                 save_users(users)
-                ip = self.client_address[0]
                 audit_log("USER_DELETE", ip, f"Suppression utilisateur : {uname}")
                 self._json({"ok": True})
             except Exception as e:
@@ -322,31 +397,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if "multipart/form-data" not in content_type:
                 self._json({"ok": False, "message": "Format invalide"}, 400)
                 return
-            environ = {
-                "REQUEST_METHOD": "POST",
-                "CONTENT_TYPE": content_type,
-                "CONTENT_LENGTH": str(length),
-            }
-            form = cgi.FieldStorage(fp=io.BytesIO(body), environ=environ)
-            if "file" not in form:
+            fields = _parse_multipart(content_type, body)
+            if "file" not in fields:
                 self._json({"ok": False, "message": "Pas de fichier"}, 400)
                 return
-            file_item = form["file"]
-            raw_name  = os.path.basename(file_item.filename or "upload.jpg")
-            safe_name = "".join(c for c in raw_name if c.isalnum() or c in ".-_") or "image.jpg"
+            part      = fields["file"]
+            raw_name  = part.get_filename() or "upload.jpg"
+            safe_name = "".join(c for c in os.path.basename(raw_name) if c.isalnum() or c in ".-_") or "image.jpg"
             # Vérifier extension image
-            if not any(safe_name.lower().endswith(ext) for ext in (".jpg",".jpeg",".png",".gif",".webp",".svg")):
+            if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")):
                 self._json({"ok": False, "message": "Type de fichier non autorisé"}, 400)
                 return
-            # Limite 10 Mo
-            data_bytes = file_item.file.read()
-            if len(data_bytes) > 10 * 1024 * 1024:
+            data_bytes = part.get_payload(decode=True)
+            if not data_bytes or len(data_bytes) > 10 * 1024 * 1024:
                 self._json({"ok": False, "message": "Fichier trop volumineux (max 10 Mo)"}, 400)
                 return
             os.makedirs("images", exist_ok=True)
             with open(os.path.join("images", safe_name), "wb") as f:
                 f.write(data_bytes)
-            ip = self.client_address[0]
             print(f"[BININGA] 📷 Image uploadée : {safe_name}")
             audit_log("UPLOAD", ip, f"Image uploadée : {safe_name}")
             self._json({"ok": True, "path": "images/" + safe_name})
@@ -358,12 +426,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Accès refusé"}, 403)
                 return
             try:
-                data = json.loads(body.decode("utf-8"))
-                ip = self.client_address[0]
-                save_data(data)
-                print(f"[BININGA] ✅ Données sauvegardées — {datetime.now().strftime('%H:%M:%S')}")
+                data    = json.loads(body.decode("utf-8"))
                 session = get_session(token)
+                save_data(data)
                 who = session["username"] if session else "?"
+                print(f"[BININGA] ✅ Données sauvegardées — {datetime.now().strftime('%H:%M:%S')}")
                 audit_log("SAVE", ip, f"data.json sauvegardé par {who}")
                 self._json({"ok": True, "message": "Données sauvegardées"})
             except Exception as e:
@@ -412,8 +479,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 # ── Lancement ──────────────────────────────────────────────
 if __name__ == "__main__":
     init_users()
-    PORT     = int(os.environ.get("PORT", 8080))
     USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem")
+    PORT     = int(os.environ.get("PORT", 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"
 
     print(f"""
@@ -433,7 +500,26 @@ if __name__ == "__main__":
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         ctx.load_cert_chain("cert.pem", "key.pem")
         server.socket = ctx.wrap_socket(server.socket, server_side=True)
-        print("🔒 HTTPS activé")
+
+        # Serveur HTTP dédié → redirection 301 vers HTTPS
+        REDIRECT_PORT = int(os.environ.get("REDIRECT_PORT", 8080))
+        HTTPS_PORT    = PORT
+
+        class _RedirectHandler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                host = self.headers.get("Host", f"localhost:{HTTPS_PORT}").split(":")[0]
+                self.send_response(301)
+                self.send_header("Location", f"https://{host}:{HTTPS_PORT}{self.path}")
+                self.end_headers()
+            def do_POST(self):
+                self.do_GET()
+            def log_message(self, *args):
+                pass
+
+        redirect_srv = http.server.HTTPServer(("0.0.0.0", REDIRECT_PORT), _RedirectHandler)
+        threading.Thread(target=redirect_srv.serve_forever, daemon=True).start()
+        print(f"🔄 Redirection HTTP:{REDIRECT_PORT} → HTTPS:{HTTPS_PORT}")
+        print(f"🔒 HTTPS activé")
 
     print(f"✅ Serveur lancé sur {protocol}://localhost:{PORT}\n")
 
