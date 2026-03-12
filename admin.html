@@ -692,9 +692,26 @@ select.form-input:focus{border-color:var(--r)}
 
       <!-- ── PARCOURS ── -->
       <div class="panel" id="panel-parcours">
+        <!-- En-tête de section -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🏷️ En-tête de la section Parcours</div></div>
+          <div class="form-group">
+            <label>Étiquette (tag)</label>
+            <input type="text" id="parcours-sec-tag" placeholder="Son parcours" oninput="updParcoursSection('tag',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Titre (partie normale)</label>
+            <input type="text" id="parcours-sec-title" placeholder="Une carrière bâtie sur" oninput="updParcoursSection('title',this.value)">
+          </div>
+          <div class="form-group">
+            <label>Titre (partie accentuée en dégradé)</label>
+            <input type="text" id="parcours-sec-accent" placeholder="la confiance" oninput="updParcoursSection('titleAccent',this.value)">
+          </div>
+        </div>
+        <!-- Étapes -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">⏳ Parcours (Timeline)</div>
+            <div class="card-title">⏳ Étapes de la timeline</div>
             <div class="card-actions">
               <button class="sbtn sbtn-progress" onclick="addParcoursItem()">+ Ajouter une étape</button>
             </div>
@@ -1987,7 +2004,19 @@ function exportCSV(storageKey, type) {
 // ══════════════════════════════════════════════════════════════════════════
 //  PARCOURS (TIMELINE)
 // ══════════════════════════════════════════════════════════════════════════
+function updParcoursSection(field, val) {
+  if (!siteData.parcoursSection) siteData.parcoursSection = {};
+  siteData.parcoursSection[field] = val;
+}
 function renderParcours() {
+  const sec = siteData.parcoursSection || {};
+  const tagEl    = document.getElementById("parcours-sec-tag");
+  const titleEl  = document.getElementById("parcours-sec-title");
+  const accentEl = document.getElementById("parcours-sec-accent");
+  if (tagEl)    tagEl.value    = sec.tag         || "";
+  if (titleEl)  titleEl.value  = sec.title        || "";
+  if (accentEl) accentEl.value = sec.titleAccent  || "";
+
   const items = (siteData.parcours || []);
   const list  = document.getElementById("parcours-list");
   if (!items.length) {

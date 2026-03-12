@@ -590,8 +590,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 <section id="parcours">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
-      <span class="stag">Son parcours</span>
-      <h2 class="stitle">Une carrière bâtie sur <span class="g">la confiance</span></h2>
+      <span class="stag" id="dyn-parcours-tag">Son parcours</span>
+      <h2 class="stitle" id="dyn-parcours-title">Une carrière bâtie sur <span class="g" id="dyn-parcours-accent">la confiance</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
     <div class="tl-wrap" id="dyn-parcours">
@@ -1084,6 +1084,17 @@ function loadContent() {
         }
         if (lblEl) lblEl.textContent = s.label;
       });
+
+      // Parcours — en-tête de section
+      const pSec = d.parcoursSection || {};
+      const pTagEl    = document.getElementById("dyn-parcours-tag");
+      const pTitleEl  = document.getElementById("dyn-parcours-title");
+      const pAccentEl = document.getElementById("dyn-parcours-accent");
+      if (pTagEl    && pSec.tag)         pTagEl.textContent    = pSec.tag;
+      if (pAccentEl && pSec.titleAccent) pAccentEl.textContent = pSec.titleAccent;
+      if (pTitleEl  && pSec.title) {
+        pTitleEl.childNodes[0].textContent = pSec.title + " ";
+      }
 
       // Parcours (timeline)
       const PARCOURS_DEFAULT = [

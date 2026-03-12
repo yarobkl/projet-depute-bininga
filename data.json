@@ -150,6 +150,11 @@
       }
     ]
   },
+  "parcoursSection": {
+    "tag": "Son parcours",
+    "title": "Une carrière bâtie sur",
+    "titleAccent": "la confiance"
+  },
   "parcours": [
     {
       "side": "left",
