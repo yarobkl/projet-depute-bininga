@@ -8,6 +8,7 @@ import hashlib
 import time
 import threading
 import posixpath
+import re
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote
@@ -113,6 +114,202 @@ def _record_failed_login(ip: str):
 
 def _reset_login_attempts(ip: str):
     LOGIN_ATTEMPTS.pop(ip, None)
+
+# ══════════════════════════════════════════════════════════
+# ██  MODULE ANTI-INTRUSION — BININGA SECURITY ENGINE     ██
+# ══════════════════════════════════════════════════════════
+
+BLOCKED_IPS_FILE  = "blocked_ips.json"
+ATTACK_LOG_FILE   = "attacks.log"
+USE_SSL           = False   # mis à jour dans __main__
+
+# ── IPs définitivement bannies ─────────────────────────────
+BLOCKED_IPS: set = set()
+
+# ── Scores d'attaque cumulatifs par IP ─────────────────────
+# ip → {"score": int, "events": [{"ts","type","detail"}]}
+ATTACK_SCORES: dict = {}
+ATTACK_BAN_THRESHOLD  = 25   # score → bannissement auto
+ATTACK_WARN_THRESHOLD = 10   # score → tarpit
+
+# ── Rate limiting global (toutes routes) ───────────────────
+REQUEST_COUNTS: dict = {}    # ip → {"n": int, "t": float}
+GLOBAL_RATE_LIMIT = 150      # requêtes / 60 s / IP
+
+# ── Délai sur échec login (ralentit brute-force + timing) ──
+LOGIN_FAIL_DELAY = 0.4       # secondes
+
+# ── Tarpit ─────────────────────────────────────────────────
+TARPIT_TABLE = {10: 1.0, 15: 2.5, 20: 5.0}  # score → délai (s)
+
+# ── Chemins pièges (honeypots) ─────────────────────────────
+HONEYPOT_PATHS = frozenset({
+    "/wp-admin", "/wp-login.php", "/wp-config.php", "/xmlrpc.php",
+    "/phpmyadmin", "/pma", "/mysql",
+    "/.env", "/.env.bak", "/.env.local", "/.env.production",
+    "/shell.php", "/cmd.php", "/c99.php", "/r57.php", "/webshell.php",
+    "/.git/config", "/.git/HEAD",
+    "/.aws/credentials", "/.ssh/id_rsa", "/.ssh/authorized_keys",
+    "/config.php", "/configuration.php", "/settings.php", "/db.php",
+    "/backup.sql", "/dump.sql", "/database.sql", "/db.sql",
+    "/admin.php", "/admin/config", "/manager/html",
+    "/actuator/env", "/actuator/health", "/v1/secret",
+    "/etc/passwd", "/proc/self/environ",
+})
+
+# ── Patterns d'attaque ─────────────────────────────────────
+_RE_FLAGS = re.IGNORECASE
+ATTACK_PATTERNS = [
+    # SQL Injection
+    (re.compile(
+        r"(?:union\s+(?:all\s+)?select|drop\s+(?:table|database|schema)"
+        r"|insert\s+into|delete\s+from|update\s+\w+\s+set"
+        r"|exec\s*\(|xp_cmdshell|information_schema|sys\.tables"
+        r"|benchmark\s*\(|sleep\s*\(\d|waitfor\s+delay)", _RE_FLAGS),
+     "SQL_INJECTION", 15),
+    # Command Injection
+    (re.compile(
+        r"(?:(?:;|\||\|\||&&)\s*(?:ls|cat|id|whoami|uname|wget|curl\b|nc\s"
+        r"|bash|sh\s|python|php\s|perl|ruby|node)\b|\$\([^)]*\)|`[^`]*`)",
+        _RE_FLAGS),
+     "CMD_INJECTION", 20),
+    # XSS / Script Injection
+    (re.compile(
+        r"(?:<script[\s/>]|javascript\s*:|vbscript\s*:|data\s*:text/html"
+        r"|onerror\s*=|onload\s*=|onclick\s*=|onfocus\s*=|onmouseover\s*="
+        r"|<iframe[\s/>]|<object[\s/>]|<embed[\s/>]|<svg\s+on\w+="
+        r"|eval\s*\(|setTimeout\s*\(|setInterval\s*\()", _RE_FLAGS),
+     "XSS_ATTEMPT", 10),
+    # Path Traversal dans le corps de requête
+    (re.compile(r"(?:\.\./){3,}|(?:%2e%2e[/\\%]){2,}", _RE_FLAGS),
+     "PATH_TRAVERSAL_DEEP", 15),
+    # Scanners connus dans User-Agent
+    (re.compile(
+        r"(?:sqlmap|nikto|nmap|masscan|zgrab|nessus|openvas|acunetix"
+        r"|burpsuite|dirbuster|gobuster|wfuzz|ffuf|nuclei"
+        r"|metasploit|w3af|arachni|havij|atscan)", _RE_FLAGS),
+     "SCANNER_UA", 25),
+    # Tentatives de lecture de fichiers sensibles
+    (re.compile(
+        r"(?:/etc/passwd|/etc/shadow|/proc/self|/sys/class"
+        r"|win\.ini|boot\.ini|system32|cmd\.exe|powershell\.exe)", _RE_FLAGS),
+     "FILE_READ_ATTEMPT", 12),
+]
+
+# ── Persistance des IPs bloquées ───────────────────────────
+def load_blocked_ips():
+    global BLOCKED_IPS
+    if not os.path.exists(BLOCKED_IPS_FILE):
+        return
+    try:
+        with open(BLOCKED_IPS_FILE, "r") as f:
+            BLOCKED_IPS = set(json.load(f))
+    except Exception:
+        pass
+
+def save_blocked_ips():
+    try:
+        with open(BLOCKED_IPS_FILE, "w") as f:
+            json.dump(sorted(BLOCKED_IPS), f, indent=2)
+    except Exception:
+        pass
+
+# ── Enregistrer un événement d'attaque ─────────────────────
+def record_attack(ip: str, event_type: str, score: int, detail: str = ""):
+    """Cumule le score d'attaque de l'IP et bannit si seuil atteint."""
+    entry = ATTACK_SCORES.setdefault(ip, {"score": 0, "events": []})
+    entry["score"] += score
+    entry["events"].append({
+        "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "type": event_type,
+        "score": score,
+        "detail": detail[:200],
+    })
+    # Garder seulement les 50 derniers événements
+    entry["events"] = entry["events"][-50:]
+
+    # Écriture dans attacks.log
+    try:
+        with open(ATTACK_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps({
+                "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "ip": ip, "type": event_type, "score": score, "detail": detail[:200]
+            }, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+    # Bannissement automatique si seuil dépassé
+    if entry["score"] >= ATTACK_BAN_THRESHOLD and ip not in BLOCKED_IPS:
+        BLOCKED_IPS.add(ip)
+        save_blocked_ips()
+        audit_log("AUTO_BAN", ip, f"Bannissement automatique — score {entry['score']} ({event_type})")
+        print(f"[BININGA] 🚫 IP bannie automatiquement : {ip} (score={entry['score']})")
+
+def check_and_ban_ip(ip: str) -> bool:
+    """Retourne True si l'IP est bloquée."""
+    return ip in BLOCKED_IPS
+
+# ── Rate limiting global ────────────────────────────────────
+def check_global_rate(ip: str) -> bool:
+    """Retourne True si l'IP a dépassé la limite globale."""
+    now  = time.time()
+    rec  = REQUEST_COUNTS.get(ip)
+    if not rec or now - rec["t"] > 60:
+        REQUEST_COUNTS[ip] = {"n": 1, "t": now}
+        return False
+    rec["n"] += 1
+    if rec["n"] > GLOBAL_RATE_LIMIT:
+        record_attack(ip, "RATE_ABUSE", 3, f"{rec['n']} req/min")
+        return True
+    return False
+
+# ── Tarpit ─────────────────────────────────────────────────
+def maybe_tarpit(ip: str):
+    """Introduit un délai proportionnel au score d'attaque de l'IP."""
+    score = ATTACK_SCORES.get(ip, {}).get("score", 0)
+    delay = 0.0
+    for threshold, d in sorted(TARPIT_TABLE.items(), reverse=True):
+        if score >= threshold:
+            delay = d
+            break
+    if delay > 0:
+        time.sleep(delay)
+
+# ── Scan des patterns d'attaque ────────────────────────────
+def scan_for_attacks(ip: str, text: str, context: str = ""):
+    """Scanne un texte et enregistre les attaques détectées."""
+    for pattern, event_type, score in ATTACK_PATTERNS:
+        if event_type == "SCANNER_UA":
+            continue  # Scanner UA traité séparément
+        m = pattern.search(text)
+        if m:
+            record_attack(ip, event_type, score,
+                          f"{context}: ...{text[max(0,m.start()-20):m.end()+20]}...")
+
+def scan_user_agent(ip: str, ua: str):
+    """Détecte les scanners automatiques dans le User-Agent."""
+    scanner_pat = ATTACK_PATTERNS[-2][0]  # SCANNER_UA pattern
+    if re.search(r"(?:sqlmap|nikto|nmap|masscan|zgrab|nessus|openvas|acunetix"
+                 r"|burpsuite|dirbuster|gobuster|wfuzz|ffuf|nuclei"
+                 r"|metasploit|w3af|arachni|havij|atscan)", ua, re.I):
+        record_attack(ip, "SCANNER_UA", 25, f"UA: {ua[:120]}")
+
+# ── Lecture du rapport de sécurité ─────────────────────────
+def load_attacks(limit=200):
+    if not os.path.exists(ATTACK_LOG_FILE):
+        return []
+    try:
+        with open(ATTACK_LOG_FILE, "r", encoding="utf-8") as f:
+            lines = [l.strip() for l in f.readlines() if l.strip()]
+        entries = []
+        for line in lines[-limit:]:
+            try:
+                entries.append(json.loads(line))
+            except Exception:
+                pass
+        return list(reversed(entries))
+    except Exception:
+        return []
 
 # ── Validation MIME par magic bytes ────────────────────────
 def _is_valid_image(data: bytes) -> bool:
@@ -313,9 +510,71 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token, X-CSRF-Token")
         self.end_headers()
 
+    # ── En-têtes de sécurité HTTP ──────────────────────────
+    def _security_headers(self):
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-XSS-Protection", "1; mode=block")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header("Permissions-Policy",
+                         "camera=(), microphone=(), geolocation=(self), payment=()")
+        csp = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "img-src 'self' data: blob: https://*.tile.openstreetmap.org "
+            "https://www.openstreetmap.org; "
+            "frame-src https://www.openstreetmap.org; "
+            "connect-src 'self'; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "form-action 'self'"
+        )
+        if USE_SSL:
+            csp += "; upgrade-insecure-requests"
+            self.send_header("Strict-Transport-Security",
+                             "max-age=63072000; includeSubDomains; preload")
+        self.send_header("Content-Security-Policy", csp)
+
+    def _guard(self):
+        """Vérifie IP bannie + rate limit. Retourne True si la requête doit être bloquée."""
+        ip = self.client_address[0]
+        if check_and_ban_ip(ip):
+            self._error(403, "Accès refusé")
+            return True
+        if check_global_rate(ip):
+            self._json({"ok": False, "message": "Trop de requêtes"}, 429)
+            return True
+        maybe_tarpit(ip)
+        return False
+
     def do_GET(self):
         # Normaliser le chemin : décoder l'URL, éliminer ../
         path = posixpath.normpath(unquote(urlparse(self.path).path))
+        ip   = self.client_address[0]
+
+        if self._guard():
+            return
+
+        # Scan User-Agent
+        scan_user_agent(ip, self.headers.get("User-Agent", ""))
+        if check_and_ban_ip(ip):
+            self._error(403, "Accès refusé")
+            return
+
+        # Scan de l'URL pour attaques
+        scan_for_attacks(ip, self.path, "URL")
+        if check_and_ban_ip(ip):
+            self._error(403, "Accès refusé")
+            return
+
+        # ── Honeypot : banning immédiat ──
+        if path in HONEYPOT_PATHS or any(path.startswith(h) for h in HONEYPOT_PATHS if h.endswith("/")):
+            record_attack(ip, "HONEYPOT", 30, f"Accès au piège : {path}")
+            audit_log("HONEYPOT", ip, f"Chemin piège accédé : {path}")
+            self._error(404, "Fichier non trouvé")
+            return
 
         if path == "/api/load":
             self._json(load_data())
@@ -327,6 +586,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             self._json({"ok": True, "logs": load_audit()})
+            return
+
+        if path == "/api/security":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            # Top IPs suspectes triées par score décroissant
+            suspects = sorted(
+                [{"ip": k, **v} for k, v in ATTACK_SCORES.items()],
+                key=lambda x: x["score"], reverse=True
+            )[:50]
+            self._json({
+                "ok": True,
+                "blocked": sorted(BLOCKED_IPS),
+                "suspects": suspects,
+                "attacks": load_attacks(100),
+            })
             return
 
         if path == "/api/users":
@@ -363,6 +640,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 elif mime.startswith("image/") or mime in ("text/css", "text/javascript"):
                     self.send_header("Cache-Control", "public, max-age=86400")
+                self._security_headers()
                 self.end_headers()
                 self.wfile.write(content)
             except Exception as e:
@@ -372,14 +650,54 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_POST(self):
         path   = posixpath.normpath(unquote(urlparse(self.path).path))
-        length = int(self.headers.get("Content-Length", 0))
-        body   = self.rfile.read(length)
         ip     = self.client_address[0]
 
-        # ── /api/test/reset (UNIQUEMENT en mode BININGA_TEST=1) ──
+        # ── /api/test/reset doit bypasser le guard (mode test uniquement) ──
         if BININGA_TEST and path == "/api/test/reset":
             LOGIN_ATTEMPTS.clear()
-            self._json({"ok": True, "message": "Rate limits reset (test mode)"})
+            ATTACK_SCORES.clear()
+            BLOCKED_IPS.clear()
+            REQUEST_COUNTS.clear()
+            self._json({"ok": True, "message": "All security state reset (test mode)"})
+            return
+
+        if self._guard():
+            return
+
+        # Scanner UA check
+        scan_user_agent(ip, self.headers.get("User-Agent", ""))
+        if check_and_ban_ip(ip):
+            self._error(403, "Accès refusé")
+            return
+
+        # Honeypot sur POST
+        if path in HONEYPOT_PATHS:
+            record_attack(ip, "HONEYPOT_POST", 30, f"POST piège : {path}")
+            self._error(404, "Route non trouvée")
+            return
+
+        # Taille max globale (DoS)
+        raw_length = int(self.headers.get("Content-Length", 0))
+        if raw_length > 20 * 1024 * 1024:  # 20 Mo max absolu
+            record_attack(ip, "OVERSIZED_REQUEST", 8, f"Content-Length: {raw_length}")
+            self._json({"ok": False, "message": "Requête trop volumineuse"}, 413)
+            return
+
+        length = raw_length
+        body   = self.rfile.read(length)
+
+        # Scan du corps de la requête (hors uploads binaires)
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            try:
+                body_text = body.decode("utf-8", errors="replace")
+                scan_for_attacks(ip, body_text, "POST body")
+            except Exception:
+                pass
+        # Scan de l'URL aussi
+        scan_for_attacks(ip, self.path, "URL")
+        if check_and_ban_ip(ip):
+            self._error(403, "Accès refusé — comportement suspect détecté")
             return
 
         # ── /api/login ──
@@ -420,9 +738,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                                 "role": user["role"], "nom": user.get("nom", username)})
                 else:
                     _record_failed_login(ip)
-                    remaining = MAX_ATTEMPTS - LOGIN_ATTEMPTS.get(ip, {}).get("count", 0)
+                    record_attack(ip, "LOGIN_FAIL", 2, f"Échec login user: {username}")
                     print(f"[BININGA] ⛔ Tentative échouée : {username} — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_FAIL", ip, f"Identifiant ou mot de passe incorrect (user: {username})")
+                    time.sleep(LOGIN_FAIL_DELAY)   # Anti brute-force + anti timing
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -513,6 +832,44 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
                 self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
                 return
+
+        if path == "/api/security/unblock":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data   = json.loads(body.decode("utf-8"))
+                target = data.get("ip", "").strip()
+                if not target:
+                    self._json({"ok": False, "message": "IP requise"}, 400)
+                    return
+                BLOCKED_IPS.discard(target)
+                ATTACK_SCORES.pop(target, None)
+                save_blocked_ips()
+                audit_log("UNBLOCK_IP", ip, f"IP débloquée : {target}")
+                self._json({"ok": True, "message": f"IP {target} débloquée"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        if path == "/api/security/block":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data   = json.loads(body.decode("utf-8"))
+                target = data.get("ip", "").strip()
+                reason = data.get("reason", "Blocage manuel")
+                if not target:
+                    self._json({"ok": False, "message": "IP requise"}, 400)
+                    return
+                BLOCKED_IPS.add(target)
+                save_blocked_ips()
+                audit_log("MANUAL_BAN", ip, f"IP bannie manuellement : {target} — {reason}")
+                self._json({"ok": True, "message": f"IP {target} bloquée"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
 
         if path == "/api/users/upsert":
             if not has_role(token, "admin", "ministre"):
@@ -658,6 +1015,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header("Vary", "Origin")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Content-Length", len(response))
+        self._security_headers()
         self.end_headers()
         self.wfile.write(response)
 
@@ -666,6 +1024,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", len(response))
+        self._security_headers()
         self.end_headers()
         self.wfile.write(response)
 
@@ -678,6 +1037,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 # ── Lancement ──────────────────────────────────────────────
 if __name__ == "__main__":
     init_users()
+    load_blocked_ips()
     USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem")
     PORT     = int(os.environ.get("PORT", 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"

@@ -162,6 +162,31 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .btn-danger{background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);font-family:inherit}
 .btn-danger:hover{background:rgba(231,76,60,.25)}
 
+/* ── SECURITY PANEL ── */
+.sec-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.ip-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.ip-row:last-child{border-bottom:none}
+.ip-addr{font-family:monospace;font-size:13px;color:var(--w);flex:1}
+.ip-score{font-size:11px;padding:3px 8px;border-radius:12px;font-weight:700}
+.ip-score.danger{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+.ip-score.warn{background:rgba(243,156,18,.15);color:#f39c12;border:1px solid rgba(243,156,18,.3)}
+.ip-score.info{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.atk-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.atk-row:last-child{border-bottom:none}
+.atk-type{font-size:10px;font-weight:700;letter-spacing:.5px;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.atk-SQL_INJECTION,.atk-PATH_TRAVERSAL_DEEP{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)}
+.atk-CMD_INJECTION,.atk-FILE_READ_ATTEMPT{background:rgba(231,76,60,.2);color:#ff6b6b;border:1px solid rgba(231,76,60,.4)}
+.atk-XSS_ATTEMPT{background:rgba(243,156,18,.15);color:#f39c12;border:1px solid rgba(243,156,18,.3)}
+.atk-SCANNER_UA,.atk-HONEYPOT,.atk-HONEYPOT_POST{background:rgba(155,89,182,.15);color:#9b59b6;border:1px solid rgba(155,89,182,.3)}
+.atk-LOGIN_FAIL,.atk-RATE_ABUSE{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.25)}
+.atk-AUTO_BAN,.atk-MANUAL_BAN{background:rgba(231,76,60,.25);color:#ff4757;border:1px solid rgba(231,76,60,.5)}
+.atk-detail{font-family:monospace;font-size:11px;color:rgba(255,255,255,.35);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.threat-meter{height:6px;border-radius:3px;background:rgba(255,255,255,.08);margin-top:4px}
+.threat-fill{height:100%;border-radius:3px;transition:width .5s}
+.sec-stat{text-align:center;background:var(--n3);border-radius:10px;padding:16px}
+.sec-stat-n{font-size:28px;font-weight:800;margin-bottom:4px}
+.sec-stat-l{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3)}
+
 /* ── FORM ── */
 .form-group{margin-bottom:16px}
 .form-group label{display:block;font-size:10px;color:rgba(255,255,255,.35);margin-bottom:7px;text-transform:uppercase;letter-spacing:1.5px;font-weight:600}
@@ -316,6 +341,10 @@ select.form-input:focus{border-color:var(--r)}
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('users',this)">
         <span class="icon">👥</span> Utilisateurs
         <span class="sb-badge" id="badge-users" style="display:none"></span>
+      </div>
+      <div class="sb-item role-admin" style="display:none" onclick="showPanel('security',this)">
+        <span class="icon">🛡️</span> Sécurité
+        <span class="sb-badge warn" id="badge-sec" style="display:none"></span>
       </div>
     </nav>
 
@@ -684,6 +713,69 @@ select.form-input:focus{border-color:var(--r)}
           </div>
           <div id="axes-list"></div>
         </div>
+      </div>
+
+      <!-- ── SÉCURITÉ ── -->
+      <div class="panel" id="panel-security">
+
+        <!-- Statistiques rapides -->
+        <div class="sec-grid" style="grid-template-columns:repeat(4,1fr)">
+          <div class="sec-stat">
+            <div class="sec-stat-n" id="sec-n-blocked" style="color:#e74c3c">—</div>
+            <div class="sec-stat-l">IPs bloquées</div>
+          </div>
+          <div class="sec-stat">
+            <div class="sec-stat-n" id="sec-n-suspects" style="color:#f39c12">—</div>
+            <div class="sec-stat-l">IPs suspectes</div>
+          </div>
+          <div class="sec-stat">
+            <div class="sec-stat-n" id="sec-n-attacks" style="color:#9b59b6">—</div>
+            <div class="sec-stat-l">Attaques détectées</div>
+          </div>
+          <div class="sec-stat">
+            <div class="sec-stat-n" id="sec-n-honeypot" style="color:#C8102E">—</div>
+            <div class="sec-stat-l">Pièges déclenchés</div>
+          </div>
+        </div>
+
+        <div class="sec-grid">
+          <!-- IPs bloquées -->
+          <div class="card" style="margin-top:0">
+            <div class="card-header">
+              <div class="card-title">🚫 IPs bloquées</div>
+              <div class="card-actions">
+                <button class="sbtn sbtn-progress" onclick="loadSecurity()">🔄</button>
+              </div>
+            </div>
+            <div style="margin-bottom:12px;display:flex;gap:8px">
+              <input id="sec-ip-input" type="text" placeholder="IP à bloquer manuellement"
+                style="flex:1;padding:8px 10px;background:var(--n3);border:1px solid rgba(255,255,255,.08);
+                       border-radius:7px;color:var(--w);font-size:13px;font-family:monospace;outline:none">
+              <button class="btn-danger" style="padding:8px 14px;font-size:11px" onclick="manualBlock()">Bloquer</button>
+            </div>
+            <div id="sec-blocked-list" class="msg-empty">Chargement…</div>
+          </div>
+
+          <!-- IPs suspectes (non bloquées) -->
+          <div class="card" style="margin-top:0">
+            <div class="card-header">
+              <div class="card-title">⚠️ IPs suspectes</div>
+            </div>
+            <div id="sec-suspects-list" class="msg-empty">Chargement…</div>
+          </div>
+        </div>
+
+        <!-- Log d'attaques récentes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🔍 Attaques récentes</div>
+            <div class="card-actions" style="font-size:11px;color:rgba(255,255,255,.3)">
+              100 dernières entrées
+            </div>
+          </div>
+          <div id="sec-attacks-list" class="msg-empty">Chargement…</div>
+        </div>
+
       </div>
 
       <!-- ── LOGS D'AUDIT ── -->
@@ -1608,6 +1700,141 @@ function pingDepute(storageKey, idOrIdx) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  SÉCURITÉ — Anti-Intrusion
+// ══════════════════════════════════════════════════════════════════════════
+const ATTACK_LABELS = {
+  SQL_INJECTION:       "💉 SQL Injection",
+  CMD_INJECTION:       "💀 Cmd Injection",
+  XSS_ATTEMPT:         "🕸️ XSS",
+  PATH_TRAVERSAL_DEEP: "📁 Path Traversal",
+  SCANNER_UA:          "🤖 Scanner",
+  FILE_READ_ATTEMPT:   "🔍 Lecture fichier",
+  HONEYPOT:            "🪤 Honeypot",
+  HONEYPOT_POST:       "🪤 Honeypot POST",
+  LOGIN_FAIL:          "🔑 Échec login",
+  RATE_ABUSE:          "🌊 Rate Abuse",
+  AUTO_BAN:            "🚫 Ban auto",
+  MANUAL_BAN:          "🚫 Ban manuel",
+  OVERSIZED_REQUEST:   "📦 Trop grand",
+};
+
+async function loadSecurity() {
+  const listBlocked  = document.getElementById("sec-blocked-list");
+  const listSuspects = document.getElementById("sec-suspects-list");
+  const listAttacks  = document.getElementById("sec-attacks-list");
+  [listBlocked, listSuspects, listAttacks].forEach(e => {
+    e.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  });
+
+  try {
+    const res  = await fetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) { listBlocked.innerHTML = '<div class="msg-empty">Erreur.</div>'; return; }
+
+    // Compteurs
+    const honeypotCount = data.attacks.filter(a => a.type.startsWith("HONEYPOT")).length;
+    document.getElementById("sec-n-blocked").textContent  = data.blocked.length;
+    document.getElementById("sec-n-suspects").textContent = data.suspects.filter(s => !data.blocked.includes(s.ip)).length;
+    document.getElementById("sec-n-attacks").textContent  = data.attacks.length;
+    document.getElementById("sec-n-honeypot").textContent = honeypotCount;
+
+    // Badge sidebar
+    const badge = document.getElementById("badge-sec");
+    if (badge && data.blocked.length > 0) {
+      badge.style.display = "inline";
+      badge.textContent   = data.blocked.length;
+    }
+
+    // IPs bloquées
+    if (!data.blocked.length) {
+      listBlocked.innerHTML = '<div class="msg-empty">Aucune IP bloquée ✅</div>';
+    } else {
+      listBlocked.innerHTML = data.blocked.map(ip => `
+        <div class="ip-row">
+          <span class="ip-addr">🚫 ${esc(ip)}</span>
+          <span class="ip-score danger">BANNI</span>
+          <button class="sbtn sbtn-done" style="font-size:10px;padding:3px 8px"
+            onclick="unblockIp('${esc(ip)}')">Débloquer</button>
+        </div>
+      `).join("");
+    }
+
+    // IPs suspectes (non bannis)
+    const suspects = data.suspects.filter(s => !data.blocked.includes(s.ip));
+    if (!suspects.length) {
+      listSuspects.innerHTML = '<div class="msg-empty">Aucune IP suspecte ✅</div>';
+    } else {
+      listSuspects.innerHTML = suspects.slice(0,20).map(s => {
+        const pct   = Math.min(100, Math.round(s.score / 25 * 100));
+        const cls   = s.score >= 20 ? "danger" : s.score >= 10 ? "warn" : "info";
+        const color = s.score >= 20 ? "#e74c3c" : s.score >= 10 ? "#f39c12" : "#3498db";
+        return `<div class="ip-row" style="flex-direction:column;align-items:stretch;gap:4px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span class="ip-addr">⚠️ ${esc(s.ip)}</span>
+            <span class="ip-score ${cls}">Score ${s.score}</span>
+            <button class="btn-danger" style="padding:3px 8px;font-size:10px"
+              onclick="manualBlockIp('${esc(s.ip)}')">Bannir</button>
+          </div>
+          <div class="threat-meter"><div class="threat-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div style="font-size:10px;color:rgba(255,255,255,.3)">${esc((s.events||[]).slice(-1)[0]?.type||"")} — ${esc((s.events||[]).slice(-1)[0]?.detail?.slice(0,60)||"")}</div>
+        </div>`;
+      }).join("");
+    }
+
+    // Log d'attaques
+    if (!data.attacks.length) {
+      listAttacks.innerHTML = '<div class="msg-empty">Aucune attaque enregistrée ✅</div>';
+    } else {
+      listAttacks.innerHTML = data.attacks.map(a => `
+        <div class="atk-row">
+          <span class="atk-type atk-${esc(a.type)}">${esc(ATTACK_LABELS[a.type] || a.type)}</span>
+          <span class="ip-addr" style="max-width:110px">${esc(a.ip)}</span>
+          <span class="atk-detail" title="${esc(a.detail)}">${esc(a.detail)}</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.25);white-space:nowrap">${esc(a.ts)}</span>
+        </div>
+      `).join("");
+    }
+  } catch(e) {
+    listBlocked.innerHTML = `<div class="msg-empty">Serveur non disponible. ${esc(e.message)}</div>`;
+  }
+}
+
+async function unblockIp(ip) {
+  if (!confirm(`Débloquer l'IP ${ip} ?`)) return;
+  try {
+    const res  = await fetch("/api/security/unblock", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ ip })
+    });
+    const data = await res.json();
+    showToast(data.ok ? `IP ${ip} débloquée` : data.message, !data.ok);
+    if (data.ok) loadSecurity();
+  } catch { showToast("Erreur serveur", true); }
+}
+
+async function manualBlockIp(ip) {
+  if (!confirm(`Bannir manuellement l'IP ${ip} ?`)) return;
+  try {
+    const res  = await fetch("/api/security/block", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ ip, reason: "Blocage manuel depuis admin" })
+    });
+    const data = await res.json();
+    showToast(data.ok ? `IP ${ip} bannie` : data.message, !data.ok);
+    if (data.ok) loadSecurity();
+  } catch { showToast("Erreur serveur", true); }
+}
+
+function manualBlock() {
+  const ip = document.getElementById("sec-ip-input").value.trim();
+  if (!ip) { showToast("Entrez une adresse IP", true); return; }
+  manualBlockIp(ip);
+  document.getElementById("sec-ip-input").value = "";
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  JOURNAUX D'AUDIT
 // ══════════════════════════════════════════════════════════════════════════
 async function loadAuditLogs() {
@@ -1648,7 +1875,7 @@ const PANEL_TITLES = {
   reclamations:"Réclamations", contacts:"Messages de contact",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
-  logs:"Journaux d'audit", users:"Gestion des utilisateurs"
+  logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion"
 };
 
 function showPanel(name, el) {
@@ -1668,6 +1895,7 @@ function showPanel(name, el) {
   if (name === "programme")    renderProgramme();
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
+  if (name === "security")     loadSecurity();
 }
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -318,6 +318,7 @@ def test_csrf():
 # ══════════════════════════════════════════════════════════════
 def test_path_traversal():
     section("3. Path Traversal")
+    reset_rate_limit()
 
     payloads = [
         ("/../users.json",             "remontée simple"),
@@ -332,7 +333,8 @@ def test_path_traversal():
 
     for path, label in payloads:
         status, _, body = get(path)
-        if status == 404:
+        if status in (403, 404):
+            # 403 = IP bannie par le système anti-intrusion (tout aussi correct que 404)
             _ok(f"Path traversal bloqué : {label}")
         elif status in (200, 206):
             # Vérifier que le contenu n'est pas sensible
@@ -348,6 +350,7 @@ def test_path_traversal():
 # ══════════════════════════════════════════════════════════════
 def test_cors():
     section("4. Politique CORS")
+    reset_rate_limit()
 
     # Origine autorisée → header ACAO présent
     status, headers, _ = req("OPTIONS", "/api/login", headers={"Origin": "http://allowed.example.com"})
@@ -396,6 +399,7 @@ def test_cors():
 # ══════════════════════════════════════════════════════════════
 def test_upload():
     section("5. Upload — Validation MIME & Taille")
+    reset_rate_limit()
 
     # Route publique sinistre (pas besoin de token)
     def upload_sinistre(filename, data):
@@ -604,6 +608,7 @@ def test_injection():
 # ══════════════════════════════════════════════════════════════
 def test_contact():
     section("8. Formulaire Contact (public)")
+    reset_rate_limit()
 
     # Envoi normal
     status, _, body = post("/api/contact", {
@@ -698,6 +703,7 @@ def test_sessions():
 # ══════════════════════════════════════════════════════════════
 def test_headers():
     section("10. En-têtes HTTP & Cache-Control")
+    reset_rate_limit()
 
     # Cache-Control sur HTML
     status, hdrs, _ = get("/index.html")
@@ -730,6 +736,143 @@ def test_headers():
     else:
         _warn("Header Server expose la version Python", f"Server: {server_hdr}")
 
+    # En-têtes de sécurité présents
+    status, hdrs, _ = get("/index.html")
+    for hdr, expected in [
+        ("X-Frame-Options",       "DENY"),
+        ("X-Content-Type-Options","nosniff"),
+        ("X-XSS-Protection",      "1"),
+        ("Referrer-Policy",       "strict-origin"),
+        ("Content-Security-Policy", "default-src"),
+    ]:
+        val = hdrs.get(hdr, "")
+        if expected.lower() in val.lower():
+            _ok(f"Header {hdr} présent")
+        else:
+            _fail(f"Header {hdr} absent ou incorrect", f"val='{val}'")
+
+# ══════════════════════════════════════════════════════════════
+#  11. HONEYPOTS & ANTI-INTRUSION
+# ══════════════════════════════════════════════════════════════
+def test_antiintrusion():
+    section("11. Honeypots & Détection d'attaques")
+    reset_rate_limit()
+
+    # Honeypot paths → 404 ou 403 (ban automatique après 1er hit)
+    honeypots = [
+        "/wp-admin", "/wp-login.php", "/.env",
+        "/phpmyadmin", "/shell.php", "/.git/config",
+    ]
+    for hp in honeypots:
+        reset_rate_limit()
+        status, _, _ = get(hp)
+        if status in (403, 404):
+            # 404 = honeypot actif, 403 = IP bannie après score ≥ 25 — les deux sont corrects
+            _ok(f"Honeypot bloqué (status={status}) : {hp}")
+        else:
+            _fail(f"Honeypot non déclenché : {hp}", f"status={status}")
+    reset_rate_limit()  # Nettoyer le ban accumulé par les honeypots
+
+    # Fichiers sensibles inaccessibles (extension bloquée)
+    reset_rate_limit()
+    for path, label in [
+        ("/users.json",    "users.json"),
+        ("/sessions.json", "sessions.json"),
+        ("/server.py",     "server.py"),
+        ("/audit.log",     "audit.log"),
+    ]:
+        status, _, body = get(path)
+        if status == 404:
+            _ok(f"Fichier sensible bloqué : {label}")
+        elif status == 200 and ("password" in body.lower() or "def " in body or "token" in body[:100]):
+            _fail(f"Fichier sensible EXPOSÉ : {label}", body[:80])
+        else:
+            _ok(f"Fichier sensible → non exposé (status={status}) : {label}")
+
+    # Endpoint /api/security accessible admin uniquement
+    reset_rate_limit()
+    tok, csrf, _ = login()
+    status, _, body = get("/api/security", headers={"X-Admin-Token": tok})
+    d = json.loads(body)
+    if status == 200 and d.get("ok") and "blocked" in d:
+        _ok("/api/security accessible à l'admin")
+    else:
+        _fail("/api/security inaccessible", body[:200])
+
+    # /api/security interdit aux non-admin
+    reset_rate_limit()
+    tok_e, _, _ = login("testediteur", "EditPass#42")
+    status, _, body = get("/api/security", headers={"X-Admin-Token": tok_e})
+    if status == 403:
+        _ok("/api/security refusé à l'éditeur (403)")
+    else:
+        _fail("/api/security accessible à un non-admin !", f"status={status}")
+
+    # Scan User-Agent scanner → IP suspecte (pas encore bannie car score seul)
+    reset_rate_limit()
+    status, _, _ = get("/api/load", headers={"User-Agent": "sqlmap/1.0 --level=5"})
+    if status in (200, 403):
+        _ok("User-Agent scanner → détecté et géré proprement")
+    else:
+        _fail("User-Agent scanner → comportement inattendu", f"status={status}")
+
+    # Payload SQL injection dans contact → stocké mais IP scorée
+    reset_rate_limit()
+    status, _, body = post("/api/contact", {
+        "nom": "' UNION SELECT * FROM users --",
+        "message": "test"
+    })
+    if status in (200, 400, 403):
+        _ok(f"SQL injection dans contact → géré (status={status})")
+    else:
+        _fail("SQL injection → comportement inattendu", f"status={status}")
+
+    # Payload XSS dans contact → détecté
+    reset_rate_limit()
+    status, _, body = post("/api/contact", {
+        "nom": "<script>alert(1)</script>",
+        "message": "javascript:eval(document.cookie)"
+    })
+    if status in (200, 400, 403):
+        _ok(f"XSS dans contact → géré (status={status})")
+    else:
+        _fail("XSS → comportement inattendu", f"status={status}")
+
+    # Bloc/déblocage manuel via API
+    reset_rate_limit()
+    tok, csrf, _ = login()
+    # Bloquer une IP de test
+    status, _, body = req("POST", "/api/security/block",
+        json.dumps({"ip": "10.9.8.7", "reason": "test"}).encode(),
+        headers={"X-Admin-Token": tok, "X-CSRF-Token": csrf,
+                 "Content-Type": "application/json"})
+    d = json.loads(body)
+    if status == 200 and d.get("ok"):
+        _ok("/api/security/block fonctionne")
+    else:
+        _fail("/api/security/block échoué", body[:200])
+
+    # Débloquer
+    status, _, body = req("POST", "/api/security/unblock",
+        json.dumps({"ip": "10.9.8.7"}).encode(),
+        headers={"X-Admin-Token": tok, "X-CSRF-Token": csrf,
+                 "Content-Type": "application/json"})
+    d = json.loads(body)
+    if status == 200 and d.get("ok"):
+        _ok("/api/security/unblock fonctionne")
+    else:
+        _fail("/api/security/unblock échoué", body[:200])
+
+    # Délai sur login raté (anti timing) — vérifier qu'il y a bien ≥ 300ms
+    reset_rate_limit()
+    t0 = time.time()
+    post("/api/login", {"username": "testadmin", "password": "WRONG"})
+    elapsed = time.time() - t0
+    if elapsed >= 0.3:
+        _ok(f"Délai anti-timing sur login raté : {elapsed:.2f}s")
+    else:
+        _fail(f"Pas de délai sur login raté", f"{elapsed:.3f}s < 0.3s")
+
 # ══════════════════════════════════════════════════════════════
 #  MAIN
 # ══════════════════════════════════════════════════════════════
@@ -752,6 +895,7 @@ def main():
         test_contact()
         test_sessions()
         test_headers()
+        test_antiintrusion()
     finally:
         proc.terminate()
         proc.wait()
