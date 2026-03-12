@@ -7,9 +7,10 @@ import secrets
 import hashlib
 import time
 import threading
+import posixpath
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
@@ -17,6 +18,7 @@ DATA_FILE       = "data.json"
 AUDIT_FILE      = "audit.log"
 USERS_FILE      = "users.json"
 SESSIONS_FILE   = "sessions.json"
+BININGA_TEST    = os.environ.get("BININGA_TEST", "") == "1"  # Mode test uniquement
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
 PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
@@ -63,9 +65,32 @@ def _verify_password(password: str, stored: str) -> bool:
     return secrets.compare_digest(hashlib.sha256(password.encode()).hexdigest(), stored)
 
 # ── Sécurité — path traversal ──────────────────────────────
+# Fichiers serveur à ne jamais servir comme statiques
+BLOCKED_STATIC = {
+    "users.json", "sessions.json", "audit.log",
+    "contacts.json", "server.py", "cert.pem", "key.pem",
+}
+# Extensions autorisées pour les fichiers statiques
+ALLOWED_STATIC_EXT = {".html", ".css", ".js", ".png", ".jpg", ".jpeg",
+                      ".gif", ".webp", ".svg", ".ico"}
+
 def _safe_path(relative: str):
-    """Retourne le chemin absolu seulement s'il reste dans BASE_DIR, sinon None."""
-    resolved = os.path.realpath(os.path.join(BASE_DIR, relative))
+    """Retourne le chemin absolu seulement s'il reste dans BASE_DIR
+    et ne correspond pas à un fichier sensible, sinon None."""
+    # Normaliser d'abord le chemin pour éliminer les séquences ../
+    normalized = posixpath.normpath("/" + relative).lstrip("/")
+    filename = os.path.basename(normalized)
+
+    # Bloquer les fichiers sensibles
+    if filename in BLOCKED_STATIC:
+        return None
+
+    # Bloquer les extensions non autorisées (sauf data.json accessible via /api/load)
+    ext = os.path.splitext(filename)[1].lower()
+    if ext and ext not in ALLOWED_STATIC_EXT:
+        return None
+
+    resolved = os.path.realpath(os.path.join(BASE_DIR, normalized))
     if resolved == BASE_DIR or resolved.startswith(BASE_DIR + os.sep):
         return resolved
     return None
@@ -289,7 +314,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
-        path = urlparse(self.path).path
+        # Normaliser le chemin : décoder l'URL, éliminer ../
+        path = posixpath.normpath(unquote(urlparse(self.path).path))
 
         if path == "/api/load":
             self._json(load_data())
@@ -345,10 +371,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._error(404, "Fichier non trouvé")
 
     def do_POST(self):
-        path   = urlparse(self.path).path
+        path   = posixpath.normpath(unquote(urlparse(self.path).path))
         length = int(self.headers.get("Content-Length", 0))
         body   = self.rfile.read(length)
         ip     = self.client_address[0]
+
+        # ── /api/test/reset (UNIQUEMENT en mode BININGA_TEST=1) ──
+        if BININGA_TEST and path == "/api/test/reset":
+            LOGIN_ATTEMPTS.clear()
+            self._json({"ok": True, "message": "Rate limits reset (test mode)"})
+            return
 
         # ── /api/login ──
         if path == "/api/login":
@@ -636,6 +668,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Content-Length", len(response))
         self.end_headers()
         self.wfile.write(response)
+
+    def version_string(self):
+        return "BININGA/1.0"  # Masquer la version Python
 
     def log_message(self, format, *args):
         pass  # Logs gérés manuellement
