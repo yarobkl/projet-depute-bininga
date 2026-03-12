@@ -573,11 +573,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <h2 class="stitle" id="dyn-about-title">Un homme forgé par <span class="r">le terrain</span></h2>
       <div class="sline"></div>
       <p class="about-intro" id="dyn-about-intro">Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays.</p>
-      <p class="about-body">Né dans la terre de la Cuvette-Ouest, Ange Aimé Wilfrid BININGA grandit avec le sens du devoir chevillé au corps. Armé d'un <strong style="color:var(--w)">Doctorat en droit</strong>, il intègre la haute fonction publique et gravit les échelons à la <strong style="color:var(--w)">Direction générale du Trésor public</strong> jusqu'au rang d'Inspecteur principal — une position qui exige rigueur, intégrité et maîtrise des finances de l'État. Il apportera également sa compétence à la <strong style="color:var(--w)">Direction générale de la Santé</strong>, où il occupera des fonctions stratégiques de conseiller ministeriel. C'est cette double expertise — juridique et administrative — qui fera de lui un commis de l'État hors du commun.</p>
-      <p class="about-body">En <strong style="color:var(--w)">2016</strong>, le Président de la République lui confie le portefeuille de <strong style="color:var(--w)">Ministre de la Fonction publique et de la Réforme de l'État</strong>. Il s'attelle aussitôt à moderniser l'administration congolaise, à dynamiser l'emploi des jeunes fonctionnaires et à impulser les réformes structurelles nécessaires à la diversification économique nationale. Le <strong style="color:var(--w)">19 août 2017</strong>, les électeurs de la 1re circonscription d'Ewo lui accordent leur confiance en l'élisant Député à l'Assemblée Nationale — consécration populaire d'un engagement profond envers sa terre natale.</p>
-      <p class="about-body">En tant que <strong style="color:var(--w)">Ministre de la Justice</strong>, il inscrit son action dans l'histoire en portant et faisant adopter en <strong style="color:var(--w)">2018</strong> la loi instituant la <strong style="color:var(--w)">Haute Autorité de lutte contre la corruption</strong> — un texte fondateur voté par 107 voix pour, 6 contre et 1 abstention, symbole d'une volonté nationale de rupture avec l'impunité. Une réforme institutionnelle qui restera comme l'une des plus importantes de la décennie.</p>
-      <p class="about-body">Aujourd'hui, en qualité de <strong style="color:var(--w)">Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones</strong>, il porte la voix du Congo sur la scène internationale. En <strong style="color:var(--w)">février 2026</strong>, il conduit à Paris des négociations cruciales avec son homologue français Gérald Darmanin pour rénover la convention de coopération judiciaire Congo-France — un accord vieux de plus de cinquante ans qu'il entend adapter aux enjeux du monde contemporain. Juriste, réformateur, diplomate : Ange Aimé Wilfrid BININGA incarne une vision exigeante et ambitieuse du service de l'État.</p>
-      <div class="about-pills">
+      <div id="dyn-about-body"></div>
+      <div class="about-pills" id="dyn-about-pills">
         <span class="pill">⚖️ Docteur en droit</span>
         <span class="pill">💰 Inspecteur principal du Trésor</span>
         <span class="pill">🏛️ Ministre de la Fonction publique</span>
@@ -1043,6 +1040,22 @@ function loadContent() {
       // À propos — Introduction
       const aboutIntroEl = document.getElementById("dyn-about-intro");
       if (aboutIntroEl && a.intro) aboutIntroEl.textContent = a.intro;
+
+      // À propos — Paragraphes biographie
+      const aboutBodyEl = document.getElementById("dyn-about-body");
+      if (aboutBodyEl && Array.isArray(a.paragraphs) && a.paragraphs.length) {
+        aboutBodyEl.innerHTML = a.paragraphs
+          .map(p => `<p class="about-body">${p.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</p>`)
+          .join("");
+      }
+
+      // À propos — Badges (pills)
+      const aboutPillsEl = document.getElementById("dyn-about-pills");
+      if (aboutPillsEl && Array.isArray(a.badges) && a.badges.length) {
+        aboutPillsEl.innerHTML = a.badges
+          .map(b => `<span class="pill">${b.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</span>`)
+          .join("");
+      }
 
       // Contact — informations dynamiques
       const ct = d.contact || {};

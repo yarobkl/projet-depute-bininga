@@ -506,9 +506,26 @@ select.form-input:focus{border-color:var(--r)}
       <!-- ── ABOUT ── -->
       <div class="panel" id="panel-about">
         <div class="card">
-          <div class="card-header"><div class="card-title">À propos</div></div>
-          <div class="form-group"><label>Titre</label><input type="text" data-key="about.title"></div>
-          <div class="form-group"><label>Introduction</label><textarea data-key="about.intro"></textarea></div>
+          <div class="card-header"><div class="card-title">Qui est-il ? — Biographie</div></div>
+          <div class="form-group">
+            <label>Titre de la section</label>
+            <input type="text" data-key="about.title" placeholder="Un homme forgé par le terrain">
+            <small style="color:rgba(255,255,255,.3);font-size:11px">HTML autorisé — ex : Un homme forgé par &lt;span class="r"&gt;le terrain&lt;/span&gt;</small>
+          </div>
+          <div class="form-group">
+            <label>Phrase d'introduction (chapeau)</label>
+            <textarea data-key="about.intro" rows="3" placeholder="Phrase courte qui résume le personnage…"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Biographie complète</label>
+            <textarea id="about-paragraphs-ta" rows="16" placeholder="Écrivez la biographie ici. Séparez chaque paragraphe par une ligne vide.&#10;&#10;Paragraphe 1…&#10;&#10;Paragraphe 2…"></textarea>
+            <small style="color:rgba(255,255,255,.3);font-size:11px">Séparez chaque paragraphe par <strong style="color:rgba(255,255,255,.5)">une ligne vide</strong>. Le texte est affiché tel quel sur le site.</small>
+          </div>
+          <div class="form-group">
+            <label>Badges / Titres (un par ligne)</label>
+            <textarea id="about-badges-ta" rows="7" placeholder="⚖️ Docteur en droit&#10;💰 Inspecteur principal du Trésor&#10;🏛️ Ministre de la Fonction publique"></textarea>
+            <small style="color:rgba(255,255,255,.3);font-size:11px">Un badge par ligne. Les emojis sont supportés.</small>
+          </div>
         </div>
       </div>
 
@@ -1312,6 +1329,18 @@ function populateForm() {
     keys.forEach(k => val = (val && val[k] !== undefined) ? val[k] : "");
     el.value = val;
   });
+  // Biographie : paragraphs → textarea (un paragraphe par bloc, séparé par ligne vide)
+  const pTa = document.getElementById("about-paragraphs-ta");
+  if (pTa) {
+    const ps = (siteData.about || {}).paragraphs || [];
+    pTa.value = ps.join("\n\n");
+  }
+  // Badges → textarea (un par ligne)
+  const bTa = document.getElementById("about-badges-ta");
+  if (bTa) {
+    const bs = (siteData.about || {}).badges || [];
+    bTa.value = bs.join("\n");
+  }
 }
 
 function renderStats() {
@@ -1344,6 +1373,18 @@ function collectForm() {
     }
     obj[keys[keys.length-1]] = el.value;
   });
+  // Biographie : textarea → array de paragraphes (split sur lignes vides)
+  const pTa = document.getElementById("about-paragraphs-ta");
+  if (pTa) {
+    if (!siteData.about) siteData.about = {};
+    siteData.about.paragraphs = pTa.value.split(/\n\s*\n/).map(p => p.trim()).filter(p => p);
+  }
+  // Badges : textarea → array (une ligne = un badge)
+  const bTa = document.getElementById("about-badges-ta");
+  if (bTa) {
+    if (!siteData.about) siteData.about = {};
+    siteData.about.badges = bTa.value.split("\n").map(b => b.trim()).filter(b => b);
+  }
 }
 
 function saveData() {
