@@ -333,6 +333,18 @@ select.form-input:focus{border-color:var(--r)}
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('seo',this)">
         <span class="icon">🔍</span> SEO
       </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('engagement',this)">
+        <span class="icon">📋</span> Engagement
+      </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('cta',this)">
+        <span class="icon">📣</span> Bandeau CTA
+      </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('contact-info',this)">
+        <span class="icon">📍</span> Contact
+      </div>
+      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('footer',this)">
+        <span class="icon">🦶</span> Footer
+      </div>
 
       <div class="sb-section role-admin" style="display:none">Système</div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
@@ -497,9 +509,12 @@ select.form-input:focus{border-color:var(--r)}
           <div class="card-header"><div class="card-title">Section Hero</div></div>
           <div class="form-group"><label>Prénom</label><input type="text" data-key="hero.firstName"></div>
           <div class="form-group"><label>Nom</label><input type="text" data-key="hero.lastName"></div>
+          <div class="form-group"><label>Texte d'accroche (sous la ligne rouge)</label><input type="text" data-key="hero.eyebrow" placeholder="Campagne législative · République du Congo"></div>
           <div class="form-group"><label>Rôle</label><input type="text" data-key="hero.role"></div>
-          <div class="form-group"><label>Slogan</label><input type="text" data-key="hero.slogan"></div>
+          <div class="form-group"><label>Slogan <small style="font-weight:400;color:rgba(255,255,255,.35)">(HTML accepté — &lt;em&gt;mot&lt;/em&gt; pour accentuer)</small></label><input type="text" data-key="hero.slogan"></div>
           <div class="form-group"><label>Sous-titre</label><textarea data-key="hero.subtitle"></textarea></div>
+          <div class="form-group"><label>Bouton principal (texte)</label><input type="text" data-key="hero.btn1" placeholder="🤝 Rejoindre la campagne"></div>
+          <div class="form-group"><label>Bouton secondaire (texte)</label><input type="text" data-key="hero.btn2" placeholder="Notre programme"></div>
         </div>
       </div>
 
@@ -507,6 +522,9 @@ select.form-input:focus{border-color:var(--r)}
       <div class="panel" id="panel-about">
         <div class="card">
           <div class="card-header"><div class="card-title">Qui est-il ? — Biographie</div></div>
+          <div class="form-group"><label>Étiquette de section</label><input type="text" data-key="about.sectionTag" placeholder="Qui est-il ?"></div>
+          <div class="form-group"><label>Badge photo — chiffre / lieu</label><input type="text" data-key="about.badgeNum" placeholder="Ewo"></div>
+          <div class="form-group"><label>Badge photo — libellé</label><input type="text" data-key="about.badgeLbl" placeholder="Sa circonscription"></div>
           <div class="form-group">
             <label>Titre de la section</label>
             <input type="text" data-key="about.title" placeholder="Un homme forgé par le terrain">
@@ -546,8 +564,86 @@ select.form-input:focus{border-color:var(--r)}
         </div>
       </div>
 
+      <!-- ── ENGAGEMENT ── -->
+      <div class="panel" id="panel-engagement">
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">📋 Textes de la section Audience / Contact</div></div>
+          <div class="form-group"><label>Étiquette (tag)</label><input type="text" data-key="engagement.tag" placeholder="Contactez-nous"></div>
+          <div class="form-group">
+            <label>Titre (utilisez \n pour les sauts de ligne)</label>
+            <input type="text" data-key="engagement.title" placeholder="Une réclamation\nou une">
+            <small style="color:rgba(255,255,255,.3);font-size:11px">La partie accentuée (en doré) est le champ ci-dessous.</small>
+          </div>
+          <div class="form-group"><label>Mot accentué (en doré)</label><input type="text" data-key="engagement.titleAccent" placeholder="demande"></div>
+          <div class="form-group"><label>Texte de description</label><textarea data-key="engagement.desc" rows="3" placeholder="Vous avez une réclamation…"></textarea></div>
+          <div class="form-group"><label>Titre du formulaire</label><input type="text" data-key="engagement.formTitle" placeholder="Demande d'audience auprès du Député"></div>
+          <div class="form-group"><label>Sous-titre du formulaire</label><input type="text" data-key="engagement.formSub" placeholder="Expliquez l'objet de votre demande…"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📌 Cartes d'info (3 cartes)</div>
+          </div>
+          <div id="eng-cards-list"></div>
+        </div>
+      </div>
+
+      <!-- ── CTA ── -->
+      <div class="panel" id="panel-cta">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📣 Bandeau CTA</div></div>
+          <div class="form-group">
+            <label>Titre (utilisez \n pour les sauts de ligne)</label>
+            <input type="text" data-key="cta.title" placeholder="Votez BININGA —\nle choix de l'expérience et du terrain">
+          </div>
+          <div class="form-group"><label>Sous-titre</label><input type="text" data-key="cta.subtitle" placeholder="Parce qu'Ewo mérite un homme…"></div>
+          <div class="form-group"><label>Bouton 1 — texte</label><input type="text" id="cta-btn1-text" placeholder="📋 Demande d'audience" oninput="updCtaBtn(1,'text',this.value)"></div>
+          <div class="form-group"><label>Bouton 1 — lien</label><input type="text" id="cta-btn1-href" placeholder="#engagement" oninput="updCtaBtn(1,'href',this.value)"></div>
+          <div class="form-group"><label>Bouton 2 — texte</label><input type="text" id="cta-btn2-text" placeholder="✉️ Nous contacter" oninput="updCtaBtn(2,'text',this.value)"></div>
+          <div class="form-group"><label>Bouton 2 — lien</label><input type="text" id="cta-btn2-href" placeholder="#contact" oninput="updCtaBtn(2,'href',this.value)"></div>
+          <div class="form-group"><label>Bouton 3 — texte</label><input type="text" id="cta-btn3-text" placeholder="📋 Lire le programme" oninput="updCtaBtn(3,'text',this.value)"></div>
+          <div class="form-group"><label>Bouton 3 — lien</label><input type="text" id="cta-btn3-href" placeholder="#programme" oninput="updCtaBtn(3,'href',this.value)"></div>
+        </div>
+      </div>
+
+      <!-- ── CONTACT INFO ── -->
+      <div class="panel" id="panel-contact-info">
+        <div class="card">
+          <div class="card-header"><div class="card-title">📍 Section Contact</div></div>
+          <div class="form-group"><label>Étiquette (tag)</label><input type="text" data-key="contact.sectionTag" placeholder="Nous écrire"></div>
+          <div class="form-group"><label>Titre (partie normale)</label><input type="text" data-key="contact.sectionTitle" placeholder="Prenez"></div>
+          <div class="form-group"><label>Titre (partie accentuée en rouge)</label><input type="text" data-key="contact.sectionAccent" placeholder="contact"></div>
+          <div class="form-group">
+            <label>Titre du bloc gauche</label>
+            <input type="text" data-key="contact.sidebarTitle" placeholder="Quartier Général\nde Campagne">
+            <small style="color:rgba(255,255,255,.3);font-size:11px">Utilisez \n pour un saut de ligne.</small>
+          </div>
+          <div class="form-group"><label>Texte du bloc gauche</label><textarea data-key="contact.sidebarDesc" rows="2" placeholder="Notre équipe répond à vos questions…"></textarea></div>
+          <div class="form-group"><label>Adresse</label><input type="text" data-key="contact.address" placeholder="Ewo, Cuvette-Ouest, République du Congo"></div>
+          <div class="form-group"><label>Téléphone</label><input type="text" data-key="contact.phone" placeholder="+242 06 XXX XXXX"></div>
+          <div class="form-group"><label>Email</label><input type="email" data-key="contact.email" placeholder="contact@bininga.cg"></div>
+          <div class="form-group"><label>Réseaux sociaux (handle)</label><input type="text" data-key="contact.social" placeholder="@AimeBiningaOfficiel"></div>
+        </div>
+      </div>
+
+      <!-- ── FOOTER ── -->
+      <div class="panel" id="panel-footer">
+        <div class="card">
+          <div class="card-header"><div class="card-title">🦶 Pied de page</div></div>
+          <div class="form-group"><label>Texte de présentation (sous le logo)</label><textarea data-key="footer.brandText" rows="3" placeholder="Site officiel d'Ange Aimé Wilfrid BININGA…"></textarea></div>
+          <div class="form-group"><label>Mention copyright (bas de page)</label><input type="text" data-key="footer.copyright" placeholder="© 2026 Campagne Aimé BININGA…"></div>
+        </div>
+      </div>
+
       <!-- ── GALERIE ── -->
       <div class="panel" id="panel-galerie">
+
+        <!-- En-tête de section -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🏷️ En-tête de la section Galerie</div></div>
+          <div class="form-group"><label>Étiquette (tag)</label><input type="text" data-key="galerieSection.tag" placeholder="En images"></div>
+          <div class="form-group"><label>Titre (partie normale)</label><input type="text" data-key="galerieSection.title" placeholder="Aimé BININGA"></div>
+          <div class="form-group"><label>Titre (partie accentuée en doré)</label><input type="text" data-key="galerieSection.titleAccent" placeholder="sur le terrain"></div>
+        </div>
 
         <!-- Diaporama -->
         <div class="card" style="margin-bottom:18px">
@@ -575,6 +671,15 @@ select.form-input:focus{border-color:var(--r)}
 
       <!-- ── ACTUALITÉS ── -->
       <div class="panel" id="panel-actus">
+
+        <!-- En-tête de section -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🏷️ En-tête de la section Actualités</div></div>
+          <div class="form-group"><label>Étiquette (tag)</label><input type="text" data-key="actusSection.tag" placeholder="Actualités"></div>
+          <div class="form-group"><label>Titre (partie normale)</label><input type="text" data-key="actusSection.title" placeholder="Sur le"></div>
+          <div class="form-group"><label>Titre (partie accentuée en rouge)</label><input type="text" data-key="actusSection.titleAccent" placeholder="terrain"></div>
+          <div class="form-group"><label>Titre de la grille des actions</label><input type="text" data-key="actusSection.gridTitle" placeholder="Autres actions du Député Ministre"></div>
+        </div>
 
         <!-- Article mis en avant -->
         <div class="card" style="margin-bottom:18px">
@@ -725,6 +830,14 @@ select.form-input:focus{border-color:var(--r)}
 
       <!-- ── PROGRAMME ── -->
       <div class="panel" id="panel-programme">
+        <!-- En-tête de section -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">🏷️ En-tête de la section Programme</div></div>
+          <div class="form-group"><label>Étiquette (tag)</label><input type="text" data-key="programmeSection.tag" placeholder="Notre vision"></div>
+          <div class="form-group"><label>Titre (partie normale)</label><input type="text" data-key="programmeSection.title" placeholder="Programme"></div>
+          <div class="form-group"><label>Titre (partie accentuée en rouge)</label><input type="text" data-key="programmeSection.titleAccent" placeholder="2027–2032"></div>
+          <div class="form-group"><label>Sous-titre de section</label><input type="text" data-key="programmeSection.subtitle" placeholder="Six axes stratégiques pour transformer Ewo…"></div>
+        </div>
         <!-- Bannière -->
         <div class="card" style="margin-bottom:18px">
           <div class="card-header"><div class="card-title">🏆 Bannière du programme</div></div>
@@ -1335,7 +1448,7 @@ function loadSiteData() {
 
 function applyData(d) {
   siteData = d;
-  [populateForm, renderStats, renderActus, renderGalerie, renderParcours, renderProgramme]
+  [populateForm, renderStats, renderActus, renderGalerie, renderParcours, renderProgramme, renderEngCards]
     .forEach(fn => { try { fn(); } catch(e) { console.error(fn.name, e); } });
 }
 
@@ -1358,6 +1471,15 @@ function populateForm() {
     const bs = (siteData.about || {}).badges || [];
     bTa.value = bs.join("\n");
   }
+  // CTA — boutons (objets imbriqués)
+  const cta = siteData.cta || {};
+  [1,2,3].forEach(n => {
+    const btn = cta["btn"+n] || {};
+    const t = document.getElementById("cta-btn"+n+"-text");
+    const h = document.getElementById("cta-btn"+n+"-href");
+    if (t) t.value = btn.text || "";
+    if (h) h.value = btn.href || "";
+  });
 }
 
 function renderStats() {
@@ -1402,6 +1524,38 @@ function collectForm() {
     if (!siteData.about) siteData.about = {};
     siteData.about.badges = bTa.value.split("\n").map(b => b.trim()).filter(b => b);
   }
+  // CTA buttons (collect from manual id inputs)
+  if (!siteData.cta) siteData.cta = {};
+  [1,2,3].forEach(n => {
+    const t = document.getElementById("cta-btn"+n+"-text");
+    const h = document.getElementById("cta-btn"+n+"-href");
+    if (t || h) {
+      if (!siteData.cta["btn"+n] || typeof siteData.cta["btn"+n] !== "object") siteData.cta["btn"+n] = {};
+      if (t) siteData.cta["btn"+n].text = t.value;
+      if (h) siteData.cta["btn"+n].href = h.value;
+    }
+  });
+}
+
+// ── CTA buttons (nested objects non gérés par data-key) ──────────────
+function updCtaBtn(n, field, val) {
+  if (!siteData.cta) siteData.cta = {};
+  if (!siteData.cta["btn"+n] || typeof siteData.cta["btn"+n] !== "object") siteData.cta["btn"+n] = {};
+  siteData.cta["btn"+n][field] = val;
+}
+
+// ── Engagement — cards ────────────────────────────────────────────────
+function renderEngCards() {
+  const el = document.getElementById("eng-cards-list");
+  if (!el) return;
+  const cards = (siteData.engagement && siteData.engagement.cards) || [];
+  el.innerHTML = cards.map((c, i) => `
+    <div style="background:var(--n3);border-radius:8px;padding:14px 16px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:10px">Carte ${i+1}</div>
+      <div class="form-group" style="margin-bottom:8px"><label>Icône</label><input type="text" value="${esc(c.icon||'')}" oninput="siteData.engagement.cards[${i}].icon=this.value" style="max-width:80px"></div>
+      <div class="form-group" style="margin-bottom:8px"><label>Titre</label><input type="text" value="${esc(c.title||'')}" oninput="siteData.engagement.cards[${i}].title=this.value"></div>
+      <div class="form-group" style="margin:0"><label>Description</label><input type="text" value="${esc(c.desc||'')}" oninput="siteData.engagement.cards[${i}].desc=this.value"></div>
+    </div>`).join("");
 }
 
 function saveData() {

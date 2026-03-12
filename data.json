@@ -2,11 +2,17 @@
   "hero": {
     "firstName": "Ange Aimé Wilfrid",
     "lastName": "BININGA",
+    "eyebrow": "Campagne législative · République du Congo",
     "role": "Garde des Sceaux · Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones · Député d'Ewo · PCT",
     "slogan": "Pour <em>Ewo</em>.<br>Pour un Congo <em>juste, libre</em> et fort.",
-    "subtitle": "Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest."
+    "subtitle": "Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.",
+    "btn1": "🤝 Rejoindre la campagne",
+    "btn2": "Notre programme"
   },
   "about": {
+    "sectionTag": "Qui est-il ?",
+    "badgeNum": "Ewo",
+    "badgeLbl": "Sa circonscription",
     "title": "Un homme forgé par <span class=\"r\">le terrain</span>",
     "intro": "Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays.",
     "paragraphs": [
@@ -150,6 +156,43 @@
       }
     ]
   },
+  "programmeSection": {
+    "tag": "Notre vision",
+    "title": "Programme",
+    "titleAccent": "2027–2032",
+    "subtitle": "Six axes stratégiques pour transformer Ewo et renforcer le Congo."
+  },
+  "galerieSection": {
+    "tag": "En images",
+    "title": "Aimé BININGA",
+    "titleAccent": "sur le terrain"
+  },
+  "actusSection": {
+    "tag": "Actualités",
+    "title": "Sur le",
+    "titleAccent": "terrain",
+    "gridTitle": "Autres actions du Député Ministre"
+  },
+  "engagement": {
+    "tag": "Contactez-nous",
+    "title": "Une réclamation\nou une",
+    "titleAccent": "demande",
+    "desc": "Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.",
+    "cards": [
+      {"icon": "📋", "title": "Demande d'audience", "desc": "Rencontrez le Député pour exposer votre situation"},
+      {"icon": "📣", "title": "Réclamation officielle", "desc": "Signalez un problème auprès de votre représentant"},
+      {"icon": "🤝", "title": "Prise de contact", "desc": "Entrez en relation avec l'équipe du Député d'Ewo"}
+    ],
+    "formTitle": "Demande d'audience auprès du Député",
+    "formSub": "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h"
+  },
+  "cta": {
+    "title": "Votez BININGA —\nle choix de l'expérience et du terrain",
+    "subtitle": "Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.",
+    "btn1": {"text": "📋 Demande d'audience", "href": "#engagement"},
+    "btn2": {"text": "✉️ Nous contacter", "href": "#contact"},
+    "btn3": {"text": "📋 Lire le programme", "href": "#programme"}
+  },
   "parcoursSection": {
     "tag": "Son parcours",
     "title": "Une carrière bâtie sur",
@@ -260,9 +303,18 @@
     "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"
   },
   "contact": {
+    "sectionTag": "Nous écrire",
+    "sectionTitle": "Prenez",
+    "sectionAccent": "contact",
+    "sidebarTitle": "Quartier Général\nde Campagne",
+    "sidebarDesc": "Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.",
     "phone": "+242 06 XXX XXXX",
     "email": "contact@bininga.cg",
     "address": "Ewo, Cuvette-Ouest, République du Congo",
-    "social": "@AimeBiningaOfficiel"
+    "social": "@AimeBingingaOfficiel"
+  },
+  "footer": {
+    "brandText": "Site officiel d'Ange Aimé Wilfrid BININGA — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.",
+    "copyright": "© 2026 Campagne Aimé BININGA · Parti Congolais du Travail · Tous droits réservés"
   }
 }

@@ -516,7 +516,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <div class="hero-content">
     <div class="hero-eyebrow">
       <div class="hero-eyebrow-line"></div>
-      <span class="hero-eyebrow-txt">Campagne législative · République du Congo</span>
+      <span class="hero-eyebrow-txt" id="dyn-hero-eyebrow">Campagne législative · République du Congo</span>
     </div>
     <h1 class="hero-name" id="dyn-name">
       Ange Aimé Wilfrid
@@ -530,8 +530,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     </h2>
     <p class="hero-sub" id="dyn-sub">Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.</p>
     <div class="hero-btns">
-      <a href="#engagement" class="btn btn-r">🤝 Rejoindre la campagne</a>
-      <a href="#programme" class="btn btn-o">Notre programme</a>
+      <a href="#engagement" class="btn btn-r" id="dyn-hero-btn1">🤝 Rejoindre la campagne</a>
+      <a href="#programme" class="btn btn-o" id="dyn-hero-btn2">Notre programme</a>
     </div>
   </div>
   <a href="#about" class="hero-scroll">
@@ -564,12 +564,12 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <div class="about-img-deco"></div>
       <div class="about-img-deco2"></div>
       <div class="about-badge">
-        <div class="about-badge-num">Ewo</div>
-        <div class="about-badge-lbl">Sa circonscription</div>
+        <div class="about-badge-num" id="dyn-about-badge-num">Ewo</div>
+        <div class="about-badge-lbl" id="dyn-about-badge-lbl">Sa circonscription</div>
       </div>
     </div>
     <div class="rev-r">
-      <span class="stag">Qui est-il ?</span>
+      <span class="stag" id="dyn-about-tag">Qui est-il ?</span>
       <h2 class="stitle" id="dyn-about-title">Un homme forgé par <span class="r">le terrain</span></h2>
       <div class="sline"></div>
       <p class="about-intro" id="dyn-about-intro">Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays.</p>
@@ -604,10 +604,10 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 <section id="programme">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
-      <span class="stag">Notre vision</span>
-      <h2 class="stitle">Programme <span class="r">2027–2032</span></h2>
+      <span class="stag" id="dyn-prog-tag">Notre vision</span>
+      <h2 class="stitle" id="dyn-prog-title">Programme <span class="r" id="dyn-prog-accent">2027–2032</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
-      <p style="font-size:16px;color:rgba(255,255,255,.45);max-width:600px;margin:20px auto 0;font-weight:300;line-height:1.9">Six axes stratégiques pour transformer Ewo et renforcer le Congo.</p>
+      <p id="dyn-prog-sub" style="font-size:16px;color:rgba(255,255,255,.45);max-width:600px;margin:20px auto 0;font-weight:300;line-height:1.9">Six axes stratégiques pour transformer Ewo et renforcer le Congo.</p>
     </div>
     <div class="prog-wrap" id="dyn-programme">
       <!-- Contenu généré dynamiquement via data.json -->
@@ -619,8 +619,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 <section id="galerie">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
-      <span class="stag">En images</span>
-      <h2 class="stitle">Aimé BININGA <span class="g">sur le terrain</span></h2>
+      <span class="stag" id="dyn-gal-tag">En images</span>
+      <h2 class="stitle" id="dyn-gal-title">Aimé BININGA <span class="g" id="dyn-gal-accent">sur le terrain</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
     <div class="gal-wrap" id="gal-wrap">
@@ -694,8 +694,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 
     <!-- En-tête section -->
     <div class="actu-section-hd rev">
-      <span class="stag">Actualités</span>
-      <h2 class="stitle">Sur le <span class="r">terrain</span></h2>
+      <span class="stag" id="dyn-actu-tag">Actualités</span>
+      <h2 class="stitle" id="dyn-actu-title">Sur le <span class="r" id="dyn-actu-accent">terrain</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
 
@@ -760,7 +760,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     </div>
 
     <!-- ── GRILLE DES ACTIONS ── -->
-    <div class="actu-grid-hd rev">Autres actions du Député Ministre</div>
+    <div class="actu-grid-hd rev" id="dyn-actu-grid-title">Autres actions du Député Ministre</div>
     <div class="actu-grid">
 
       <div class="actu-card rev" style="border-color:rgba(46,125,50,.25)">
@@ -849,11 +849,11 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 <section id="engagement">
   <div class="eng-wrap">
     <div class="eng-left">
-      <span class="stag">Contactez-nous</span>
-      <h2 class="stitle" style="color:var(--w)">Une réclamation<br>ou une <span class="g">demande</span> ?</h2>
+      <span class="stag" id="dyn-eng-tag">Contactez-nous</span>
+      <h2 class="stitle" style="color:var(--w)" id="dyn-eng-title">Une réclamation<br>ou une <span class="g" id="dyn-eng-title-accent">demande</span> ?</h2>
       <div class="sline"></div>
-      <p class="eng-desc">Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.</p>
-      <div class="eng-cards">
+      <p class="eng-desc" id="dyn-eng-desc">Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.</p>
+      <div class="eng-cards" id="dyn-eng-cards">
         <div class="eng-card"><div class="eng-ci">📋</div><div><div class="eng-ct">Demande d'audience</div><div class="eng-cd">Rencontrez le Député pour exposer votre situation</div></div></div>
         <div class="eng-card"><div class="eng-ci">📣</div><div><div class="eng-ct">Réclamation officielle</div><div class="eng-cd">Signalez un problème auprès de votre représentant</div></div></div>
         <div class="eng-card"><div class="eng-ci">🤝</div><div><div class="eng-ct">Prise de contact</div><div class="eng-cd">Entrez en relation avec l'équipe du Député d'Ewo</div></div></div>
@@ -928,12 +928,12 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 
 <!-- CTA -->
 <div class="cta-band">
-  <h2>Votez BININGA —<br>le choix de l'expérience et du terrain</h2>
-  <p>Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.</p>
+  <h2 id="dyn-cta-title">Votez BININGA —<br>le choix de l'expérience et du terrain</h2>
+  <p id="dyn-cta-sub">Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.</p>
   <div class="cta-btns">
-    <a href="#engagement" class="btn btn-r">📋 Demande d'audience</a>
-    <a href="#contact" class="btn btn-g">✉️ Nous contacter</a>
-    <a href="#programme" class="btn btn-o">📋 Lire le programme</a>
+    <a href="#engagement" class="btn btn-r" id="dyn-cta-btn1">📋 Demande d'audience</a>
+    <a href="#contact" class="btn btn-g" id="dyn-cta-btn2">✉️ Nous contacter</a>
+    <a href="#programme" class="btn btn-o" id="dyn-cta-btn3">📋 Lire le programme</a>
   </div>
 </div>
 
@@ -941,19 +941,19 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 <section id="contact">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
-      <span class="stag">Nous écrire</span>
-      <h2 class="stitle">Prenez <span class="r">contact</span></h2>
+      <span class="stag" id="dyn-ct-tag">Nous écrire</span>
+      <h2 class="stitle" id="dyn-ct-title">Prenez <span class="r" id="dyn-ct-accent">contact</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
     <div class="ct-wrap">
       <div class="rev-l">
-        <h3 class="ct-title">Quartier Général<br>de Campagne</h3>
-        <p class="ct-txt">Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.</p>
+        <h3 class="ct-title" id="dyn-ct-sidebar-title">Quartier Général<br>de Campagne</h3>
+        <p class="ct-txt" id="dyn-ct-sidebar-desc">Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.</p>
         <div class="ct-items">
-          <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl">Adresse</span><span class="ct-val">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl">Adresse</span><span class="ct-val" id="dyn-ct-address">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
           <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
-          <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl">Email</span><span class="ct-val"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="3b5854554f5a584f7b59525552555c5a16585a564b5a5c555e15585c">[email&#160;protected]</a></span></div></div>
-          <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl">Réseaux sociaux</span><span class="ct-val">@AimeBiningaOfficiel</span></div></div>
+          <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl">Email</span><span class="ct-val" id="dyn-ct-email">contact@bininga.cg</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl">Réseaux sociaux</span><span class="ct-val" id="dyn-ct-social">@AimeBingingaOfficiel</span></div></div>
         </div>
       </div>
       <div class="ct-form rev-r">
@@ -985,7 +985,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <div class="nlogo-badge">AB</div>
         <div class="nlogo-txt">Aimé BININGA<small>PCT · Député d'Ewo</small></div>
       </div>
-      <p class="ft-brand-p">Site officiel d'Ange Aimé Wilfrid BININGA — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.</p>
+      <p class="ft-brand-p" id="dyn-ft-brand">Site officiel d'Ange Aimé Wilfrid BININGA — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.</p>
       <div class="social-row">
         <a href="#" class="soc">f</a>
         <a href="#" class="soc">𝕏</a>
@@ -999,7 +999,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="#" onclick="event.preventDefault();openLegal('financement')">Financement</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
-    <p>© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
+    <p id="dyn-ft-copyright">© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
     <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a><a href="connexion.html">Connexion</a></div>
   </div>
 </footer>
@@ -1208,6 +1208,91 @@ function loadContent() {
         const metaDesc = document.querySelector("meta[name=description]");
         if (metaDesc && d.seo.description) metaDesc.content = d.seo.description;
       }
+
+      // ── Hero — éléments supplémentaires ──────────────────────────────
+      if (h.eyebrow) { const el=document.getElementById("dyn-hero-eyebrow"); if(el) el.textContent=h.eyebrow; }
+      if (h.btn1)    { const el=document.getElementById("dyn-hero-btn1");    if(el) el.textContent=h.btn1; }
+      if (h.btn2)    { const el=document.getElementById("dyn-hero-btn2");    if(el) el.textContent=h.btn2; }
+
+      // ── À propos — tag + badge ────────────────────────────────────────
+      if (a.sectionTag) { const el=document.getElementById("dyn-about-tag");       if(el) el.textContent=a.sectionTag; }
+      if (a.badgeNum)   { const el=document.getElementById("dyn-about-badge-num"); if(el) el.textContent=a.badgeNum; }
+      if (a.badgeLbl)   { const el=document.getElementById("dyn-about-badge-lbl"); if(el) el.textContent=a.badgeLbl; }
+
+      // ── Programme — en-tête de section ───────────────────────────────
+      const ps = d.programmeSection || {};
+      if (ps.tag)    { const el=document.getElementById("dyn-prog-tag");    if(el) el.textContent=ps.tag; }
+      if (ps.titleAccent) { const el=document.getElementById("dyn-prog-accent"); if(el) el.textContent=ps.titleAccent; }
+      if (ps.title)  {
+        const el=document.getElementById("dyn-prog-title");
+        if(el) el.childNodes[0].textContent=ps.title+" ";
+      }
+      if (ps.subtitle) { const el=document.getElementById("dyn-prog-sub"); if(el) el.textContent=ps.subtitle; }
+
+      // ── Galerie — en-tête de section ─────────────────────────────────
+      const gs = d.galerieSection || {};
+      if (gs.tag)         { const el=document.getElementById("dyn-gal-tag");    if(el) el.textContent=gs.tag; }
+      if (gs.titleAccent) { const el=document.getElementById("dyn-gal-accent"); if(el) el.textContent=gs.titleAccent; }
+      if (gs.title)       {
+        const el=document.getElementById("dyn-gal-title");
+        if(el) el.childNodes[0].textContent=gs.title+" ";
+      }
+
+      // ── Actualités — en-tête de section + titre grille ───────────────
+      const as_ = d.actusSection || {};
+      if (as_.tag)         { const el=document.getElementById("dyn-actu-tag");        if(el) el.textContent=as_.tag; }
+      if (as_.titleAccent) { const el=document.getElementById("dyn-actu-accent");     if(el) el.textContent=as_.titleAccent; }
+      if (as_.gridTitle)   { const el=document.getElementById("dyn-actu-grid-title"); if(el) el.textContent=as_.gridTitle; }
+      if (as_.title)       {
+        const el=document.getElementById("dyn-actu-title");
+        if(el) el.childNodes[0].textContent=as_.title+" ";
+      }
+
+      // ── Engagement ───────────────────────────────────────────────────
+      const eng = d.engagement || {};
+      if (eng.tag)         { const el=document.getElementById("dyn-eng-tag");          if(el) el.textContent=eng.tag; }
+      if (eng.titleAccent) { const el=document.getElementById("dyn-eng-title-accent"); if(el) el.textContent=eng.titleAccent; }
+      if (eng.title)       {
+        const el=document.getElementById("dyn-eng-title");
+        if(el) el.childNodes[0].innerHTML=eng.title.replace(/\n/g,"<br>")+" ";
+      }
+      if (eng.desc)      { const el=document.getElementById("dyn-eng-desc");      if(el) el.textContent=eng.desc; }
+      if (eng.formTitle) { const el=document.getElementById("form-title-aud");    if(el) el.textContent=eng.formTitle; }
+      if (eng.formSub)   { const el=document.getElementById("form-sub-aud");      if(el) el.textContent=eng.formSub; }
+      if (Array.isArray(eng.cards) && eng.cards.length) {
+        const el=document.getElementById("dyn-eng-cards");
+        if(el) el.innerHTML=eng.cards.map(c=>`<div class="eng-card"><div class="eng-ci">${escHtml(c.icon||"")}</div><div><div class="eng-ct">${escHtml(c.title||"")}</div><div class="eng-cd">${escHtml(c.desc||"")}</div></div></div>`).join("");
+      }
+
+      // ── CTA ──────────────────────────────────────────────────────────
+      const cta = d.cta || {};
+      if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=escHtml(cta.title).replace(/\n/g,"<br>"); }
+      if (cta.subtitle) { const el=document.getElementById("dyn-cta-sub");   if(el) el.textContent=cta.subtitle; }
+      if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cta.btn1.text||cta.btn1; if(cta.btn1.href) el.href=cta.btn1.href; } }
+      if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cta.btn2.text||cta.btn2; if(cta.btn2.href) el.href=cta.btn2.href; } }
+      if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cta.btn3.text||cta.btn3; if(cta.btn3.href) el.href=cta.btn3.href; } }
+
+      // ── Contact — en-tête + coordonnées ──────────────────────────────
+      const ct = d.contact || {};
+      if (ct.sectionTag)    { const el=document.getElementById("dyn-ct-tag");          if(el) el.textContent=ct.sectionTag; }
+      if (ct.sectionAccent) { const el=document.getElementById("dyn-ct-accent");       if(el) el.textContent=ct.sectionAccent; }
+      if (ct.sectionTitle)  {
+        const el=document.getElementById("dyn-ct-title");
+        if(el) el.childNodes[0].textContent=ct.sectionTitle+" ";
+      }
+      if (ct.sidebarTitle)  {
+        const el=document.getElementById("dyn-ct-sidebar-title");
+        if(el) el.innerHTML=escHtml(ct.sidebarTitle).replace(/\n/g,"<br>");
+      }
+      if (ct.sidebarDesc)   { const el=document.getElementById("dyn-ct-sidebar-desc"); if(el) el.textContent=ct.sidebarDesc; }
+      if (ct.address)       { const el=document.getElementById("dyn-ct-address");      if(el) el.textContent=ct.address; }
+      if (ct.email)         { const el=document.getElementById("dyn-ct-email");        if(el) el.textContent=ct.email; }
+      if (ct.social)        { const el=document.getElementById("dyn-ct-social");       if(el) el.textContent=ct.social; }
+
+      // ── Footer ───────────────────────────────────────────────────────
+      const ft = d.footer || {};
+      if (ft.brandText)  { const el=document.getElementById("dyn-ft-brand");     if(el) el.textContent=ft.brandText; }
+      if (ft.copyright)  { const el=document.getElementById("dyn-ft-copyright"); if(el) el.textContent=ft.copyright; }
     })
     .catch(() => {}); // Fallback : le contenu statique reste affiché
 }
