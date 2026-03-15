@@ -47,6 +47,15 @@
   "actus": {
     "slides": [
       {
+        "image": "images/rwanda-ambassadeur.jpg",
+        "alt": "BININGA reçoit l'Ambassadeur du Rwanda — 12 décembre 2025",
+        "chipColor": "#1565C0",
+        "chip": "🌍 Diplomatie judiciaire · 12 déc. 2025",
+        "date": "12 Décembre 2025 — Brazzaville, Congo",
+        "title": "BININGA & l'Ambassadeur du Rwanda :\npartenariat judiciaire et coopération bilatérale",
+        "subtitle": "L'Ambassadeur du Rwanda au Congo (@parfaitbus) a rendu une visite de courtoisie au Ministre de la Justice Aimé Wilfrid Bininga. La rencontre a permis d'aborder la mise en place d'un partenariat judiciaire et le renforcement de la coopération entre les deux pays."
+      },
+      {
         "image": "images/bininga.jpg",
         "alt": "BININGA — Tournée terrain Ewo, 9 mars 2026",
         "chipColor": "#2e7d32",
@@ -75,6 +84,23 @@
       }
     ],
     "vedettes": [
+      {
+        "image": "images/rwanda-ambassadeur.jpg",
+        "imageBg": "",
+        "placeholderEmoji": "🇷🇼",
+        "placeholderTitle": "Rwanda × Congo",
+        "placeholderDate": "12 déc. 2025",
+        "badgeColor": "#1565C0",
+        "badge": "🌍 Diplomatie",
+        "tagColor": "#1976D2",
+        "tag": "Coopération judiciaire Rwanda–Congo",
+        "date": "📅 12 Décembre 2025 · Brazzaville",
+        "title": "L'Ambassadeur du Rwanda rend visite au Ministre BININGA pour renforcer la coopération judiciaire bilatérale",
+        "text1": "Ce 12 décembre 2025, l'Ambassadeur du Rwanda en République du Congo (@parfaitbus) a rendu une visite de courtoisie au Ministre de la Justice, des Droits Humains et des Populations Autochtones, Ange Aimé Wilfrid BININGA. Cette rencontre diplomatique s'est tenue dans un esprit d'ouverture et de coopération entre les deux nations africaines.",
+        "quote": "« La rencontre a permis d'aborder la mise en place d'un partenariat judiciaire et le renforcement de la coopération entre les deux pays. »",
+        "text2": "Au cours de cet entretien, les deux parties ont examiné les voies et moyens de renforcer les liens judiciaires entre le Rwanda et le Congo-Brazzaville. Des échanges de cadeaux protocolaires ont ponctué la visite, témoignant de la qualité des relations entre les deux pays. Cette initiative s'inscrit dans la dynamique internationale portée par le Ministre BININGA, qui multiplie les partenariats judiciaires au bénéfice de la République du Congo.",
+        "tags": ["Diplomatie", "Rwanda", "Congo-Brazzaville", "Justice", "Coopération judiciaire", "Décembre 2025"]
+      },
       {
         "image": "",
         "imageBg": "linear-gradient(135deg,#0a1f0a,#1a3a1a)",
@@ -111,6 +137,17 @@
       }
     ],
     "cards": [
+      {
+        "catColor": "#1565C0",
+        "borderColor": "rgba(21,101,192,.25)",
+        "cat": "Diplomatie judiciaire · Rwanda",
+        "icon": "🌍",
+        "day": "12",
+        "month": "Déc",
+        "year": "2025",
+        "title": "L'Ambassadeur du Rwanda en visite chez le Ministre BININGA",
+        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville."
+      },
       {
         "catColor": "#4caf50",
         "borderColor": "rgba(46,125,50,.25)",
