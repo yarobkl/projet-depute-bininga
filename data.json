@@ -81,6 +81,15 @@
         "date": "18 Février 2026 — Place Vendôme, Paris",
         "title": "BININGA & Darmanin :\nune nouvelle ère judiciaire Congo–France",
         "subtitle": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions — entraide, extraditions, transfèrements — attendues à l'été 2026."
+      },
+      {
+        "image": "images/ewo.jpg",
+        "alt": "Boulevard énergétique — Ewo bientôt connecté au réseau électrique national",
+        "chipColor": "#e65100",
+        "chip": "⚡ Énergie · Août 2024",
+        "date": "20 Août 2024 — Cuvette-Ouest, Congo",
+        "title": "Boulevard énergétique :\nEwo bientôt connecté au réseau électrique national",
+        "subtitle": "Le Premier ministre Anatole Collinet Makosso a visité les travaux de la ligne électrique 110 KV et la route bitumée Boundji-Ewo. Sur 180 pylônes, 116 sont déjà installés — Ewo sera électrifiée dans quelques mois."
       }
     ],
     "vedettes": [
@@ -134,6 +143,23 @@
         "quote": "« Trois nouvelles conventions sont en cours de finalisation : entraide judiciaire, extraditions et transfèrements de personnes condamnées. L'objectif est une signature avant l'été 2026. »",
         "text2": "Une démarche saluée par les deux Ministères de la Justice, qui ouvre un nouveau chapitre dans les relations franco-congolaises. Porté par sa vision d'une justice moderne et accessible, le Ministre BININGA inscrit cette mission diplomatique dans la continuité directe de ses réformes institutionnelles au Congo.",
         "tags": ["Diplomatie", "Justice", "Congo–France", "Réformes", "Paris 2026"]
+      },
+      {
+        "image": "images/ewo.jpg",
+        "imageBg": "",
+        "placeholderEmoji": "⚡",
+        "placeholderTitle": "Ewo & le réseau\nélectrique national",
+        "placeholderDate": "Août 2024",
+        "badgeColor": "#e65100",
+        "badge": "⚡ Énergie & Développement",
+        "tagColor": "#ff6d00",
+        "tag": "Boulevard énergétique · Cuvette-Ouest",
+        "date": "📅 20 Août 2024 · Cuvette-Ouest, Congo",
+        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
+        "text1": "Le Premier ministre Anatole Collinet Makosso a effectué le 20 août 2024 une visite des travaux de construction de la ligne électrique de 110 KV et de la route bitumée Boundji-Ewo. Il a annoncé la connexion imminente d'Ewo, chef-lieu de la Cuvette-Ouest, au réseau électrique national congolais.",
+        "quote": "« Sur 180 pylônes, il y en a 116 qui sont déjà installés. Le poste transformateur est en train d'être construit. Ewo sera connectée au réseau électrique national dans quelques mois. »",
+        "text2": "Cette avancée majeure pour la Cuvette-Ouest s'inscrit dans le cadre du boulevard énergétique, l'un des axes stratégiques du programme du Président Denis Sassou-N'Guesso. La route bitumée de 25 km reliant Boundji à Ewo, déjà réalisée, et l'achèvement de la ligne 110 KV transformeront durablement le quotidien des habitants d'Ewo. Une métamorphose attendue de longue date pour toute la région.",
+        "tags": ["Énergie", "Ewo", "Boulevard énergétique", "Cuvette-Ouest", "Développement", "Août 2024"]
       }
     ],
     "cards": [
@@ -224,6 +250,17 @@
         "year": "2018",
         "title": "Adoption de la loi instituant la HALC — 107 voix pour",
         "desc": "Votée à 107 voix pour, 6 contre — la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
+      },
+      {
+        "catColor": "#e65100",
+        "borderColor": "rgba(230,81,0,.25)",
+        "cat": "Énergie · Cuvette-Ouest",
+        "icon": "⚡",
+        "day": "20",
+        "month": "Août",
+        "year": "2024",
+        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
+        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés — Ewo sera connectée au réseau national dans quelques mois."
       }
     ]
   },
