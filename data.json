@@ -45,49 +45,148 @@
     }
   ],
   "actus": {
-    "featured": {
-      "category": "Diplomatie",
-      "date": "18 Février 2026 — Paris",
-      "title": "Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France",
-      "text": "Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, a été reçu place Vendôme par son homologue français Gérald Darmanin. L'objet : la révision de la convention de coopération judiciaire liant les deux pays depuis 1974. Trois nouvelles conventions portant sur l'entraide judiciaire, les extraditions et les transfèrements sont en cours de négociation, avec pour objectif une signature à l'été 2026. Une nouvelle dynamique diplomatique saluée par les deux ministères.",
-      "image": "images/Darmanin.jpeg"
-    },
-    "items": [
+    "slides": [
       {
-        "day": "18",
-        "month": "FÉV",
-        "title": "Place Vendôme : rencontre avec Gérald Darmanin",
-        "desc": "Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026."
+        "image": "images/bininga.jpg",
+        "alt": "BININGA — Tournée terrain Ewo, 9 mars 2026",
+        "chipColor": "#2e7d32",
+        "chip": "🗳️ Campagne présidentielle · 9 mars 2026",
+        "date": "Ewo, Cuvette-Ouest — Axe Lebankaya",
+        "title": "BININGA au cœur de 13 villages —\nla campagne Sassou Nguesso à Ewo",
+        "subtitle": "Coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Bininga a sillonné l'axe Lebankaya pour porter le message présidentiel auprès des populations. Forte mobilisation à chaque étape."
       },
       {
+        "image": "images/bininga.jpg",
+        "alt": "Ange Aimé Wilfrid BININGA, Garde des Sceaux",
+        "chipColor": "",
+        "chip": "Portrait officiel",
+        "date": "République du Congo — Garde des Sceaux",
+        "title": "Ange Aimé Wilfrid BININGA,\nau service de la Justice et de son peuple",
+        "subtitle": "Juriste, réformateur, diplomate — Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales."
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "alt": "BININGA et Gérald Darmanin — Place Vendôme, Paris, Février 2026",
+        "chipColor": "",
+        "chip": "Diplomatie · Février 2026",
+        "date": "18 Février 2026 — Place Vendôme, Paris",
+        "title": "BININGA & Darmanin :\nune nouvelle ère judiciaire Congo–France",
+        "subtitle": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions — entraide, extraditions, transfèrements — attendues à l'été 2026."
+      }
+    ],
+    "vedettes": [
+      {
+        "image": "",
+        "imageBg": "linear-gradient(135deg,#0a1f0a,#1a3a1a)",
+        "placeholderEmoji": "🏘️",
+        "placeholderTitle": "13 villages\nsur l'axe Lebankaya",
+        "placeholderDate": "Ewo · 9 mars 2026",
+        "badgeColor": "#2e7d32",
+        "badge": "🗳️ En direct d'Ewo",
+        "tagColor": "#4caf50",
+        "tag": "Campagne présidentielle · District d'Ewo",
+        "date": "📅 9 mars 2026 · Axe Lebankaya, Cuvette-Ouest",
+        "title": "BININGA sillonne 13 villages pour porter le message du Président-Candidat Denis Sassou Nguesso",
+        "text1": "En sa qualité de coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Ange Wilfrid BININGA a effectué ce lundi une tournée de terrain sur l'axe Lebankaya, à la rencontre directe des populations de plusieurs localités de la zone.",
+        "quote": "Une forte mobilisation des populations venues écouter le message porté par la délégation de campagne, avec un soutien renouvelé à la candidature de Denis Sassou Nguesso.",
+        "text2": "Cette mission de proximité l'a conduit successivement dans les villages Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami et Ngayi. À chaque étape, les échanges ont permis de réaffirmer l'attachement des communautés locales à la candidature présidentielle — une dynamique qui témoigne du lien profond entre BININGA et les habitants d'Ewo qu'il représente depuis 2017.",
+        "tags": ["Campagne 2026", "Sassou Nguesso", "District d'Ewo", "Terrain", "13 villages", "Cuvette-Ouest"]
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "imageBg": "",
+        "placeholderEmoji": "",
+        "placeholderTitle": "",
+        "placeholderDate": "",
+        "badgeColor": "",
+        "badge": "Diplomatie",
+        "tagColor": "",
+        "tag": "Diplomatie judiciaire",
+        "date": "📅 18 Février 2026 · Paris, Place Vendôme",
+        "title": "BININGA et Darmanin relancent la coopération judiciaire Congo–France",
+        "text1": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis 1974 — un accord vieux de plus de 50 ans.",
+        "quote": "« Trois nouvelles conventions sont en cours de finalisation : entraide judiciaire, extraditions et transfèrements de personnes condamnées. L'objectif est une signature avant l'été 2026. »",
+        "text2": "Une démarche saluée par les deux Ministères de la Justice, qui ouvre un nouveau chapitre dans les relations franco-congolaises. Porté par sa vision d'une justice moderne et accessible, le Ministre BININGA inscrit cette mission diplomatique dans la continuité directe de ses réformes institutionnelles au Congo.",
+        "tags": ["Diplomatie", "Justice", "Congo–France", "Réformes", "Paris 2026"]
+      }
+    ],
+    "cards": [
+      {
+        "catColor": "#4caf50",
+        "borderColor": "rgba(46,125,50,.25)",
+        "cat": "Campagne présidentielle · Ewo",
+        "icon": "🗳️",
+        "day": "09",
+        "month": "Mars",
+        "year": "2026",
+        "title": "Coordinateur de campagne — tournée sur l'axe Lebankaya",
+        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi — fort soutien aux populations."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Justice · Ewo",
+        "icon": "⚖️",
         "day": "15",
-        "month": "DÉC",
+        "month": "Déc",
+        "year": "2025",
         "title": "Inauguration du tribunal de proximité d'Ewo",
-        "desc": "Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens."
+        "desc": "Résultat direct de son engagement au Ministère de la Justice — la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Dialogue social",
+        "icon": "🤝",
         "day": "08",
-        "month": "NOV",
-        "title": "Accord de dialogue social signé avec les syndicats",
-        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais."
+        "month": "Nov",
+        "year": "2025",
+        "title": "Accord historique avec les syndicats congolais",
+        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur — une victoire pour les travailleurs congolais."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Éducation · Jeunesse",
+        "icon": "🎓",
         "day": "22",
-        "month": "OCT",
-        "title": "Remise de 50 bourses d'études à des étudiants d'Ewo",
-        "desc": "Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest."
+        "month": "Oct",
+        "year": "2025",
+        "title": "50 bourses d'études remises à des jeunes d'Ewo",
+        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Emploi · Cuvette-Ouest",
+        "icon": "💼",
         "day": "05",
-        "month": "SEP",
-        "title": "Forum sur l'emploi des jeunes de la Cuvette-Ouest",
-        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région."
+        "month": "Sep",
+        "year": "2025",
+        "title": "Forum pour l'emploi des jeunes de la Cuvette-Ouest",
+        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "International · AIEA",
+        "icon": "🌍",
         "day": "14",
-        "month": "JUL",
-        "title": "Mission diplomatique à l'AIEA — Représentation du Congo",
-        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales."
+        "month": "Jul",
+        "year": "2025",
+        "title": "Mission diplomatique à l'AIEA — Congo représenté",
+        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Réforme · Anticorruption",
+        "icon": "🏛️",
+        "day": "07",
+        "month": "Mar",
+        "year": "2018",
+        "title": "Adoption de la loi instituant la HALC — 107 voix pour",
+        "desc": "Votée à 107 voix pour, 6 contre — la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
       }
     ]
   },

@@ -681,32 +681,40 @@ select.form-input:focus{border-color:var(--r)}
           <div class="form-group"><label>Titre de la grille des actions</label><input type="text" data-key="actusSection.gridTitle" placeholder="Autres actions du Député Ministre"></div>
         </div>
 
-        <!-- Article mis en avant -->
+        <!-- Slides hero -->
         <div class="card" style="margin-bottom:18px">
-          <div class="card-header"><div class="card-title">⭐ Article mis en avant</div></div>
-          <div class="form-group"><label>Catégorie (ex: Diplomatie)</label><input type="text" id="feat-cat" placeholder="Diplomatie"></div>
-          <div class="form-group"><label>Date affichée (ex: 18 Février 2026 — Paris)</label><input type="text" id="feat-date" placeholder="18 Février 2026 — Paris"></div>
-          <div class="form-group"><label>Titre de l'article</label><input type="text" id="feat-title" placeholder="Titre de l'article principal"></div>
-          <div class="form-group"><label>Texte complet</label><textarea id="feat-text" style="min-height:130px" placeholder="Contenu de l'article..."></textarea></div>
-          <div class="form-group">
-            <label>Photo de l'article</label>
-            <div style="display:flex;align-items:center;gap:10px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;padding:10px 13px">
-              <span id="feat-img-path" style="font-size:12px;color:rgba(255,255,255,.4);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Aucune photo</span>
-              <button class="sbtn sbtn-progress" style="flex-shrink:0" onclick="uploadFeaturedImage()">📷 Changer la photo</button>
+          <div class="card-header">
+            <div class="card-title">🎞️ Diaporama hero <span id="slides-count" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:400;margin-left:6px"></span></div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addActuSlide()">+ Ajouter une slide</button>
             </div>
           </div>
+          <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:14px">Chaque slide s'affiche dans le grand diaporama en haut de la section Actualités.</p>
+          <div id="actu-slides-list"></div>
         </div>
 
-        <!-- Petites actualités -->
-        <div class="card">
+        <!-- Articles vedette -->
+        <div class="card" style="margin-bottom:18px">
           <div class="card-header">
-            <div class="card-title">📋 Petites actualités <span id="actu-count" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:400;margin-left:6px"></span></div>
+            <div class="card-title">⭐ Articles vedette <span id="vedettes-count" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:400;margin-left:6px"></span></div>
             <div class="card-actions">
-              <button class="sbtn" style="background:rgba(255,255,255,.04);color:rgba(255,255,255,.5)" onclick="loadSiteData()">🔄</button>
-              <button class="sbtn sbtn-progress" onclick="addActuItem()">+ Ajouter</button>
+              <button class="sbtn sbtn-progress" onclick="addActuVedette()">+ Ajouter un article</button>
             </div>
           </div>
-          <div id="actu-items-list"><div class="msg-empty">Chargement…</div></div>
+          <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:14px">Articles mis en avant sous le diaporama, avec texte complet et citation.</p>
+          <div id="actu-vedettes-list"></div>
+        </div>
+
+        <!-- Cards grille -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📋 Grille d'actions <span id="cards-count" style="font-size:11px;color:rgba(255,255,255,.35);font-weight:400;margin-left:6px"></span></div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="addActuCard()">+ Ajouter une carte</button>
+            </div>
+          </div>
+          <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:14px">Petites cartes d'action sous les articles vedette (date + titre + description).</p>
+          <div id="actu-cards-list"></div>
         </div>
 
       </div>
@@ -1328,106 +1336,137 @@ function addGridPhoto() {
 //  ACTUALITÉS
 // ══════════════════════════════════════════════════════════════════════════
 // Articles par défaut (issus du HTML statique de index.html)
-const ACTUS_DEFAULT = {
-  featured: {
-    category: "Diplomatie",
-    date: "18 Février 2026 — Paris",
-    title: "Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France",
-    text: "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis 1974 — un accord vieux de plus de 50 ans.",
-    image: "images/Darmanin.jpeg"
-  },
-  items: [
-    { day: "18", month: "FÉV", title: "Place Vendôme : rencontre avec Gérald Darmanin", desc: "Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026." },
-    { day: "15", month: "DÉC", title: "Inauguration du tribunal de proximité d'Ewo", desc: "Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens." },
-    { day: "08", month: "NOV", title: "Accord de dialogue social signé avec les syndicats", desc: "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais." },
-    { day: "22", month: "OCT", title: "Remise de 50 bourses d'études à des étudiants d'Ewo", desc: "Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest." },
-    { day: "05", month: "SEP", title: "Forum sur l'emploi des jeunes de la Cuvette-Ouest", desc: "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région." },
-    { day: "14", month: "JUL", title: "Mission diplomatique à l'AIEA — Représentation du Congo", desc: "Aimé BININGA représente la République du Congo dans des instances internationales." }
-  ]
-};
-
 function renderActus() {
-  // Si actus vide OU featured sans titre → on précharge depuis le site statique
-  if (!siteData.actus || !siteData.actus.featured || !siteData.actus.featured.title) {
-    siteData.actus = JSON.parse(JSON.stringify(ACTUS_DEFAULT));
-  }
-  const f = siteData.actus.featured;
-  document.getElementById("feat-cat").value   = f.category || "";
-  document.getElementById("feat-date").value  = f.date     || "";
-  document.getElementById("feat-title").value = f.title    || "";
-  document.getElementById("feat-text").value  = f.text     || "";
-  const featImgEl = document.getElementById("feat-img-path");
-  if (featImgEl) featImgEl.textContent = f.image || "Aucune photo";
-
-  renderActuItems();
+  if (!siteData.actus) siteData.actus = {};
+  renderActuSlides();
+  renderActuVedettes();
+  renderActuCards();
 }
 
-function renderActuItems() {
-  const items = (siteData.actus && siteData.actus.items) || [];
-  const list = document.getElementById("actu-items-list");
-  const counter = document.getElementById("actu-count");
-  if (counter) counter.textContent = items.length ? `(${items.length})` : "";
-  if (!items.length) {
-    list.innerHTML = '<div class="msg-empty">Aucune actualité. Cliquez sur "+ Ajouter".</div>';
-    return;
-  }
-  list.innerHTML = items.map((it, i) => `
-    <div class="stats-row" style="grid-template-columns:60px 80px 1fr 1fr auto;gap:10px;align-items:start">
-      <div class="form-group" style="margin:0">
-        <label>Jour</label>
-        <input type="text" value="${esc(it.day||'')}" placeholder="18"
-          oninput="updActu(${i},'day',this.value)" style="text-align:center;font-size:18px;font-weight:700">
+// ── SLIDES ────────────────────────────────────────────────────────────
+function renderActuSlides() {
+  const slides = (siteData.actus && siteData.actus.slides) || [];
+  const el = document.getElementById("actu-slides-list");
+  const ct = document.getElementById("slides-count");
+  if (ct) ct.textContent = slides.length ? `(${slides.length})` : "";
+  if (!slides.length) { el.innerHTML = '<div class="msg-empty">Aucune slide. Cliquez sur "+ Ajouter".</div>'; return; }
+  el.innerHTML = slides.map((s, i) => `
+    <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Slide ${i+1}</div>
+        <button class="btn-danger" onclick="delActuSlide(${i})" title="Supprimer">🗑</button>
       </div>
-      <div class="form-group" style="margin:0">
-        <label>Mois</label>
-        <input type="text" value="${esc(it.month||'')}" placeholder="FÉV"
-          oninput="updActu(${i},'month',this.value)" style="text-align:center;text-transform:uppercase">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0"><label>Image (chemin)</label><input type="text" value="${esc(s.image||'')}" placeholder="images/photo.jpg" oninput="updActuSlide(${i},'image',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Texte alt</label><input type="text" value="${esc(s.alt||'')}" oninput="updActuSlide(${i},'alt',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Badge (chip)</label><input type="text" value="${esc(s.chip||'')}" oninput="updActuSlide(${i},'chip',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(s.chipColor||'')}" placeholder="#2e7d32" oninput="updActuSlide(${i},'chipColor',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Date / lieu</label><input type="text" value="${esc(s.date||'')}" oninput="updActuSlide(${i},'date',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Titre (\\n pour saut de ligne)</label><input type="text" value="${esc(s.title||'')}" oninput="updActuSlide(${i},'title',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Sous-titre</label><textarea rows="2" oninput="updActuSlide(${i},'subtitle',this.value)">${esc(s.subtitle||'')}</textarea></div>
       </div>
-      <div class="form-group" style="margin:0">
-        <label>Titre</label>
-        <input type="text" value="${esc(it.title||'')}" placeholder="Titre de l'actualité"
-          oninput="updActu(${i},'title',this.value)">
-      </div>
-      <div class="form-group" style="margin:0">
-        <label>Description courte</label>
-        <input type="text" value="${esc(it.desc||'')}" placeholder="Résumé en une ligne"
-          oninput="updActu(${i},'desc',this.value)">
-      </div>
-      <div style="padding-top:22px">
-        <button class="btn-danger" onclick="delActuItem(${i})" title="Supprimer">🗑</button>
-      </div>
-    </div>
-  `).join("");
+    </div>`).join('');
+}
+function updActuSlide(i, f, v) { if (siteData.actus.slides[i]) siteData.actus.slides[i][f] = v; }
+function addActuSlide() {
+  if (!siteData.actus.slides) siteData.actus.slides = [];
+  siteData.actus.slides.push({ image:"", alt:"", chip:"", chipColor:"", date:"", title:"", subtitle:"" });
+  renderActuSlides();
+}
+function delActuSlide(i) {
+  if (!confirm("Supprimer cette slide ?")) return;
+  siteData.actus.slides.splice(i, 1); renderActuSlides(); showToast("Slide supprimée");
 }
 
-function updActu(i, field, val) {
-  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
-  if (!siteData.actus.items[i]) return;
-  siteData.actus.items[i][field] = val;
+// ── VEDETTES ──────────────────────────────────────────────────────────
+function renderActuVedettes() {
+  const vedettes = (siteData.actus && siteData.actus.vedettes) || [];
+  const el = document.getElementById("actu-vedettes-list");
+  const ct = document.getElementById("vedettes-count");
+  if (ct) ct.textContent = vedettes.length ? `(${vedettes.length})` : "";
+  if (!vedettes.length) { el.innerHTML = '<div class="msg-empty">Aucun article. Cliquez sur "+ Ajouter".</div>'; return; }
+  el.innerHTML = vedettes.map((v, i) => `
+    <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Article ${i+1}</div>
+        <button class="btn-danger" onclick="delActuVedette(${i})" title="Supprimer">🗑</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0"><label>Image (vide = placeholder)</label><input type="text" value="${esc(v.image||'')}" placeholder="images/photo.jpg" oninput="updActuVedette(${i},'image',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Badge (ex: Diplomatie)</label><input type="text" value="${esc(v.badge||'')}" oninput="updActuVedette(${i},'badge',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(v.badgeColor||'')}" placeholder="#2e7d32" oninput="updActuVedette(${i},'badgeColor',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Catégorie</label><input type="text" value="${esc(v.tag||'')}" oninput="updActuVedette(${i},'tag',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Couleur catégorie (vide = blanc)</label><input type="text" value="${esc(v.tagColor||'')}" placeholder="#4caf50" oninput="updActuVedette(${i},'tagColor',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Date / lieu affiché</label><input type="text" value="${esc(v.date||'')}" oninput="updActuVedette(${i},'date',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Titre de l'article</label><input type="text" value="${esc(v.title||'')}" oninput="updActuVedette(${i},'title',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Paragraphe 1</label><textarea rows="3" oninput="updActuVedette(${i},'text1',this.value)">${esc(v.text1||'')}</textarea></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Citation (encadré)</label><textarea rows="2" oninput="updActuVedette(${i},'quote',this.value)">${esc(v.quote||'')}</textarea></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Paragraphe 2</label><textarea rows="3" oninput="updActuVedette(${i},'text2',this.value)">${esc(v.text2||'')}</textarea></div>
+        <div class="form-group" style="margin:0;grid-column:span 2">
+          <label>Tags (un par ligne)</label>
+          <textarea rows="3" oninput="updActuVedetteTags(${i},this.value)">${esc((v.tags||[]).join('\n'))}</textarea>
+        </div>
+        <div style="grid-column:span 2;font-size:11px;color:rgba(255,255,255,.25);margin-top:4px">Si pas d'image : renseignez les champs ci-dessous pour le placeholder</div>
+        <div class="form-group" style="margin:0"><label>Emoji placeholder</label><input type="text" value="${esc(v.placeholderEmoji||'')}" placeholder="🏘️" oninput="updActuVedette(${i},'placeholderEmoji',this.value)" style="max-width:80px"></div>
+        <div class="form-group" style="margin:0"><label>Titre placeholder (\\n = saut)</label><input type="text" value="${esc(v.placeholderTitle||'')}" oninput="updActuVedette(${i},'placeholderTitle',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Date placeholder</label><input type="text" value="${esc(v.placeholderDate||'')}" oninput="updActuVedette(${i},'placeholderDate',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Fond placeholder (CSS)</label><input type="text" value="${esc(v.imageBg||'')}" placeholder="linear-gradient(…)" oninput="updActuVedette(${i},'imageBg',this.value)"></div>
+      </div>
+    </div>`).join('');
+}
+function updActuVedette(i, f, v) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i][f] = v; }
+function updActuVedetteTags(i, val) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].tags = val.split('\n').map(t=>t.trim()).filter(t=>t); }
+function addActuVedette() {
+  if (!siteData.actus.vedettes) siteData.actus.vedettes = [];
+  siteData.actus.vedettes.push({ image:"", badge:"", tag:"", date:"", title:"", text1:"", quote:"", text2:"", tags:[] });
+  renderActuVedettes();
+}
+function delActuVedette(i) {
+  if (!confirm("Supprimer cet article vedette ?")) return;
+  siteData.actus.vedettes.splice(i, 1); renderActuVedettes(); showToast("Article supprimé");
 }
 
-function addActuItem() {
-  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
-  if (!siteData.actus.items) siteData.actus.items = [];
-  siteData.actus.items.unshift({ day: "", month: "", title: "", desc: "" });
-  renderActuItems();
+// ── CARDS ─────────────────────────────────────────────────────────────
+function renderActuCards() {
+  const cards = (siteData.actus && siteData.actus.cards) || [];
+  const el = document.getElementById("actu-cards-list");
+  const ct = document.getElementById("cards-count");
+  if (ct) ct.textContent = cards.length ? `(${cards.length})` : "";
+  if (!cards.length) { el.innerHTML = '<div class="msg-empty">Aucune carte. Cliquez sur "+ Ajouter".</div>'; return; }
+  el.innerHTML = cards.map((c, i) => `
+    <div style="background:var(--n3);border-radius:8px;padding:14px;margin-bottom:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Carte ${i+1}</div>
+        <button class="btn-danger" onclick="delActuCard(${i})" title="Supprimer">🗑</button>
+      </div>
+      <div style="display:grid;grid-template-columns:50px 50px 70px 1fr 1fr auto;gap:8px;align-items:start">
+        <div class="form-group" style="margin:0"><label>Icône</label><input type="text" value="${esc(c.icon||'')}" oninput="updActuCard(${i},'icon',this.value)" style="text-align:center"></div>
+        <div class="form-group" style="margin:0"><label>Jour</label><input type="text" value="${esc(c.day||'')}" oninput="updActuCard(${i},'day',this.value)" style="text-align:center;font-weight:700"></div>
+        <div class="form-group" style="margin:0"><label>Mois</label><input type="text" value="${esc(c.month||'')}" oninput="updActuCard(${i},'month',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Année</label><input type="text" value="${esc(c.year||'')}" oninput="updActuCard(${i},'year',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Catégorie</label><input type="text" value="${esc(c.cat||'')}" oninput="updActuCard(${i},'cat',this.value)"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div class="form-group" style="margin:0"><label>Couleur catégorie (vide = blanc)</label><input type="text" value="${esc(c.catColor||'')}" placeholder="#4caf50" oninput="updActuCard(${i},'catColor',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Couleur bordure (vide = défaut)</label><input type="text" value="${esc(c.borderColor||'')}" placeholder="rgba(46,125,50,.25)" oninput="updActuCard(${i},'borderColor',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Titre</label><input type="text" value="${esc(c.title||'')}" oninput="updActuCard(${i},'title',this.value)"></div>
+        <div class="form-group" style="margin:0;grid-column:span 2"><label>Description</label><textarea rows="2" oninput="updActuCard(${i},'desc',this.value)">${esc(c.desc||'')}</textarea></div>
+      </div>
+    </div>`).join('');
 }
-
-function delActuItem(i) {
-  if (!confirm("Supprimer cette actualité ?")) return;
-  siteData.actus.items.splice(i, 1);
-  renderActuItems();
-  showToast("Actualité supprimée");
+function updActuCard(i, f, v) { if (siteData.actus.cards[i]) siteData.actus.cards[i][f] = v; }
+function addActuCard() {
+  if (!siteData.actus.cards) siteData.actus.cards = [];
+  siteData.actus.cards.push({ icon:"", day:"", month:"", year:"", cat:"", catColor:"", borderColor:"", title:"", desc:"" });
+  renderActuCards();
+}
+function delActuCard(i) {
+  if (!confirm("Supprimer cette carte ?")) return;
+  siteData.actus.cards.splice(i, 1); renderActuCards(); showToast("Carte supprimée");
 }
 
 function collectActus() {
-  if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
-  if (!siteData.actus.featured) siteData.actus.featured = {};
-  siteData.actus.featured.category = document.getElementById("feat-cat").value;
-  siteData.actus.featured.date     = document.getElementById("feat-date").value;
-  siteData.actus.featured.title    = document.getElementById("feat-title").value;
-  siteData.actus.featured.text     = document.getElementById("feat-text").value;
-  // Les items sont déjà mis à jour via oninput (updActu)
+  // Tout est déjà mis à jour en temps réel via oninput
 }
 
 // ══════════════════════════════════════════════════════════════════════════

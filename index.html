@@ -635,43 +635,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <!-- ══ HERO SLIDESHOW ══════════════════════════════════════════════ -->
   <div class="actu-hero" id="actu-hero">
     <div class="actu-hero-track" id="actu-hero-track">
-
-      <!-- Slide 1 — Tournée de terrain Ewo (9 mars 2026) — LA PLUS RÉCENTE -->
-      <div class="actu-hero-slide" id="hs0">
-        <img src="images/bininga.jpg" alt="BININGA — Tournée terrain Ewo, 9 mars 2026">
-        <div class="actu-hero-overlay" style="background:linear-gradient(to top,rgba(6,6,6,.95) 0%,rgba(6,6,6,.5) 45%,rgba(10,30,10,.2) 100%)"></div>
-        <div class="actu-hero-content">
-          <span class="actu-hero-chip" style="background:#2e7d32">🗳️ Campagne présidentielle · 9 mars 2026</span>
-          <div class="actu-hero-date">Ewo, Cuvette-Ouest — Axe Lebankaya</div>
-          <h2 class="actu-hero-title">BININGA au cœur de 13 villages —<br>la campagne Sassou Nguesso à Ewo</h2>
-          <p class="actu-hero-sub">Coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Bininga a sillonné l'axe Lebankaya pour porter le message présidentiel auprès des populations. Forte mobilisation à chaque étape.</p>
-        </div>
-      </div>
-
-      <!-- Slide 2 — Portrait officiel Bininga -->
-      <div class="actu-hero-slide" id="hs1">
-        <img src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA, Garde des Sceaux">
-        <div class="actu-hero-overlay"></div>
-        <div class="actu-hero-content">
-          <span class="actu-hero-chip">Portrait officiel</span>
-          <div class="actu-hero-date">République du Congo — Garde des Sceaux</div>
-          <h2 class="actu-hero-title">Ange Aimé Wilfrid BININGA,<br>au service de la Justice et de son peuple</h2>
-          <p class="actu-hero-sub">Juriste, réformateur, diplomate — Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales.</p>
-        </div>
-      </div>
-
-      <!-- Slide 3 — Rencontre avec Darmanin -->
-      <div class="actu-hero-slide" id="hs2">
-        <img src="images/Darmanin.jpeg" alt="BININGA et Gérald Darmanin — Place Vendôme, Paris, Février 2026">
-        <div class="actu-hero-overlay"></div>
-        <div class="actu-hero-content">
-          <span class="actu-hero-chip">Diplomatie · Février 2026</span>
-          <div class="actu-hero-date">18 Février 2026 — Place Vendôme, Paris</div>
-          <h2 class="actu-hero-title">BININGA & Darmanin :<br>une nouvelle ère judiciaire Congo–France</h2>
-          <p class="actu-hero-sub">Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions — entraide, extraditions, transfèrements — attendues à l'été 2026.</p>
-        </div>
-      </div>
-
+      <!-- Rempli dynamiquement par loadContent() depuis data.json -->
     </div>
 
     <!-- Navigation -->
@@ -679,14 +643,10 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <button class="actu-hero-nav actu-hero-next" id="actu-next" aria-label="Suivant">›</button>
 
     <!-- Dots -->
-    <div class="actu-hero-dots">
-      <button class="actu-hero-dot" data-hs="0" aria-label="Slide 1"></button>
-      <button class="actu-hero-dot" data-hs="1" aria-label="Slide 2"></button>
-      <button class="actu-hero-dot" data-hs="2" aria-label="Slide 3"></button>
-    </div>
+    <div class="actu-hero-dots" id="actu-hero-dots"></div>
 
     <!-- Compteur -->
-    <div class="actu-hero-counter" id="actu-counter">01 / 03</div>
+    <div class="actu-hero-counter" id="actu-counter">01 / 01</div>
   </div>
 
   <!-- ══ CONTENU ÉDITORIAL ══════════════════════════════════════════ -->
@@ -699,148 +659,12 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       <div class="sline" style="margin:18px auto 0"></div>
     </div>
 
-    <!-- ══ ARTICLE VEDETTE 1 — Tournée terrain Ewo 9 mars 2026 ══ -->
-    <div class="actu-vedette rev" style="margin-bottom:32px">
-      <div class="actu-vedette-img" style="background:linear-gradient(135deg,#0a1f0a,#1a3a1a)">
-        <!-- Village ambiance CSS quand pas de photo -->
-        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
-          <div style="font-size:56px">🏘️</div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">13 villages<br>sur l'axe Lebankaya</div>
-          <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">Ewo · 9 mars 2026</div>
-          <!-- Badges villages -->
-          <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px">
-            <span class="actu-tag" style="color:rgba(255,255,255,.5)">Oboukou</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Oyendze</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Eti</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Ossele</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Abeke</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Okogo</span><span class="actu-tag" style="color:rgba(255,255,255,.5)">Lembessi</span>
-          </div>
-        </div>
-        <span class="actu-vedette-badge" style="background:#2e7d32">🗳️ En direct d'Ewo</span>
-      </div>
-      <div class="actu-vedette-body">
-        <div class="actu-vedette-tag" style="color:#4caf50">Campagne présidentielle · District d'Ewo</div>
-        <div class="actu-vedette-date">📅 9 mars 2026 · Axe Lebankaya, Cuvette-Ouest</div>
-        <h3 class="actu-vedette-title">BININGA sillonne 13 villages pour porter le message du Président-Candidat Denis Sassou Nguesso</h3>
-        <p class="actu-vedette-txt">En sa qualité de <strong style="color:rgba(255,255,255,.85)">coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso</strong> dans le district et la commune d'Ewo, Aimé Ange Wilfrid BININGA a effectué ce lundi une tournée de terrain sur l'axe Lebankaya, à la rencontre directe des populations de plusieurs localités de la zone.</p>
-        <div class="actu-vedette-quote" style="border-color:#4caf50">
-          Une forte mobilisation des populations venues écouter le message porté par la délégation de campagne, avec un soutien renouvelé à la candidature de Denis Sassou Nguesso.
-        </div>
-        <p class="actu-vedette-txt">Cette mission de proximité l'a conduit successivement dans les villages <strong style="color:rgba(255,255,255,.8)">Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami et Ngayi</strong>. À chaque étape, les échanges ont permis de réaffirmer l'attachement des communautés locales à la candidature présidentielle — une dynamique qui témoigne du lien profond entre BININGA et les habitants d'Ewo qu'il représente depuis 2017.</p>
-        <div class="actu-vedette-tags">
-          <span class="actu-tag">Campagne 2026</span>
-          <span class="actu-tag">Sassou Nguesso</span>
-          <span class="actu-tag">District d'Ewo</span>
-          <span class="actu-tag">Terrain</span>
-          <span class="actu-tag">13 villages</span>
-          <span class="actu-tag">Cuvette-Ouest</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ ARTICLE VEDETTE 2 — Rencontre Darmanin ══ -->
-    <div class="actu-vedette rev">
-      <div class="actu-vedette-img">
-        <img src="images/Darmanin.jpeg" alt="BININGA et Darmanin — Paris, Place Vendôme, 18 Février 2026">
-        <span class="actu-vedette-badge">Diplomatie</span>
-      </div>
-      <div class="actu-vedette-body">
-        <div class="actu-vedette-tag">Diplomatie judiciaire</div>
-        <div class="actu-vedette-date">📅 18 Février 2026 · Paris, Place Vendôme</div>
-        <h3 class="actu-vedette-title">BININGA et Darmanin relancent la coopération judiciaire Congo–France</h3>
-        <p class="actu-vedette-txt">Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis <strong style="color:rgba(255,255,255,.8)">1974</strong> — un accord vieux de plus de <strong style="color:rgba(255,255,255,.8)">50 ans</strong>.</p>
-        <div class="actu-vedette-quote">
-          « Trois nouvelles conventions sont en cours de finalisation : entraide judiciaire, extraditions et transfèrements de personnes condamnées. L'objectif est une signature avant l'été 2026. »
-        </div>
-        <p class="actu-vedette-txt">Une démarche saluée par les deux Ministères de la Justice, qui ouvre un nouveau chapitre dans les relations franco-congolaises. Porté par sa vision d'une justice moderne et accessible, le Ministre BININGA inscrit cette mission diplomatique dans la continuité directe de ses réformes institutionnelles au Congo.</p>
-        <div class="actu-vedette-tags">
-          <span class="actu-tag">Diplomatie</span>
-          <span class="actu-tag">Justice</span>
-          <span class="actu-tag">Congo–France</span>
-          <span class="actu-tag">Réformes</span>
-          <span class="actu-tag">Paris 2026</span>
-        </div>
-      </div>
-    </div>
+    <!-- Articles vedette — remplis dynamiquement -->
+    <div id="actu-vedettes-wrap"></div>
 
     <!-- ── GRILLE DES ACTIONS ── -->
     <div class="actu-grid-hd rev" id="dyn-actu-grid-title">Autres actions du Député Ministre</div>
-    <div class="actu-grid">
-
-      <div class="actu-card rev" style="border-color:rgba(46,125,50,.25)">
-        <div class="actu-card-cat" style="color:#4caf50">Campagne présidentielle · Ewo</div>
-        <div class="actu-card-ic">🗳️</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">09</span>
-          <span class="actu-card-mon">Mars<br>2026</span>
-        </div>
-        <div class="actu-card-title">Coordinateur de campagne — tournée sur l'axe Lebankaya</div>
-        <div class="actu-card-desc">13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi — fort soutien aux populations.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">Justice · Ewo</div>
-        <div class="actu-card-ic">⚖️</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">15</span>
-          <span class="actu-card-mon">Déc<br>2025</span>
-        </div>
-        <div class="actu-card-title">Inauguration du tribunal de proximité d'Ewo</div>
-        <div class="actu-card-desc">Résultat direct de son engagement au Ministère de la Justice — la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">Dialogue social</div>
-        <div class="actu-card-ic">🤝</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">08</span>
-          <span class="actu-card-mon">Nov<br>2025</span>
-        </div>
-        <div class="actu-card-title">Accord historique avec les syndicats congolais</div>
-        <div class="actu-card-desc">Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur — une victoire pour les travailleurs congolais.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">Éducation · Jeunesse</div>
-        <div class="actu-card-ic">🎓</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">22</span>
-          <span class="actu-card-mon">Oct<br>2025</span>
-        </div>
-        <div class="actu-card-title">50 bourses d'études remises à des jeunes d'Ewo</div>
-        <div class="actu-card-desc">Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">Emploi · Cuvette-Ouest</div>
-        <div class="actu-card-ic">💼</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">05</span>
-          <span class="actu-card-mon">Sep<br>2025</span>
-        </div>
-        <div class="actu-card-title">Forum pour l'emploi des jeunes de la Cuvette-Ouest</div>
-        <div class="actu-card-desc">300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">International · AIEA</div>
-        <div class="actu-card-ic">🌍</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">14</span>
-          <span class="actu-card-mon">Jul<br>2025</span>
-        </div>
-        <div class="actu-card-title">Mission diplomatique à l'AIEA — Congo représenté</div>
-        <div class="actu-card-desc">Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise.</div>
-      </div>
-
-      <div class="actu-card rev">
-        <div class="actu-card-cat">Réforme · Anticorruption</div>
-        <div class="actu-card-ic">🏛️</div>
-        <div class="actu-card-dt">
-          <span class="actu-card-day">07</span>
-          <span class="actu-card-mon">Mar<br>2018</span>
-        </div>
-        <div class="actu-card-title">Adoption de la loi instituant la HALC — 107 voix pour</div>
-        <div class="actu-card-desc">Votée à 107 voix pour, 6 contre — la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie.</div>
-      </div>
-
-    </div>
+    <div class="actu-grid" id="actu-cards-grid"></div>
   </div>
 
 </section>
@@ -1293,6 +1117,76 @@ function loadContent() {
       const ft = d.footer || {};
       if (ft.brandText)  { const el=document.getElementById("dyn-ft-brand");     if(el) el.textContent=ft.brandText; }
       if (ft.copyright)  { const el=document.getElementById("dyn-ft-copyright"); if(el) el.textContent=ft.copyright; }
+
+      // ── Actualités — slides, vedettes, cards ─────────────────────────
+      const ac = d.actus || {};
+
+      // Slides hero
+      const slidesWrap = document.getElementById("actu-hero-track");
+      const dotsWrap   = document.getElementById("actu-hero-dots");
+      if (slidesWrap && Array.isArray(ac.slides) && ac.slides.length) {
+        slidesWrap.innerHTML = ac.slides.map(s => `
+          <div class="actu-hero-slide">
+            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
+            <div class="actu-hero-overlay"></div>
+            <div class="actu-hero-content">
+              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(s.chip||'')}</span>
+              <div class="actu-hero-date">${escHtml(s.date||'')}</div>
+              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
+              <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
+            </div>
+          </div>`).join('');
+        if (dotsWrap) dotsWrap.innerHTML = ac.slides.map((_,i)=>
+          `<button class="actu-hero-dot${i===0?' hd-active':''}" aria-label="Slide ${i+1}"></button>`).join('');
+        initActuSlider();
+      }
+
+      // Vedettes
+      const vedettesWrap = document.getElementById("actu-vedettes-wrap");
+      if (vedettesWrap && Array.isArray(ac.vedettes) && ac.vedettes.length) {
+        vedettesWrap.innerHTML = ac.vedettes.map((v,i) => {
+          const imgSide = v.image
+            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`
+            : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
+                 <div style="font-size:56px">${escHtml(v.placeholderEmoji||'📰')}</div>
+                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
+                 <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
+               </div>
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`;
+          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(t)}</span>`).join('');
+          return `<div class="actu-vedette rev"${i<ac.vedettes.length-1?' style="margin-bottom:32px"':''}>
+            <div class="actu-vedette-img"${v.imageBg&&!v.image?` style="background:${v.imageBg}"`:''}">${imgSide}</div>
+            <div class="actu-vedette-body">
+              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.tag||'')}</div>
+              <div class="actu-vedette-date">${escHtml(v.date||'')}</div>
+              <h3 class="actu-vedette-title">${escHtml(v.title||'')}</h3>
+              ${v.text1?`<p class="actu-vedette-txt">${escHtml(v.text1)}</p>`:''}
+              ${v.quote?`<div class="actu-vedette-quote"${v.tagColor?` style="border-color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.quote)}</div>`:''}
+              ${v.text2?`<p class="actu-vedette-txt">${escHtml(v.text2)}</p>`:''}
+              ${tagsHtml?`<div class="actu-vedette-tags">${tagsHtml}</div>`:''}
+            </div>
+          </div>`;
+        }).join('');
+        vedettesWrap.querySelectorAll(".rev").forEach(el=>rObs.observe(el));
+      }
+
+      // Cards grille
+      const cardsGrid = document.getElementById("actu-cards-grid");
+      if (cardsGrid && Array.isArray(ac.cards) && ac.cards.length) {
+        cardsGrid.innerHTML = ac.cards.map(c => `
+          <div class="actu-card rev"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
+            <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
+            <div class="actu-card-ic">${escHtml(c.icon||'')}</div>
+            <div class="actu-card-dt">
+              <span class="actu-card-day">${escHtml(c.day||'')}</span>
+              <span class="actu-card-mon">${escHtml(c.month||'')}<br>${escHtml(c.year||'')}</span>
+            </div>
+            <div class="actu-card-title">${escHtml(c.title||'')}</div>
+            <div class="actu-card-desc">${escHtml(c.desc||'')}</div>
+          </div>`).join('');
+        cardsGrid.querySelectorAll(".rev").forEach(el=>rObs.observe(el));
+      }
     })
     .catch(() => {}); // Fallback : le contenu statique reste affiché
 }
@@ -1611,16 +1505,18 @@ document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("clic
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
 
 // ── ACTU HERO SLIDESHOW ───────────────────────────────────
-(function(){
+let _actuTimer = null;
+function initActuSlider() {
+  if (_actuTimer) clearInterval(_actuTimer);
   const track  = document.getElementById("actu-hero-track");
-  const dots   = document.querySelectorAll(".actu-hero-dot");
-  const slides = document.querySelectorAll(".actu-hero-slide");
   const counter= document.getElementById("actu-counter");
-  if(!track || !slides.length) return;
+  if (!track) return;
+  const slides = track.querySelectorAll(".actu-hero-slide");
+  const dots   = document.querySelectorAll(".actu-hero-dot");
+  if (!slides.length) return;
 
-  let cur = 0, timer;
+  let cur = 0;
   const total = slides.length;
-
   function pad(n){ return String(n).padStart(2,"0"); }
 
   function goTo(n) {
@@ -1633,23 +1529,19 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelect
     if(counter) counter.textContent = pad(cur+1) + " / " + pad(total);
   }
 
-  function startTimer(){ timer = setInterval(() => goTo(cur+1), 5800); }
-  function resetTimer(){ clearInterval(timer); startTimer(); }
+  function startTimer(){ _actuTimer = setInterval(() => goTo(cur+1), 5800); }
+  function resetTimer(){ clearInterval(_actuTimer); startTimer(); }
 
-  // Initialisation
   goTo(0);
   startTimer();
 
-  // Navigation
   const prev = document.getElementById("actu-prev");
   const next  = document.getElementById("actu-next");
-  if(prev) prev.addEventListener("click", () => { goTo(cur-1); resetTimer(); });
-  if(next) next.addEventListener("click", () => { goTo(cur+1); resetTimer(); });
+  if(prev) { prev.replaceWith(prev.cloneNode(true)); document.getElementById("actu-prev").addEventListener("click", () => { goTo(cur-1); resetTimer(); }); }
+  if(next)  { next.replaceWith(next.cloneNode(true));  document.getElementById("actu-next").addEventListener("click",  () => { goTo(cur+1); resetTimer(); }); }
 
-  // Dots
   dots.forEach((d,i) => d.addEventListener("click", () => { goTo(i); resetTimer(); }));
 
-  // Touch swipe mobile
   let startX = 0;
   track.addEventListener("touchstart", e => { startX = e.touches[0].clientX; }, {passive:true});
   track.addEventListener("touchend",   e => {
@@ -1657,13 +1549,12 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelect
     if(Math.abs(dx) > 50){ goTo(dx < 0 ? cur+1 : cur-1); resetTimer(); }
   }, {passive:true});
 
-  // Pause au survol
   const hero = document.getElementById("actu-hero");
   if(hero){
-    hero.addEventListener("mouseenter", () => clearInterval(timer));
+    hero.addEventListener("mouseenter", () => clearInterval(_actuTimer));
     hero.addEventListener("mouseleave", startTimer);
   }
-})();
+}
 
 </script>
 
