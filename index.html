@@ -820,11 +820,11 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     </div>
     <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="#" onclick="event.preventDefault();openLegal('financement')">Financement</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
     <p id="dyn-ft-copyright">© 2026 Campagne Aimé BININGA · <span>Parti Congolais du Travail</span> · Tous droits réservés</p>
-    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a><a href="connexion.html">Connexion</a></div>
+    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a><a href="gestion.html">Espace équipe</a></div>
   </div>
 </footer>
 
@@ -1231,11 +1231,30 @@ function upd(){if(!galTrackEl)return;galTrackEl.style.transform=`translateX(-${c
 function gSlide(d){cs=(cs+d+galSlides.length)%galSlides.length;upd()}
 function gGo(n){cs=n;upd()}
 
-// counters
+// counters — effet slot machine
 function aCount(el){
-  const t=+el.dataset.c,d=1400,s=performance.now();
-  function u(n){const p=Math.min((n-s)/d,1),e=1-Math.pow(1-p,3);el.textContent=Math.floor(e*t);if(p<1)requestAnimationFrame(u);else el.textContent=t}
-  requestAnimationFrame(u);
+  const target=+el.dataset.c;
+  if(isNaN(target)){el.textContent=el.dataset.c;return;}
+  const totalDur=1800, spinDur=900;
+  const start=performance.now();
+  function frame(now){
+    const elapsed=now-start;
+    if(elapsed<spinDur){
+      // Phase 1 : chiffres qui défilent en boucle
+      el.textContent=Math.floor(Math.random()*99);
+      requestAnimationFrame(frame);
+    } else if(elapsed<totalDur){
+      // Phase 2 : ralentissement vers la cible
+      const p=(elapsed-spinDur)/(totalDur-spinDur);
+      const ease=1-Math.pow(1-p,3);
+      const displayed=Math.round(ease*target);
+      el.textContent=displayed;
+      requestAnimationFrame(frame);
+    } else {
+      el.textContent=target;
+    }
+  }
+  requestAnimationFrame(frame);
 }
 const cObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){aCount(e.target);cObs.unobserve(e.target)}})},{threshold:.5});
 document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
@@ -1612,26 +1631,6 @@ function initActuSlider() {
   </div>
 </div>
 
-<!-- Financement -->
-<div class="lmodal-overlay" id="modal-financement">
-  <div class="lmodal">
-    <div class="lmodal-head">
-      <h3>Financement de la campagne</h3>
-      <button class="lmodal-close" onclick="closeLegal('financement')">✕</button>
-    </div>
-    <div class="lmodal-body">
-      <h4>Transparence financière</h4>
-      <p>La campagne d'Ange Aimé Wilfrid BININGA est conduite dans le respect des dispositions légales régissant le financement des campagnes électorales en République du Congo.</p>
-      <h4>Sources de financement</h4>
-      <p>La campagne est financée par :</p>
-      <p>— Les contributions personnelles du candidat ;<br>— Les dons et soutiens de sympathisants congolais conformément à la législation en vigueur ;<br>— Le soutien logistique du <strong>Parti Congolais du Travail (PCT)</strong>.</p>
-      <h4>Conformité légale</h4>
-      <p>Tous les financements reçus sont conformes aux dispositions de la loi électorale congolaise. Aucun financement étranger n'est accepté. Les comptes de campagne sont soumis au contrôle des autorités compétentes.</p>
-      <h4>Contact</h4>
-      <p>Pour toute question relative au financement, adressez-vous à la cellule de communication de la campagne via le formulaire de contact du site.</p>
-    </div>
-  </div>
-</div>
 
 <!-- Cookies -->
 <div class="lmodal-overlay" id="modal-cookies">
