@@ -47,7 +47,7 @@
   "actus": {
     "slides": [
       {
-        "image": "images/rwanda-ambassadeur.jpg",
+        "image": "images/rwanda.JPG",
         "alt": "BININGA reçoit l'Ambassadeur du Rwanda — 12 décembre 2025",
         "chipColor": "#1565C0",
         "chip": "🌍 Diplomatie judiciaire · 12 déc. 2025",
@@ -85,7 +85,7 @@
     ],
     "vedettes": [
       {
-        "image": "images/rwanda-ambassadeur.jpg",
+        "image": "images/rwanda.JPG",
         "imageBg": "",
         "placeholderEmoji": "🇷🇼",
         "placeholderTitle": "Rwanda × Congo",
