@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "id": "del_002",
+      "title": "A garder",
+      "url": "https://example.com",
+      "source": "test",
+      "published": "",
+      "found_at": "",
+      "summary": "",
+      "read": false,
+      "category": "bininga"
+    }
+  ],
+  "last_run": null,
+  "stats": {}
+}
