@@ -737,7 +737,7 @@
 
           <!-- Onglets principaux -->
           <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <button id="tab-bininga" onclick="setNewsFilter('bininga')"
+            <button id="tab-bininga" data-filter="filter-bininga" onclick="setNewsFilter('bininga')"
               style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px">
               🧑‍⚖️ Sur Bininga
               <span id="tab-bininga-count" style="margin-left:6px;background:var(--r);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px"></span>
@@ -747,6 +747,9 @@
               🌍 Toutes les infos
               <span id="tab-all-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
             </button>
+            <button id="filter-bininga" onclick="setNewsFilter('bininga')" style="display:none"></button>
+            <button id="filter-loi_justice" onclick="setNewsFilter('loi_justice')" style="display:none"></button>
+            <button id="filter-recherche" onclick="setNewsFilter('recherche')" style="display:none"></button>
           </div>
 
           <!-- Contrôle de tri -->
