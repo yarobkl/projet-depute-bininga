@@ -576,7 +576,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._error(404, "Fichier non trouvé")
             return
 
-        if path == "/api/load":
+        if path in ("/api/load", "/data.json"):
             self._json(load_data())
             return
 
