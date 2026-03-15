@@ -21,6 +21,9 @@ images/sinistres/*
 # Sessions runtime
 sessions.json
 
+# PID files
+*.pid
+
 # OS
 .DS_Store
 Thumbs.db
