@@ -37,6 +37,9 @@ SESSION_TTL     = 86400  # 24 heures
 # Fichier de contact
 CONTACT_FILE = "contacts.json"
 
+# Fichier de veille IA
+NEWS_FILE = "news_monitor.json"
+
 # Rate limiting : ip → {count, blocked_until}
 LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
@@ -483,6 +486,23 @@ def save_data(data):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
+# ── Veille IA : lecture/écriture ──────────────────────────
+def load_news() -> dict:
+    if not os.path.exists(NEWS_FILE):
+        return {"items": [], "last_run": None, "stats": {"total_found": 0, "runs": 0}}
+    try:
+        with open(NEWS_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"items": [], "last_run": None, "stats": {"total_found": 0, "runs": 0}}
+
+def save_news(data: dict):
+    try:
+        with open(NEWS_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde news: {e}")
+
 # ── Init au chargement du module ───────────────────────────
 init_users()
 load_sessions()
@@ -636,6 +656,32 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
                      for u in all_users]
             self._json({"ok": True, "users": users})
+            return
+
+        # ── /api/news — Veille IA ──
+        if path == "/api/news":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            data = load_news()
+            # Vérifie si monitor.py tourne
+            pid_file = "monitor.pid"
+            monitor_running = False
+            if os.path.exists(pid_file):
+                try:
+                    pid = int(open(pid_file).read().strip())
+                    os.kill(pid, 0)   # signal 0 = vérification existence
+                    monitor_running = True
+                except Exception:
+                    pass
+            self._json({
+                "ok": True,
+                "items": data.get("items", []),
+                "last_run": data.get("last_run"),
+                "stats": data.get("stats", {}),
+                "monitor_running": monitor_running,
+            })
             return
 
         # ── Fichiers statiques avec protection path traversal ──
@@ -1046,6 +1092,44 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, "message": "Données sauvegardées"})
             except Exception as e:
                 print(f"[BININGA] ❌ Erreur sauvegarde : {e}")
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/news/mark-read ──
+        if path == "/api/news/mark-read":
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                item_id = payload.get("id")
+                mark_all = payload.get("all", False)
+                data = load_news()
+                changed = 0
+                for item in data.get("items", []):
+                    if mark_all or item.get("id") == item_id:
+                        item["read"] = True
+                        changed += 1
+                save_news(data)
+                self._json({"ok": True, "changed": changed})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/news/delete ──
+        if path == "/api/news/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload = json.loads(body.decode("utf-8"))
+                item_id = payload.get("id")
+                data = load_news()
+                before = len(data.get("items", []))
+                data["items"] = [a for a in data.get("items", []) if a.get("id") != item_id]
+                save_news(data)
+                self._json({"ok": True, "deleted": before - len(data["items"])})
+            except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
 

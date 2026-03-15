@@ -346,6 +346,12 @@ select.form-input:focus{border-color:var(--r)}
         <span class="icon">🦶</span> Footer
       </div>
 
+      <div class="sb-section">Intelligence</div>
+      <div class="sb-item" onclick="showPanel('veille',this)">
+        <span class="icon">🤖</span> Veille IA
+        <span class="sb-badge" id="badge-veille" style="display:none"></span>
+      </div>
+
       <div class="sb-section role-admin" style="display:none">Système</div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
         <span class="icon">📜</span> Journaux d'audit
@@ -941,6 +947,32 @@ select.form-input:focus{border-color:var(--r)}
       </div>
 
       <!-- ── LOGS D'AUDIT ── -->
+      <!-- ── Veille IA ── -->
+      <div class="panel" id="panel-veille">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🤖 Veille IA — Actualités Bininga</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="loadNews()">🔄 Actualiser</button>
+              <button class="sbtn" onclick="markAllNewsRead()" style="background:rgba(46,204,113,.1);color:#2ecc71;border:1px solid rgba(46,204,113,.2)">✅ Tout marquer lu</button>
+            </div>
+          </div>
+          <div id="veille-status" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:8px;font-size:12px;color:rgba(255,255,255,.5)">
+            <span id="veille-dot" style="width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0"></span>
+            <span id="veille-status-txt">Chargement…</span>
+            <span style="margin-left:auto" id="veille-last-run"></span>
+          </div>
+          <div id="veille-start-hint" style="display:none;padding:12px 16px;background:rgba(243,156,18,.06);border:1px solid rgba(243,156,18,.15);border-radius:8px;font-size:12px;color:#f39c12;margin-bottom:16px">
+            ⚠️ L'agent de veille n'est pas actif. Lancez-le avec :<br>
+            <code style="display:block;margin-top:6px;color:#fff;font-size:11px">python3 monitor.py &amp;</code>
+            <small style="color:rgba(255,255,255,.35);margin-top:4px;display:block">Configurez SMTP_HOST/SMTP_USER/SMTP_PASS/NOTIF_EMAIL pour les alertes email.</small>
+          </div>
+          <div id="veille-list" style="display:flex;flex-direction:column;gap:10px">
+            <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Chargement des actualités…</div>
+          </div>
+        </div>
+      </div>
+
       <div class="panel" id="panel-logs">
         <div class="card">
           <div class="card-header">
@@ -1172,6 +1204,12 @@ let siteData = {};
 function init() {
   loadSiteData();
   syncMessages().then(() => refreshDashboard());
+  startNewsPoller();
+  // Badge initial
+  fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    .then(r => r.json())
+    .then(d => { if(d.ok) setBadge("badge-veille", (d.items||[]).filter(a=>!a.read).length); })
+    .catch(()=>{});
 }
 
 // ── Synchronisation des messages depuis le serveur ──────────────────────
@@ -2138,6 +2176,157 @@ function manualBlock() {
 // ══════════════════════════════════════════════════════════════════════════
 //  JOURNAUX D'AUDIT
 // ══════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════════
+//  VEILLE IA
+// ══════════════════════════════════════════════════════════════════════════
+
+let _newsItems = [];
+let _newsPoller = null;
+
+async function loadNews() {
+  const list = document.getElementById("veille-list");
+  if (!list) return;
+  try {
+    const res  = await fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) { list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0">Erreur de chargement.</div>'; return; }
+    _newsItems = data.items || [];
+
+    // Statut agent
+    const dot  = document.getElementById("veille-dot");
+    const stxt = document.getElementById("veille-status-txt");
+    const hint = document.getElementById("veille-start-hint");
+    const lr   = document.getElementById("veille-last-run");
+    if (data.monitor_running) {
+      dot.style.background = "#2ecc71";
+      stxt.textContent = "Agent actif";
+      hint.style.display = "none";
+    } else {
+      dot.style.background = "#e74c3c";
+      stxt.textContent = "Agent inactif";
+      hint.style.display = "block";
+    }
+    if (data.last_run) {
+      try {
+        lr.textContent = "Dernière veille : " + new Date(data.last_run).toLocaleString("fr-FR");
+      } catch(e) { lr.textContent = ""; }
+    }
+
+    // Badge sidebar
+    const unread = _newsItems.filter(a => !a.read).length;
+    setBadge("badge-veille", unread);
+
+    renderNewsItems();
+  } catch(e) {
+    if (list) list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0">Impossible de charger les actualités.</div>';
+  }
+}
+
+function renderNewsItems() {
+  const list = document.getElementById("veille-list");
+  if (!list) return;
+  if (!_newsItems.length) {
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucune actualité détectée pour le moment.<br><small>L\'agent surveille Google News toutes les 15 minutes.</small></div>';
+    return;
+  }
+  list.innerHTML = _newsItems.map(a => {
+    const isRead   = a.read;
+    const dateStr  = a.published ? (() => { try { return new Date(a.published).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}); } catch(e) { return a.published; } })() : "";
+    const foundStr = a.found_at ? (() => { try { return new Date(a.found_at).toLocaleString("fr-FR"); } catch(e) { return ""; } })() : "";
+    const aiBlock  = a.ai_summary
+      ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(52,152,219,.06);border-left:2px solid rgba(52,152,219,.3);border-radius:0 6px 6px 0;font-size:11.5px;color:rgba(255,255,255,.65);font-style:italic">${esc(a.ai_summary)}</div>`
+      : "";
+    const summaryBlock = a.summary
+      ? `<div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:5px;line-height:1.5">${esc(a.summary.slice(0,300))}${a.summary.length>300?"…":""}</div>`
+      : "";
+    return `<div style="background:rgba(255,255,255,${isRead?".02":".05"});border:1px solid rgba(255,255,255,${isRead?".04":".09"});border-radius:10px;padding:14px 16px;opacity:${isRead?".6":"1"};transition:.2s">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
+            ${!isRead?'<span style="width:7px;height:7px;border-radius:50%;background:#3498db;flex-shrink:0;display:inline-block"></span>':""}
+            <a href="${esc(a.url)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:var(--w);text-decoration:none;hover:text-decoration:underline;line-height:1.4">${esc(a.title)}</a>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:4px">
+            <span>${esc(a.source)}</span>
+            ${dateStr?`<span style="margin:0 6px">·</span><span>${dateStr}</span>`:""}
+            ${foundStr?`<span style="margin:0 6px">·</span><span style="color:rgba(255,255,255,.2)">Détecté le ${foundStr}</span>`:""}
+          </div>
+          ${summaryBlock}
+          ${aiBlock}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          <a href="${esc(a.url)}" target="_blank" rel="noopener" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(52,152,219,.1);color:#3498db;border:1px solid rgba(52,152,219,.2);text-decoration:none;white-space:nowrap">🔗 Lire</a>
+          ${!isRead?`<button onclick="markNewsRead('${esc(a.id)}')" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer;white-space:nowrap">✓ Lu</button>`:""}
+          <button onclick="deleteNewsItem('${esc(a.id)}')" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(200,16,46,.08);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;white-space:nowrap">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function markNewsRead(id) {
+  try {
+    await fetch("/api/news/mark-read", {
+      method: "POST",
+      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const item = _newsItems.find(a => a.id === id);
+    if (item) item.read = true;
+    const unread = _newsItems.filter(a => !a.read).length;
+    setBadge("badge-veille", unread);
+    renderNewsItems();
+  } catch(e) {}
+}
+
+async function markAllNewsRead() {
+  try {
+    await fetch("/api/news/mark-read", {
+      method: "POST",
+      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ all: true }),
+    });
+    _newsItems.forEach(a => a.read = true);
+    setBadge("badge-veille", 0);
+    renderNewsItems();
+    showToast("Toutes les actualités marquées comme lues");
+  } catch(e) {}
+}
+
+async function deleteNewsItem(id) {
+  try {
+    await fetch("/api/news/delete", {
+      method: "POST",
+      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    _newsItems = _newsItems.filter(a => a.id !== id);
+    const unread = _newsItems.filter(a => !a.read).length;
+    setBadge("badge-veille", unread);
+    renderNewsItems();
+  } catch(e) {}
+}
+
+function startNewsPoller() {
+  if (_newsPoller) return;
+  _newsPoller = setInterval(() => {
+    // Polling silencieux (badge seulement, pas de re-render si pas sur le panel)
+    fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok) return;
+        const unread = (data.items || []).filter(a => !a.read).length;
+        setBadge("badge-veille", unread);
+        // Si panel ouvert, actualiser
+        if (document.getElementById("panel-veille")?.classList.contains("active")) {
+          _newsItems = data.items || [];
+          renderNewsItems();
+        }
+      })
+      .catch(() => {});
+  }, 2 * 60 * 1000);   // toutes les 2 minutes
+}
+
 async function loadAuditLogs() {
   const el = document.getElementById("log-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
@@ -2176,7 +2365,8 @@ const PANEL_TITLES = {
   reclamations:"Réclamations", contacts:"Messages de contact",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
-  logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion"
+  logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
+  veille:"🤖 Veille IA — Actualités Bininga"
 };
 
 function showPanel(name, el) {
@@ -2197,6 +2387,7 @@ function showPanel(name, el) {
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
   if (name === "security")     loadSecurity();
+  if (name === "veille")       loadNews();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
