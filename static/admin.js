@@ -1202,6 +1202,7 @@ function manualBlock() {
 let _newsItems = [];
 let _newsPoller = null;
 let _newsFilter = "bininga";
+let _newsSort = "date_desc";
 
 async function loadNews() {
   const list = document.getElementById("veille-list");
@@ -1257,6 +1258,20 @@ function setNewsFilter(f) {
     tabA.style.color = active ? "#fff" : "rgba(255,255,255,.4)";
     tabA.style.borderBottom = active ? "2px solid var(--r)" : "2px solid transparent";
   }
+  renderNewsItems();
+}
+
+function setNewsSort(s) {
+  _newsSort = s;
+  const SORTS = { pertinence: "sort-pertinence", date_desc: "sort-date-desc", date_asc: "sort-date-asc" };
+  Object.entries(SORTS).forEach(([key, id]) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    const active = key === s;
+    btn.style.background   = active ? "rgba(52,152,219,.15)" : "rgba(255,255,255,.04)";
+    btn.style.color        = active ? "#3498db"              : "rgba(255,255,255,.4)";
+    btn.style.borderColor  = active ? "rgba(52,152,219,.3)"  : "rgba(255,255,255,.08)";
+  });
   renderNewsItems();
 }
 
@@ -1327,8 +1342,11 @@ function renderNewsItems() {
   if (tbc) tbc.textContent = bUnread > 0 ? `${bUnread} non lu${bUnread>1?"s":""}` : bCount;
   if (tac) tac.textContent = aUnread > 0 ? `${aUnread} non lu${aUnread>1?"s":""}` : aCount;
 
-  // Tri : pertinence (score) puis date décroissante
+  // Tri selon le mode choisi
   const sorted = [...filtered].sort((a, b) => {
+    if (_newsSort === "date_desc") return _newsDate(b) - _newsDate(a);
+    if (_newsSort === "date_asc")  return _newsDate(a) - _newsDate(b);
+    // pertinence (score) puis date décroissante
     const sd = _newsScore(b) - _newsScore(a);
     if (sd !== 0) return sd;
     return _newsDate(b) - _newsDate(a);

@@ -749,6 +749,14 @@
             </button>
           </div>
 
+          <!-- Contrôle de tri -->
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-size:11px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Trier :</span>
+            <button id="sort-pertinence" onclick="setNewsSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⭐ Pertinence</button>
+            <button id="sort-date-desc" onclick="setNewsSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">⬇ Plus récent</button>
+            <button id="sort-date-asc" onclick="setNewsSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⬆ Plus ancien</button>
+          </div>
+
           <div id="veille-list" style="display:flex;flex-direction:column;gap:10px">
             <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Chargement des actualités…</div>
           </div>
