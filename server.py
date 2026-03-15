@@ -1274,8 +1274,16 @@ def resolve_ssl_certs():
 def start_monitor():
     """Lance monitor.py en sous-processus daemon si pas déjà actif."""
     import subprocess, sys
-    pid_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.pid")
-    # Vérifier si déjà lancé
+    base = os.path.dirname(os.path.abspath(__file__))
+    pid_file     = os.path.join(base, "monitor.pid")
+    monitor_path = os.path.join(base, "monitor.py")
+    log_path     = os.path.join(base, "monitor.log")
+
+    if not os.path.isfile(monitor_path):
+        print("[BININGA] ⚠️  monitor.py introuvable — veille désactivée")
+        return
+
+    # Vérifier si déjà lancé et toujours vivant
     if os.path.isfile(pid_file):
         try:
             pid = int(open(pid_file).read().strip())
@@ -1283,24 +1291,50 @@ def start_monitor():
             print(f"[BININGA] 🤖 YARO IA déjà actif (PID {pid})")
             return
         except (OSError, ValueError):
+            # PID mort ou invalide — on relance
             pass
-    monitor_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.py")
-    if not os.path.isfile(monitor_path):
-        print("[BININGA] ⚠️  monitor.py introuvable — veille désactivée")
-        return
+
+    log_fd = open(log_path, "a")
     proc = subprocess.Popen(
         [sys.executable, monitor_path],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=log_fd,
+        stderr=log_fd,
         start_new_session=True,
     )
-    print(f"[BININGA] 🤖 YARO IA lancé (PID {proc.pid})")
+    print(f"[BININGA] 🤖 YARO IA lancé (PID {proc.pid}) — logs : {log_path}")
+
+
+def _monitor_watchdog():
+    """Thread watchdog : vérifie toutes les 5 min si YARO IA tourne, le relance si mort."""
+    import threading
+    def _check():
+        while True:
+            time.sleep(300)   # 5 minutes
+            try:
+                base     = os.path.dirname(os.path.abspath(__file__))
+                pid_file = os.path.join(base, "monitor.pid")
+                alive = False
+                if os.path.isfile(pid_file):
+                    try:
+                        pid = int(open(pid_file).read().strip())
+                        os.kill(pid, 0)
+                        alive = True
+                    except (OSError, ValueError):
+                        pass
+                if not alive:
+                    print("[BININGA] ⚠️  YARO IA inactif — redémarrage automatique…", flush=True)
+                    start_monitor()
+            except Exception as e:
+                print(f"[BININGA] Watchdog erreur : {e}", flush=True)
+    t = threading.Thread(target=_check, daemon=True, name="yaro-watchdog")
+    t.start()
 
 
 if __name__ == "__main__":
     init_users()
     load_blocked_ips()
     start_monitor()
+    _monitor_watchdog()
 
     # Génère un certificat auto-signé si aucun n'existe du tout
     if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")
