@@ -826,4 +826,53 @@ function initActuSlider() {
   }
 }
 
+// ── BOTTOM TAB BAR (mobile) ───────────────────────────────
+const MOB_TAB_MAP = {
+  "#hero":"accueil","#main-content":"accueil",
+  "#about":"profil","#parcours":"profil","#publication":"profil",
+  "#programme":"programme",
+  "#galerie":"actu","#actu":"actu","#video-section":"actu",
+  "#engagement":"contact","#contact":"contact","#newsletter":"contact"
+};
+let _activeMobTab = "accueil";
+
+function setMobTab(tab) {
+  _activeMobTab = tab;
+  document.querySelectorAll(".mob-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.tab === tab);
+  });
+  document.querySelectorAll("[data-mob-tab]").forEach(el => {
+    el.classList.toggle("mob-tab-visible", el.dataset.mobTab === tab);
+  });
+  window.scrollTo({top: 0, behavior: "instant"});
+}
+
+function initMobTabs() {
+  if (window.innerWidth > 900) return;
+  document.body.classList.add("mob-tabs-active");
+  setMobTab("accueil");
+}
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth > 900) {
+    document.body.classList.remove("mob-tabs-active");
+    document.querySelectorAll("[data-mob-tab]").forEach(el => el.classList.remove("mob-tab-visible"));
+  } else if (!document.body.classList.contains("mob-tabs-active")) {
+    document.body.classList.add("mob-tabs-active");
+    setMobTab(_activeMobTab);
+  }
+});
+
+window.addEventListener("hashchange", () => {
+  if (window.innerWidth > 900) return;
+  const tab = MOB_TAB_MAP[location.hash];
+  if (!tab) return;
+  if (tab !== _activeMobTab) setMobTab(tab);
+  setTimeout(() => {
+    const el = document.querySelector(location.hash);
+    if (el) el.scrollIntoView({behavior: "smooth"});
+  }, 50);
+});
+
+initMobTabs();
 
