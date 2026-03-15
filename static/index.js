@@ -759,7 +759,7 @@ async function subNewsletter(e, f) {
 
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
-  const videoId = "6Oy4rLyMVqA";
+  const videoId = "D_aj4bxOsJY";
   const wrap = placeholder.parentElement;
   const iframe = document.createElement("iframe");
   iframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0";
