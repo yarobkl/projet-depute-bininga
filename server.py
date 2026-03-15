@@ -580,6 +580,23 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json(load_data())
             return
 
+        if path == "/api/contacts":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            all_contacts = []
+            if os.path.exists(CONTACT_FILE):
+                try:
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_contacts = json.load(f)
+                except Exception:
+                    all_contacts = []
+            audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
+            contacts  = [c for c in all_contacts if c.get("type") != "bininga_audiences"]
+            self._json({"ok": True, "audiences": audiences, "contacts": contacts})
+            return
+
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "ministre"):
@@ -793,15 +810,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/contact":
             try:
                 data = json.loads(body.decode("utf-8"))
+                # Sauvegarder tous les champs du formulaire (chaines et nombres seulement)
+                PROTECTED = {"ts", "ip"}
                 entry = {
-                    "ts":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "ip":      ip,
-                    "type":    data.get("type", "contact"),
-                    "nom":     data.get("nom", ""),
-                    "prenom":  data.get("prenom", ""),
-                    "email":   data.get("email", ""),
-                    "message": data.get("message", ""),
+                    "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                    "ip": ip,
                 }
+                for k, v in data.items():
+                    k = str(k)[:64]
+                    if k in PROTECTED:
+                        continue
+                    if isinstance(v, str):
+                        entry[k] = v[:2000]
+                    elif isinstance(v, (int, float, bool)):
+                        entry[k] = v
                 contacts = []
                 if os.path.exists(CONTACT_FILE):
                     try:
@@ -812,7 +834,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 contacts.append(entry)
                 with open(CONTACT_FILE, "w", encoding="utf-8") as f:
                     json.dump(contacts, f, indent=2, ensure_ascii=False)
-                audit_log("CONTACT", ip, f"Message de {entry['nom']} {entry['prenom']} ({entry['type']})")
+                nom    = entry.get("nom", "")
+                prenom = entry.get("prenom", "")
+                etype  = entry.get("type", "contact")
+                audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
                 self._json({"ok": True, "message": "Message reçu"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)

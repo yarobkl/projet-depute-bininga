@@ -1171,7 +1171,46 @@ let siteData = {};
 
 function init() {
   loadSiteData();
-  refreshDashboard();
+  syncMessages().then(() => refreshDashboard());
+}
+
+// ── Synchronisation des messages depuis le serveur ──────────────────────
+async function syncMessages() {
+  try {
+    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const mapping = [
+      ["bininga_audiences", data.audiences || []],
+      ["bininga_contacts",  data.contacts  || []]
+    ];
+
+    for (const [key, serverList] of mapping) {
+      const localList = JSON.parse(localStorage.getItem(key) || "[]");
+      // Construire un index des métadonnées locales (_status, _notes, _pinged) par _id
+      const localMeta = {};
+      localList.forEach(m => { if (m._id) localMeta[m._id] = m; });
+
+      // Fusionner : données serveur + métadonnées locales
+      const serverIds = new Set(serverList.map(m => m._id).filter(Boolean));
+      const merged = serverList.map(m => {
+        const local = localMeta[m._id] || {};
+        return Object.assign({}, m, {
+          _status: local._status || m._status,
+          _notes:  local._notes  || m._notes,
+          _pinged: local._pinged || m._pinged
+        });
+      });
+
+      // Conserver les entrées locales non encore synchronisées avec le serveur
+      localList.filter(m => m._id && !serverIds.has(m._id)).forEach(m => merged.push(m));
+
+      localStorage.setItem(key, JSON.stringify(merged));
+    }
+  } catch (_) {
+    // Serveur non disponible — le localStorage existant est utilisé
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -2146,10 +2185,10 @@ function showPanel(name, el) {
   document.getElementById("panel-"+name).classList.add("active");
   if (el) el.classList.add("active");
   document.getElementById("topbar-title").textContent = PANEL_TITLES[name] || name;
-  if (name === "dashboard")    refreshDashboard();
-  if (name === "audiences")    renderAudiences();
-  if (name === "reclamations") renderReclamations();
-  if (name === "contacts")     renderContacts();
+  if (name === "dashboard")    syncMessages().then(() => refreshDashboard());
+  if (name === "audiences")    syncMessages().then(() => renderAudiences());
+  if (name === "reclamations") syncMessages().then(() => renderReclamations());
+  if (name === "contacts")     syncMessages().then(() => renderContacts());
   if (name === "stats")        renderStats();
   if (name === "galerie")      renderGalerie();
   if (name === "actus")        renderActus();

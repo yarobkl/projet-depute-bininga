@@ -1263,6 +1263,7 @@ const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.t
 document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
 
 // ── Envoi des formulaires vers le serveur ────────────────────────────
+const FORMSPREE = {};
 async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   btn.textContent = "⏳ Envoi en cours…";
   btn.disabled = true;
