@@ -27,7 +27,9 @@ PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
 
 # Origines autorisées pour CORS
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
-    "BININGA_ORIGINS", "http://localhost:8080,http://localhost:8443,http://127.0.0.1:8080"
+    "BININGA_ORIGINS",
+    "https://bininga.cg,https://www.bininga.cg,"
+    "http://localhost:8080,https://localhost:8443,http://127.0.0.1:8080"
 ).split(",") if o.strip()]
 BASE_DIR        = os.path.realpath(os.getcwd())
 
@@ -1240,23 +1242,61 @@ def generate_self_signed_cert():
         print("[BININGA] ⚠️  openssl non disponible — SSL désactivé")
         return False
 
+def resolve_ssl_certs():
+    """Résout les chemins des certificats SSL.
+
+    Priorité :
+      1. Variables d'environnement BININGA_CERT / BININGA_KEY
+      2. Certificats Let's Encrypt pour bininga.cg
+      3. Certificat auto-signé local (cert.pem / key.pem)
+    Retourne (cert_path, key_path, source) ou (None, None, None).
+    """
+    # 1. Variables d'environnement
+    env_cert = os.environ.get("BININGA_CERT", "")
+    env_key  = os.environ.get("BININGA_KEY", "")
+    if env_cert and env_key and os.path.isfile(env_cert) and os.path.isfile(env_key):
+        return env_cert, env_key, "variables d'env"
+
+    # 2. Let's Encrypt
+    le_base = "/etc/letsencrypt/live/bininga.cg"
+    le_cert = os.path.join(le_base, "fullchain.pem")
+    le_key  = os.path.join(le_base, "privkey.pem")
+    if os.path.isfile(le_cert) and os.path.isfile(le_key):
+        return le_cert, le_key, "Let's Encrypt"
+
+    # 3. Certificat local
+    if os.path.isfile("cert.pem") and os.path.isfile("key.pem"):
+        return "cert.pem", "key.pem", "auto-signé (local)"
+
+    return None, None, None
+
+
 if __name__ == "__main__":
     init_users()
     load_blocked_ips()
-    if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")):
+
+    # Génère un certificat auto-signé si aucun n'existe du tout
+    if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")
+            or os.path.isfile("/etc/letsencrypt/live/bininga.cg/fullchain.pem")):
         generate_self_signed_cert()
-    USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem") and not os.environ.get("RAILWAY_ENVIRONMENT") and not os.environ.get("RAILWAY_PROJECT_ID")
-    PORT     = int(os.environ.get("PORT", 8443 if USE_SSL else 8080))
+
+    CERT_FILE, KEY_FILE, CERT_SOURCE = resolve_ssl_certs()
+    # Disable SSL when running on Railway (or any reverse-proxy that handles TLS termination)
+    _on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
+    _force_http = os.environ.get("BININGA_FORCE_HTTP", "") == "1"
+    USE_SSL  = CERT_FILE is not None and not _on_railway and not _force_http
+    PORT     = int(os.environ.get("PORT", 443 if (USE_SSL and CERT_SOURCE == "Let's Encrypt") else 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"
 
+    ssl_label = f"✅ {CERT_SOURCE}" if USE_SSL else "⚠️  Désactivé"
     print(f"""
 ╔══════════════════════════════════════════════╗
   ║   BININGA — Serveur                         ║
   ║                                            ║
-  ║   Site  →  {protocol}://localhost:{PORT}        ║
-  ║   Admin →  {protocol}://localhost:{PORT}/admin.html ║
+  ║   Site  →  {protocol}://bininga.cg:{PORT}       ║
+  ║   Admin →  {protocol}://bininga.cg:{PORT}/admin.html ║
   ║                                            ║
-  ║   SSL : {"✅ Activé  (cert.pem + key.pem)" if USE_SSL else "⚠️  Désactivé  (pas de cert.pem)"}  ║
+  ║   SSL : {ssl_label:<38}║
   ╚══════════════════════════════════════════════╝
     """)
 
@@ -1264,18 +1304,20 @@ if __name__ == "__main__":
 
     if USE_SSL:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ctx.load_cert_chain("cert.pem", "key.pem")
+        ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        ctx.load_cert_chain(CERT_FILE, KEY_FILE)
         server.socket = ctx.wrap_socket(server.socket, server_side=True)
 
         # Serveur HTTP dédié → redirection 301 vers HTTPS
-        REDIRECT_PORT = int(os.environ.get("REDIRECT_PORT", 8080))
+        REDIRECT_PORT = int(os.environ.get("REDIRECT_PORT", 80 if CERT_SOURCE == "Let's Encrypt" else 8080))
         HTTPS_PORT    = PORT
 
         class _RedirectHandler(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
-                host = self.headers.get("Host", f"localhost:{HTTPS_PORT}").split(":")[0]
+                host = self.headers.get("Host", f"bininga.cg").split(":")[0]
+                location = f"https://{host}{self.path}" if HTTPS_PORT == 443 else f"https://{host}:{HTTPS_PORT}{self.path}"
                 self.send_response(301)
-                self.send_header("Location", f"https://{host}:{HTTPS_PORT}{self.path}")
+                self.send_header("Location", location)
                 self.end_headers()
             def do_POST(self):
                 self.do_GET()
@@ -1285,9 +1327,9 @@ if __name__ == "__main__":
         redirect_srv = http.server.HTTPServer(("0.0.0.0", REDIRECT_PORT), _RedirectHandler)
         threading.Thread(target=redirect_srv.serve_forever, daemon=True).start()
         print(f"🔄 Redirection HTTP:{REDIRECT_PORT} → HTTPS:{HTTPS_PORT}")
-        print(f"🔒 HTTPS activé")
+        print(f"🔒 HTTPS activé ({CERT_SOURCE})")
 
-    print(f"✅ Serveur lancé sur {protocol}://localhost:{PORT}\n")
+    print(f"✅ Serveur lancé sur {protocol}://bininga.cg:{PORT}\n")
 
     try:
         server.serve_forever()

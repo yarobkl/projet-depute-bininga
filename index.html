@@ -128,7 +128,7 @@
 </div>
 
 <!-- HERO -->
-<section id="main-content" role="main" aria-label="Présentation">
+<section id="main-content" data-mob-tab="accueil" role="main" aria-label="Présentation">
   <div class="hero-video-bg"></div>
   <div class="hero-noise"></div>
   <div class="hero-img-side">
@@ -176,7 +176,7 @@
 </section>
 
 <!-- ABOUT -->
-<section id="about">
+<section id="about" data-mob-tab="profil">
   <div class="about-grid">
     <div class="about-img-wrap rev-l">
       <div class="about-img-frame">
@@ -208,7 +208,7 @@
 </section>
 
 <!-- PARCOURS -->
-<section id="parcours">
+<section id="parcours" data-mob-tab="profil">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag" id="dyn-parcours-tag">Son parcours</span>
@@ -222,7 +222,7 @@
 </section>
 
 <!-- ═══════════ PUBLICATION ═══════════ -->
-<section id="publication">
+<section id="publication" data-mob-tab="profil">
   <div class="pub-wrap">
 
     <!-- Couverture -->
@@ -274,7 +274,7 @@
 </section>
 
 <!-- PROGRAMME -->
-<section id="programme">
+<section id="programme" data-mob-tab="programme">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag" id="dyn-prog-tag">Notre vision</span>
@@ -289,7 +289,7 @@
 </section>
 
 <!-- GALERIE -->
-<section id="galerie">
+<section id="galerie" data-mob-tab="actu">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag" id="dyn-gal-tag">En images</span>
@@ -303,7 +303,7 @@
 </section>
 
 <!-- ACTUALITÉS -->
-<section id="actu">
+<section id="actu" data-mob-tab="actu">
 
   <!-- ══ HERO SLIDESHOW ══════════════════════════════════════════════ -->
   <div class="actu-hero" id="actu-hero">
@@ -344,7 +344,7 @@
 
 <!-- ENGAGEMENT -->
 <!-- ═══════════ VIDÉO ═══════════ -->
-<section id="video-section">
+<section id="video-section" data-mob-tab="actu">
   <div class="video-inner rev">
     <span class="stag">Le Député en action</span>
     <h2 class="stitle">Discours & <span class="r">terrain</span></h2>
@@ -360,7 +360,7 @@
   </div>
 </section>
 
-<section id="engagement">
+<section id="engagement" data-mob-tab="contact">
   <div class="eng-wrap">
     <div class="eng-left">
       <span class="stag" id="dyn-eng-tag">Contactez-nous</span>
@@ -441,7 +441,7 @@
 
 
 <!-- CTA -->
-<div class="cta-band">
+<div class="cta-band" data-mob-tab="contact">
   <h2 id="dyn-cta-title">Votez BININGA —<br>le choix de l'expérience et du terrain</h2>
   <p id="dyn-cta-sub">Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.</p>
   <div class="cta-btns">
@@ -452,7 +452,7 @@
 </div>
 
 <!-- CONTACT -->
-<section id="contact">
+<section id="contact" data-mob-tab="contact">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag" id="dyn-ct-tag">Nous écrire</span>
@@ -492,7 +492,7 @@
 </section>
 
 <!-- ═══════════ NEWSLETTER ═══════════ -->
-<section id="newsletter">
+<section id="newsletter" data-mob-tab="contact">
   <div class="nl-inner rev">
     <h3>Restez informé</h3>
     <p>Recevez les actualités, les initiatives et les avancées du Député directement dans votre boîte mail. Pas de spam — une lettre mensuelle.</p>
@@ -531,6 +531,30 @@
     <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a><a href="gestion.html">©</a></div>
   </div>
 </footer>
+
+<!-- BOTTOM TAB BAR (mobile uniquement) -->
+<nav class="mob-tab-bar" id="mobTabBar" role="navigation" aria-label="Navigation par onglets">
+  <button class="mob-tab" data-tab="accueil" onclick="setMobTab('accueil')" aria-label="Accueil">
+    <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span class="mob-tab-lbl">Accueil</span>
+  </button>
+  <button class="mob-tab" data-tab="profil" onclick="setMobTab('profil')" aria-label="Profil">
+    <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <span class="mob-tab-lbl">Profil</span>
+  </button>
+  <button class="mob-tab" data-tab="programme" onclick="setMobTab('programme')" aria-label="Programme">
+    <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    <span class="mob-tab-lbl">Programme</span>
+  </button>
+  <button class="mob-tab" data-tab="actu" onclick="setMobTab('actu')" aria-label="Actualités">
+    <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/></svg>
+    <span class="mob-tab-lbl">Actualités</span>
+  </button>
+  <button class="mob-tab" data-tab="contact" onclick="setMobTab('contact')" aria-label="Contact">
+    <svg class="mob-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    <span class="mob-tab-lbl">Contact</span>
+  </button>
+</nav>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="static/index.js" defer></script>
