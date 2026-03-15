@@ -533,6 +533,37 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .lmodal-body p{margin-bottom:12px}
 .lmodal-body strong{color:rgba(255,255,255,.85)}
 
+/* ── SECTION PUBLICATION ── */
+#publication{padding:110px 6%;background:var(--n2)}
+.pub-wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:320px 1fr;gap:80px;align-items:center}
+.pub-book{position:relative;flex-shrink:0}
+.pub-cover{width:100%;max-width:300px;border-radius:8px;box-shadow:0 30px 80px rgba(0,0,0,.7),-8px 8px 0 rgba(200,16,46,.3);display:block;background:linear-gradient(135deg,#1a1a2e,#16213e);aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:32px 24px;text-align:center;border:1px solid rgba(200,16,46,.2)}
+.pub-cover-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--w);line-height:1.3;margin-bottom:12px}
+.pub-cover-author{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(200,16,46,.8);font-weight:600}
+.pub-cover-badge{position:absolute;top:-12px;right:-12px;background:var(--r);color:var(--w);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:6px 12px;border-radius:20px}
+.pub-badge-harmattan{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);background:var(--n3);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.5);font-size:10px;padding:5px 14px;border-radius:20px;white-space:nowrap;letter-spacing:1px}
+.pub-info{}
+.pub-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--r);font-weight:700;margin-bottom:14px;display:block}
+.pub-title{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,3vw,36px);font-weight:700;color:var(--w);line-height:1.25;margin-bottom:6px}
+.pub-subtitle{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:24px;font-style:italic}
+.pub-desc{font-size:14px;color:rgba(255,255,255,.55);line-height:1.85;margin-bottom:28px}
+.pub-meta{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:32px}
+.pub-meta-item{font-size:11px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);padding:5px 13px;border-radius:5px}
+.pub-meta-item strong{color:rgba(255,255,255,.8);margin-right:4px}
+.pub-actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.pub-btn-primary{padding:13px 26px;background:var(--r);color:var(--w);border:none;border-radius:7px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;transition:background .2s;text-decoration:none;display:inline-flex;align-items:center;gap:8px}
+.pub-btn-primary:hover{background:var(--rd)}
+.pub-btn-ext{padding:12px 22px;background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.15);border-radius:7px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center;gap:7px}
+.pub-btn-ext:hover{color:var(--w);border-color:rgba(255,255,255,.4)}
+.pub-preface{font-size:12px;color:rgba(255,255,255,.25);margin-top:18px}
+/* Modal commande */
+.order-form .fgrp{margin-bottom:14px}
+.order-form label{display:block;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
+.order-form input,.order-form select,.order-form textarea{width:100%;padding:11px 14px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:13px;font-family:inherit;outline:none;transition:border-color .2s}
+.order-form input:focus,.order-form select:focus,.order-form textarea:focus{border-color:var(--r)}
+.order-form select option{background:var(--n3)}
+.order-note{font-size:12px;color:rgba(255,255,255,.3);margin-top:10px;line-height:1.6;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:6px;border-left:2px solid rgba(200,16,46,.4)}
+@media(max-width:900px){.pub-wrap{grid-template-columns:1fr}.pub-book{display:flex;justify-content:center;margin-bottom:20px}.pub-cover{max-width:240px}}
 /* ── SECTION VIDÉO ── */
 #video-section{padding:100px 6%;background:var(--n);text-align:center}
 .video-inner{max-width:900px;margin:0 auto}
@@ -583,6 +614,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <ul class="nlinks">
     <li><a href="#about">Biographie</a></li>
     <li><a href="#parcours">Parcours</a></li>
+    <li><a href="#publication">Publication</a></li>
     <li><a href="#programme">Programme</a></li>
     <li><a href="#galerie">Galerie</a></li>
     <li><a href="#actu">Actualités</a></li>
@@ -597,6 +629,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   <button class="mob-close" id="mobClose">✕</button>
   <a href="#about" onclick="cMob()">Biographie</a>
   <a href="#parcours" onclick="cMob()">Parcours</a>
+  <a href="#publication" onclick="cMob()">Publication</a>
   <a href="#programme" onclick="cMob()">Programme</a>
   <a href="#galerie" onclick="cMob()">Galerie</a>
   <a href="#actu" onclick="cMob()">Actualités</a>
@@ -695,6 +728,44 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <div class="tl-wrap" id="dyn-parcours">
       <!-- Contenu généré dynamiquement via data.json -->
     </div>
+  </div>
+</section>
+
+<!-- ═══════════ PUBLICATION ═══════════ -->
+<section id="publication">
+  <div class="pub-wrap">
+
+    <!-- Couverture du livre -->
+    <div class="pub-book rev-l">
+      <div class="pub-cover">
+        <div class="pub-cover-title">Les mutations constitutionnelles en Afrique noire francophone</div>
+        <div class="pub-cover-author">Ange Aimé Wilfrid BININGA</div>
+      </div>
+      <span class="pub-cover-badge">En vente</span>
+      <span class="pub-badge-harmattan">Éditions L'Harmattan · 2019</span>
+    </div>
+
+    <!-- Informations -->
+    <div class="pub-info rev">
+      <span class="pub-tag">Publication académique</span>
+      <h2 class="pub-title">Les mutations constitutionnelles<br>en Afrique noire francophone</h2>
+      <p class="pub-subtitle">À partir des exemples du Congo, du Bénin et du Sénégal</p>
+      <p class="pub-desc">Cet ouvrage analyse les transformations constitutionnelles qui ont marqué les États d'Afrique noire francophone depuis le renouveau démocratique des années 1990. À travers les exemples du Congo, du Bénin et du Sénégal, le Député BININGA examine comment révisions, pratiques et interprétations constitutionnelles façonnent — ou freinent — la dynamique démocratique.</p>
+      <div class="pub-meta">
+        <span class="pub-meta-item"><strong>Éditeur</strong> L'Harmattan</span>
+        <span class="pub-meta-item"><strong>Parution</strong> 12 sept. 2019</span>
+        <span class="pub-meta-item"><strong>Pages</strong> 353</span>
+        <span class="pub-meta-item"><strong>ISBN</strong> 978-2-343-18410-4</span>
+        <span class="pub-meta-item"><strong>Format</strong> 24 × 16 cm</span>
+      </div>
+      <div class="pub-actions">
+        <button class="pub-btn-primary" onclick="openLegal('commander')">📦 Commander sur ce site</button>
+        <a class="pub-btn-ext" href="https://www.editions-harmattan.fr/catalogue/livre/les-mutations-constitutionnelles-en-afrique-noire-francophone/13871" target="_blank" rel="noopener">🌐 L'Harmattan</a>
+        <a class="pub-btn-ext" href="https://www.amazon.fr/mutations-constitutionnelles-Afrique-noire-francophone/dp/2343184100" target="_blank" rel="noopener">📦 Amazon</a>
+      </div>
+      <p class="pub-preface">Préfacé par Frédéric Joël Aïvo et Babacar Guèye · Docteur en droit public, Université Cheikh Anta Diop de Dakar</p>
+    </div>
+
   </div>
 </section>
 
@@ -947,7 +1018,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         <a href="#" class="soc">💬</a>
       </div>
     </div>
-    <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#publication">Publication</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#newsletter">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
   </div>
@@ -1670,6 +1741,20 @@ window.addEventListener("scroll", () => { pxTarget = window.scrollY; }, { passiv
 function openLegal(id){document.getElementById("modal-"+id).classList.add("open");document.body.style.overflow="hidden"}
 function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
 
+// ── COMMANDE LIVRE ─────────────────────────────────────────
+async function submitOrder(e, f) {
+  e.preventDefault();
+  const btn = document.getElementById("order-btn");
+  btn.disabled = true; btn.textContent = "⏳ Envoi…";
+  const fd = new FormData(f);
+  const entry = { type:"bininga_commande_livre", livre:"Les mutations constitutionnelles en Afrique noire francophone", _date: new Date().toLocaleString("fr-FR"), _id: Date.now()+"-"+Math.random().toString(36).slice(2,8) };
+  fd.forEach((v,k) => { entry[k] = v; });
+  try { await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)}); } catch(_){}
+  try { const l=JSON.parse(localStorage.getItem("bininga_commandes")||"[]"); l.push(entry); localStorage.setItem("bininga_commandes",JSON.stringify(l)); } catch(_){}
+  f.style.display = "none";
+  document.getElementById("order-ok").style.display = "block";
+}
+
 // ── NEWSLETTER ─────────────────────────────────────────────
 async function subNewsletter(e, f) {
   e.preventDefault();
@@ -1776,6 +1861,41 @@ function initActuSlider() {
       <p>L'ensemble des contenus de ce site (textes, photos, graphismes) est la propriété exclusive de la campagne Aimé BININGA ou de leurs auteurs respectifs. Toute reproduction sans autorisation préalable est interdite.</p>
       <h4>Limitation de responsabilité</h4>
       <p>Les informations publiées sur ce site sont fournies à titre indicatif. La campagne ne saurait être tenue responsable des inexactitudes ou omissions qui pourraient y figurer.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Commander le livre -->
+<div class="lmodal-overlay" id="modal-commander">
+  <div class="lmodal">
+    <div class="lmodal-head">
+      <h3>Commander le livre</h3>
+      <button class="lmodal-close" onclick="closeLegal('commander')">✕</button>
+    </div>
+    <div class="lmodal-body">
+      <p style="margin-bottom:20px;color:rgba(255,255,255,.5);font-size:13px">Remplissez le formulaire ci-dessous. Notre équipe vous contactera sous 48h pour confirmer votre commande et le mode de paiement.</p>
+      <form class="order-form" onsubmit="submitOrder(event,this)">
+        <div class="fg2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="fgrp"><label>Prénom *</label><input type="text" name="prenom" placeholder="Votre prénom" required></div>
+          <div class="fgrp"><label>Nom *</label><input type="text" name="nom" placeholder="Votre nom" required></div>
+        </div>
+        <div class="fgrp"><label>Téléphone *</label><input type="tel" name="telephone" placeholder="+242 XX XXX XXXX" required></div>
+        <div class="fgrp"><label>Email</label><input type="email" name="email" placeholder="votre@email.com"></div>
+        <div class="fgrp"><label>Adresse de livraison *</label><input type="text" name="adresse" placeholder="Ville, quartier, rue…" required></div>
+        <div class="fgrp"><label>Quantité *</label>
+          <select name="quantite" required>
+            <option value="1">1 exemplaire</option>
+            <option value="2">2 exemplaires</option>
+            <option value="3">3 exemplaires</option>
+            <option value="5">5 exemplaires</option>
+            <option value="autre">Autre quantité (préciser en note)</option>
+          </select>
+        </div>
+        <div class="fgrp"><label>Note (optionnel)</label><textarea name="note" rows="2" placeholder="Dédicace souhaitée, quantité spéciale, autre précision…"></textarea></div>
+        <div class="order-note">📌 Le paiement s'effectue à la livraison ou par virement bancaire. Notre équipe vous communiquera le tarif et les modalités par téléphone ou email.</div>
+        <button type="submit" class="pub-btn-primary" id="order-btn" style="width:100%;margin-top:16px;justify-content:center">📦 Envoyer ma commande</button>
+      </form>
+      <div id="order-ok" style="display:none;text-align:center;padding:20px 0;color:#2ecc71;font-size:15px;font-weight:600">✅ Commande reçue ! Notre équipe vous contacte sous 48h.</div>
     </div>
   </div>
 </div>
