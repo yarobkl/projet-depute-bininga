@@ -1245,7 +1245,7 @@ if __name__ == "__main__":
     load_blocked_ips()
     if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")):
         generate_self_signed_cert()
-    USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem")
+    USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem") and not os.environ.get("RAILWAY_ENVIRONMENT") and not os.environ.get("RAILWAY_PROJECT_ID")
     PORT     = int(os.environ.get("PORT", 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"
 
