@@ -1314,7 +1314,7 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
 function fSub(e, f) {
   e.preventDefault();
   const objet = document.getElementById("sel-objet").value;
-  const isRecl = objet === "Réclamation";
+  const isRecl = objet.normalize("NFC") === "R\u00e9clamation";
 
   if (isRecl) {
     const desc = document.getElementById("desc-sinistre").value.trim();
@@ -1339,14 +1339,14 @@ function toggleGeoFields(sel) {
   const extras = document.getElementById("geo-extras");
   const reason = document.getElementById("aud-reason");
   const raison = document.getElementById("raison-text");
-  const isRecl = sel.value === "Réclamation";
+  const isRecl = sel.value.normalize("NFC") === "R\u00e9clamation";
   extras.style.display = isRecl ? "block" : "none";
   reason.style.display = isRecl ? "none" : "block";
   if (raison) raison.required = !isRecl;
 
   const titles = {
     "Demande d'audience":  ["Demande d'audience auprès du Député", "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h"],
-    "Réclamation":         ["Signalement officiel au Député", "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement"],
+    "R\u00e9clamation":   ["Signalement officiel au Député", "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement"],
     "Question au Député":  ["Poser une question au Député", "Rédigez votre question, le Député ou son équipe vous répondra directement"],
     "Autre":               ["Autre demande", "Décrivez votre demande, notre équipe l'étudiera avec attention"]
   };
