@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /admin.html
+Disallow: /ministre.html
+Disallow: /gestion.html
+Disallow: /api/
+
+Sitemap: https://bininga.cg/sitemap.xml
