@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BININGA — Espace du Député</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --r:#C8102E;--rd:#8B0A1E;--rl:#ff6b6b;
+  --n:#060606;--n2:#0e0e0e;--n3:#161616;--n4:#1e1e1e;
+  --w:#fff;
+  --success:#2ecc71;--warn:#f39c12;--err:#e74c3c;--info:#3498db;
+  --t:all .3s ease;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(--w);min-height:100vh;font-size:14px}
+
+/* ── LOGIN ── */
+#login{position:fixed;inset:0;background:var(--n);display:flex;align-items:center;justify-content:center;z-index:9999;background-image:radial-gradient(ellipse at 50% 0%,rgba(200,16,46,.08) 0%,transparent 70%)}
+#login.hidden{display:none}
+.login-box{background:var(--n2);border:1px solid rgba(200,16,46,.2);border-radius:20px;padding:52px 44px;width:100%;max-width:440px;text-align:center;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 80px rgba(200,16,46,.05)}
+.login-seal{width:72px;height:72px;background:var(--r);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto 28px;box-shadow:0 0 50px rgba(200,16,46,.3);font-family:serif;letter-spacing:1px}
+.login-box h1{font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
+.login-box h2{font-size:12px;color:var(--rl);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+.login-box p{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:36px}
+.login-field{width:100%;padding:14px 16px;margin-bottom:12px;background:var(--n3);border:1px solid rgba(255,255,255,.07);border-radius:9px;color:var(--w);font-size:14px;transition:var(--t);outline:none;font-family:inherit}
+.login-field:focus{border-color:var(--r);background:rgba(200,16,46,.04);box-shadow:0 0 0 3px rgba(200,16,46,.08)}
+.login-btn{width:100%;padding:15px;background:var(--r);color:var(--w);border:none;border-radius:9px;font-weight:800;cursor:pointer;font-size:14px;letter-spacing:.5px;transition:var(--t);margin-top:6px;font-family:inherit}
+.login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+.login-err{color:#ff8888;font-size:12px;margin-top:14px;min-height:18px}
+
+/* ── APP ── */
+#app{display:none;flex-direction:column;min-height:100vh}
+#app.visible{display:flex}
+
+/* ── HEADER ── */
+.app-header{background:var(--n2);border-bottom:1px solid rgba(200,16,46,.12);padding:0 32px;height:72px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.header-left{display:flex;align-items:center;gap:16px}
+.deputy-seal{width:44px;height:44px;background:var(--r);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;font-family:serif;box-shadow:0 0 20px rgba(200,16,46,.25);flex-shrink:0}
+.deputy-name{font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.1}
+.deputy-title{font-size:11px;color:var(--rl);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:16px}
+.header-date{font-size:12px;color:rgba(255,255,255,.3);text-align:right;line-height:1.5}
+.header-btn{padding:9px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-family:inherit}
+.header-btn:hover{color:var(--w);border-color:rgba(255,255,255,.25)}
+.header-btn.gold{background:var(--r);color:var(--w);border-color:transparent;font-weight:700}
+.header-btn.gold:hover{filter:brightness(1.1)}
+
+/* ── KPI HÉROS (rangée supérieure) ── */
+.kpi-section{padding:28px 32px 0;background:linear-gradient(180deg,rgba(200,16,46,.04) 0%,transparent 100%)}
+.kpi-hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px}
+.kpi-hero{position:relative;overflow:hidden;border-radius:16px;padding:28px 28px 24px;border:1px solid rgba(255,255,255,.07);background:var(--n2);transition:var(--t);cursor:default}
+.kpi-hero:hover{transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.kpi-hero::after{content:'';position:absolute;inset:0;opacity:.04;border-radius:16px}
+.kpi-hero.gold{border-color:rgba(200,16,46,.3);box-shadow:0 0 0 1px rgba(200,16,46,.08) inset}
+.kpi-hero.gold::after{background:linear-gradient(135deg,var(--r),transparent)}
+.kpi-hero.green{border-color:rgba(46,204,113,.2);box-shadow:0 0 0 1px rgba(46,204,113,.06) inset}
+.kpi-hero.green::after{background:linear-gradient(135deg,#2ecc71,transparent)}
+.kpi-hero.red{border-color:rgba(231,76,60,.25);box-shadow:0 0 0 1px rgba(231,76,60,.08) inset}
+.kpi-hero.red::after{background:linear-gradient(135deg,#e74c3c,transparent)}
+.kpi-hero-icon{font-size:28px;margin-bottom:16px;line-height:1}
+.kpi-hero-val{font-size:68px;font-weight:900;line-height:.9;margin-bottom:10px;letter-spacing:-3px}
+.kpi-hero.gold .kpi-hero-val{color:var(--rl);text-shadow:0 0 60px rgba(200,16,46,.3)}
+.kpi-hero.green .kpi-hero-val{color:#2ecc71;text-shadow:0 0 60px rgba(46,204,113,.2)}
+.kpi-hero.red .kpi-hero-val{color:#ff7070;text-shadow:0 0 60px rgba(231,76,60,.2)}
+.kpi-hero-label{font-size:15px;font-weight:700;color:var(--w);margin-bottom:4px;letter-spacing:-.2px}
+.kpi-hero-sub{font-size:12px;color:rgba(255,255,255,.3);line-height:1.4}
+.kpi-hero-badge{position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px}
+.kpi-hero.gold .kpi-hero-badge{background:rgba(200,16,46,.15);color:var(--rl);border:1px solid rgba(200,16,46,.25)}
+.kpi-hero.green .kpi-hero-badge{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.2)}
+.kpi-hero.red .kpi-hero-badge{background:rgba(231,76,60,.12);color:#ff7070;border:1px solid rgba(231,76,60,.2)}
+
+/* ── KPI DÉTAIL (rangée secondaire) ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.kpi-card{background:var(--n3);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:16px 14px;position:relative;overflow:hidden;transition:var(--t)}
+.kpi-card:hover{border-color:rgba(200,16,46,.15);transform:translateY(-2px);background:var(--n2)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--r);opacity:.5}
+.kpi-card.red::before{background:var(--r)}
+.kpi-card.green::before{background:var(--success)}
+.kpi-card.blue::before{background:var(--info)}
+.kpi-card.warn::before{background:var(--warn)}
+.kpi-card.purple::before{background:#9b59b6}
+.kpi-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:8px;font-weight:700}
+.kpi-val{font-size:36px;font-weight:800;line-height:1;margin-bottom:3px;color:var(--rl)}
+.kpi-card.red .kpi-val{color:#ff8888}
+.kpi-card.green .kpi-val{color:var(--success)}
+.kpi-card.blue .kpi-val{color:#6bbeff}
+.kpi-card.warn .kpi-val{color:var(--warn)}
+.kpi-card.purple .kpi-val{color:#c39bd3}
+.kpi-sub{font-size:11px;color:rgba(255,255,255,.22)}
+
+/* ── ACTIVITY STRIP ── */
+.activity-strip{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 32px 0}
+.strip-card{background:var(--n2);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:16px 18px}
+.strip-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.25);font-weight:700;margin-bottom:12px}
+.priority-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.priority-item:last-child{border-bottom:none}
+.priority-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.priority-name{font-size:12px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.priority-type{font-size:10px;color:rgba(255,255,255,.3)}
+.prog-row{margin-bottom:10px}
+.prog-label{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.45);margin-bottom:5px}
+.prog-bar{background:rgba(255,255,255,.06);border-radius:4px;height:5px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.16,1,.3,1)}
+
+/* ── NAV TABS ── */
+.nav-section{padding:16px 32px 0}
+.nav-tabs{display:flex;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:0}
+.nav-tab{padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-size:12px;font-weight:600;color:rgba(255,255,255,.4);transition:var(--t);border:1px solid transparent;border-bottom:none;background:transparent;font-family:inherit;display:flex;align-items:center;gap:7px}
+.nav-tab:hover{color:var(--w);background:rgba(255,255,255,.03)}
+.nav-tab.active{background:var(--n2);color:var(--w);border-color:rgba(200,16,46,.2);border-bottom-color:var(--n2);position:relative;top:1px}
+.nav-count{background:rgba(200,16,46,.2);color:var(--rl);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800}
+.nav-tab.active .nav-count{background:rgba(200,16,46,.3)}
+.nav-count.red{background:rgba(200,16,46,.2);color:#ff8888}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:0 32px 32px;background:var(--n)}
+.tab-panel{display:none;padding-top:20px}
+.tab-panel.active{display:block}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 13px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:rgba(255,255,255,.4);transition:var(--t);border:1px solid transparent;background:transparent;font-family:inherit}
+.filter-btn:hover{color:var(--w);background:rgba(255,255,255,.04)}
+.filter-btn.active{background:rgba(200,16,46,.12);color:var(--rl);border-color:rgba(200,16,46,.25)}
+.filter-spacer{flex:1}
+.msg-count{font-size:11px;color:rgba(255,255,255,.2)}
+
+/* ── MESSAGE CARDS ── */
+.msg-list{display:flex;flex-direction:column;gap:10px}
+.msg-card{background:var(--n2);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;transition:var(--t)}
+.msg-card:hover{border-color:rgba(200,16,46,.15)}
+.msg-card.has-reply{border-color:rgba(46,204,113,.15)}
+.msg-card.priority{border-left:3px solid var(--r)}
+.msg-top{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;cursor:pointer;user-select:none}
+.msg-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;background:rgba(200,16,46,.12);color:var(--rl)}
+.msg-header{flex:1;min-width:0}
+.msg-name{font-weight:700;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.msg-date-line{font-size:11px;color:rgba(255,255,255,.3)}
+.msg-preview{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.msg-actions-top{display:flex;align-items:center;gap:8px;flex-shrink:0}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.badge-wait{background:rgba(243,156,18,.12);color:#f39c12;border:1px solid rgba(243,156,18,.2)}
+.badge-progress{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.2)}
+.badge-done{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.2)}
+.badge-recl{background:rgba(200,16,46,.12);color:#ff8888;border:1px solid rgba(200,16,46,.2)}
+.badge-unread{background:rgba(52,152,219,.12);color:#3498db;border:1px solid rgba(52,152,219,.2)}
+.badge-lu{background:rgba(255,255,255,.06);color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.08)}
+.badge-reply{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.2)}
+.badge-pinged{background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.35);animation:pulse-red 2s infinite}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,.4)}50%{box-shadow:0 0 0 4px rgba(231,76,60,0)}}
+
+/* ── MSG BODY (expanded) ── */
+.msg-body{display:none;padding:0 18px 16px;border-top:1px solid rgba(255,255,255,.05)}
+.msg-body.open{display:block}
+.msg-fields{display:flex;flex-wrap:wrap;gap:6px;padding:14px 0 12px}
+.msg-field{font-size:12px;color:rgba(255,255,255,.5);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);padding:4px 11px;border-radius:5px}
+.msg-field strong{color:rgba(255,255,255,.7);margin-right:5px}
+.msg-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:10px 0;border-top:1px solid rgba(255,255,255,.05)}
+.sbtn{padding:6px 13px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:var(--t);font-family:inherit}
+.sbtn-wait{background:rgba(243,156,18,.1);color:#f39c12;border-color:rgba(243,156,18,.2)}
+.sbtn-wait:hover{background:rgba(243,156,18,.25)}
+.sbtn-progress{background:rgba(52,152,219,.1);color:#3498db;border-color:rgba(52,152,219,.2)}
+.sbtn-progress:hover{background:rgba(52,152,219,.25)}
+.sbtn-done{background:rgba(46,204,113,.1);color:#2ecc71;border-color:rgba(46,204,113,.2)}
+.sbtn-done:hover{background:rgba(46,204,113,.25)}
+.sbtn-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
+.sbtn-read:hover{background:rgba(255,255,255,.1);color:var(--w)}
+.sbtn-reply{background:rgba(200,16,46,.12);color:var(--rl);border-color:rgba(200,16,46,.25)}
+.sbtn-reply:hover{background:rgba(200,16,46,.25)}
+.sbtn-reply.active{background:rgba(200,16,46,.2);color:var(--rl)}
+
+/* ── NOTES INTERNES ── */
+.notes-section{margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:12px}
+.notes-title{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:8px;font-weight:600}
+.note-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:9px 12px;margin-bottom:7px}
+.note-meta{font-size:10px;color:rgba(255,255,255,.3);margin-bottom:4px}
+.note-meta strong{color:rgba(255,255,255,.5)}
+.note-text{font-size:13px;color:rgba(255,255,255,.7);white-space:pre-wrap}
+.note-form{display:flex;gap:8px;margin-top:8px}
+.note-form textarea{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:12px;font-family:inherit;padding:8px 10px;resize:none;min-height:54px;outline:none;transition:var(--t)}
+.note-form textarea:focus{border-color:var(--rl)}
+.note-form button{align-self:flex-end;padding:8px 14px;background:rgba(200,16,46,.12);color:var(--rl);border:1px solid rgba(200,16,46,.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
+.note-form button:hover{background:rgba(200,16,46,.25)}
+
+/* ── REPLY PANEL ── */
+.reply-panel{display:none;background:var(--n3);border:1px solid rgba(200,16,46,.15);border-radius:10px;padding:18px;margin-top:12px}
+.reply-panel.open{display:block}
+.reply-panel-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--rl);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.reply-textarea{width:100%;min-height:160px;padding:13px 15px;background:var(--n4);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--w);font-size:13px;font-family:'Segoe UI',system-ui,sans-serif;resize:vertical;outline:none;transition:var(--t);line-height:1.6}
+.reply-textarea:focus{border-color:var(--r);background:rgba(200,16,46,.03)}
+.reply-meta{font-size:11px;color:rgba(255,255,255,.25);margin-top:8px;display:flex;justify-content:space-between;align-items:center}
+.reply-actions{display:flex;gap:8px;margin-top:12px}
+.btn-send{padding:10px 20px;background:var(--r);color:var(--w);border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;transition:var(--t)}
+.btn-send:hover{filter:brightness(1.1)}
+.btn-cancel-reply{padding:10px 16px;background:transparent;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;transition:var(--t)}
+.btn-cancel-reply:hover{color:var(--w);border-color:rgba(255,255,255,.2)}
+
+/* ── EXISTING REPLY DISPLAY ── */
+.reply-display{background:rgba(46,204,113,.05);border:1px solid rgba(46,204,113,.15);border-radius:10px;padding:16px 18px;margin-top:10px}
+.reply-display-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.reply-display-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#2ecc71;font-weight:700}
+.reply-display-date{font-size:11px;color:rgba(255,255,255,.3)}
+.reply-display-text{font-size:13px;color:rgba(255,255,255,.75);line-height:1.65;white-space:pre-wrap}
+.reply-edit-btn{font-size:11px;color:rgba(255,255,255,.35);cursor:pointer;text-decoration:underline;margin-top:8px;display:inline-block;transition:var(--t)}
+.reply-edit-btn:hover{color:var(--w)}
+
+/* ── SINISTRE GÉO ── */
+.sin-desc{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px 14px;margin:10px 0;font-size:13px;color:rgba(255,255,255,.65);line-height:1.55}
+.sin-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:6px}
+.sin-geo{background:rgba(52,152,219,.07);border:1px solid rgba(52,152,219,.2);border-radius:10px;padding:14px 16px;margin:10px 0}
+.sin-geo-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px}
+.sin-geo-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6bbeff}
+.btn-gmaps{background:#1a73e8;color:#fff;border-radius:6px;padding:6px 14px;font-size:11px;font-weight:700;text-decoration:none;transition:background .2s;white-space:nowrap}
+.btn-gmaps:hover{background:#1558b0}
+.sin-addr{font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;font-style:italic;line-height:1.4}
+.sin-map{width:100%;height:210px;border:none;border-radius:7px;display:block}
+.sin-coords{font-size:10px;color:rgba(255,255,255,.2);margin-top:6px;font-family:monospace}
+.sin-photo-wrap{margin:10px 0}
+.sin-photo{max-width:100%;max-height:300px;border-radius:8px;cursor:zoom-in;object-fit:cover;transition:all .3s;border:1px solid rgba(255,255,255,.08)}
+.sin-photo.full{max-height:620px;cursor:zoom-out}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:60px 20px;color:rgba(255,255,255,.2)}
+.empty-icon{font-size:40px;margin-bottom:14px}
+.empty-text{font-size:14px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:28px;right:28px;padding:13px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(120px);opacity:0;transition:all .35s cubic-bezier(.175,.885,.32,1.275)}
+#toast.show{transform:translateY(0);opacity:1;background:var(--success);color:var(--w)}
+#toast.show.err{background:var(--err)}
+#toast.show.gold{background:var(--r);color:var(--w)}
+
+@media(max-width:1100px){.kpi-hero-grid{grid-template-columns:repeat(3,1fr)}.kpi-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.kpi-hero-grid{grid-template-columns:1fr 1fr}.kpi-hero-val{font-size:52px}}
+@media(max-width:800px){
+  .app-header{padding:0 16px;height:60px}
+  .kpi-section,.activity-strip,.nav-section,.content{padding-left:16px;padding-right:16px}
+  .kpi-hero-grid{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .activity-strip{grid-template-columns:1fr}
+  .kpi-hero-val{font-size:60px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-seal">B</div>
+    <h2>Circonscription d'Ewo</h2>
+    <h1>Espace du Député</h1>
+    <p>Accès réservé — Ange Aimé Bininga</p>
+    <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username">
+    <input class="login-field" type="password" id="p" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Accéder à l'espace</button>
+    <div class="login-err" id="err"></div>
+  </div>
+</div>
+
+<!-- ═══════════ APP ═══════════ -->
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="deputy-seal">B</div>
+      <div>
+        <div class="deputy-name" id="hdr-nom">Ange Aimé Bininga</div>
+        <div class="deputy-title">Député · Circonscription d'Ewo</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="header-date" id="hdr-date"></div>
+      <a href="index.html" target="_blank" class="header-btn">🌐 Voir le site</a>
+      <a href="admin.html" class="header-btn">⚙️ Administration</a>
+      <button class="header-btn" onclick="logout()">↩ Déconnexion</button>
+    </div>
+  </header>
+
+  <!-- KPI HÉROS -->
+  <div class="kpi-section">
+    <div class="kpi-hero-grid">
+
+      <div class="kpi-hero gold">
+        <span class="kpi-hero-badge">PEUPLE</span>
+        <div class="kpi-hero-icon">👥</div>
+        <div class="kpi-hero-val" id="k-total">0</div>
+        <div class="kpi-hero-label">Citoyens ayant sollicité le Député</div>
+        <div class="kpi-hero-sub">Audiences · Réclamations · Messages</div>
+      </div>
+
+      <div class="kpi-hero green">
+        <span class="kpi-hero-badge">RÉSOLUTION</span>
+        <div class="kpi-hero-icon">✅</div>
+        <div class="kpi-hero-val" id="k-taux">0%</div>
+        <div class="kpi-hero-label">Taux de traitement</div>
+        <div class="kpi-hero-sub" id="k-taux-detail">dossiers traités / total soumis</div>
+      </div>
+
+      <div class="kpi-hero red">
+        <span class="kpi-hero-badge">URGENT</span>
+        <div class="kpi-hero-icon">⚠️</div>
+        <div class="kpi-hero-val" id="k-urgent">0</div>
+        <div class="kpi-hero-label">Dossiers urgents à traiter</div>
+        <div class="kpi-hero-sub">Réclamations ouvertes + en attente de réponse</div>
+      </div>
+
+    </div>
+
+    <!-- KPI DÉTAIL -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Audiences</div>
+        <div class="kpi-val" id="k-aud">0</div>
+        <div class="kpi-sub">demandes totales</div>
+      </div>
+      <div class="kpi-card warn">
+        <div class="kpi-label">En attente</div>
+        <div class="kpi-val" id="k-wait">0</div>
+        <div class="kpi-sub">à planifier</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">En cours</div>
+        <div class="kpi-val" id="k-encours">0</div>
+        <div class="kpi-sub">traitement actif</div>
+      </div>
+      <div class="kpi-card blue">
+        <div class="kpi-label">Messages non lus</div>
+        <div class="kpi-val" id="k-ct">0</div>
+        <div class="kpi-sub">contacts entrants</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Réponses directes</div>
+        <div class="kpi-val" id="k-rep">0</div>
+        <div class="kpi-sub">signées par le Député</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVITY STRIP -->
+  <div class="activity-strip">
+    <div class="strip-card">
+      <div class="strip-title">⚡ Priorités immédiates</div>
+      <div id="priority-list"><div class="empty" style="padding:20px 0;font-size:12px">Aucune urgence</div></div>
+    </div>
+    <div class="strip-card">
+      <div class="strip-title">📊 Répartition des dossiers</div>
+      <div id="breakdown"></div>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <div class="nav-section">
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('audiences',this)">
+        📋 Audiences <span class="nav-count" id="nt-aud">0</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('reclamations',this)">
+        ⚠️ Réclamations <span class="nav-count red" id="nt-recl">0</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('contacts',this)">
+        ✉️ Messages <span class="nav-count" id="nt-ct">0</span>
+      </button>
+      <button class="nav-tab" onclick="showTab('reponses',this)">
+        💬 Réponses envoyées <span class="nav-count" id="nt-rep">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ── AUDIENCES ── -->
+    <div class="tab-panel active" id="panel-audiences">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterAud('all',this)">Toutes</button>
+        <button class="filter-btn" onclick="filterAud('en_attente',this)">⏳ En attente</button>
+        <button class="filter-btn" onclick="filterAud('en_cours',this)">🔄 En cours</button>
+        <button class="filter-btn" onclick="filterAud('traite',this)">✅ Traitées</button>
+        <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
+        <span class="msg-count" id="aud-count"></span>
+      </div>
+      <div class="msg-list" id="list-audiences"></div>
+    </div>
+
+    <!-- ── RÉCLAMATIONS ── -->
+    <div class="tab-panel" id="panel-reclamations">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterRecl('all',this)">Toutes</button>
+        <button class="filter-btn" onclick="filterRecl('en_attente',this)">⏳ En attente</button>
+        <button class="filter-btn" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
+        <button class="filter-btn" onclick="filterRecl('traite',this)">✅ Traitées</button>
+        <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
+        <span class="msg-count" id="recl-count"></span>
+      </div>
+      <div class="msg-list" id="list-reclamations"></div>
+    </div>
+
+    <!-- ── CONTACTS ── -->
+    <div class="tab-panel" id="panel-contacts">
+      <div class="filter-bar">
+        <button class="filter-btn active" onclick="filterCt('all',this)">Tous</button>
+        <button class="filter-btn" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
+        <button class="filter-btn" onclick="filterCt('lu',this)">✓ Lus</button>
+        <span class="filter-spacer"></span>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
+        <span class="msg-count" id="ct-count"></span>
+      </div>
+      <div class="msg-list" id="list-contacts"></div>
+    </div>
+
+    <!-- ── RÉPONSES ENVOYÉES ── -->
+    <div class="tab-panel" id="panel-reponses">
+      <div class="msg-list" id="list-reponses"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  AUTH
+// ══════════════════════════════════════════════════════════
+let SESSION_TOKEN = "";
+let SESSION_CSRF  = "";
+let SESSION_NOM   = "";
+let SESSION_ROLE  = "";
+
+function authHeaders(extra) {
+  return Object.assign({
+    "Content-Type": "application/json",
+    "X-Admin-Token": SESSION_TOKEN,
+    "X-CSRF-Token": SESSION_CSRF,
+  }, extra);
+}
+
+const SIGNATURE = () =>
+  `\n\n---\nCordialement,\n${SESSION_NOM || "Ange Aimé Bininga"}\nDéputé de la Circonscription d'Ewo`;
+
+async function doLogin() {
+  const u   = document.getElementById("u").value.trim();
+  const p   = document.getElementById("p").value;
+  const btn = document.querySelector(".login-btn");
+  btn.disabled = true; btn.textContent = "Connexion…";
+  try {
+    const res  = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: u, password: p })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      if (!["admin","ministre"].includes(data.role)) {
+        showErr("Accès réservé à l'espace du Député.");
+        return;
+      }
+      if (data.role === "admin") {
+        // Admin → rediriger vers admin.html (qui a son propre formulaire de login)
+        window.location.href = "admin.html";
+        return;
+      }
+      SESSION_TOKEN = data.token;
+      SESSION_CSRF  = data.csrf_token || "";
+      SESSION_NOM   = data.nom;
+      SESSION_ROLE  = data.role;
+      document.getElementById("login").classList.add("hidden");
+      document.getElementById("app").classList.add("visible");
+      document.getElementById("hdr-nom").textContent = data.nom;
+      updateHeaderDate();
+      init();
+    } else {
+      showErr("Identifiant ou mot de passe incorrect.");
+    }
+  } catch { showErr("Erreur de connexion au serveur."); }
+  finally { btn.disabled = false; btn.textContent = "Accéder à l'espace"; }
+}
+
+function showErr(msg) {
+  const el = document.getElementById("err");
+  el.textContent = msg;
+  setTimeout(() => el.textContent = "", 3500);
+}
+
+async function logout() {
+  try {
+    await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
+  } catch (_) {}
+  SESSION_TOKEN = "";
+  document.getElementById("login").classList.remove("hidden");
+  document.getElementById("app").classList.remove("visible");
+  document.getElementById("u").value = "";
+  document.getElementById("p").value = "";
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
+});
+
+function updateHeaderDate() {
+  const now = new Date();
+  document.getElementById("hdr-date").innerHTML =
+    now.toLocaleDateString("fr-FR",{weekday:"long",year:"numeric",month:"long",day:"numeric"}) +
+    "<br>" + now.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+}
+
+// ══════════════════════════════════════════════════════════
+//  STORAGE
+// ══════════════════════════════════════════════════════════
+function getAll(key)       { try { return JSON.parse(localStorage.getItem(key)||"[]"); } catch { return []; } }
+function saveAll(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
+function msgId(m)          { return (m._date||"") + "|" + (m.prenom||"") + "|" + (m.nom||""); }
+
+// ══════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════
+function init() {
+  updateHeaderDate();
+  setInterval(updateHeaderDate, 60000);
+  syncMessages().then(() => refreshAll());
+}
+
+async function syncMessages() {
+  try {
+    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) return;
+    const mapping = [
+      ["bininga_audiences", data.audiences || []],
+      ["bininga_contacts",  data.contacts  || []]
+    ];
+    for (const [key, serverList] of mapping) {
+      const localList = JSON.parse(localStorage.getItem(key) || "[]");
+      const localMeta = {};
+      localList.forEach(m => { if (m._id) localMeta[m._id] = m; });
+      const serverIds = new Set(serverList.map(m => m._id).filter(Boolean));
+      const merged = serverList.map(m => {
+        const local = localMeta[m._id] || {};
+        return Object.assign({}, m, {
+          _status: local._status || m._status,
+          _notes:  local._notes  || m._notes,
+          _pinged: local._pinged || m._pinged,
+          _reply:  local._reply  || m._reply,
+          _reply_date: local._reply_date || m._reply_date
+        });
+      });
+      localList.filter(m => m._id && !serverIds.has(m._id)).forEach(m => merged.push(m));
+      localStorage.setItem(key, JSON.stringify(merged));
+    }
+  } catch (_) {}
+}
+
+let audFilter = "all", reclFilter = "all", ctFilter = "all";
+
+function refreshAll() {
+  refreshKpi();
+  refreshPriority();
+  refreshBreakdown();
+  renderAudiences();
+  renderReclamations();
+  renderContacts();
+  renderReponses();
+}
+
+// ══════════════════════════════════════════════════════════
+//  KPI
+// ══════════════════════════════════════════════════════════
+function refreshKpi() {
+  const aud   = getAll("bininga_audiences");
+  const ct    = getAll("bininga_contacts");
+  const auds  = aud.filter(m => !isRéclamation(m));
+  const recls = aud.filter(m => isRéclamation(m));
+
+  const wait    = auds.filter(m => !m._status || m._status === "en_attente").length;
+  const encours = auds.filter(m => m._status === "en_cours").length;
+  const done    = auds.filter(m => m._status === "traite").length;
+  const reclW   = recls.filter(m => m._status !== "traite").length;
+  const ctUnr   = ct.filter(m => !m._status || m._status === "non_lu").length;
+  const replies = [...aud, ...ct].filter(m => m._reply).length;
+
+  // KPIs héros
+  const total   = aud.length + ct.length;
+  const traites = done + recls.filter(m => m._status === "traite").length + ct.filter(m => m._status === "lu").length;
+  const taux    = total > 0 ? Math.round(traites / total * 100) : 0;
+  const urgent  = reclW + auds.filter(m => (!m._status || m._status === "en_attente") && !m._reply).length;
+
+  setText("k-total",  total);
+  setText("k-taux",   taux + "%");
+  setText("k-taux-detail", traites + " traités sur " + total + " soumis");
+  setText("k-urgent", urgent);
+
+  // KPIs détail
+  setText("k-aud",     auds.length);
+  setText("k-wait",    wait);
+  setText("k-encours", encours);
+  setText("k-ct",      ctUnr);
+  setText("k-rep",     replies);
+
+  // Compteurs onglets
+  setText("nt-aud",  auds.length);
+  setText("nt-recl", reclW);
+  setText("nt-ct",   ctUnr);
+  setText("nt-rep",  replies);
+}
+
+// ══════════════════════════════════════════════════════════
+//  PRIORITY LIST
+// ══════════════════════════════════════════════════════════
+function refreshPriority() {
+  const aud = getAll("bininga_audiences");
+  const ct  = getAll("bininga_contacts");
+  // Réclamations non traitées en premier, puis audiences en attente sans réponse
+  const urgent = [
+    ...aud.filter(m => isRéclamation(m) && m._status !== "traite"),
+    ...aud.filter(m => !isRéclamation(m) && (!m._status || m._status === "en_attente") && !m._reply),
+    ...ct.filter(m => (!m._status || m._status === "non_lu") && !m._reply)
+  ].slice(0, 5);
+
+  const el = document.getElementById("priority-list");
+  if (!urgent.length) {
+    el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.2);padding:10px 0">✅ Aucune urgence en cours</div>';
+    return;
+  }
+  el.innerHTML = urgent.map(m => {
+    const isRecl = isRéclamation(m);
+    const color  = isRecl ? "#e74c3c" : m._type === "contact" ? "#3498db" : "#f39c12";
+    const label  = isRecl ? "Réclamation" : m.objet ? m.objet.slice(0,22) : "Contact";
+    return `<div class="priority-item">
+      <div class="priority-dot" style="background:${color}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="priority-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
+        <div class="priority-type">${esc(label)}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════
+//  BREAKDOWN
+// ══════════════════════════════════════════════════════════
+function refreshBreakdown() {
+  const aud   = getAll("bininga_audiences");
+  const auds  = aud.filter(m => !isRéclamation(m));
+  const total = auds.length || 1;
+  const wait  = auds.filter(m => !m._status || m._status === "en_attente").length;
+  const prog  = auds.filter(m => m._status === "en_cours").length;
+  const done  = auds.filter(m => m._status === "traite").length;
+  const replied = [...aud, ...getAll("bininga_contacts")].filter(m => m._reply).length;
+
+  document.getElementById("breakdown").innerHTML = [
+    { label:"En attente",   count:wait,    color:"#f39c12", pct:Math.round(wait/total*100) },
+    { label:"En cours",     count:prog,    color:"#3498db", pct:Math.round(prog/total*100) },
+    { label:"Traitées",     count:done,    color:"#2ecc71", pct:Math.round(done/total*100) },
+    { label:"Avec réponse", count:replied, color:var_g(),   pct:Math.round(replied/(total||1)*100) },
+  ].map(r => `<div class="prog-row">
+    <div class="prog-label"><span>${esc(r.label)}</span><strong style="color:${r.color}">${Number(r.count)}</strong></div>
+    <div class="prog-bar"><div class="prog-fill" style="width:${Number(r.pct)}%;background:${r.color}"></div></div>
+  </div>`).join("");
+}
+
+function var_g() { return "#C8102E"; }
+
+// ══════════════════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════════════════
+function showTab(name, el) {
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+  document.getElementById("panel-"+name).classList.add("active");
+  if (el) el.classList.add("active");
+}
+
+// ══════════════════════════════════════════════════════════
+//  RENDER MESSAGES
+// ══════════════════════════════════════════════════════════
+function filterAud(f, el) {
+  audFilter = f;
+  document.querySelectorAll("#panel-audiences .filter-btn").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  renderAudiences();
+}
+function filterRecl(f, el) {
+  reclFilter = f;
+  document.querySelectorAll("#panel-reclamations .filter-btn").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  renderReclamations();
+}
+function filterCt(f, el) {
+  ctFilter = f;
+  document.querySelectorAll("#panel-contacts .filter-btn").forEach(b => b.classList.remove("active"));
+  el.classList.add("active");
+  renderContacts();
+}
+
+function renderAudiences() {
+  const all  = getAll("bininga_audiences").filter(m => !isRéclamation(m));
+  const list = audFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === audFilter);
+  setText("aud-count", list.length + " demande" + (list.length > 1 ? "s" : ""));
+  renderMsgList("list-audiences", list, "bininga_audiences", "status3");
+}
+function renderReclamations() {
+  const all  = getAll("bininga_audiences").filter(m => isRéclamation(m));
+  const list = reclFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === reclFilter);
+  setText("recl-count", list.length + " réclamation" + (list.length > 1 ? "s" : ""));
+  renderMsgList("list-reclamations", list, "bininga_audiences", "status3");
+}
+function renderContacts() {
+  const all  = getAll("bininga_contacts");
+  const list = ctFilter === "all" ? all : all.filter(m => (m._status||"non_lu") === ctFilter);
+  setText("ct-count", list.length + " message" + (list.length > 1 ? "s" : ""));
+  renderMsgList("list-contacts", list, "bininga_contacts", "status2");
+}
+function renderReponses() {
+  const all = [
+    ...getAll("bininga_audiences").filter(m => m._reply),
+    ...getAll("bininga_contacts").filter(m => m._reply)
+  ];
+  setText("nt-rep", all.length);
+  const el = document.getElementById("list-reponses");
+  if (!all.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucune réponse envoyée pour le moment.</div></div>';
+    return;
+  }
+  const storageKey = m => m.objet !== undefined ? "bininga_audiences" : "bininga_contacts";
+  el.innerHTML = all.map(m => buildCard(m, storageKey(m), "readonly")).join("");
+}
+
+// ══════════════════════════════════════════════════════════
+//  GENERIC MESSAGE LIST
+// ══════════════════════════════════════════════════════════
+function renderMsgList(containerId, list, storageKey, mode) {
+  const el = document.getElementById(containerId);
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Aucun message dans cette catégorie.</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(m => buildCard(m, storageKey, mode)).join("");
+}
+
+function buildCard(m, storageKey, mode) {
+  const id       = msgId(m);
+  const safeId   = btoa(encodeURIComponent(id)).replace(/[+/=]/g,"_").slice(0,20);
+  const isRecl   = isRéclamation(m);
+  const status   = m._status || (mode === "status2" ? "non_lu" : "en_attente");
+  const hasReply = !!m._reply;
+  const hasGeo   = !!(m.geo_lat && m.geo_lng);
+  const hasPhoto = !!m.photo_url;
+  const initials = ((m.prenom||"?").charAt(0) + (m.nom||"?").charAt(0)).toUpperCase();
+  const geoSkip  = new Set(["_date","_status","_reply","_reply_date","_pinged","_pinged_date","_id","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
+  const fields   = Object.entries(m)
+    .filter(([k]) => !geoSkip.has(k))
+    .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
+    .join("");
+
+  // Raison demande d'audience / question
+  const raisonHtml = m.raison ? `<div class="sin-desc"><div class="sin-label">📝 Requête</div>${esc(m.raison)}</div>` : "";
+
+  // Description sinistre
+  const descHtml = m.description ? `<div class="sin-desc"><div class="sin-label">📝 Description du sinistre</div>${esc(m.description)}</div>` : "";
+
+  // Bloc géolocalisation
+  let geoHtml = "";
+  if (hasGeo) {
+    const lat = parseFloat(m.geo_lat), lng = parseFloat(m.geo_lng);
+    const δ = 0.008;
+    const mapsUrl = m.geo_maps_url || `https://www.google.com/maps?q=${lat},${lng}&z=16`;
+    geoHtml = `<div class="sin-geo">
+      <div class="sin-geo-hdr">
+        <span class="sin-geo-lbl">📍 Zone du sinistre — géolocalisée</span>
+        <a href="${esc(mapsUrl)}" target="_blank" class="btn-gmaps">🗺️ Google Maps</a>
+      </div>
+      ${m.geo_label ? `<div class="sin-addr">${esc(m.geo_label)}</div>` : ""}
+      <iframe class="sin-map"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
+        allowfullscreen loading="lazy"></iframe>
+      <div class="sin-coords">🌐 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
+    </div>`;
+  }
+
+  // Photo
+  const photoHtml = hasPhoto ? `<div class="sin-photo-wrap">
+    <div class="sin-label">📷 Photo du sinistre</div>
+    <img src="${esc(m.photo_url)}" class="sin-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
+  </div>` : "";
+
+  let statusBadge = "";
+  if (mode === "status3") {
+    const map = {
+      en_attente:`<span class="badge badge-wait">⏳ En attente</span>`,
+      en_cours:`<span class="badge badge-progress">🔄 En cours</span>`,
+      traite:`<span class="badge badge-done">✅ Traité</span>`,
+    };
+    statusBadge = isRecl ? `<span class="badge badge-recl">⚠️ Réclamation</span>` : (map[status]||map.en_attente);
+  } else {
+    statusBadge = status === "lu"
+      ? `<span class="badge badge-lu">✓ Lu</span>`
+      : `<span class="badge badge-unread">🔵 Non lu</span>`;
+  }
+
+  const replyBadge = hasReply ? `<span class="badge badge-reply">💬 Répondu</span>` : "";
+  const pingBadge  = m._pinged ? `<span class="badge badge-pinged">🚨 Député alerté</span>` : "";
+
+  // Bouton ping Député
+  const isGrave = isRecl || (!m._status || m._status === "en_attente");
+  const pingBtn = isGrave && mode !== "readonly"
+    ? (m._pinged
+        ? `<button class="sbtn" style="background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</button>`
+        : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${safeId}')">🚨 Alerter le Député</button>`)
+    : "";
+
+  let statusBtns = "";
+  if (mode === "status3" && mode !== "readonly") {
+    statusBtns = `
+      <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${safeId}','en_attente','${mode}')">⏳ En attente</button>
+      <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${safeId}','en_cours','${mode}')">🔄 En cours</button>
+      <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${safeId}','traite','${mode}')">✅ Traité</button>
+      ${pingBtn}`;
+  } else if (mode === "status2") {
+    statusBtns = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${safeId}','lu','${mode}')">✅ Marquer lu</button>${pingBtn}`;
+  }
+
+  // Reply section
+  let replySection = "";
+  if (mode !== "readonly") {
+    if (hasReply) {
+      replySection = `
+        <div class="reply-display" id="rd-${safeId}">
+          <div class="reply-display-header">
+            <span class="reply-display-label">💬 Réponse envoyée</span>
+            <span class="reply-display-date">${esc(m._reply_date||"")}</span>
+          </div>
+          <div class="reply-display-text">${esc(m._reply)}</div>
+          <span class="reply-edit-btn" onclick="openReply('${safeId}','${storageKey}')">✏️ Modifier la réponse</span>
+        </div>
+        <div class="reply-panel" id="rp-${safeId}">
+          ${buildReplyForm(safeId, storageKey, m._reply)}
+        </div>`;
+    } else {
+      replySection = `
+        <div class="reply-panel" id="rp-${safeId}">
+          ${buildReplyForm(safeId, storageKey, "")}
+        </div>`;
+    }
+  }
+
+  const replyBtn = mode !== "readonly"
+    ? `<button class="sbtn sbtn-reply${hasReply?" active":""}" onclick="toggleReply('${safeId}')">✉️ ${hasReply?"Voir réponse":"Répondre"}</button>`
+    : "";
+
+  // Preview
+  const firstVal = Object.entries(m).filter(([k]) => !geoSkip.has(k) && k !== "nom" && k !== "prenom")[0];
+  const preview  = m.description || (firstVal ? firstVal[1] : "");
+  const geoBadge = hasGeo ? `<span class="badge" style="background:rgba(52,152,219,.12);color:#6bbeff;border:1px solid rgba(52,152,219,.2)">📍 Géolocalisé</span>` : "";
+
+  return `<div class="msg-card${hasReply?" has-reply":""}${isRecl?" priority":""}" id="mc-${safeId}">
+    <div class="msg-top" onclick="toggleCard('${safeId}')">
+      <div class="msg-avatar">${esc(initials)}</div>
+      <div class="msg-header">
+        <div class="msg-name">
+          ${esc(m.prenom||"")} ${esc(m.nom||"")}
+          ${statusBadge} ${replyBadge} ${geoBadge} ${pingBadge}
+        </div>
+        <div class="msg-date-line">📅 ${esc(m._date||m.ts||"")}</div>
+        <div class="msg-preview">${esc(preview)}</div>
+      </div>
+      <div class="msg-actions-top">
+        ${replyBtn}
+        <span style="font-size:18px;color:rgba(255,255,255,.2)" id="arrow-${safeId}">›</span>
+      </div>
+    </div>
+    <div class="msg-body" id="mb-${safeId}">
+      <div class="msg-fields">${fields}</div>
+      ${raisonHtml}
+      ${descHtml}
+      ${geoHtml}
+      ${photoHtml}
+      ${buildNotesSection(m, storageKey, safeId)}
+      ${statusBtns ? `<div class="msg-status-row">${statusBtns}</div>` : ""}
+      ${replySection}
+    </div>
+  </div>`;
+}
+
+function buildReplyForm(safeId, storageKey, existingText) {
+  return `<div class="reply-panel-title">✉️ Rédiger une réponse</div>
+    <textarea class="reply-textarea" id="rt-${safeId}" placeholder="Votre réponse…">${esc(existingText || SIGNATURE())}</textarea>
+    <div class="reply-meta">
+      <span>Signature automatique incluse</span>
+      <span id="rc-${safeId}">${(existingText || SIGNATURE()).length} caractères</span>
+    </div>
+    <div class="reply-actions">
+      <button class="btn-send" onclick="saveReply('${safeId}','${storageKey}')">💬 Enregistrer la réponse</button>
+      <button class="btn-cancel-reply" onclick="closeReply('${safeId}')">Annuler</button>
+    </div>`;
+}
+
+// ══════════════════════════════════════════════════════════
+//  CARD & REPLY INTERACTIONS
+// ══════════════════════════════════════════════════════════
+function toggleCard(safeId) {
+  const body  = document.getElementById("mb-"+safeId);
+  const arrow = document.getElementById("arrow-"+safeId);
+  const open  = body.classList.toggle("open");
+  if (arrow) arrow.textContent = open ? "⌄" : "›";
+  // Wire up character counter
+  const ta = document.getElementById("rt-"+safeId);
+  const rc = document.getElementById("rc-"+safeId);
+  if (ta && rc) {
+    ta.oninput = () => { rc.textContent = ta.value.length + " caractères"; };
+  }
+}
+
+function toggleReply(safeId) {
+  const body = document.getElementById("mb-"+safeId);
+  if (!body.classList.contains("open")) {
+    body.classList.add("open");
+    const arrow = document.getElementById("arrow-"+safeId);
+    if (arrow) arrow.textContent = "⌄";
+  }
+  const rp = document.getElementById("rp-"+safeId);
+  if (rp) {
+    const open = rp.classList.toggle("open");
+    if (open) rp.scrollIntoView({ behavior:"smooth", block:"nearest" });
+    // Wire counter
+    const ta = document.getElementById("rt-"+safeId);
+    const rc = document.getElementById("rc-"+safeId);
+    if (ta && rc) ta.oninput = () => rc.textContent = ta.value.length + " caractères";
+  }
+}
+
+function openReply(safeId) {
+  const rp = document.getElementById("rp-"+safeId);
+  if (rp) {
+    rp.classList.add("open");
+    rp.scrollIntoView({ behavior:"smooth", block:"nearest" });
+  }
+}
+
+function closeReply(safeId) {
+  const rp = document.getElementById("rp-"+safeId);
+  if (rp) rp.classList.remove("open");
+}
+
+// ══════════════════════════════════════════════════════════
+//  REPLY — SAVE
+// ══════════════════════════════════════════════════════════
+function saveReply(safeId, storageKey) {
+  const ta   = document.getElementById("rt-"+safeId);
+  const text = ta ? ta.value.trim() : "";
+  if (!text) { showToast("La réponse ne peut pas être vide.", true); return; }
+
+  // Find message by safeId (decode not possible → scan all)
+  const all = getAll(storageKey);
+  // safeId is derived from msgId; we match by looking at all encoded ids
+  const idx = all.findIndex(m => {
+    const sid = btoa(encodeURIComponent(msgId(m))).replace(/[+/=]/g,"_").slice(0,20);
+    return sid === safeId;
+  });
+  if (idx === -1) { showToast("Message introuvable.", true); return; }
+
+  all[idx]._reply      = text;
+  all[idx]._reply_date = new Date().toLocaleString("fr-FR");
+  saveAll(storageKey, all);
+  showToast("✉️ Réponse enregistrée !", false, true);
+  refreshAll();
+}
+
+// ══════════════════════════════════════════════════════════
+//  STATUS
+// ══════════════════════════════════════════════════════════
+function setStatus(storageKey, safeId, status, mode) {
+  const all = getAll(storageKey);
+  const idx = all.findIndex(m => {
+    const sid = btoa(encodeURIComponent(msgId(m))).replace(/[+/=]/g,"_").slice(0,20);
+    return sid === safeId;
+  });
+  if (idx !== -1) { all[idx]._status = status; saveAll(storageKey, all); }
+  refreshAll();
+  showToast("Statut mis à jour");
+}
+
+// ══════════════════════════════════════════════════════════
+//  NOTES INTERNES
+// ══════════════════════════════════════════════════════════
+function buildNotesSection(m, storageKey, safeId) {
+  const notes = m._notes || [];
+  const notesHtml = notes.map(n => `
+    <div class="note-item">
+      <div class="note-meta"><strong>${esc(n.auteur||"?")}</strong> · ${esc(n.date||"")}</div>
+      <div class="note-text">${esc(n.texte)}</div>
+    </div>`).join("");
+  return `
+    <div class="notes-section">
+      <div class="notes-title">💬 Notes internes (admin ↔ ministre)</div>
+      ${notesHtml || '<div style="font-size:11px;color:rgba(255,255,255,.2);margin-bottom:6px">Aucune note pour l\'instant</div>'}
+      <div class="note-form">
+        <textarea id="note-ta-${safeId}" placeholder="Ajouter une note interne…" rows="2"></textarea>
+        <button onclick="addNote('${storageKey}','${safeId}')">💬 Ajouter</button>
+      </div>
+    </div>`;
+}
+
+function addNote(storageKey, safeId) {
+  const ta = document.getElementById("note-ta-" + safeId);
+  const texte = ta ? ta.value.trim() : "";
+  if (!texte) { showToast("Note vide.", true); return; }
+
+  const all = getAll(storageKey);
+  const idx = all.findIndex(m => {
+    const sid = btoa(encodeURIComponent(msgId(m))).replace(/[+/=]/g,"_").slice(0,20);
+    return sid === safeId;
+  });
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+
+  if (!all[idx]._notes) all[idx]._notes = [];
+  all[idx]._notes.push({ auteur: "Ministre", texte, date: new Date().toLocaleString("fr-FR") });
+  saveAll(storageKey, all);
+  refreshAll();
+  showToast("Note ajoutée");
+}
+
+// ══════════════════════════════════════════════════════════
+//  PING DÉPUTÉ
+// ══════════════════════════════════════════════════════════
+function pingDepute(storageKey, safeId) {
+  const all = getAll(storageKey);
+  const idx = all.findIndex(m => {
+    const sid = btoa(encodeURIComponent(msgId(m))).replace(/[+/=]/g,"_").slice(0,20);
+    return sid === safeId;
+  });
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+  all[idx]._pinged      = true;
+  all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
+  saveAll(storageKey, all);
+  refreshAll();
+  showToast("🚨 Le Député a été alerté sur ce dossier !");
+}
+
+// ══════════════════════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════════════════════
+function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function isRéclamation(m) { return (m.objet||"").normalize("NFC") === "R\u00e9clamation"; }
+function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function showToast(msg, err=false, gold=false) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show" + (err ? " err" : gold ? " gold" : "");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.className = "", 3500);
+}
+
+function exportCSV(storageKey, type) {
+  const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
+  let rows = data;
+  if (type === "audiences")    rows = data.filter(m => !isRéclamation(m));
+  if (type === "reclamations") rows = data.filter(m => isRéclamation(m));
+  if (!rows.length) { showToast("Aucune donnée à exporter", true); return; }
+  const keys = [...new Set(rows.flatMap(Object.keys))];
+  const lines = [keys.join(";")];
+  rows.forEach(item => lines.push(keys.map(k => `"${String(item[k]||"").replace(/"/g,'""').replace(/[\r\n]+/g," ")}"`).join(";")));
+  const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `bininga_${type}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast("Export CSV téléchargé !");
+}
+</script>
+</body>
+</html>

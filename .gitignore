@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Backups automatiques du serveur
+data_backup_*.json
+
+# Certificats SSL
+cert.pem
+key.pem
+
+# Logs
+logs/
+*.log
+
+# Photos sinistres (uploadées par les citoyens, non versionnées)
+images/sinistres/*
+!images/sinistres/.gitkeep
+
+# Sessions runtime
+sessions.json
+
+# OS
+.DS_Store
+Thumbs.db

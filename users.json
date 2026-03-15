@@ -1,0 +1,8 @@
+[
+  {
+    "username": "admin",
+    "password_hash": "pbkdf2:sha256:3344370f6d31077a6377cdeab5864f98:508e06fdd3270865dd7c61c18dd27ac91fd04bb3667fafa801aa93960839bb63",
+    "role": "admin",
+    "nom": "Rodrin Bakala"
+  }
+]

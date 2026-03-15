@@ -1,0 +1,56 @@
+name: CD — Déploiement en production
+
+# Se déclenche UNIQUEMENT sur push vers master (branche principale)
+on:
+  push:
+    branches: [master, main]
+
+jobs:
+  deploy:
+    name: Déploiement sur le serveur
+    runs-on: ubuntu-latest
+    # Ne déploie que si les tests CI ont réussi
+    needs: []
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # ── Déploiement via SSH ───────────────────────────────
+      # Prérequis : ajouter ces 4 secrets dans GitHub → Settings → Secrets :
+      #   SSH_HOST     → adresse IP ou domaine du serveur (ex: 192.168.1.1)
+      #   SSH_USER     → utilisateur SSH (ex: ubuntu, root)
+      #   SSH_KEY      → clé privée SSH (contenu du fichier id_rsa)
+      #   SSH_PORT     → port SSH (généralement 22)
+      - name: Déploiement SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "📦 Mise à jour du code..."
+            cd /var/www/bininga
+            git pull origin master
+
+            echo "🔄 Redémarrage du serveur..."
+            pkill -f "python3 server.py" || true
+            nohup python3 server.py > logs/server.log 2>&1 &
+
+            echo "✅ Déploiement terminé — $(date)"
+
+      # ── Notification de succès ────────────────────────────
+      - name: Confirmation
+        if: success()
+        run: |
+          echo "╔══════════════════════════════════════════╗"
+          echo "  🚀 Déploiement réussi !"
+          echo "  Site BININGA mis à jour en production"
+          echo "╚══════════════════════════════════════════╝"
+
+      # ── Notification d'échec ──────────────────────────────
+      - name: Alerte en cas d'échec
+        if: failure()
+        run: |
+          echo "❌ Le déploiement a échoué. Vérifier les logs."

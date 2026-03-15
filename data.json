@@ -2,13 +2,33 @@
   "hero": {
     "firstName": "Ange Aimé Wilfrid",
     "lastName": "BININGA",
+    "eyebrow": "Campagne législative · République du Congo",
     "role": "Garde des Sceaux · Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones · Député d'Ewo · PCT",
     "slogan": "Pour <em>Ewo</em>.<br>Pour un Congo <em>juste, libre</em> et fort.",
-    "subtitle": "Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest."
+    "subtitle": "Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.",
+    "btn1": "🤝 Rejoindre la campagne",
+    "btn2": "Notre programme"
   },
   "about": {
+    "sectionTag": "Qui est-il ?",
+    "badgeNum": "Ewo",
+    "badgeLbl": "Sa circonscription",
     "title": "Un homme forgé par <span class=\"r\">le terrain</span>",
-    "intro": "Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays."
+    "intro": "Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux — son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays.",
+    "paragraphs": [
+      "Né dans la terre de la Cuvette-Ouest, Ange Aimé Wilfrid BININGA grandit avec le sens du devoir chevillé au corps. Armé d'un Doctorat en droit, il intègre la haute fonction publique et gravit les échelons à la Direction générale du Trésor public jusqu'au rang d'Inspecteur principal — une position qui exige rigueur, intégrité et maîtrise des finances de l'État. Il apportera également sa compétence à la Direction générale de la Santé, où il occupera des fonctions stratégiques de conseiller ministeriel. C'est cette double expertise — juridique et administrative — qui fera de lui un commis de l'État hors du commun.",
+      "En 2016, le Président de la République lui confie le portefeuille de Ministre de la Fonction publique et de la Réforme de l'État. Il s'attelle aussitôt à moderniser l'administration congolaise, à dynamiser l'emploi des jeunes fonctionnaires et à impulser les réformes structurelles nécessaires à la diversification économique nationale. Le 19 août 2017, les électeurs de la 1re circonscription d'Ewo lui accordent leur confiance en l'élisant Député à l'Assemblée Nationale — consécration populaire d'un engagement profond envers sa terre natale.",
+      "En tant que Ministre de la Justice, il inscrit son action dans l'histoire en portant et faisant adopter en 2018 la loi instituant la Haute Autorité de lutte contre la corruption — un texte fondateur voté par 107 voix pour, 6 contre et 1 abstention, symbole d'une volonté nationale de rupture avec l'impunité. Une réforme institutionnelle qui restera comme l'une des plus importantes de la décennie.",
+      "Aujourd'hui, en qualité de Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, il porte la voix du Congo sur la scène internationale. En février 2026, il conduit à Paris des négociations cruciales avec son homologue français Gérald Darmanin pour rénover la convention de coopération judiciaire Congo-France — un accord vieux de plus de cinquante ans qu'il entend adapter aux enjeux du monde contemporain. Juriste, réformateur, diplomate : Ange Aimé Wilfrid BININGA incarne une vision exigeante et ambitieuse du service de l'État."
+    ],
+    "badges": [
+      "⚖️ Docteur en droit",
+      "💰 Inspecteur principal du Trésor",
+      "🏛️ Ministre de la Fonction publique",
+      "⚖️ Garde des Sceaux",
+      "🗳️ Député d'Ewo depuis 2017",
+      "🌍 Cuvette-Ouest"
+    ]
   },
   "stats": [
     {
@@ -25,49 +45,222 @@
     }
   ],
   "actus": {
-    "featured": {
-      "category": "Diplomatie",
-      "date": "18 Février 2026 — Paris",
-      "title": "Rencontre Place Vendôme : BININGA et Darmanin relancent la coopération judiciaire Congo–France",
-      "text": "Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, a été reçu place Vendôme par son homologue français Gérald Darmanin. L'objet : la révision de la convention de coopération judiciaire liant les deux pays depuis 1974. Trois nouvelles conventions portant sur l'entraide judiciaire, les extraditions et les transfèrements sont en cours de négociation, avec pour objectif une signature à l'été 2026. Une nouvelle dynamique diplomatique saluée par les deux ministères.",
-      "image": "images/Darmanin.jpeg"
-    },
-    "items": [
+    "slides": [
       {
-        "day": "18",
-        "month": "FÉV",
-        "title": "Place Vendôme : rencontre avec Gérald Darmanin",
-        "desc": "Révision de la convention judiciaire Congo–France de 1974 — signature des trois nouvelles conventions prévue à l'été 2026."
+        "image": "images/rwanda.JPG",
+        "alt": "BININGA reçoit l'Ambassadeur du Rwanda — 12 décembre 2025",
+        "chipColor": "#1565C0",
+        "chip": "🌍 Diplomatie judiciaire · 12 déc. 2025",
+        "date": "12 Décembre 2025 — Brazzaville, Congo",
+        "title": "BININGA & l'Ambassadeur du Rwanda :\npartenariat judiciaire et coopération bilatérale",
+        "subtitle": "L'Ambassadeur du Rwanda au Congo (@parfaitbus) a rendu une visite de courtoisie au Ministre de la Justice Aimé Wilfrid Bininga. La rencontre a permis d'aborder la mise en place d'un partenariat judiciaire et le renforcement de la coopération entre les deux pays."
       },
       {
+        "image": "images/bininga.jpg",
+        "alt": "BININGA — Tournée terrain Ewo, 9 mars 2026",
+        "chipColor": "#2e7d32",
+        "chip": "🗳️ Campagne présidentielle · 9 mars 2026",
+        "date": "Ewo, Cuvette-Ouest — Axe Lebankaya",
+        "title": "BININGA au cœur de 13 villages —\nla campagne Sassou Nguesso à Ewo",
+        "subtitle": "Coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Bininga a sillonné l'axe Lebankaya pour porter le message présidentiel auprès des populations. Forte mobilisation à chaque étape."
+      },
+      {
+        "image": "images/bininga.jpg",
+        "alt": "Ange Aimé Wilfrid BININGA, Garde des Sceaux",
+        "chipColor": "",
+        "chip": "Portrait officiel",
+        "date": "République du Congo — Garde des Sceaux",
+        "title": "Ange Aimé Wilfrid BININGA,\nau service de la Justice et de son peuple",
+        "subtitle": "Juriste, réformateur, diplomate — Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales."
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "alt": "BININGA et Gérald Darmanin — Place Vendôme, Paris, Février 2026",
+        "chipColor": "",
+        "chip": "Diplomatie · Février 2026",
+        "date": "18 Février 2026 — Place Vendôme, Paris",
+        "title": "BININGA & Darmanin :\nune nouvelle ère judiciaire Congo–France",
+        "subtitle": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions — entraide, extraditions, transfèrements — attendues à l'été 2026."
+      },
+      {
+        "image": "images/ewo.jpg",
+        "alt": "Boulevard énergétique — Ewo bientôt connecté au réseau électrique national",
+        "chipColor": "#e65100",
+        "chip": "⚡ Énergie · Août 2024",
+        "date": "20 Août 2024 — Cuvette-Ouest, Congo",
+        "title": "Boulevard énergétique :\nEwo bientôt connecté au réseau électrique national",
+        "subtitle": "Le Premier ministre Anatole Collinet Makosso a visité les travaux de la ligne électrique 110 KV et la route bitumée Boundji-Ewo. Sur 180 pylônes, 116 sont déjà installés — Ewo sera électrifiée dans quelques mois."
+      }
+    ],
+    "vedettes": [
+      {
+        "image": "images/rwanda.JPG",
+        "imageBg": "",
+        "placeholderEmoji": "🇷🇼",
+        "placeholderTitle": "Rwanda × Congo",
+        "placeholderDate": "12 déc. 2025",
+        "badgeColor": "#1565C0",
+        "badge": "🌍 Diplomatie",
+        "tagColor": "#1976D2",
+        "tag": "Coopération judiciaire Rwanda–Congo",
+        "date": "📅 12 Décembre 2025 · Brazzaville",
+        "title": "L'Ambassadeur du Rwanda rend visite au Ministre BININGA pour renforcer la coopération judiciaire bilatérale",
+        "text1": "Ce 12 décembre 2025, l'Ambassadeur du Rwanda en République du Congo (@parfaitbus) a rendu une visite de courtoisie au Ministre de la Justice, des Droits Humains et des Populations Autochtones, Ange Aimé Wilfrid BININGA. Cette rencontre diplomatique s'est tenue dans un esprit d'ouverture et de coopération entre les deux nations africaines.",
+        "quote": "« La rencontre a permis d'aborder la mise en place d'un partenariat judiciaire et le renforcement de la coopération entre les deux pays. »",
+        "text2": "Au cours de cet entretien, les deux parties ont examiné les voies et moyens de renforcer les liens judiciaires entre le Rwanda et le Congo-Brazzaville. Des échanges de cadeaux protocolaires ont ponctué la visite, témoignant de la qualité des relations entre les deux pays. Cette initiative s'inscrit dans la dynamique internationale portée par le Ministre BININGA, qui multiplie les partenariats judiciaires au bénéfice de la République du Congo.",
+        "tags": ["Diplomatie", "Rwanda", "Congo-Brazzaville", "Justice", "Coopération judiciaire", "Décembre 2025"]
+      },
+      {
+        "image": "",
+        "imageBg": "linear-gradient(135deg,#0a1f0a,#1a3a1a)",
+        "placeholderEmoji": "🏘️",
+        "placeholderTitle": "13 villages\nsur l'axe Lebankaya",
+        "placeholderDate": "Ewo · 9 mars 2026",
+        "badgeColor": "#2e7d32",
+        "badge": "🗳️ En direct d'Ewo",
+        "tagColor": "#4caf50",
+        "tag": "Campagne présidentielle · District d'Ewo",
+        "date": "📅 9 mars 2026 · Axe Lebankaya, Cuvette-Ouest",
+        "title": "BININGA sillonne 13 villages pour porter le message du Président-Candidat Denis Sassou Nguesso",
+        "text1": "En sa qualité de coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Ange Wilfrid BININGA a effectué ce lundi une tournée de terrain sur l'axe Lebankaya, à la rencontre directe des populations de plusieurs localités de la zone.",
+        "quote": "Une forte mobilisation des populations venues écouter le message porté par la délégation de campagne, avec un soutien renouvelé à la candidature de Denis Sassou Nguesso.",
+        "text2": "Cette mission de proximité l'a conduit successivement dans les villages Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami et Ngayi. À chaque étape, les échanges ont permis de réaffirmer l'attachement des communautés locales à la candidature présidentielle — une dynamique qui témoigne du lien profond entre BININGA et les habitants d'Ewo qu'il représente depuis 2017.",
+        "tags": ["Campagne 2026", "Sassou Nguesso", "District d'Ewo", "Terrain", "13 villages", "Cuvette-Ouest"]
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "imageBg": "",
+        "placeholderEmoji": "",
+        "placeholderTitle": "",
+        "placeholderDate": "",
+        "badgeColor": "",
+        "badge": "Diplomatie",
+        "tagColor": "",
+        "tag": "Diplomatie judiciaire",
+        "date": "📅 18 Février 2026 · Paris, Place Vendôme",
+        "title": "BININGA et Darmanin relancent la coopération judiciaire Congo–France",
+        "text1": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Garde des Sceaux Ange Aimé Wilfrid BININGA a engagé des négociations décisives pour moderniser la convention judiciaire bilatérale liant les deux pays depuis 1974 — un accord vieux de plus de 50 ans.",
+        "quote": "« Trois nouvelles conventions sont en cours de finalisation : entraide judiciaire, extraditions et transfèrements de personnes condamnées. L'objectif est une signature avant l'été 2026. »",
+        "text2": "Une démarche saluée par les deux Ministères de la Justice, qui ouvre un nouveau chapitre dans les relations franco-congolaises. Porté par sa vision d'une justice moderne et accessible, le Ministre BININGA inscrit cette mission diplomatique dans la continuité directe de ses réformes institutionnelles au Congo.",
+        "tags": ["Diplomatie", "Justice", "Congo–France", "Réformes", "Paris 2026"]
+      },
+      {
+        "image": "images/ewo.jpg",
+        "imageBg": "",
+        "placeholderEmoji": "⚡",
+        "placeholderTitle": "Ewo & le réseau\nélectrique national",
+        "placeholderDate": "Août 2024",
+        "badgeColor": "#e65100",
+        "badge": "⚡ Énergie & Développement",
+        "tagColor": "#ff6d00",
+        "tag": "Boulevard énergétique · Cuvette-Ouest",
+        "date": "📅 20 Août 2024 · Cuvette-Ouest, Congo",
+        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
+        "text1": "Le Premier ministre Anatole Collinet Makosso a effectué le 20 août 2024 une visite des travaux de construction de la ligne électrique de 110 KV et de la route bitumée Boundji-Ewo. Il a annoncé la connexion imminente d'Ewo, chef-lieu de la Cuvette-Ouest, au réseau électrique national congolais.",
+        "quote": "« Sur 180 pylônes, il y en a 116 qui sont déjà installés. Le poste transformateur est en train d'être construit. Ewo sera connectée au réseau électrique national dans quelques mois. »",
+        "text2": "Cette avancée majeure pour la Cuvette-Ouest s'inscrit dans le cadre du boulevard énergétique, l'un des axes stratégiques du programme du Président Denis Sassou-N'Guesso. La route bitumée de 25 km reliant Boundji à Ewo, déjà réalisée, et l'achèvement de la ligne 110 KV transformeront durablement le quotidien des habitants d'Ewo. Une métamorphose attendue de longue date pour toute la région.",
+        "tags": ["Énergie", "Ewo", "Boulevard énergétique", "Cuvette-Ouest", "Développement", "Août 2024"]
+      }
+    ],
+    "cards": [
+      {
+        "catColor": "#1565C0",
+        "borderColor": "rgba(21,101,192,.25)",
+        "cat": "Diplomatie judiciaire · Rwanda",
+        "icon": "🌍",
+        "day": "12",
+        "month": "Déc",
+        "year": "2025",
+        "title": "L'Ambassadeur du Rwanda en visite chez le Ministre BININGA",
+        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville."
+      },
+      {
+        "catColor": "#4caf50",
+        "borderColor": "rgba(46,125,50,.25)",
+        "cat": "Campagne présidentielle · Ewo",
+        "icon": "🗳️",
+        "day": "09",
+        "month": "Mars",
+        "year": "2026",
+        "title": "Coordinateur de campagne — tournée sur l'axe Lebankaya",
+        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi — fort soutien aux populations."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Justice · Ewo",
+        "icon": "⚖️",
         "day": "15",
-        "month": "DÉC",
+        "month": "Déc",
+        "year": "2025",
         "title": "Inauguration du tribunal de proximité d'Ewo",
-        "desc": "Résultat direct de son action au Ministère de la Justice — la justice rapprochée des citoyens."
+        "desc": "Résultat direct de son engagement au Ministère de la Justice — la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Dialogue social",
+        "icon": "🤝",
         "day": "08",
-        "month": "NOV",
-        "title": "Accord de dialogue social signé avec les syndicats",
-        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord historique pour les travailleurs congolais."
+        "month": "Nov",
+        "year": "2025",
+        "title": "Accord historique avec les syndicats congolais",
+        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur — une victoire pour les travailleurs congolais."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Éducation · Jeunesse",
+        "icon": "🎓",
         "day": "22",
-        "month": "OCT",
-        "title": "Remise de 50 bourses d'études à des étudiants d'Ewo",
-        "desc": "Un engagement tenu envers la jeunesse et l'excellence académique de la Cuvette-Ouest."
+        "month": "Oct",
+        "year": "2025",
+        "title": "50 bourses d'études remises à des jeunes d'Ewo",
+        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Emploi · Cuvette-Ouest",
+        "icon": "💼",
         "day": "05",
-        "month": "SEP",
-        "title": "Forum sur l'emploi des jeunes de la Cuvette-Ouest",
-        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région."
+        "month": "Sep",
+        "year": "2025",
+        "title": "Forum pour l'emploi des jeunes de la Cuvette-Ouest",
+        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain."
       },
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "International · AIEA",
+        "icon": "🌍",
         "day": "14",
-        "month": "JUL",
-        "title": "Mission diplomatique à l'AIEA — Représentation du Congo",
-        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales."
+        "month": "Jul",
+        "year": "2025",
+        "title": "Mission diplomatique à l'AIEA — Congo représenté",
+        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Réforme · Anticorruption",
+        "icon": "🏛️",
+        "day": "07",
+        "month": "Mar",
+        "year": "2018",
+        "title": "Adoption de la loi instituant la HALC — 107 voix pour",
+        "desc": "Votée à 107 voix pour, 6 contre — la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
+      },
+      {
+        "catColor": "#e65100",
+        "borderColor": "rgba(230,81,0,.25)",
+        "cat": "Énergie · Cuvette-Ouest",
+        "icon": "⚡",
+        "day": "20",
+        "month": "Août",
+        "year": "2024",
+        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
+        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés — Ewo sera connectée au réseau national dans quelques mois."
       }
     ]
   },
@@ -136,8 +329,168 @@
       }
     ]
   },
+  "programmeSection": {
+    "tag": "Notre vision",
+    "title": "Programme",
+    "titleAccent": "2027–2032",
+    "subtitle": "Six axes stratégiques pour transformer Ewo et renforcer le Congo."
+  },
+  "galerieSection": {
+    "tag": "En images",
+    "title": "Aimé BININGA",
+    "titleAccent": "sur le terrain"
+  },
+  "actusSection": {
+    "tag": "Actualités",
+    "title": "Sur le",
+    "titleAccent": "terrain",
+    "gridTitle": "Autres actions du Député Ministre"
+  },
+  "engagement": {
+    "tag": "Contactez-nous",
+    "title": "Une réclamation\nou une",
+    "titleAccent": "demande",
+    "desc": "Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.",
+    "cards": [
+      {"icon": "📋", "title": "Demande d'audience", "desc": "Rencontrez le Député pour exposer votre situation"},
+      {"icon": "📣", "title": "Réclamation officielle", "desc": "Signalez un problème auprès de votre représentant"},
+      {"icon": "🤝", "title": "Prise de contact", "desc": "Entrez en relation avec l'équipe du Député d'Ewo"}
+    ],
+    "formTitle": "Demande d'audience auprès du Député",
+    "formSub": "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h"
+  },
+  "cta": {
+    "title": "Votez BININGA —\nle choix de l'expérience et du terrain",
+    "subtitle": "Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.",
+    "btn1": {"text": "📋 Demande d'audience", "href": "#engagement"},
+    "btn2": {"text": "✉️ Nous contacter", "href": "#contact"},
+    "btn3": {"text": "📋 Lire le programme", "href": "#programme"}
+  },
+  "parcoursSection": {
+    "tag": "Son parcours",
+    "title": "Une carrière bâtie sur",
+    "titleAccent": "la confiance"
+  },
+  "parcours": [
+    {
+      "side": "left",
+      "emoji": "📚",
+      "year": "Formation",
+      "title": "Doctorat en droit & Inspecteur principal du Trésor",
+      "desc": "Docteur en droit, Ange Aimé Wilfrid BININGA bâtit une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre celle de la Santé comme conseiller stratégique du ministre.",
+      "tag": "📚 Juriste"
+    },
+    {
+      "side": "right",
+      "emoji": "🌱",
+      "year": "Engagement politique",
+      "title": "Adhésion au PCT & premières actions",
+      "desc": "Militant du Parti Congolais du Travail, il s'engage activement dans la vie politique d'Ewo et de la Cuvette-Ouest, portant les aspirations de sa communauté.",
+      "tag": "🔴 PCT"
+    },
+    {
+      "side": "left",
+      "emoji": "👷",
+      "year": "2016",
+      "title": "Ministre de la Fonction publique et de la Réforme de l'État",
+      "desc": "Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale.",
+      "tag": "🏛️ Ministère de la Fonction publique"
+    },
+    {
+      "side": "right",
+      "emoji": "🗳️",
+      "year": "19 août 2017",
+      "title": "Élu Député de la 1re circonscription d'Ewo",
+      "desc": "Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo.",
+      "tag": "🗳️ Assemblée Nationale"
+    },
+    {
+      "side": "left",
+      "emoji": "📈",
+      "year": "2018",
+      "title": "Ministre de la Justice & Haute Autorité anti-corruption",
+      "desc": "En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires.",
+      "tag": "📈 Confiance renouvelée"
+    },
+    {
+      "side": "right",
+      "emoji": "⚖️",
+      "year": "Aujourd'hui",
+      "title": "Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones",
+      "desc": "À ce poste clé du gouvernement, il incarne la diplomatie judiciaire du Congo, notamment avec la renégociation en février 2026 à Paris de la convention de coopération judiciaire Congo-France — accord vieux de plus de 50 ans, renouvelé sur de nouvelles bases modernes.",
+      "tag": "⚖️ Ministère de la Justice"
+    },
+    {
+      "side": "left",
+      "emoji": "🚀",
+      "year": "Législatives 2027",
+      "title": "Candidat pour Ewo · Campagne 2027",
+      "desc": "Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo.",
+      "tag": "🚀 Campagne en cours"
+    }
+  ],
+  "programme": {
+    "heroTitle": "Un programme construit\navec les citoyens d'Ewo",
+    "heroText": "Chaque engagement de ce programme est issu d'échanges directs avec les habitants d'Ewo, les chefs de village, les jeunes, les femmes entrepreneurs et les professionnels de santé et d'éducation.",
+    "axes": [
+      {
+        "icon": "⚖️",
+        "title": "Justice accessible",
+        "text": "Étendre la justice au cœur de la Cuvette-Ouest. Chaque citoyen doit pouvoir accéder à un tribunal, un avocat, une décision équitable.",
+        "points": ["Tribunal de proximité à Ewo", "Aide juridictionnelle gratuite", "Formation de médiateurs locaux"]
+      },
+      {
+        "icon": "👷",
+        "title": "Emploi & Travail décent",
+        "text": "Fort de son expérience au Ministère de la Fonction publique, il porte un plan ambitieux pour l'emploi des jeunes et la dignité des travailleurs d'Ewo.",
+        "points": ["Centre de formation professionnelle", "Microcrédit pour jeunes entrepreneurs", "Protection des travailleurs informels"]
+      },
+      {
+        "icon": "🏗️",
+        "title": "Infrastructures & Routes",
+        "text": "Désenclaver la Cuvette-Ouest. Des routes, des ponts, de l'électricité — les bases d'un développement économique durable.",
+        "points": ["Routes bitumées Ewo–Oyo", "Électrification rurale", "Eau potable dans chaque village"]
+      },
+      {
+        "icon": "📚",
+        "title": "Éducation & Jeunesse",
+        "text": "La jeunesse d'Ewo est l'avenir du Congo. Investir dans l'éducation, c'est bâtir la nation de demain.",
+        "points": ["Construction d'écoles modernes", "Bourses aux étudiants méritants", "Accès au numérique dans les lycées"]
+      },
+      {
+        "icon": "🏥",
+        "title": "Santé pour tous",
+        "text": "Un accès aux soins de qualité dans toute la circonscription. La santé est un droit, pas un privilège.",
+        "points": ["Modernisation de l'hôpital d'Ewo", "Santé maternelle et néonatale", "Médecins spécialistes en rotation"]
+      },
+      {
+        "icon": "🌱",
+        "title": "Agriculture & Économie",
+        "text": "Valoriser les richesses naturelles de la Cuvette-Ouest. Soutenir les agriculteurs et créer une économie locale forte et résiliente.",
+        "points": ["Coopératives agricoles soutenues", "Unité de transformation locale", "Soutien aux femmes entrepreneures"]
+      }
+    ]
+  },
   "seo": {
     "title": "Ange Aimé Wilfrid BININGA — Ministre · Député d'Ewo",
     "description": "Site officiel — Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, Député de la 1re circonscription d'Ewo (Cuvette-Ouest), PCT"
+  },
+  "contact": {
+    "sectionTag": "Nous écrire",
+    "sectionTitle": "Prenez",
+    "sectionAccent": "contact",
+    "sidebarTitle": "Quartier Général\nde Campagne",
+    "sidebarDesc": "Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.",
+    "phone": "+242 06 XXX XXXX",
+    "email": "contact@bininga.cg",
+    "address": "Ewo, Cuvette-Ouest, République du Congo",
+    "social": "@AimeBingingaOfficiel",
+    "formTitle2": "Envoyez un message"
+  },
+  "footer": {
+    "logoName": "Aimé BININGA",
+    "logoSub": "PCT · Député d'Ewo",
+    "brandText": "Site officiel d'Ange Aimé Wilfrid BININGA — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.",
+    "copyright": "© 2026 Campagne Aimé BININGA · Parti Congolais du Travail · Tous droits réservés"
   }
 }
