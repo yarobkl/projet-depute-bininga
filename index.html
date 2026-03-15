@@ -73,6 +73,9 @@
 }
 </script>
 
+<!-- Analytics — Plausible (sans cookies, conforme RGPD) -->
+<script defer data-domain="bininga.cg" src="https://plausible.io/js/script.js"></script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
@@ -529,6 +532,33 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .lmodal-body h4:first-child{margin-top:0}
 .lmodal-body p{margin-bottom:12px}
 .lmodal-body strong{color:rgba(255,255,255,.85)}
+
+/* ── SECTION VIDÉO ── */
+#video-section{padding:100px 6%;background:var(--n);text-align:center}
+.video-inner{max-width:900px;margin:0 auto}
+.video-inner .stag{margin-bottom:14px;display:inline-block}
+.video-inner .stitle{margin-bottom:10px}
+.video-inner .ssub{font-size:16px;color:rgba(255,255,255,.4);margin-bottom:48px;line-height:1.7}
+.video-frame-wrap{position:relative;width:100%;padding-bottom:56.25%;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 40px 100px rgba(0,0,0,.7);border:1px solid rgba(200,16,46,.15)}
+.video-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+.video-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--n2);cursor:pointer}
+.video-placeholder-icon{font-size:64px;opacity:.6}
+.video-placeholder-text{font-size:13px;color:rgba(255,255,255,.3);letter-spacing:2px;text-transform:uppercase}
+
+/* ── NEWSLETTER STRIP ── */
+#newsletter{padding:70px 6%;background:var(--n2);border-top:1px solid rgba(200,16,46,.1);border-bottom:1px solid rgba(200,16,46,.1)}
+.nl-inner{max-width:640px;margin:0 auto;text-align:center}
+.nl-inner h3{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--w);margin-bottom:10px}
+.nl-inner p{font-size:14px;color:rgba(255,255,255,.4);margin-bottom:30px;line-height:1.7}
+.nl-form{display:flex;gap:10px;max-width:480px;margin:0 auto 14px}
+.nl-form input{flex:1;padding:14px 18px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--w);font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.nl-form input:focus{border-color:var(--r)}
+.nl-form button{padding:14px 24px;background:var(--r);color:var(--w);border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;transition:background .2s;white-space:nowrap}
+.nl-form button:hover{background:var(--rd)}
+.nl-sub{font-size:11px;color:rgba(255,255,255,.2)}
+.nl-ok{display:none;color:#2ecc71;font-size:14px;font-weight:600;margin-top:12px}
+@media(max-width:600px){.nl-form{flex-direction:column}.nl-form button{width:100%}}
+@media(max-width:768px){#video-section{padding:70px 4%}}
 </style>
 </head>
 <body>
@@ -738,6 +768,23 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 </section>
 
 <!-- ENGAGEMENT -->
+<!-- ═══════════ VIDÉO ═══════════ -->
+<section id="video-section">
+  <div class="video-inner rev">
+    <span class="stag">Le Député en action</span>
+    <h2 class="stitle">Discours & <span class="r">terrain</span></h2>
+    <div class="sline" style="margin:16px auto 0"></div>
+    <p class="ssub">Suivez les interventions, discours et actions de terrain d'Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député de la circonscription d'Ewo.</p>
+    <div class="video-frame-wrap">
+      <!-- Remplacer VIDEO_ID par l'identifiant de la vidéo YouTube du Député -->
+      <div class="video-placeholder" onclick="loadVideo(this)">
+        <div class="video-placeholder-icon">▶</div>
+        <div class="video-placeholder-text">Cliquer pour lancer la vidéo</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section id="engagement">
   <div class="eng-wrap">
     <div class="eng-left">
@@ -869,6 +916,20 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   </div>
 </section>
 
+<!-- ═══════════ NEWSLETTER ═══════════ -->
+<section id="newsletter">
+  <div class="nl-inner rev">
+    <h3>Restez informé</h3>
+    <p>Recevez les actualités, les initiatives et les avancées du Député directement dans votre boîte mail. Pas de spam — une lettre mensuelle.</p>
+    <form class="nl-form" onsubmit="subNewsletter(event,this)">
+      <input type="email" name="email" placeholder="votre@email.com" required autocomplete="email">
+      <button type="submit" id="nl-btn">📩 S'inscrire</button>
+    </form>
+    <div class="nl-sub">En vous inscrivant, vous acceptez notre <a href="#" onclick="event.preventDefault();openLegal('confidentialite')" style="color:rgba(255,255,255,.35);text-decoration:underline">politique de confidentialité</a>.</div>
+    <div class="nl-ok" id="nl-ok">✅ Inscription confirmée — merci pour votre soutien !</div>
+  </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
   <div class="ft-grid">
@@ -887,7 +948,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
       </div>
     </div>
     <div class="ft-col"><div class="ft-col-t">Navigation</div><ul><li><a href="#about">Biographie</a></li><li><a href="#parcours">Parcours</a></li><li><a href="#programme">Programme</a></li><li><a href="#galerie">Galerie</a></li><li><a href="#actu">Actualités</a></li></ul></div>
-    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#engagement">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
+    <div class="ft-col"><div class="ft-col-t">S'engager</div><ul><li><a href="#engagement">Devenir bénévole</a></li><li><a href="#newsletter">Newsletter</a></li><li><a href="#contact">Presse</a></li></ul></div>
     <div class="ft-col"><div class="ft-col-t">Légal</div><ul><li><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a></li><li><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a></li><li><a href="https://pct.cg/" target="_blank" rel="noopener">PCT officiel</a></li></ul></div>
   </div>
   <div class="ft-bottom">
@@ -1608,6 +1669,34 @@ window.addEventListener("scroll", () => { pxTarget = window.scrollY; }, { passiv
 // modales légales
 function openLegal(id){document.getElementById("modal-"+id).classList.add("open");document.body.style.overflow="hidden"}
 function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
+
+// ── NEWSLETTER ─────────────────────────────────────────────
+async function subNewsletter(e, f) {
+  e.preventDefault();
+  const btn = document.getElementById("nl-btn");
+  const ok  = document.getElementById("nl-ok");
+  const email = f.email.value.trim();
+  btn.disabled = true; btn.textContent = "⏳ Envoi…";
+  const entry = { email, type:"bininga_newsletter", _date: new Date().toLocaleString("fr-FR"), _id: Date.now()+"-"+Math.random().toString(36).slice(2,8) };
+  try { await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)}); } catch(_){}
+  try { const l=JSON.parse(localStorage.getItem("bininga_newsletter")||"[]"); l.push(entry); localStorage.setItem("bininga_newsletter",JSON.stringify(l)); } catch(_){}
+  f.style.display = "none";
+  ok.style.display = "block";
+}
+
+// ── VIDÉO YOUTUBE ──────────────────────────────────────────
+function loadVideo(placeholder) {
+  // Remplacer VIDEO_ID par l'identifiant réel de la vidéo YouTube
+  const videoId = "VIDEO_ID";
+  const wrap = placeholder.parentElement;
+  if (videoId === "VIDEO_ID") { placeholder.querySelector(".video-placeholder-text").textContent = "Vidéo à configurer — remplacez VIDEO_ID dans le code"; return; }
+  const iframe = document.createElement("iframe");
+  iframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0";
+  iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+  iframe.allowFullscreen = true;
+  placeholder.remove();
+  wrap.appendChild(iframe);
+}
 document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
 
