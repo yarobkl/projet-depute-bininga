@@ -7,8 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --g:#B8973A;--gd:#8a6e20;--gl:#d4b96a;
-  --r:#C8102E;
+  --r:#C8102E;--rd:#8B0A1E;--rl:#ff6b6b;
   --n:#060606;--n2:#0e0e0e;--n3:#161616;--n4:#1e1e1e;
   --w:#fff;
   --success:#2ecc71;--warn:#f39c12;--err:#e74c3c;--info:#3498db;
@@ -17,16 +16,16 @@
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(--w);min-height:100vh;font-size:14px}
 
 /* ── LOGIN ── */
-#login{position:fixed;inset:0;background:var(--n);display:flex;align-items:center;justify-content:center;z-index:9999;background-image:radial-gradient(ellipse at 50% 0%,rgba(184,151,58,.08) 0%,transparent 70%)}
+#login{position:fixed;inset:0;background:var(--n);display:flex;align-items:center;justify-content:center;z-index:9999;background-image:radial-gradient(ellipse at 50% 0%,rgba(200,16,46,.08) 0%,transparent 70%)}
 #login.hidden{display:none}
-.login-box{background:var(--n2);border:1px solid rgba(184,151,58,.2);border-radius:20px;padding:52px 44px;width:100%;max-width:440px;text-align:center;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 80px rgba(184,151,58,.05)}
-.login-seal{width:72px;height:72px;background:linear-gradient(135deg,var(--g),var(--gd));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto 28px;box-shadow:0 0 50px rgba(184,151,58,.3);font-family:serif;letter-spacing:1px}
+.login-box{background:var(--n2);border:1px solid rgba(200,16,46,.2);border-radius:20px;padding:52px 44px;width:100%;max-width:440px;text-align:center;box-shadow:0 40px 120px rgba(0,0,0,.8),0 0 80px rgba(200,16,46,.05)}
+.login-seal{width:72px;height:72px;background:var(--r);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;margin:0 auto 28px;box-shadow:0 0 50px rgba(200,16,46,.3);font-family:serif;letter-spacing:1px}
 .login-box h1{font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px}
-.login-box h2{font-size:12px;color:var(--gl);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:6px}
+.login-box h2{font-size:12px;color:var(--rl);letter-spacing:2px;text-transform:uppercase;font-weight:600;margin-bottom:6px}
 .login-box p{font-size:12px;color:rgba(255,255,255,.3);margin-bottom:36px}
 .login-field{width:100%;padding:14px 16px;margin-bottom:12px;background:var(--n3);border:1px solid rgba(255,255,255,.07);border-radius:9px;color:var(--w);font-size:14px;transition:var(--t);outline:none;font-family:inherit}
-.login-field:focus{border-color:var(--g);background:rgba(184,151,58,.04);box-shadow:0 0 0 3px rgba(184,151,58,.08)}
-.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--g),var(--gd));color:var(--n);border:none;border-radius:9px;font-weight:800;cursor:pointer;font-size:14px;letter-spacing:.5px;transition:var(--t);margin-top:6px;font-family:inherit}
+.login-field:focus{border-color:var(--r);background:rgba(200,16,46,.04);box-shadow:0 0 0 3px rgba(200,16,46,.08)}
+.login-btn{width:100%;padding:15px;background:var(--r);color:var(--w);border:none;border-radius:9px;font-weight:800;cursor:pointer;font-size:14px;letter-spacing:.5px;transition:var(--t);margin-top:6px;font-family:inherit}
 .login-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
 .login-err{color:#ff8888;font-size:12px;margin-top:14px;min-height:18px}
 
@@ -35,54 +34,54 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 #app.visible{display:flex}
 
 /* ── HEADER ── */
-.app-header{background:var(--n2);border-bottom:1px solid rgba(184,151,58,.12);padding:0 32px;height:72px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,.4)}
+.app-header{background:var(--n2);border-bottom:1px solid rgba(200,16,46,.12);padding:0 32px;height:72px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 4px 24px rgba(0,0,0,.4)}
 .header-left{display:flex;align-items:center;gap:16px}
-.deputy-seal{width:44px;height:44px;background:linear-gradient(135deg,var(--g),var(--gd));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;font-family:serif;box-shadow:0 0 20px rgba(184,151,58,.25);flex-shrink:0}
+.deputy-seal{width:44px;height:44px;background:var(--r);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;font-family:serif;box-shadow:0 0 20px rgba(200,16,46,.25);flex-shrink:0}
 .deputy-name{font-size:17px;font-weight:800;letter-spacing:-.3px;line-height:1.1}
-.deputy-title{font-size:11px;color:var(--gl);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-top:2px}
+.deputy-title{font-size:11px;color:var(--rl);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-top:2px}
 .header-right{display:flex;align-items:center;gap:16px}
 .header-date{font-size:12px;color:rgba(255,255,255,.3);text-align:right;line-height:1.5}
 .header-btn{padding:9px 18px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-family:inherit}
 .header-btn:hover{color:var(--w);border-color:rgba(255,255,255,.25)}
-.header-btn.gold{background:linear-gradient(135deg,var(--g),var(--gd));color:var(--n);border-color:transparent;font-weight:700}
+.header-btn.gold{background:var(--r);color:var(--w);border-color:transparent;font-weight:700}
 .header-btn.gold:hover{filter:brightness(1.1)}
 
 /* ── KPI HÉROS (rangée supérieure) ── */
-.kpi-section{padding:28px 32px 0;background:linear-gradient(180deg,rgba(184,151,58,.04) 0%,transparent 100%)}
+.kpi-section{padding:28px 32px 0;background:linear-gradient(180deg,rgba(200,16,46,.04) 0%,transparent 100%)}
 .kpi-hero-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px}
 .kpi-hero{position:relative;overflow:hidden;border-radius:16px;padding:28px 28px 24px;border:1px solid rgba(255,255,255,.07);background:var(--n2);transition:var(--t);cursor:default}
 .kpi-hero:hover{transform:translateY(-3px);box-shadow:0 20px 60px rgba(0,0,0,.4)}
 .kpi-hero::after{content:'';position:absolute;inset:0;opacity:.04;border-radius:16px}
-.kpi-hero.gold{border-color:rgba(184,151,58,.3);box-shadow:0 0 0 1px rgba(184,151,58,.08) inset}
-.kpi-hero.gold::after{background:linear-gradient(135deg,var(--g),transparent)}
+.kpi-hero.gold{border-color:rgba(200,16,46,.3);box-shadow:0 0 0 1px rgba(200,16,46,.08) inset}
+.kpi-hero.gold::after{background:linear-gradient(135deg,var(--r),transparent)}
 .kpi-hero.green{border-color:rgba(46,204,113,.2);box-shadow:0 0 0 1px rgba(46,204,113,.06) inset}
 .kpi-hero.green::after{background:linear-gradient(135deg,#2ecc71,transparent)}
 .kpi-hero.red{border-color:rgba(231,76,60,.25);box-shadow:0 0 0 1px rgba(231,76,60,.08) inset}
 .kpi-hero.red::after{background:linear-gradient(135deg,#e74c3c,transparent)}
 .kpi-hero-icon{font-size:28px;margin-bottom:16px;line-height:1}
 .kpi-hero-val{font-size:68px;font-weight:900;line-height:.9;margin-bottom:10px;letter-spacing:-3px}
-.kpi-hero.gold .kpi-hero-val{color:var(--gl);text-shadow:0 0 60px rgba(184,151,58,.3)}
+.kpi-hero.gold .kpi-hero-val{color:var(--rl);text-shadow:0 0 60px rgba(200,16,46,.3)}
 .kpi-hero.green .kpi-hero-val{color:#2ecc71;text-shadow:0 0 60px rgba(46,204,113,.2)}
 .kpi-hero.red .kpi-hero-val{color:#ff7070;text-shadow:0 0 60px rgba(231,76,60,.2)}
 .kpi-hero-label{font-size:15px;font-weight:700;color:var(--w);margin-bottom:4px;letter-spacing:-.2px}
 .kpi-hero-sub{font-size:12px;color:rgba(255,255,255,.3);line-height:1.4}
 .kpi-hero-badge{position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 10px;border-radius:20px}
-.kpi-hero.gold .kpi-hero-badge{background:rgba(184,151,58,.15);color:var(--gl);border:1px solid rgba(184,151,58,.25)}
+.kpi-hero.gold .kpi-hero-badge{background:rgba(200,16,46,.15);color:var(--rl);border:1px solid rgba(200,16,46,.25)}
 .kpi-hero.green .kpi-hero-badge{background:rgba(46,204,113,.12);color:#2ecc71;border:1px solid rgba(46,204,113,.2)}
 .kpi-hero.red .kpi-hero-badge{background:rgba(231,76,60,.12);color:#ff7070;border:1px solid rgba(231,76,60,.2)}
 
 /* ── KPI DÉTAIL (rangée secondaire) ── */
 .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
 .kpi-card{background:var(--n3);border:1px solid rgba(255,255,255,.05);border-radius:10px;padding:16px 14px;position:relative;overflow:hidden;transition:var(--t)}
-.kpi-card:hover{border-color:rgba(184,151,58,.15);transform:translateY(-2px);background:var(--n2)}
-.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--g);opacity:.5}
+.kpi-card:hover{border-color:rgba(200,16,46,.15);transform:translateY(-2px);background:var(--n2)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--r);opacity:.5}
 .kpi-card.red::before{background:var(--r)}
 .kpi-card.green::before{background:var(--success)}
 .kpi-card.blue::before{background:var(--info)}
 .kpi-card.warn::before{background:var(--warn)}
 .kpi-card.purple::before{background:#9b59b6}
 .kpi-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:8px;font-weight:700}
-.kpi-val{font-size:36px;font-weight:800;line-height:1;margin-bottom:3px;color:var(--gl)}
+.kpi-val{font-size:36px;font-weight:800;line-height:1;margin-bottom:3px;color:var(--rl)}
 .kpi-card.red .kpi-val{color:#ff8888}
 .kpi-card.green .kpi-val{color:var(--success)}
 .kpi-card.blue .kpi-val{color:#6bbeff}
@@ -109,9 +108,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .nav-tabs{display:flex;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);padding-bottom:0}
 .nav-tab{padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-size:12px;font-weight:600;color:rgba(255,255,255,.4);transition:var(--t);border:1px solid transparent;border-bottom:none;background:transparent;font-family:inherit;display:flex;align-items:center;gap:7px}
 .nav-tab:hover{color:var(--w);background:rgba(255,255,255,.03)}
-.nav-tab.active{background:var(--n2);color:var(--w);border-color:rgba(184,151,58,.2);border-bottom-color:var(--n2);position:relative;top:1px}
-.nav-count{background:rgba(184,151,58,.2);color:var(--gl);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800}
-.nav-tab.active .nav-count{background:rgba(184,151,58,.3)}
+.nav-tab.active{background:var(--n2);color:var(--w);border-color:rgba(200,16,46,.2);border-bottom-color:var(--n2);position:relative;top:1px}
+.nav-count{background:rgba(200,16,46,.2);color:var(--rl);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800}
+.nav-tab.active .nav-count{background:rgba(200,16,46,.3)}
 .nav-count.red{background:rgba(200,16,46,.2);color:#ff8888}
 
 /* ── CONTENT ── */
@@ -123,18 +122,18 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap}
 .filter-btn{padding:6px 13px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:rgba(255,255,255,.4);transition:var(--t);border:1px solid transparent;background:transparent;font-family:inherit}
 .filter-btn:hover{color:var(--w);background:rgba(255,255,255,.04)}
-.filter-btn.active{background:rgba(184,151,58,.12);color:var(--gl);border-color:rgba(184,151,58,.25)}
+.filter-btn.active{background:rgba(200,16,46,.12);color:var(--rl);border-color:rgba(200,16,46,.25)}
 .filter-spacer{flex:1}
 .msg-count{font-size:11px;color:rgba(255,255,255,.2)}
 
 /* ── MESSAGE CARDS ── */
 .msg-list{display:flex;flex-direction:column;gap:10px}
 .msg-card{background:var(--n2);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;transition:var(--t)}
-.msg-card:hover{border-color:rgba(184,151,58,.15)}
+.msg-card:hover{border-color:rgba(200,16,46,.15)}
 .msg-card.has-reply{border-color:rgba(46,204,113,.15)}
 .msg-card.priority{border-left:3px solid var(--r)}
 .msg-top{display:flex;align-items:flex-start;gap:14px;padding:16px 18px;cursor:pointer;user-select:none}
-.msg-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;background:rgba(184,151,58,.12);color:var(--gl)}
+.msg-avatar{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;background:rgba(200,16,46,.12);color:var(--rl)}
 .msg-header{flex:1;min-width:0}
 .msg-name{font-weight:700;font-size:14px;margin-bottom:3px;display:flex;align-items:center;gap:8px}
 .msg-date-line{font-size:11px;color:rgba(255,255,255,.3)}
@@ -169,9 +168,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .sbtn-done:hover{background:rgba(46,204,113,.25)}
 .sbtn-read{background:rgba(255,255,255,.06);color:rgba(255,255,255,.4);border-color:rgba(255,255,255,.1)}
 .sbtn-read:hover{background:rgba(255,255,255,.1);color:var(--w)}
-.sbtn-reply{background:rgba(184,151,58,.12);color:var(--gl);border-color:rgba(184,151,58,.25)}
-.sbtn-reply:hover{background:rgba(184,151,58,.25)}
-.sbtn-reply.active{background:rgba(184,151,58,.2);color:var(--gl)}
+.sbtn-reply{background:rgba(200,16,46,.12);color:var(--rl);border-color:rgba(200,16,46,.25)}
+.sbtn-reply:hover{background:rgba(200,16,46,.25)}
+.sbtn-reply.active{background:rgba(200,16,46,.2);color:var(--rl)}
 
 /* ── NOTES INTERNES ── */
 .notes-section{margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:12px}
@@ -182,19 +181,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .note-text{font-size:13px;color:rgba(255,255,255,.7);white-space:pre-wrap}
 .note-form{display:flex;gap:8px;margin-top:8px}
 .note-form textarea{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:12px;font-family:inherit;padding:8px 10px;resize:none;min-height:54px;outline:none;transition:var(--t)}
-.note-form textarea:focus{border-color:var(--gl)}
-.note-form button{align-self:flex-end;padding:8px 14px;background:rgba(184,151,58,.12);color:var(--gl);border:1px solid rgba(184,151,58,.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
-.note-form button:hover{background:rgba(184,151,58,.25)}
+.note-form textarea:focus{border-color:var(--rl)}
+.note-form button{align-self:flex-end;padding:8px 14px;background:rgba(200,16,46,.12);color:var(--rl);border:1px solid rgba(200,16,46,.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
+.note-form button:hover{background:rgba(200,16,46,.25)}
 
 /* ── REPLY PANEL ── */
-.reply-panel{display:none;background:var(--n3);border:1px solid rgba(184,151,58,.15);border-radius:10px;padding:18px;margin-top:12px}
+.reply-panel{display:none;background:var(--n3);border:1px solid rgba(200,16,46,.15);border-radius:10px;padding:18px;margin-top:12px}
 .reply-panel.open{display:block}
-.reply-panel-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gl);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.reply-panel-title{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--rl);font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .reply-textarea{width:100%;min-height:160px;padding:13px 15px;background:var(--n4);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--w);font-size:13px;font-family:'Segoe UI',system-ui,sans-serif;resize:vertical;outline:none;transition:var(--t);line-height:1.6}
-.reply-textarea:focus{border-color:var(--g);background:rgba(184,151,58,.03)}
+.reply-textarea:focus{border-color:var(--r);background:rgba(200,16,46,.03)}
 .reply-meta{font-size:11px;color:rgba(255,255,255,.25);margin-top:8px;display:flex;justify-content:space-between;align-items:center}
 .reply-actions{display:flex;gap:8px;margin-top:12px}
-.btn-send{padding:10px 20px;background:linear-gradient(135deg,var(--g),var(--gd));color:var(--n);border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;transition:var(--t)}
+.btn-send{padding:10px 20px;background:var(--r);color:var(--w);border:none;border-radius:7px;font-weight:700;cursor:pointer;font-size:13px;font-family:inherit;transition:var(--t)}
 .btn-send:hover{filter:brightness(1.1)}
 .btn-cancel-reply{padding:10px 16px;background:transparent;color:rgba(255,255,255,.35);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer;font-family:inherit;transition:var(--t)}
 .btn-cancel-reply:hover{color:var(--w);border-color:rgba(255,255,255,.2)}
@@ -232,7 +231,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 #toast{position:fixed;bottom:28px;right:28px;padding:13px 22px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transform:translateY(120px);opacity:0;transition:all .35s cubic-bezier(.175,.885,.32,1.275)}
 #toast.show{transform:translateY(0);opacity:1;background:var(--success);color:var(--w)}
 #toast.show.err{background:var(--err)}
-#toast.show.gold{background:var(--g);color:var(--n)}
+#toast.show.gold{background:var(--r);color:var(--w)}
 
 @media(max-width:1100px){.kpi-hero-grid{grid-template-columns:repeat(3,1fr)}.kpi-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.kpi-hero-grid{grid-template-columns:1fr 1fr}.kpi-hero-val{font-size:52px}}
@@ -383,7 +382,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterAud('en_cours',this)">🔄 En cours</button>
         <button class="filter-btn" onclick="filterAud('traite',this)">✅ Traitées</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
         <span class="msg-count" id="aud-count"></span>
       </div>
       <div class="msg-list" id="list-audiences"></div>
@@ -397,7 +396,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
         <button class="filter-btn" onclick="filterRecl('traite',this)">✅ Traitées</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
         <span class="msg-count" id="recl-count"></span>
       </div>
       <div class="msg-list" id="list-reclamations"></div>
@@ -410,7 +409,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <button class="filter-btn" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
         <button class="filter-btn" onclick="filterCt('lu',this)">✓ Lus</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--g);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
         <span class="msg-count" id="ct-count"></span>
       </div>
       <div class="msg-list" id="list-contacts"></div>
@@ -576,8 +575,8 @@ function refreshAll() {
 function refreshKpi() {
   const aud   = getAll("bininga_audiences");
   const ct    = getAll("bininga_contacts");
-  const auds  = aud.filter(m => m.objet !== "Réclamation");
-  const recls = aud.filter(m => m.objet === "Réclamation");
+  const auds  = aud.filter(m => !isRéclamation(m));
+  const recls = aud.filter(m => isRéclamation(m));
 
   const wait    = auds.filter(m => !m._status || m._status === "en_attente").length;
   const encours = auds.filter(m => m._status === "en_cours").length;
@@ -619,8 +618,8 @@ function refreshPriority() {
   const ct  = getAll("bininga_contacts");
   // Réclamations non traitées en premier, puis audiences en attente sans réponse
   const urgent = [
-    ...aud.filter(m => m.objet === "Réclamation" && m._status !== "traite"),
-    ...aud.filter(m => m.objet !== "Réclamation" && (!m._status || m._status === "en_attente") && !m._reply),
+    ...aud.filter(m => isRéclamation(m) && m._status !== "traite"),
+    ...aud.filter(m => !isRéclamation(m) && (!m._status || m._status === "en_attente") && !m._reply),
     ...ct.filter(m => (!m._status || m._status === "non_lu") && !m._reply)
   ].slice(0, 5);
 
@@ -630,7 +629,7 @@ function refreshPriority() {
     return;
   }
   el.innerHTML = urgent.map(m => {
-    const isRecl = m.objet === "Réclamation";
+    const isRecl = isRéclamation(m);
     const color  = isRecl ? "#e74c3c" : m._type === "contact" ? "#3498db" : "#f39c12";
     const label  = isRecl ? "Réclamation" : m.objet ? m.objet.slice(0,22) : "Contact";
     return `<div class="priority-item">
@@ -648,7 +647,7 @@ function refreshPriority() {
 // ══════════════════════════════════════════════════════════
 function refreshBreakdown() {
   const aud   = getAll("bininga_audiences");
-  const auds  = aud.filter(m => m.objet !== "Réclamation");
+  const auds  = aud.filter(m => !isRéclamation(m));
   const total = auds.length || 1;
   const wait  = auds.filter(m => !m._status || m._status === "en_attente").length;
   const prog  = auds.filter(m => m._status === "en_cours").length;
@@ -666,7 +665,7 @@ function refreshBreakdown() {
   </div>`).join("");
 }
 
-function var_g() { return "#B8973A"; }
+function var_g() { return "#C8102E"; }
 
 // ══════════════════════════════════════════════════════════
 //  NAVIGATION
@@ -701,13 +700,13 @@ function filterCt(f, el) {
 }
 
 function renderAudiences() {
-  const all  = getAll("bininga_audiences").filter(m => m.objet !== "Réclamation");
+  const all  = getAll("bininga_audiences").filter(m => !isRéclamation(m));
   const list = audFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === audFilter);
   setText("aud-count", list.length + " demande" + (list.length > 1 ? "s" : ""));
   renderMsgList("list-audiences", list, "bininga_audiences", "status3");
 }
 function renderReclamations() {
-  const all  = getAll("bininga_audiences").filter(m => m.objet === "Réclamation");
+  const all  = getAll("bininga_audiences").filter(m => isRéclamation(m));
   const list = reclFilter === "all" ? all : all.filter(m => (m._status||"en_attente") === reclFilter);
   setText("recl-count", list.length + " réclamation" + (list.length > 1 ? "s" : ""));
   renderMsgList("list-reclamations", list, "bininga_audiences", "status3");
@@ -748,7 +747,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
 function buildCard(m, storageKey, mode) {
   const id       = msgId(m);
   const safeId   = btoa(encodeURIComponent(id)).replace(/[+/=]/g,"_").slice(0,20);
-  const isRecl   = m.objet === "Réclamation";
+  const isRecl   = isRéclamation(m);
   const status   = m._status || (mode === "status2" ? "non_lu" : "en_attente");
   const hasReply = !!m._reply;
   const hasGeo   = !!(m.geo_lat && m.geo_lng);
@@ -1048,6 +1047,7 @@ function pingDepute(storageKey, safeId) {
 //  UTILS
 // ══════════════════════════════════════════════════════════
 function setText(id, val) { const el = document.getElementById(id); if (el) el.textContent = val; }
+function isRéclamation(m) { return (m.objet||"").normalize("NFC") === "R\u00e9clamation"; }
 function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 function showToast(msg, err=false, gold=false) {
@@ -1061,8 +1061,8 @@ function showToast(msg, err=false, gold=false) {
 function exportCSV(storageKey, type) {
   const data = JSON.parse(localStorage.getItem(storageKey) || "[]");
   let rows = data;
-  if (type === "audiences")    rows = data.filter(m => m.objet !== "Réclamation");
-  if (type === "reclamations") rows = data.filter(m => m.objet === "Réclamation");
+  if (type === "audiences")    rows = data.filter(m => !isRéclamation(m));
+  if (type === "reclamations") rows = data.filter(m => isRéclamation(m));
   if (!rows.length) { showToast("Aucune donnée à exporter", true); return; }
   const keys = [...new Set(rows.flatMap(Object.keys))];
   const lines = [keys.join(";")];
