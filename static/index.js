@@ -759,14 +759,13 @@ async function subNewsletter(e, f) {
 
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
-  // Remplacer VIDEO_ID par l'identifiant réel de la vidéo YouTube
-  const videoId = "VIDEO_ID";
+  const videoId = "6Oy4rLyMVqA";
   const wrap = placeholder.parentElement;
-  if (videoId === "VIDEO_ID") { placeholder.querySelector(".video-placeholder-text").textContent = "Vidéo à configurer — remplacez VIDEO_ID dans le code"; return; }
   const iframe = document.createElement("iframe");
   iframe.src = "https://www.youtube.com/embed/" + videoId + "?autoplay=1&rel=0";
   iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
   iframe.allowFullscreen = true;
+  iframe.style.cssText = "width:100%;aspect-ratio:16/9;border:none;border-radius:12px;display:block";
   placeholder.remove();
   wrap.appendChild(iframe);
 }
