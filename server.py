@@ -1271,9 +1271,36 @@ def resolve_ssl_certs():
     return None, None, None
 
 
+def start_monitor():
+    """Lance monitor.py en sous-processus daemon si pas déjà actif."""
+    import subprocess, sys
+    pid_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.pid")
+    # Vérifier si déjà lancé
+    if os.path.isfile(pid_file):
+        try:
+            pid = int(open(pid_file).read().strip())
+            os.kill(pid, 0)
+            print(f"[BININGA] 🤖 YARO IA déjà actif (PID {pid})")
+            return
+        except (OSError, ValueError):
+            pass
+    monitor_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.py")
+    if not os.path.isfile(monitor_path):
+        print("[BININGA] ⚠️  monitor.py introuvable — veille désactivée")
+        return
+    proc = subprocess.Popen(
+        [sys.executable, monitor_path],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    print(f"[BININGA] 🤖 YARO IA lancé (PID {proc.pid})")
+
+
 if __name__ == "__main__":
     init_users()
     load_blocked_ips()
+    start_monitor()
 
     # Génère un certificat auto-signé si aucun n'existe du tout
     if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")
