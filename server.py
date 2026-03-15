@@ -667,7 +667,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
             data = load_news()
             # Vérifie si monitor.py tourne
-            pid_file = "monitor.pid"
+            pid_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.pid")
             monitor_running = False
             if os.path.exists(pid_file):
                 try:

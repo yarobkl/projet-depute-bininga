@@ -1343,6 +1343,14 @@ function renderNewsItems() {
     const catBadge = `<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${cat.bg};color:${cat.color};flex-shrink:0">${cat.label}</span>`;
     const dateStr  = a.published ? (() => { try { return new Date(a.published).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}); } catch(e) { return a.published; } })() : "";
     const foundStr = a.found_at ? (() => { try { return new Date(a.found_at).toLocaleString("fr-FR"); } catch(e) { return ""; } })() : "";
+    const src = (a.source || "").toLowerCase();
+    const socialBadge = src.includes("twitter") || src.includes("nitter")
+      ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(29,161,242,.15);color:#1da1f2;font-weight:700">𝕏 Twitter</span>`
+      : src.includes("youtube")
+      ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(255,0,0,.12);color:#ff4444;font-weight:700">▶ YouTube</span>`
+      : src.includes("facebook") || src.includes("instagram")
+      ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(66,103,178,.15);color:#4267b2;font-weight:700">📘 Facebook</span>`
+      : "";
     const aiBlock  = a.ai_summary
       ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(52,152,219,.06);border-left:2px solid rgba(52,152,219,.3);border-radius:0 6px 6px 0;font-size:11.5px;color:rgba(255,255,255,.65);font-style:italic">${esc(a.ai_summary)}</div>`
       : "";
@@ -1357,10 +1365,11 @@ function renderNewsItems() {
             ${catBadge}
             <a href="${esc(a.url)}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:var(--w);text-decoration:none;line-height:1.4">${esc(a.title)}</a>
           </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:4px">
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            ${socialBadge}
             <span>${esc(a.source)}</span>
-            ${dateStr?`<span style="margin:0 6px">·</span><span>${dateStr}</span>`:""}
-            ${foundStr?`<span style="margin:0 6px">·</span><span style="color:rgba(255,255,255,.2)">Détecté le ${foundStr}</span>`:""}
+            ${dateStr?`<span style="margin:0 4px">·</span><span>${dateStr}</span>`:""}
+            ${foundStr?`<span style="margin:0 4px">·</span><span style="color:rgba(255,255,255,.2)">Détecté le ${foundStr}</span>`:""}
           </div>
           ${summaryBlock}
           ${aiBlock}

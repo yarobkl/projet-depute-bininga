@@ -87,6 +87,36 @@ LEGAL_RSS = [
     "https://www.lemonde.fr/afrique/rss_full.xml",
 ]
 
+# ── Réseaux sociaux ────────────────────────────────────────────────────────────
+
+# Instances Nitter (miroirs Twitter/X publics — essayées dans l'ordre)
+NITTER_INSTANCES = [
+    "https://nitter.privacydev.net",
+    "https://nitter.poast.org",
+    "https://nitter.net",
+    "https://nitter.1d4.us",
+]
+
+# Requêtes Twitter/X via Nitter
+NITTER_QUERIES = [
+    "Bininga Congo",
+    "Bininga ministre justice",
+    "Aimé Bininga",
+]
+
+# Requêtes Google News ciblées réseaux sociaux
+SOCIAL_GOOGLE_QUERIES = [
+    '"Bininga" twitter OR facebook OR instagram Congo',
+    '"Aimé Bininga" discours OR interview OR déclaration',
+    '"Bininga" ministre congo vidéo OR communiqué 2026',
+]
+
+# YouTube — recherche via Google News (YouTube n'a pas de RSS de recherche public)
+YOUTUBE_GOOGLE_QUERIES = [
+    '"Bininga" Congo site:youtube.com',
+    '"ministre Bininga" site:youtube.com OR site:youtu.be',
+]
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (compatible; BiningaVeille/1.0; "
@@ -220,6 +250,19 @@ def fetch_google_news(query: str) -> list[dict]:
         return []
     label = f"Google News — {query}"
     return parse_rss(data, label)
+
+
+def fetch_nitter(query: str) -> list[dict]:
+    """Cherche sur Twitter/X via les miroirs Nitter publics."""
+    for base in NITTER_INSTANCES:
+        url = f"{base}/search/rss?q={quote_plus(query)}&f=tweets"
+        data = _fetch(url, timeout=10)
+        if data:
+            articles = parse_rss(data, f"Twitter/X — {query}")
+            if articles:
+                _log(f"[Nitter] {len(articles)} tweets via {base}")
+                return articles
+    return []
 
 
 def fetch_extra_rss(rss_url: str) -> list[dict]:
@@ -369,6 +412,24 @@ def run_cycle(data: dict, custom_query: str = "") -> list[dict]:
         _log(f"[RSS Juridique] {rss_url}")
         _add(fetch_extra_rss(rss_url), "loi_justice")
         time.sleep(1)
+
+    # Réseaux sociaux — Twitter/X via Nitter
+    for query in NITTER_QUERIES:
+        _log(f"[Twitter/X] {query}")
+        _add(fetch_nitter(query), "bininga")
+        time.sleep(2)
+
+    # Réseaux sociaux — Google News ciblé social media
+    for query in SOCIAL_GOOGLE_QUERIES:
+        _log(f"[Social] {query}")
+        _add(fetch_google_news(query), "bininga")
+        time.sleep(2)
+
+    # YouTube — via Google News
+    for query in YOUTUBE_GOOGLE_QUERIES:
+        _log(f"[YouTube] {query}")
+        _add(fetch_google_news(query), "bininga")
+        time.sleep(2)
 
     # Résumés IA (si configuré)
     if os.environ.get("ANTHROPIC_API_KEY") and new_articles:
