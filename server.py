@@ -77,7 +77,7 @@ BLOCKED_STATIC = {
 }
 # Extensions autorisées pour les fichiers statiques
 ALLOWED_STATIC_EXT = {".html", ".css", ".js", ".png", ".jpg", ".jpeg",
-                      ".gif", ".webp", ".svg", ".ico", ".xml", ".txt"}
+                      ".gif", ".webp", ".svg", ".ico", ".xml", ".txt", ".mp4", ".webm"}
 
 def _safe_path(relative: str):
     """Retourne le chemin absolu seulement s'il reste dans BASE_DIR
