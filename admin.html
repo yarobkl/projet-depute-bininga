@@ -735,12 +735,18 @@
             <div id="veille-run-feedback" style="display:none;margin-top:8px;font-size:12px;color:#2ecc71"></div>
           </div>
 
-          <!-- Filtres par catégorie -->
-          <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-            <button id="filter-all" onclick="setNewsFilter('all')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:var(--r);color:#fff;border:none;cursor:pointer">Tout</button>
-            <button id="filter-bininga" onclick="setNewsFilter('bininga')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:none;cursor:pointer">🧑‍⚖️ Bininga</button>
-            <button id="filter-loi_justice" onclick="setNewsFilter('loi_justice')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:none;cursor:pointer">⚖️ Lois &amp; Justice</button>
-            <button id="filter-recherche" onclick="setNewsFilter('recherche')" style="padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;background:rgba(255,255,255,.07);color:rgba(255,255,255,.6);border:none;cursor:pointer">🔍 Recherches</button>
+          <!-- Onglets principaux -->
+          <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <button id="tab-bininga" onclick="setNewsFilter('bininga')"
+              style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px">
+              🧑‍⚖️ Sur Bininga
+              <span id="tab-bininga-count" style="margin-left:6px;background:var(--r);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px"></span>
+            </button>
+            <button id="tab-all" onclick="setNewsFilter('all')"
+              style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px">
+              🌍 Toutes les infos
+              <span id="tab-all-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
+            </button>
           </div>
 
           <div id="veille-list" style="display:flex;flex-direction:column;gap:10px">

@@ -1201,7 +1201,7 @@ function manualBlock() {
 
 let _newsItems = [];
 let _newsPoller = null;
-let _newsFilter = "all";
+let _newsFilter = "bininga";
 
 async function loadNews() {
   const list = document.getElementById("veille-list");
@@ -1244,15 +1244,19 @@ async function loadNews() {
 
 function setNewsFilter(f) {
   _newsFilter = f;
-  ["all","bininga","loi_justice","recherche"].forEach(k => {
-    const btn = document.getElementById("filter-" + k);
-    if (!btn) return;
-    if (k === f) {
-      btn.style.background = "var(--r)"; btn.style.color = "#fff";
-    } else {
-      btn.style.background = "rgba(255,255,255,.07)"; btn.style.color = "rgba(255,255,255,.6)";
-    }
-  });
+  // Onglet Bininga
+  const tabB = document.getElementById("tab-bininga");
+  const tabA = document.getElementById("tab-all");
+  if (tabB) {
+    const active = f === "bininga";
+    tabB.style.color = active ? "#fff" : "rgba(255,255,255,.4)";
+    tabB.style.borderBottom = active ? "2px solid var(--r)" : "2px solid transparent";
+  }
+  if (tabA) {
+    const active = f === "all";
+    tabA.style.color = active ? "#fff" : "rgba(255,255,255,.4)";
+    tabA.style.borderBottom = active ? "2px solid var(--r)" : "2px solid transparent";
+  }
   renderNewsItems();
 }
 
@@ -1289,15 +1293,51 @@ const CAT_LABELS = {
   recherche:   { label: "🔍 Recherche", color: "rgba(52,152,219,.9)",   bg: "rgba(52,152,219,.1)" },
 };
 
+function _newsDate(a) {
+  const d = a.published || a.found_at || "";
+  if (!d) return 0;
+  try { return new Date(d).getTime(); } catch(e) { return 0; }
+}
+
+function _newsScore(a) {
+  let score = 0;
+  if (!a.read) score += 100;
+  const t = (a.title || "").toLowerCase();
+  if (t.includes("bininga")) score += 50;
+  if (t.includes("ministre") || t.includes("justice") || t.includes("congo")) score += 20;
+  if (a.ai_summary) score += 10;
+  if (a.summary) score += 5;
+  return score;
+}
+
 function renderNewsItems() {
   const list = document.getElementById("veille-list");
   if (!list) return;
-  const filtered = _newsFilter === "all" ? _newsItems : _newsItems.filter(a => (a.category || "bininga") === _newsFilter);
-  if (!filtered.length) {
+  const filtered = _newsFilter === "all"
+    ? _newsItems.filter(a => (a.category || "bininga") !== "bininga")
+    : _newsItems.filter(a => (a.category || "bininga") === _newsFilter);
+
+  // Mise à jour compteurs onglets
+  const bCount = _newsItems.filter(a => (a.category || "bininga") === "bininga").length;
+  const aCount = _newsItems.filter(a => (a.category || "bininga") !== "bininga").length;
+  const bUnread = _newsItems.filter(a => (a.category || "bininga") === "bininga" && !a.read).length;
+  const aUnread = _newsItems.filter(a => (a.category || "bininga") !== "bininga" && !a.read).length;
+  const tbc = document.getElementById("tab-bininga-count");
+  const tac = document.getElementById("tab-all-count");
+  if (tbc) tbc.textContent = bUnread > 0 ? `${bUnread} non lu${bUnread>1?"s":""}` : bCount;
+  if (tac) tac.textContent = aUnread > 0 ? `${aUnread} non lu${aUnread>1?"s":""}` : aCount;
+
+  // Tri : pertinence (score) puis date décroissante
+  const sorted = [...filtered].sort((a, b) => {
+    const sd = _newsScore(b) - _newsScore(a);
+    if (sd !== 0) return sd;
+    return _newsDate(b) - _newsDate(a);
+  });
+  if (!sorted.length) {
     list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucune actualité dans cette catégorie.<br><small>L\'agent surveille Google News toutes les 15 minutes.</small></div>';
     return;
   }
-  list.innerHTML = filtered.map(a => {
+  list.innerHTML = sorted.map(a => {
     const isRead   = a.read;
     const cat      = CAT_LABELS[a.category] || CAT_LABELS.bininga;
     const catBadge = `<span style="padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${cat.bg};color:${cat.color};flex-shrink:0">${cat.label}</span>`;
