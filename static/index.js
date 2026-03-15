@@ -826,40 +826,24 @@ function initActuSlider() {
   }
 }
 
-// ══════════════════════════════════════
-//  BOTTOM TAB BAR — navigation mobile
-// ══════════════════════════════════════
+// ── BOTTOM TAB BAR (mobile) ───────────────────────────────
 const MOB_TAB_MAP = {
-  "#main-content": "accueil",
-  "#hero":         "accueil",
-  "#about":        "profil",
-  "#parcours":     "profil",
-  "#publication":  "profil",
-  "#programme":    "programme",
-  "#galerie":      "actu",
-  "#actu":         "actu",
-  "#video-section":"actu",
-  "#engagement":   "contact",
-  "#contact":      "contact",
-  "#newsletter":   "contact"
+  "#hero":"accueil","#main-content":"accueil",
+  "#about":"profil","#parcours":"profil","#publication":"profil",
+  "#programme":"programme",
+  "#galerie":"actu","#actu":"actu","#video-section":"actu",
+  "#engagement":"contact","#contact":"contact","#newsletter":"contact"
 };
-
 let _activeMobTab = "accueil";
 
 function setMobTab(tab) {
   _activeMobTab = tab;
-
-  // Mettre à jour les boutons
   document.querySelectorAll(".mob-tab").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.tab === tab);
   });
-
-  // Afficher/masquer les sections
   document.querySelectorAll("[data-mob-tab]").forEach(el => {
     el.classList.toggle("mob-tab-visible", el.dataset.mobTab === tab);
   });
-
-  // Remonter en haut
   window.scrollTo({top: 0, behavior: "instant"});
 }
 
@@ -869,24 +853,6 @@ function initMobTabs() {
   setMobTab("accueil");
 }
 
-// Gérer les liens ancres (hamburger menu, boutons CTA, etc.)
-function handleHashChange() {
-  if (window.innerWidth > 900) return;
-  const hash = location.hash;
-  if (!hash) return;
-  const tab = MOB_TAB_MAP[hash];
-  if (!tab) return;
-  if (tab !== _activeMobTab) {
-    setMobTab(tab);
-  }
-  // Scroller vers la section après affichage
-  setTimeout(() => {
-    const el = document.querySelector(hash);
-    if (el) el.scrollIntoView({behavior: "smooth"});
-  }, 50);
-}
-
-// Adaptation si redimensionnement fenêtre
 window.addEventListener("resize", () => {
   if (window.innerWidth > 900) {
     document.body.classList.remove("mob-tabs-active");
@@ -897,8 +863,16 @@ window.addEventListener("resize", () => {
   }
 });
 
-window.addEventListener("hashchange", handleHashChange);
+window.addEventListener("hashchange", () => {
+  if (window.innerWidth > 900) return;
+  const tab = MOB_TAB_MAP[location.hash];
+  if (!tab) return;
+  if (tab !== _activeMobTab) setMobTab(tab);
+  setTimeout(() => {
+    const el = document.querySelector(location.hash);
+    if (el) el.scrollIntoView({behavior: "smooth"});
+  }, 50);
+});
 
-// Démarrage
 initMobTabs();
 

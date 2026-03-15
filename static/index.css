@@ -537,10 +537,10 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .nl-ok{display:none;color:#2ecc71;font-size:14px;font-weight:600;margin-top:12px}
 @media(max-width:600px){.nl-form{flex-direction:column}.nl-form button{width:100%}}
 @media(max-width:768px){#video-section{padding:70px 4%}}
-</style>
 
 /* ── Skip navigation (accessibilité) ── */
 .skip-link{position:absolute;top:-44px;left:0;background:var(--r);color:#fff;padding:10px 18px;z-index:9999;border-radius:0 0 8px 0;font-weight:700;font-size:13px;transition:top .2s;text-decoration:none}
+.skip-link:focus{top:0}
 
 /* ══════════════════════════════════════
    BOTTOM TAB BAR — mobile uniquement
@@ -548,7 +548,6 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .mob-tab-bar{display:none}
 
 @media(max-width:900px){
-  /* Afficher la barre */
   .mob-tab-bar{
     display:flex;
     position:fixed;
@@ -560,8 +559,6 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     z-index:998;
     padding-bottom:env(safe-area-inset-bottom,0px);
   }
-
-  /* Chaque bouton d'onglet */
   .mob-tab{
     flex:1;
     display:flex;
@@ -580,14 +577,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   }
   .mob-tab.active{color:var(--r)}
   .mob-tab:active{opacity:.7}
-
-  .mob-tab-icon{
-    width:22px;height:22px;
-    flex-shrink:0;
-    transition:transform .2s;
-  }
+  .mob-tab-icon{width:22px;height:22px;flex-shrink:0;transition:transform .2s}
   .mob-tab.active .mob-tab-icon{transform:translateY(-1px)}
-
   .mob-tab-lbl{
     font-family:'DM Sans',sans-serif;
     font-size:9px;
@@ -599,14 +590,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     text-overflow:ellipsis;
     max-width:100%;
   }
-
-  /* Espace en bas pour ne pas masquer le contenu */
   body{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px))}
-
-  /* Masquer les sections hors onglet actif */
   body.mob-tabs-active [data-mob-tab]{display:none!important}
   body.mob-tabs-active [data-mob-tab].mob-tab-visible{display:block!important}
-  /* Le footer reste toujours visible */
   body.mob-tabs-active footer{display:block!important}
 }
-.skip-link:focus{top:0}
