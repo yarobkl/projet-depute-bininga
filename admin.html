@@ -309,10 +309,10 @@ select.form-input:focus{border-color:var(--r)}
       </div>
 
       <div class="sb-section role-editeur" style="display:none">Contenu du site</div>
-      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('hero',this)">
+      <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('hero',this)">
         <span class="icon">🏠</span> Hero
       </div>
-      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('about',this)">
+      <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('about',this)">
         <span class="icon">👤</span> À propos
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('stats',this)">
@@ -324,7 +324,7 @@ select.form-input:focus{border-color:var(--r)}
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('actus',this)">
         <span class="icon">📰</span> Actualités
       </div>
-      <div class="sb-item role-editeur" style="display:none" onclick="showPanel('parcours',this)">
+      <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('parcours',this)">
         <span class="icon">⏳</span> Parcours
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('programme',this)">
@@ -772,10 +772,11 @@ select.form-input:focus{border-color:var(--r)}
         <div class="card" style="margin-top:0">
           <div class="card-title" style="margin-bottom:14px">Permissions par rôle</div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-            <div style="background:var(--n3);border-radius:8px;padding:14px">
-              <div class="role-badge admin" style="margin-bottom:10px">Admin</div>
+            <div style="background:var(--n3);border-radius:8px;padding:14px;border:1px solid rgba(200,16,46,.3)">
+              <div class="role-badge admin" style="margin-bottom:10px">Admin (vous)</div>
               <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
-                <li>Modifier le contenu</li>
+                <li>Nom, biographie, parcours du Ministre</li>
+                <li>Modifier tout le contenu</li>
                 <li>Voir les messages</li>
                 <li>Journaux d'audit</li>
                 <li>Gérer les utilisateurs</li>
@@ -784,8 +785,9 @@ select.form-input:focus{border-color:var(--r)}
             <div style="background:var(--n3);border-radius:8px;padding:14px">
               <div class="role-badge editeur" style="margin-bottom:10px">Éditeur</div>
               <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
-                <li>Modifier le contenu</li>
+                <li>Modifier contenu (hors infos Ministre)</li>
                 <li>Voir les messages</li>
+                <li style="color:rgba(255,255,255,.2)">Nom / biographie / parcours ✗</li>
                 <li style="color:rgba(255,255,255,.2)">Journaux d'audit ✗</li>
                 <li style="color:rgba(255,255,255,.2)">Gérer utilisateurs ✗</li>
               </ul>
@@ -795,6 +797,7 @@ select.form-input:focus{border-color:var(--r)}
               <ul style="font-size:12px;color:rgba(255,255,255,.5);padding-left:16px;line-height:1.8">
                 <li>Voir les messages</li>
                 <li style="color:rgba(255,255,255,.2)">Modifier contenu ✗</li>
+                <li style="color:rgba(255,255,255,.2)">Nom / biographie / parcours ✗</li>
                 <li style="color:rgba(255,255,255,.2)">Journaux d'audit ✗</li>
                 <li style="color:rgba(255,255,255,.2)">Gérer utilisateurs ✗</li>
               </ul>
@@ -1044,6 +1047,10 @@ function applyRoleUI(role) {
   });
   // .role-admin = visible pour admin seulement
   document.querySelectorAll(".role-admin").forEach(el => {
+    el.style.display = role === "admin" ? "" : "none";
+  });
+  // .role-superadmin = réservé UNIQUEMENT à l'admin principal (Hero, À propos, Parcours)
+  document.querySelectorAll(".role-superadmin").forEach(el => {
     el.style.display = role === "admin" ? "" : "none";
   });
 }

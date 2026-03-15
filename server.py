@@ -974,9 +974,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Accès refusé"}, 403)
                 return
+            # Clés réservées à l'admin principal uniquement
+            ADMIN_ONLY_KEYS = {"hero", "about", "parcours", "parcoursSection"}
             try:
                 data    = json.loads(body.decode("utf-8"))
                 session = get_session(token)
+                role    = session["role"] if session else "lecteur"
+                # Si non-admin : on préserve les clés sensibles de data.json existant
+                if role != "admin":
+                    existing = load_data()
+                    for key in ADMIN_ONLY_KEYS:
+                        if key in existing:
+                            data[key] = existing[key]
+                        elif key in data:
+                            del data[key]
                 save_data(data)
                 who = session["username"] if session else "?"
                 print(f"[BININGA] ✅ Données sauvegardées — {datetime.now().strftime('%H:%M:%S')}")
