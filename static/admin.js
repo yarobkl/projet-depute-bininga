@@ -1302,6 +1302,22 @@ async function runVeille(preset) {
   }
 }
 
+async function toggleMonitorLog() {
+  const box = document.getElementById("monitor-log-box");
+  if (!box) return;
+  if (box.style.display !== "none") { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.textContent = "Chargement…";
+  try {
+    const res  = await fetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    box.textContent = data.ok ? (data.lines.join("\n") || "(log vide)") : "Erreur : " + data.message;
+    box.scrollTop = box.scrollHeight;
+  } catch(e) {
+    box.textContent = "Erreur réseau";
+  }
+}
+
 const CAT_LABELS = {
   bininga:     { label: "Bininga",      color: "rgba(200,16,46,.8)",    bg: "rgba(200,16,46,.12)" },
   loi_justice: { label: "⚖️ Lois & Justice", color: "rgba(46,204,113,.9)", bg: "rgba(46,204,113,.1)" },

@@ -735,6 +735,12 @@
             <div id="veille-run-feedback" style="display:none;margin-top:8px;font-size:12px;color:#2ecc71"></div>
           </div>
 
+          <!-- Logs YARO IA -->
+          <div style="margin-bottom:16px">
+            <button class="sbtn" onclick="toggleMonitorLog()" style="font-size:11px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08)">🪵 Voir les logs de l'agent</button>
+            <pre id="monitor-log-box" style="display:none;margin-top:8px;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-size:10px;color:#aaa;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></pre>
+          </div>
+
           <!-- Onglets principaux -->
           <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)">
             <button id="tab-bininga" data-filter="filter-bininga" onclick="setNewsFilter('bininga')"

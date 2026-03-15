@@ -1164,6 +1164,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": str(e)}, 500)
             return
 
+        # ── /api/monitor-log ── dernières lignes du log YARO IA ──
+        if path == "/api/monitor-log":
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.log")
+            try:
+                if not os.path.isfile(log_path):
+                    self._json({"ok": True, "lines": ["(monitor.log introuvable — agent pas encore démarré)"]})
+                    return
+                with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                    lines = f.readlines()
+                last = [l.rstrip() for l in lines[-100:]]
+                self._json({"ok": True, "lines": last})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         self._error(404, "Route non trouvée")
 
     # ── Helpers ────────────────────────────────────────────
