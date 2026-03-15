@@ -1449,7 +1449,7 @@ function renderActuSlides() {
         <button class="btn-danger" onclick="delActuSlide(${i})" title="Supprimer">🗑</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group" style="margin:0"><label>Image (chemin)</label><input type="text" value="${esc(s.image||'')}" placeholder="images/photo.jpg" oninput="updActuSlide(${i},'image',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-slide-img-${i}" value="${esc(s.image||'')}" placeholder="images/photo.jpg" oninput="updActuSlide(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuSlide(${i})">📷 Upload</button></div></div>
         <div class="form-group" style="margin:0"><label>Texte alt</label><input type="text" value="${esc(s.alt||'')}" oninput="updActuSlide(${i},'alt',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Badge (chip)</label><input type="text" value="${esc(s.chip||'')}" oninput="updActuSlide(${i},'chip',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(s.chipColor||'')}" placeholder="#2e7d32" oninput="updActuSlide(${i},'chipColor',this.value)"></div>
@@ -1460,6 +1460,13 @@ function renderActuSlides() {
     </div>`).join('');
 }
 function updActuSlide(i, f, v) { if (siteData.actus.slides[i]) siteData.actus.slides[i][f] = v; }
+function uploadForActuSlide(i) {
+  uploadImage(path => {
+    if (siteData.actus.slides[i]) siteData.actus.slides[i].image = path;
+    const el = document.getElementById("actu-slide-img-" + i);
+    if (el) el.value = path;
+  });
+}
 function addActuSlide() {
   if (!siteData.actus.slides) siteData.actus.slides = [];
   siteData.actus.slides.push({ image:"", alt:"", chip:"", chipColor:"", date:"", title:"", subtitle:"" });
@@ -1484,7 +1491,7 @@ function renderActuVedettes() {
         <button class="btn-danger" onclick="delActuVedette(${i})" title="Supprimer">🗑</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group" style="margin:0"><label>Image (vide = placeholder)</label><input type="text" value="${esc(v.image||'')}" placeholder="images/photo.jpg" oninput="updActuVedette(${i},'image',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-vedette-img-${i}" value="${esc(v.image||'')}" placeholder="images/photo.jpg" oninput="updActuVedette(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuVedette(${i})">📷 Upload</button></div></div>
         <div class="form-group" style="margin:0"><label>Badge (ex: Diplomatie)</label><input type="text" value="${esc(v.badge||'')}" oninput="updActuVedette(${i},'badge',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(v.badgeColor||'')}" placeholder="#2e7d32" oninput="updActuVedette(${i},'badgeColor',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Catégorie</label><input type="text" value="${esc(v.tag||'')}" oninput="updActuVedette(${i},'tag',this.value)"></div>
@@ -1507,6 +1514,13 @@ function renderActuVedettes() {
     </div>`).join('');
 }
 function updActuVedette(i, f, v) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i][f] = v; }
+function uploadForActuVedette(i) {
+  uploadImage(path => {
+    if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].image = path;
+    const el = document.getElementById("actu-vedette-img-" + i);
+    if (el) el.value = path;
+  });
+}
 function updActuVedetteTags(i, val) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].tags = val.split('\n').map(t=>t.trim()).filter(t=>t); }
 function addActuVedette() {
   if (!siteData.actus.vedettes) siteData.actus.vedettes = [];
