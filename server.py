@@ -1097,9 +1097,32 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         pass  # Logs gérés manuellement
 
 # ── Lancement ──────────────────────────────────────────────
+def generate_self_signed_cert():
+    """Génère un certificat SSL auto-signé si absent (localhost dev)."""
+    try:
+        import subprocess
+        result = subprocess.run([
+            "openssl", "req", "-x509", "-newkey", "rsa:2048",
+            "-keyout", "key.pem", "-out", "cert.pem",
+            "-days", "365", "-nodes",
+            "-subj", "/C=CG/ST=Cuvette/L=Ewo/O=Bininga/CN=localhost",
+            "-addext", "subjectAltName=IP:127.0.0.1,DNS:localhost"
+        ], capture_output=True, timeout=30)
+        if result.returncode == 0:
+            print("[BININGA] ✅ Certificat SSL auto-généré (cert.pem / key.pem)")
+            return True
+        else:
+            print("[BININGA] ⚠️  Impossible de générer le certificat SSL (openssl requis)")
+            return False
+    except Exception:
+        print("[BININGA] ⚠️  openssl non disponible — SSL désactivé")
+        return False
+
 if __name__ == "__main__":
     init_users()
     load_blocked_ips()
+    if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")):
+        generate_self_signed_cert()
     USE_SSL  = os.path.isfile("cert.pem") and os.path.isfile("key.pem")
     PORT     = int(os.environ.get("PORT", 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"
