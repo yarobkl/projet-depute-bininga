@@ -194,6 +194,8 @@ function loadContent() {
 
         // Réinitialiser le slider avec le bon nombre de slides
         initSlider();
+        // Enregistrer les nouveaux éléments .rev auprès de l'observer
+        galWrap.querySelectorAll(".rev").forEach(el => rObs.observe(el));
       }
 
       // SEO
