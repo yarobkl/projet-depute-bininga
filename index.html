@@ -1097,7 +1097,6 @@ function loadContent() {
       if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cta.btn3.text||cta.btn3; if(cta.btn3.href) el.href=cta.btn3.href; } }
 
       // ── Contact — en-tête + coordonnées ──────────────────────────────
-      const ct = d.contact || {};
       if (ct.sectionTag)    { const el=document.getElementById("dyn-ct-tag");          if(el) el.textContent=ct.sectionTag; }
       if (ct.sectionAccent) { const el=document.getElementById("dyn-ct-accent");       if(el) el.textContent=ct.sectionAccent; }
       if (ct.sectionTitle)  {
