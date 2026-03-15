@@ -346,8 +346,8 @@ select.form-input:focus{border-color:var(--r)}
         <span class="icon">🦶</span> Footer
       </div>
 
-      <div class="sb-section">Intelligence</div>
-      <div class="sb-item" onclick="showPanel('veille',this)">
+      <div class="sb-section role-ministre" style="display:none">Intelligence</div>
+      <div class="sb-item role-ministre" style="display:none" onclick="showPanel('veille',this)">
         <span class="icon">🤖</span> Veille IA
         <span class="sb-badge" id="badge-veille" style="display:none"></span>
       </div>
@@ -1088,6 +1088,10 @@ function applyRoleUI(role) {
   // .role-superadmin = réservé UNIQUEMENT à l'admin principal (Hero, À propos, Parcours)
   document.querySelectorAll(".role-superadmin").forEach(el => {
     el.style.display = role === "admin" ? "" : "none";
+  });
+  // .role-ministre = visible pour admin ET ministre uniquement
+  document.querySelectorAll(".role-ministre").forEach(el => {
+    el.style.display = (role === "admin" || role === "ministre") ? "" : "none";
   });
 }
 
