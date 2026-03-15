@@ -781,7 +781,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
         </div>
       </div>
       <div class="ct-form rev-r">
-        <h3 style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--w);margin-bottom:24px">Envoyez un message</h3>
+        <h3 id="dyn-ct-form-title2" style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--w);margin-bottom:24px">Envoyez un message</h3>
         <form onsubmit="fCt(event,this)">
           <div class="fg2">
             <div class="fgrp"><label>Prénom</label><input type="text" name="prenom" placeholder="Prénom" required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></div>
@@ -807,7 +807,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
     <div>
       <div class="nlogo">
         <div class="nlogo-badge">AB</div>
-        <div class="nlogo-txt">Aimé BININGA<small>PCT · Député d'Ewo</small></div>
+        <div class="nlogo-txt"><span id="dyn-ft-logo-name">Aimé BININGA</span><small id="dyn-ft-logo-sub">PCT · Député d'Ewo</small></div>
       </div>
       <p class="ft-brand-p" id="dyn-ft-brand">Site officiel d'Ange Aimé Wilfrid BININGA — Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.</p>
       <div class="social-row">
@@ -1115,8 +1115,12 @@ function loadContent() {
 
       // ── Footer ───────────────────────────────────────────────────────
       const ft = d.footer || {};
+      if (ft.logoName)   { const el=document.getElementById("dyn-ft-logo-name"); if(el) el.textContent=ft.logoName; }
+      if (ft.logoSub)    { const el=document.getElementById("dyn-ft-logo-sub");  if(el) el.textContent=ft.logoSub; }
       if (ft.brandText)  { const el=document.getElementById("dyn-ft-brand");     if(el) el.textContent=ft.brandText; }
       if (ft.copyright)  { const el=document.getElementById("dyn-ft-copyright"); if(el) el.textContent=ft.copyright; }
+      // ── Contact — titre formulaire message ───────────────────────────
+      if (ct.formTitle2) { const el=document.getElementById("dyn-ct-form-title2"); if(el) el.textContent=ct.formTitle2; }
 
       // ── Actualités — slides, vedettes, cards ─────────────────────────
       const ac = d.actus || {};
