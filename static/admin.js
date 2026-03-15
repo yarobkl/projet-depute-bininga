@@ -1486,7 +1486,7 @@ const PANEL_TITLES = {
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
-  veille:"🤖 Veille IA — Actualités Bininga"
+  veille:"🤖 YARO IA — Actualités Bininga"
 };
 
 function showPanel(name, el) {

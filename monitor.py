@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Veille IA — Agent de surveillance des actualités concernant BININGA
+YARO IA — Agent de surveillance des actualités concernant BININGA
 ====================================================================
 Surveille automatiquement Google News et d'autres sources RSS toutes
 les 15 minutes pour détecter toute nouvelle information concernant
@@ -35,7 +35,7 @@ from pathlib import Path
 BASE_DIR   = Path(__file__).parent
 NEWS_FILE  = BASE_DIR / "news_monitor.json"
 PID_FILE   = BASE_DIR / "monitor.pid"
-LOG_PREFIX = "[VEILLE IA]"
+LOG_PREFIX = "[YARO IA]"
 INTERVAL   = int(os.environ.get("MONITOR_INTERVAL", 900))   # 15 min par défaut
 
 # ── Fichier de déclenchement manuel ──────────────────────────────────────────
@@ -335,7 +335,7 @@ def send_email_notification(new_articles: list[dict]):
     subject = f"[Veille BININGA] {count} nouvelle(s) info(s) détectée(s)"
 
     body_parts = [
-        f"<h2>🤖 Veille IA — {count} article(s) détecté(s)</h2>",
+        f"<h2>🤖 YARO IA — {count} article(s) détecté(s)</h2>",
         f"<p>Rapport du {datetime.now().strftime('%d/%m/%Y à %H:%M')}</p>",
         "<hr>",
     ]
@@ -347,7 +347,7 @@ def send_email_notification(new_articles: list[dict]):
             f"<p>{a['summary']}</p>{ai}<hr>"
         )
     if count > 10:
-        body_parts.append(f"<p>… et {count - 10} autre(s) article(s). Voir le panneau Veille IA.</p>")
+        body_parts.append(f"<p>… et {count - 10} autre(s) article(s). Voir le panneau YARO IA.</p>")
 
     body_parts.append('<p><a href="https://bininga.cg/admin.html">→ Ouvrir l\'espace admin</a></p>')
     html_body = "\n".join(body_parts)
@@ -443,7 +443,7 @@ def run_cycle(data: dict, custom_query: str = "") -> list[dict]:
 
 
 def main():
-    _log("=== Agent de veille BININGA démarré ===")
+    _log("=== YARO IA — Agent BININGA démarré ===")
     _log(f"Intervalle : {INTERVAL // 60} min | Requêtes : {len(QUERIES)}")
     _log(f"Email notifications : {'✅' if os.environ.get('SMTP_HOST') else '⚠️  non configuré'}")
     _log(f"Résumés IA (Claude) : {'✅' if os.environ.get('ANTHROPIC_API_KEY') else '⚠️  non configuré'}")
