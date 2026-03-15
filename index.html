@@ -1301,9 +1301,13 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
     btn.style.background = "#2ecc71";
   }
   // Réinitialiser le formulaire après 3 secondes
+  const originalText = btn.dataset.originalText || "📨 Soumettre";
   setTimeout(() => {
     const form = btn.closest("form");
-    if (form) { form.reset(); btn.style.background = ""; }
+    if (form) form.reset();
+    btn.style.background = "";
+    btn.textContent = originalText;
+    btn.disabled = false;
   }, 3000);
 }
 

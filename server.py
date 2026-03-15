@@ -847,6 +847,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         token = self.headers.get("X-Admin-Token", "")
         session = get_session(token)
 
+        if not session:
+            self._json({"ok": False, "message": "Non autorisé"}, 401)
+            return
+        # Validation CSRF sur routes d'écriture
+        if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear"):
+            csrf_received = self.headers.get("X-CSRF-Token", "")
+            csrf_expected = session.get("csrf_token", "")
+            if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
+                audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
+                self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
+                return
+
         # ── /api/contacts/clear ──
         if path == "/api/contacts/clear":
             if not has_role(token, "admin"):
@@ -871,17 +883,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
-        if not session:
-            self._json({"ok": False, "message": "Non autorisé"}, 401)
-            return
-        # Validation CSRF sur routes d'écriture
-        if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear"):
-            csrf_received = self.headers.get("X-CSRF-Token", "")
-            csrf_expected = session.get("csrf_token", "")
-            if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
-                audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
-                self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
-                return
 
         if path == "/api/security/unblock":
             if not has_role(token, "admin"):
