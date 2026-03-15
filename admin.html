@@ -1880,7 +1880,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
       <div class="msg-top">
         <div>
           <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
-          <div class="msg-date">📅 ${esc(m._date||"")}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
+          <div class="msg-date">📅 ${esc(m._date||m.ts||"")}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">${pingBadge}${badge}</div>
       </div>
@@ -2208,8 +2208,17 @@ function setText(id, val)  { const el=document.getElementById(id); if(el) el.tex
 function setBadge(id, n)   { const el=document.getElementById(id); if(!el)return; el.style.display=n>0?"inline":"none"; el.textContent=n; }
 function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
-function clearAll(storageKey, panel) {
-  if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ?")) return;
+async function clearAll(storageKey, panel) {
+  if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ? Cette action est irréversible.")) return;
+  // Suppression côté serveur
+  try {
+    await fetch("/api/contacts/clear", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ type: storageKey })
+    });
+  } catch (_) {}
+  // Suppression locale
   localStorage.removeItem(storageKey);
   refreshDashboard();
   if (panel === "audiences") { renderAudiences(); renderReclamations(); }

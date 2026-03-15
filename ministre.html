@@ -525,7 +525,37 @@ function msgId(m)          { return (m._date||"") + "|" + (m.prenom||"") + "|" +
 function init() {
   updateHeaderDate();
   setInterval(updateHeaderDate, 60000);
-  refreshAll();
+  syncMessages().then(() => refreshAll());
+}
+
+async function syncMessages() {
+  try {
+    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) return;
+    const mapping = [
+      ["bininga_audiences", data.audiences || []],
+      ["bininga_contacts",  data.contacts  || []]
+    ];
+    for (const [key, serverList] of mapping) {
+      const localList = JSON.parse(localStorage.getItem(key) || "[]");
+      const localMeta = {};
+      localList.forEach(m => { if (m._id) localMeta[m._id] = m; });
+      const serverIds = new Set(serverList.map(m => m._id).filter(Boolean));
+      const merged = serverList.map(m => {
+        const local = localMeta[m._id] || {};
+        return Object.assign({}, m, {
+          _status: local._status || m._status,
+          _notes:  local._notes  || m._notes,
+          _pinged: local._pinged || m._pinged,
+          _reply:  local._reply  || m._reply,
+          _reply_date: local._reply_date || m._reply_date
+        });
+      });
+      localList.filter(m => m._id && !serverIds.has(m._id)).forEach(m => merged.push(m));
+      localStorage.setItem(key, JSON.stringify(merged));
+    }
+  } catch (_) {}
 }
 
 let audFilter = "all", reclFilter = "all", ctFilter = "all";
@@ -838,7 +868,7 @@ function buildCard(m, storageKey, mode) {
           ${esc(m.prenom||"")} ${esc(m.nom||"")}
           ${statusBadge} ${replyBadge} ${geoBadge} ${pingBadge}
         </div>
-        <div class="msg-date-line">📅 ${esc(m._date||"")}</div>
+        <div class="msg-date-line">📅 ${esc(m._date||m.ts||"")}</div>
         <div class="msg-preview">${esc(preview)}</div>
       </div>
       <div class="msg-actions-top">

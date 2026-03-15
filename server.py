@@ -846,11 +846,36 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # ── Vérification token + CSRF pour les routes protégées ──
         token = self.headers.get("X-Admin-Token", "")
         session = get_session(token)
+
+        # ── /api/contacts/clear ──
+        if path == "/api/contacts/clear":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data     = json.loads(body.decode("utf-8"))
+                msg_type = data.get("type", "")
+                if not msg_type:
+                    self._json({"ok": False, "message": "Type requis"}, 400)
+                    return
+                all_contacts = []
+                if os.path.exists(CONTACT_FILE):
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_contacts = json.load(f)
+                kept = [c for c in all_contacts if c.get("type") != msg_type]
+                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                    json.dump(kept, f, indent=2, ensure_ascii=False)
+                who = session["username"] if session else "?"
+                audit_log("CLEAR_CONTACTS", ip, f"Suppression type={msg_type} par {who}")
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
         if not session:
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
         # Validation CSRF sur routes d'écriture
-        if path in ("/api/save", "/api/users/upsert", "/api/users/delete"):
+        if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
             if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
