@@ -1281,7 +1281,10 @@ if __name__ == "__main__":
         generate_self_signed_cert()
 
     CERT_FILE, KEY_FILE, CERT_SOURCE = resolve_ssl_certs()
-    USE_SSL  = CERT_FILE is not None
+    # Disable SSL when running on Railway (or any reverse-proxy that handles TLS termination)
+    _on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
+    _force_http = os.environ.get("BININGA_FORCE_HTTP", "") == "1"
+    USE_SSL  = CERT_FILE is not None and not _on_railway and not _force_http
     PORT     = int(os.environ.get("PORT", 443 if (USE_SSL and CERT_SOURCE == "Let's Encrypt") else 8443 if USE_SSL else 8080))
     protocol = "https" if USE_SSL else "http"
 
