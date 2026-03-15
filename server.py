@@ -1133,6 +1133,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": str(e)}, 400)
             return
 
+        # ── /api/news/run ── déclenchement manuel de la veille ──
+        if path == "/api/news/run":
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload = json.loads(body.decode("utf-8")) if body.strip() else {}
+                custom_query = (payload.get("query") or "").strip()
+                trigger_file = os.path.join(os.path.dirname(__file__), "monitor.trigger")
+                with open(trigger_file, "w", encoding="utf-8") as f:
+                    f.write(custom_query)
+                msg = f"Recherche lancée : « {custom_query} »" if custom_query else "Cycle de veille complet lancé"
+                audit_log("SAVE", ip, msg)
+                self._json({"ok": True, "message": msg})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         self._error(404, "Route non trouvée")
 
     # ── Helpers ────────────────────────────────────────────

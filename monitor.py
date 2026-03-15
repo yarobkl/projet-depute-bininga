@@ -37,7 +37,10 @@ PID_FILE   = BASE_DIR / "monitor.pid"
 LOG_PREFIX = "[VEILLE IA]"
 INTERVAL   = int(os.environ.get("MONITOR_INTERVAL", 900))   # 15 min par défaut
 
-# Requêtes de recherche
+# ── Fichier de déclenchement manuel ──────────────────────────────────────────
+TRIGGER_FILE = BASE_DIR / "monitor.trigger"
+
+# Requêtes de recherche — Actualités Bininga
 QUERIES = [
     '"Ange Aimé Bininga"',
     '"Aimé Bininga" Congo',
@@ -47,12 +50,40 @@ QUERIES = [
     '"BININGA" Congo Brazzaville',
 ]
 
-# Sources RSS supplémentaires à surveiller (presse congolaise)
+# Requêtes de veille juridique mondiale — Lois & Justice
+LEGAL_QUERIES = [
+    "nouvelles lois justice droits humains 2026",
+    "réforme judiciaire Afrique 2026",
+    "droits des peuples autochtones nouvelles lois 2026",
+    "loi justice réparation populations autochtones",
+    "réforme pénitentiaire Afrique subsaharienne",
+    "coopération judiciaire internationale Afrique 2026",
+    "nouvelles lois droits humains ONU 2026",
+    "justice transitionnelle Afrique centrale",
+    "réforme code pénal Afrique francophone 2026",
+    "OHADA réforme juridique 2026",
+    "Cour pénale internationale Afrique actualité 2026",
+    "accès à la justice populations vulnérables Afrique",
+]
+
+# Sources RSS — presse congolaise
 EXTRA_RSS = [
     # Les Dépêches de Brazzaville
     "https://www.lesdepechesdebrazzaville.fr/rss.xml",
     # Adiac-Congo
     "https://www.adiac-congo.com/rss.xml",
+]
+
+# Sources RSS — juridiques internationales
+LEGAL_RSS = [
+    # RFI Afrique (droit, justice, société)
+    "https://www.rfi.fr/fr/rss/afrique/",
+    # ONU actualités droits de l'homme
+    "https://news.un.org/feed/subscribe/fr/news/topic/human-rights/feed/rss.xml",
+    # Jeune Afrique
+    "https://www.jeuneafrique.com/feed/",
+    # Le Monde Afrique
+    "https://www.lemonde.fr/afrique/rss_full.xml",
 ]
 
 HEADERS = {
@@ -63,7 +94,7 @@ HEADERS = {
     "Accept": "application/rss+xml,application/xml,text/xml,*/*",
 }
 
-MAX_ITEMS = 200   # nombre max d'articles gardés en mémoire
+MAX_ITEMS = 300   # nombre max d'articles gardés en mémoire
 MAX_AGE_DAYS = 30
 
 # ── Signaux ───────────────────────────────────────────────────────────────────
@@ -295,35 +326,53 @@ def send_email_notification(new_articles: list[dict]):
 
 # ── Cycle principal ────────────────────────────────────────────────────────────
 
-def run_cycle(data: dict) -> list[dict]:
+def run_cycle(data: dict, custom_query: str = "") -> list[dict]:
     """Exécute un cycle de veille et retourne les nouveaux articles."""
     existing_ids = {a["id"] for a in data.get("items", [])}
     new_articles: list[dict] = []
 
-    # Google News pour chaque requête
-    for query in QUERIES:
-        _log(f"Recherche : {query}")
-        articles = fetch_google_news(query)
+    def _add(articles, category):
         for a in articles:
             if a["id"] not in existing_ids:
                 existing_ids.add(a["id"])
+                a["category"] = category
                 new_articles.append(a)
-        time.sleep(2)   # courtoisie
 
-    # Sources RSS directes
+    # Requête personnalisée (déclenchement manuel)
+    if custom_query:
+        _log(f"Recherche manuelle : {custom_query}")
+        _add(fetch_google_news(custom_query), "recherche")
+        time.sleep(2)
+        return new_articles
+
+    # Google News — Actualités Bininga
+    for query in QUERIES:
+        _log(f"[Bininga] {query}")
+        _add(fetch_google_news(query), "bininga")
+        time.sleep(2)
+
+    # Google News — Lois & Justice mondiale
+    for query in LEGAL_QUERIES:
+        _log(f"[Juridique] {query}")
+        _add(fetch_google_news(query), "loi_justice")
+        time.sleep(2)
+
+    # Sources RSS — presse congolaise
     for rss_url in EXTRA_RSS:
-        _log(f"RSS : {rss_url}")
-        articles = fetch_extra_rss(rss_url)
-        for a in articles:
-            if a["id"] not in existing_ids:
-                existing_ids.add(a["id"])
-                new_articles.append(a)
+        _log(f"[RSS Congo] {rss_url}")
+        _add(fetch_extra_rss(rss_url), "bininga")
+        time.sleep(1)
+
+    # Sources RSS — juridiques internationales
+    for rss_url in LEGAL_RSS:
+        _log(f"[RSS Juridique] {rss_url}")
+        _add(fetch_extra_rss(rss_url), "loi_justice")
         time.sleep(1)
 
     # Résumés IA (si configuré)
     if os.environ.get("ANTHROPIC_API_KEY") and new_articles:
         _log(f"Résumés IA pour {len(new_articles)} article(s)…")
-        for a in new_articles[:5]:   # limite coût API
+        for a in new_articles[:8]:
             a["ai_summary"] = ai_summarize(a)
             time.sleep(0.5)
 
@@ -346,7 +395,17 @@ def main():
 
     while running:
         try:
-            new_articles = run_cycle(data)
+            # Vérifier si un déclenchement manuel est demandé
+            custom_query = ""
+            if TRIGGER_FILE.exists():
+                try:
+                    custom_query = TRIGGER_FILE.read_text(encoding="utf-8").strip()
+                    TRIGGER_FILE.unlink(missing_ok=True)
+                    _log(f"Déclenchement manuel {'— requête : ' + custom_query if custom_query else '(cycle complet)'}")
+                except Exception:
+                    pass
+
+            new_articles = run_cycle(data, custom_query=custom_query)
 
             if new_articles:
                 # Insérer en tête (plus récent d'abord)
@@ -379,11 +438,14 @@ def main():
             break
 
         _log(f"Prochaine veille dans {INTERVAL // 60} min…")
-        # Attendre par tranches de 5 s pour réagir au signal d'arrêt
+        # Attendre par tranches de 5 s pour réagir au signal d'arrêt ou au trigger
         waited = 0
         while running and waited < INTERVAL:
             time.sleep(5)
             waited += 5
+            if TRIGGER_FILE.exists():
+                _log("Trigger détecté — lancement immédiat du cycle")
+                break
 
     PID_FILE.unlink(missing_ok=True)
     _log("Agent arrêté.")
