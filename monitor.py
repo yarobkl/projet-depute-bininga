@@ -19,6 +19,7 @@ Variables d'environnement :
   MONITOR_INTERVAL   — intervalle en secondes (défaut: 900 = 15 min)
 """
 
+from __future__ import annotations
 import os, json, time, hashlib, signal, sys, smtplib, re
 from datetime import datetime, timezone
 from urllib.request import urlopen, Request
