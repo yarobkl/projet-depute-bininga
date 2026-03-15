@@ -9,6 +9,7 @@ import time
 import threading
 import posixpath
 import re
+import gzip
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote
@@ -693,9 +694,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     content = f.read()
                 mime = self._mime(safe)
                 origin = self._cors_origin()
+                # Gzip compression pour texte/HTML/CSS/JS/JSON
+                accept_enc = self.headers.get("Accept-Encoding", "")
+                can_gzip = "gzip" in accept_enc and mime.startswith((
+                    "text/", "application/json", "application/javascript"
+                ))
+                if can_gzip:
+                    content = gzip.compress(content, compresslevel=6)
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
+                if can_gzip:
+                    self.send_header("Content-Encoding", "gzip")
+                    self.send_header("Vary", "Accept-Encoding")
                 if origin:
                     self.send_header("Access-Control-Allow-Origin", origin)
                     self.send_header("Vary", "Origin")
@@ -1172,11 +1183,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
     def _json(self, data, status=200):
         response = json.dumps(data, ensure_ascii=False).encode("utf-8")
         origin = self._cors_origin()
+        accept_enc = self.headers.get("Accept-Encoding", "")
+        if "gzip" in accept_enc and len(response) > 512:
+            response = gzip.compress(response, compresslevel=6)
+            encoding = "gzip"
+        else:
+            encoding = None
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         if origin:
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
+        if encoding:
+            self.send_header("Content-Encoding", encoding)
+            self.send_header("Vary", "Accept-Encoding")
         self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
         self.send_header("Content-Length", len(response))
         self._security_headers()

@@ -580,30 +580,36 @@ def test_monitor_category_field():
 
 
 def test_admin_html_upload_actus():
-    """admin.html doit avoir les boutons upload dans les actus slides et vedettes."""
+    """Les fonctions upload actus doivent être dans admin.html ou static/admin.js."""
     import os
-    admin_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "admin.html")
-    source = open(admin_path, encoding="utf-8").read()
-    assert "uploadForActuSlide" in source, "uploadForActuSlide doit être défini dans admin.html"
-    assert "uploadForActuVedette" in source, "uploadForActuVedette doit être défini dans admin.html"
-    assert "actu-slide-img-" in source, "Les inputs image slide doivent avoir un id dynamique"
-    assert "actu-vedette-img-" in source, "Les inputs image vedette doivent avoir un id dynamique"
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    admin_html = open(os.path.join(base, "admin.html"), encoding="utf-8").read()
+    admin_js_path = os.path.join(base, "static", "admin.js")
+    admin_js = open(admin_js_path, encoding="utf-8").read() if os.path.exists(admin_js_path) else ""
+    combined = admin_html + admin_js
+    assert "uploadForActuSlide" in combined, "uploadForActuSlide doit être défini"
+    assert "uploadForActuVedette" in combined, "uploadForActuVedette doit être défini"
+    assert "actu-slide-img-" in combined, "Les inputs image slide doivent avoir un id dynamique"
+    assert "actu-vedette-img-" in combined, "Les inputs image vedette doivent avoir un id dynamique"
     print("✅ test_admin_html_upload_actus")
 
 
 def test_admin_html_veille_run():
-    """admin.html doit avoir le panneau de commande de la veille IA."""
+    """Le panneau de commande veille IA doit être dans admin.html ou static/admin.js."""
     import os
-    admin_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "admin.html")
-    source = open(admin_path, encoding="utf-8").read()
-    assert "runVeille" in source, "runVeille() doit être défini dans admin.html"
-    assert "setNewsFilter" in source, "setNewsFilter() doit être défini dans admin.html"
-    assert "veille-custom-query" in source, "Le champ de recherche personnalisée doit exister"
-    assert "btn-run-veille" in source, "Le bouton 'Lancer maintenant' doit exister"
-    assert "filter-bininga" in source, "Le filtre Bininga doit exister"
-    assert "filter-loi_justice" in source, "Le filtre Lois & Justice doit exister"
-    assert "filter-recherche" in source, "Le filtre Recherche doit exister"
-    assert "CAT_LABELS" in source, "CAT_LABELS doit être défini pour les badges de catégorie"
+    base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    admin_html = open(os.path.join(base, "admin.html"), encoding="utf-8").read()
+    admin_js_path = os.path.join(base, "static", "admin.js")
+    admin_js = open(admin_js_path, encoding="utf-8").read() if os.path.exists(admin_js_path) else ""
+    combined = admin_html + admin_js
+    assert "runVeille" in combined, "runVeille() doit être défini"
+    assert "setNewsFilter" in combined, "setNewsFilter() doit être défini"
+    assert "veille-custom-query" in admin_html, "Le champ de recherche personnalisée doit exister dans admin.html"
+    assert "btn-run-veille" in admin_html, "Le bouton 'Lancer maintenant' doit exister dans admin.html"
+    assert "filter-bininga" in admin_html, "Le filtre Bininga doit exister dans admin.html"
+    assert "filter-loi_justice" in admin_html, "Le filtre Lois & Justice doit exister dans admin.html"
+    assert "filter-recherche" in admin_html, "Le filtre Recherche doit exister dans admin.html"
+    assert "CAT_LABELS" in combined, "CAT_LABELS doit être défini"
     print("✅ test_admin_html_veille_run")
 
 
