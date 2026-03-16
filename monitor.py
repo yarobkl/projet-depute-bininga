@@ -49,6 +49,10 @@ QUERIES = [
     '"Bininga" député "Brazzaville"',
     '"Bininga" ministre justice Congo 2026',
     '"BININGA" Congo Brazzaville',
+    # Presse congolaise ciblée (fallback si RSS indisponible)
+    '"Bininga" site:lesdepechesdebrazzaville.fr',
+    '"Bininga" site:adiac-congo.com',
+    '"Bininga" site:congo-site.com OR site:acp.cg OR site:lesechosducongo.net',
 ]
 
 # Requêtes de veille juridique mondiale — Lois & Justice
@@ -73,6 +77,16 @@ EXTRA_RSS = [
     "https://www.lesdepechesdebrazzaville.fr/rss.xml",
     # Adiac-Congo
     "https://www.adiac-congo.com/rss.xml",
+    # Congo-Site — actualités générales Congo
+    "https://www.congo-site.com/feed",
+    # Agence Congolaise de Presse (officielle)
+    "https://www.acp.cg/feed",
+    # Les Échos du Congo
+    "https://lesechosducongo.net/feed",
+    # La Semaine Africaine — hebdomadaire catholique Brazzaville
+    "https://www.lasemaineafricaine.com/feed",
+    # Horizon News Congo
+    "https://horizonnewscongo.com/feed",
 ]
 
 # Sources RSS — juridiques internationales
