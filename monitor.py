@@ -217,17 +217,18 @@ def _fetch(url: str, timeout: int = 15) -> bytes | None:
     return None
 
 
-def gdelt_url(query: str, days: int = 7) -> str:
+def gdelt_url(query: str, days: int = 30, lang: str = "") -> str:
     """GDELT Article Search API — accès public, pas bloqué sur cloud."""
-    params = urlencode({
+    params: dict = {
         "query":      query,
         "mode":       "artlist",
         "format":     "rss",
         "maxrecords": "25",
         "timespan":   f"{days}d",
-        "sourcelang": "fr",
-    })
-    return f"https://api.gdeltproject.org/api/v2/doc/doc?{params}"
+    }
+    if lang:
+        params["sourcelang"] = lang
+    return f"https://api.gdeltproject.org/api/v2/doc/doc?{urlencode(params)}"
 
 
 def google_news_url(query: str) -> str:
@@ -278,11 +279,19 @@ def parse_rss(xml_bytes: bytes, source_label: str) -> list[dict]:
 
 
 def fetch_google_news(query: str) -> list[dict]:
-    # 1. GDELT — API ouverte, pas bloquée sur Railway/cloud
-    url_gdelt = gdelt_url(query)
+    # 1. GDELT — API ouverte, pas bloquée sur Railway/cloud (toutes langues, 30 jours)
+    url_gdelt = gdelt_url(query, days=30)
     data_gdelt = _fetch(url_gdelt)
     if data_gdelt:
         results = parse_rss(data_gdelt, f"GDELT — {query}")
+        if results:
+            return results
+
+    # 1b. GDELT en français uniquement (fallback si toutes langues rien)
+    url_gdelt_fr = gdelt_url(query, days=30, lang="fr")
+    data_gdelt_fr = _fetch(url_gdelt_fr)
+    if data_gdelt_fr:
+        results = parse_rss(data_gdelt_fr, f"GDELT FR — {query}")
         if results:
             return results
 
@@ -316,18 +325,47 @@ def fetch_nitter(query: str) -> list[dict]:
 
 
 def fetch_extra_rss(rss_url: str) -> list[dict]:
-    data = _fetch(rss_url)
-    if not data:
-        return []
     label = rss_url.split("//")[-1].split("/")[0]
-    articles = parse_rss(data, label)
+
+    # Essai direct
+    raw = _fetch(rss_url)
+    if not raw:
+        # Fallback : passer par rss2json.com (proxy public — contourne le tunnel Railway)
+        proxy_url = "https://api.rss2json.com/v1/api.json?rss_url=" + quote_plus(rss_url)
+        proxy_data = _fetch(proxy_url, timeout=15)
+        if proxy_data:
+            try:
+                jd = json.loads(proxy_data)
+                if jd.get("status") == "ok":
+                    articles = []
+                    for item in jd.get("items", []):
+                        title   = _strip_tags(item.get("title", ""))
+                        url     = item.get("link", item.get("guid", ""))
+                        summary = _strip_tags(item.get("description", item.get("content", "")))
+                        pub     = _parse_date(item.get("pubDate", ""))
+                        if not title or not url:
+                            continue
+                        articles.append({
+                            "id":         _item_id(url),
+                            "title":      title,
+                            "url":        url,
+                            "source":     label,
+                            "published":  pub,
+                            "summary":    summary[:500],
+                            "ai_summary": "",
+                            "read":       False,
+                            "found_at":   datetime.now(timezone.utc).isoformat(),
+                        })
+                    keywords = ["bininga", "ange aimé", "garde des sceaux"]
+                    return [a for a in articles if any(k in (a["title"] + a["summary"]).lower() for k in keywords)]
+            except Exception as e:
+                _log(f"rss2json error ({label}): {e}")
+        return []
+
+    articles = parse_rss(raw, label)
     # Filtrer seulement ceux qui concernent Bininga
     keywords = ["bininga", "ange aimé", "garde des sceaux"]
-    filtered = [
-        a for a in articles
-        if any(k in (a["title"] + a["summary"]).lower() for k in keywords)
-    ]
-    return filtered
+    return [a for a in articles if any(k in (a["title"] + a["summary"]).lower() for k in keywords)]
 
 # ── IA — Résumé Claude ─────────────────────────────────────────────────────────
 
@@ -542,6 +580,8 @@ def main():
                 send_email_notification(new_articles)
 
             data["last_run"] = datetime.now(timezone.utc).isoformat()
+            if not isinstance(data.get("stats"), dict):
+                data["stats"] = {}
             data["stats"]["runs"] = data["stats"].get("runs", 0) + 1
             data["stats"]["total_found"] = data["stats"].get("total_found", 0) + len(new_articles)
             save_news(data)
