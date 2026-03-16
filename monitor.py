@@ -22,7 +22,7 @@ Variables d'environnement :
 from __future__ import annotations
 import os, json, time, hashlib, signal, sys, smtplib, re
 from datetime import datetime, timezone
-from urllib.request import urlopen, Request
+from urllib.request import urlopen, Request, build_opener, ProxyHandler
 from urllib.parse import quote_plus, urlencode
 from urllib.error import URLError, HTTPError
 from xml.etree import ElementTree as ET
@@ -204,7 +204,9 @@ def save_news(data: dict):
 def _fetch(url: str, timeout: int = 15) -> bytes | None:
     try:
         req = Request(url, headers=HEADERS)
-        with urlopen(req, timeout=timeout) as r:
+        # Bypass les proxies injectés par Railway/cloud (cause des 403)
+        opener = build_opener(ProxyHandler({}))
+        with opener.open(req, timeout=timeout) as r:
             return r.read()
     except HTTPError as e:
         _log(f"HTTP {e.code} pour {url}")
@@ -218,6 +220,11 @@ def _fetch(url: str, timeout: int = 15) -> bytes | None:
 def google_news_url(query: str) -> str:
     params = urlencode({"q": query, "hl": "fr", "gl": "CG", "ceid": "CG:fr"})
     return f"https://news.google.com/rss/search?{params}"
+
+
+def bing_news_url(query: str) -> str:
+    params = urlencode({"q": query, "format": "rss", "setlang": "fr", "cc": "CG"})
+    return f"https://www.bing.com/news/search?{params}"
 
 
 def parse_rss(xml_bytes: bytes, source_label: str) -> list[dict]:
@@ -260,10 +267,18 @@ def parse_rss(xml_bytes: bytes, source_label: str) -> list[dict]:
 def fetch_google_news(query: str) -> list[dict]:
     url = google_news_url(query)
     data = _fetch(url)
-    if not data:
+    if data:
+        label = f"Google News — {query}"
+        results = parse_rss(data, label)
+        if results:
+            return results
+    # Fallback : Bing News si Google News échoue
+    url2 = bing_news_url(query)
+    data2 = _fetch(url2)
+    if not data2:
         return []
-    label = f"Google News — {query}"
-    return parse_rss(data, label)
+    label2 = f"Bing News — {query}"
+    return parse_rss(data2, label2)
 
 
 def fetch_nitter(query: str) -> list[dict]:
@@ -503,7 +518,7 @@ def main():
                 send_email_notification(new_articles)
 
             data["last_run"] = datetime.now(timezone.utc).isoformat()
-            data["stats"]["runs"] += 1
+            data["stats"]["runs"] = data["stats"].get("runs", 0) + 1
             data["stats"]["total_found"] = data["stats"].get("total_found", 0) + len(new_articles)
             save_news(data)
 
