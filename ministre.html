@@ -112,6 +112,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .nav-count{background:rgba(200,16,46,.2);color:var(--rl);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:800}
 .nav-tab.active .nav-count{background:rgba(200,16,46,.3)}
 .nav-count.red{background:rgba(200,16,46,.2);color:#ff8888}
+.nav-count.blue{background:rgba(52,152,219,.2);color:#6bbeff}
 
 /* ── CONTENT ── */
 .content{flex:1;padding:0 32px 32px;background:var(--n)}
@@ -368,6 +369,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       <button class="nav-tab" onclick="showTab('reponses',this)">
         💬 Réponses envoyées <span class="nav-count" id="nt-rep">0</span>
       </button>
+      <button class="nav-tab" onclick="showTab('veille',this); loadNews()">
+        🤖 Veille YARO IA <span class="nav-count blue" id="nt-veille"></span>
+      </button>
     </div>
   </div>
 
@@ -419,6 +423,65 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="tab-panel" id="panel-reponses">
       <div class="msg-list" id="list-reponses"></div>
     </div>
+
+    <!-- ── VEILLE YARO IA ── -->
+    <div class="tab-panel" id="panel-veille">
+
+      <!-- Statut agent -->
+      <div id="v-status-bar" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;font-size:12px;color:rgba(255,255,255,.45)">
+        <span id="v-dot" style="width:9px;height:9px;border-radius:50%;background:#555;flex-shrink:0"></span>
+        <span id="v-status-txt">Chargement…</span>
+        <span style="margin-left:auto;font-size:11px" id="v-last-run"></span>
+        <button onclick="loadNews()" style="margin-left:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;transition:all .2s">🔄 Actualiser</button>
+      </div>
+
+      <!-- Lancer une recherche rapide -->
+      <div style="background:rgba(52,152,219,.05);border:1px solid rgba(52,152,219,.13);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">🔍 Lancer une veille maintenant</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button onclick="vRunVeille('Bininga Congo justice 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(200,16,46,.1);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;transition:all .2s">🧑‍⚖️ Sur moi</button>
+          <button onclick="vRunVeille('nouvelles lois justice Afrique 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer;transition:all .2s">📜 Lois & Justice</button>
+          <button onclick="vRunVeille('droits humains populations autochtones Congo 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(155,89,182,.08);color:#bb8fce;border:1px solid rgba(155,89,182,.2);cursor:pointer;transition:all .2s">🌿 Droits humains</button>
+          <button onclick="vRunVeille()" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:all .2s">⚡ Cycle complet</button>
+        </div>
+        <div id="v-run-feedback" style="display:none;margin-top:10px;font-size:12px;color:#2ecc71;padding:8px 12px;background:rgba(46,204,113,.07);border-radius:7px;border:1px solid rgba(46,204,113,.15)"></div>
+      </div>
+
+      <!-- Filtres catégorie -->
+      <div style="display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08)">
+        <button id="v-tab-bininga" onclick="vSetFilter('bininga')"
+          style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px;transition:all .2s">
+          🧑‍⚖️ Sur Bininga
+          <span id="v-tab-bininga-count" style="margin-left:6px;background:var(--r);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px"></span>
+        </button>
+        <button id="v-tab-loi" onclick="vSetFilter('loi_justice')"
+          style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s">
+          📜 Lois & Justice
+          <span id="v-tab-loi-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
+        </button>
+        <button id="v-tab-all" onclick="vSetFilter('all')"
+          style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s">
+          🌍 Toutes les infos
+          <span id="v-tab-all-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
+        </button>
+      </div>
+
+      <!-- Tri -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <span style="font-size:11px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Trier :</span>
+        <button id="v-sort-date-desc" onclick="vSetSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">⬇ Plus récent</button>
+        <button id="v-sort-date-asc" onclick="vSetSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⬆ Plus ancien</button>
+        <button id="v-sort-pertinence" onclick="vSetSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⭐ Pertinence</button>
+        <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.25)" id="v-count-label"></span>
+        <button onclick="vMarkAllRead()" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer">✅ Tout lire</button>
+      </div>
+
+      <!-- Liste articles -->
+      <div id="v-list" style="display:flex;flex-direction:column;gap:10px">
+        <div style="text-align:center;color:rgba(255,255,255,.3);padding:50px 0;font-size:13px">Chargement des actualités…</div>
+      </div>
+
+    </div><!-- /panel-veille -->
 
   </div><!-- /content -->
 </div><!-- /app -->
@@ -525,6 +588,8 @@ function init() {
   updateHeaderDate();
   setInterval(updateHeaderDate, 60000);
   syncMessages().then(() => refreshAll());
+  loadNews();
+  setInterval(loadNews, 5 * 60 * 1000); // rafraîchit la veille toutes les 5 min
 }
 
 async function syncMessages() {
@@ -1041,6 +1106,201 @@ function pingDepute(storageKey, safeId) {
   saveAll(storageKey, all);
   refreshAll();
   showToast("🚨 Le Député a été alerté sur ce dossier !");
+}
+
+// ══════════════════════════════════════════════════════════
+//  VEILLE YARO IA
+// ══════════════════════════════════════════════════════════
+let _vItems  = [];
+let _vFilter = "bininga";
+let _vSort   = "date_desc";
+
+async function loadNews() {
+  const list = document.getElementById("v-list");
+  if (!list) return;
+  try {
+    const res  = await fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    _vItems = data.items || [];
+
+    // Statut agent
+    const dot  = document.getElementById("v-dot");
+    const stxt = document.getElementById("v-status-txt");
+    const lr   = document.getElementById("v-last-run");
+    if (data.running) {
+      dot.style.background = "#2ecc71";
+      stxt.textContent = "YARO IA actif — surveillance en cours";
+    } else {
+      dot.style.background = "#e74c3c";
+      stxt.textContent = "YARO IA inactif";
+    }
+    if (data.last_run) lr.textContent = "Dernière veille : " + new Date(data.last_run).toLocaleString("fr-FR");
+
+    // Badge onglet
+    const unread = _vItems.filter(a => !a.read).length;
+    const ntv = document.getElementById("nt-veille");
+    if (ntv) { ntv.textContent = unread > 0 ? unread : ""; }
+
+    vRenderItems();
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Impossible de charger la veille.</div>';
+  }
+}
+
+function vSetFilter(f) {
+  _vFilter = f;
+  const tabs = { bininga:"v-tab-bininga", loi_justice:"v-tab-loi", all:"v-tab-all" };
+  Object.entries(tabs).forEach(([key, id]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const active = key === f;
+    el.style.color = active ? "#fff" : "rgba(255,255,255,.4)";
+    el.style.borderBottom = active ? "2px solid var(--r)" : "2px solid transparent";
+  });
+  vRenderItems();
+}
+
+function vSetSort(s) {
+  _vSort = s;
+  ["date_desc","date_asc","pertinence"].forEach(k => {
+    const el = document.getElementById("v-sort-"+k);
+    if (!el) return;
+    const active = k === s;
+    el.style.background = active ? "rgba(52,152,219,.15)" : "rgba(255,255,255,.04)";
+    el.style.color = active ? "#3498db" : "rgba(255,255,255,.4)";
+    el.style.borderColor = active ? "rgba(52,152,219,.3)" : "rgba(255,255,255,.08)";
+  });
+  vRenderItems();
+}
+
+function _vDate(a) { try { return new Date(a.published_at||a.date||0).getTime(); } catch { return 0; } }
+function _vScore(a) {
+  let s = _vDate(a) / 1e10;
+  if (!a.read) s += 50;
+  if ((a.category||"bininga") === "bininga") s += 30;
+  return s;
+}
+
+function vRenderItems() {
+  const list = document.getElementById("v-list");
+  if (!list) return;
+
+  const filtered = _vFilter === "all"
+    ? _vItems
+    : _vItems.filter(a => (a.category || "bininga") === _vFilter);
+
+  // Compteurs onglets
+  const bCount  = _vItems.filter(a => (a.category||"bininga") === "bininga").length;
+  const lCount  = _vItems.filter(a => (a.category||"bininga") === "loi_justice").length;
+  const bUnread = _vItems.filter(a => (a.category||"bininga") === "bininga" && !a.read).length;
+  const lUnread = _vItems.filter(a => (a.category||"bininga") === "loi_justice" && !a.read).length;
+
+  const tabB = document.getElementById("v-tab-bininga-count");
+  const tabL = document.getElementById("v-tab-loi-count");
+  const tabA = document.getElementById("v-tab-all-count");
+  if (tabB) tabB.textContent = bCount > 0 ? (bUnread > 0 ? bUnread + " non lus" : bCount) : "";
+  if (tabL) tabL.textContent = lCount > 0 ? (lUnread > 0 ? lUnread + " non lus" : lCount) : "";
+  if (tabA) tabA.textContent = _vItems.length;
+
+  const lbl = document.getElementById("v-count-label");
+  if (lbl) lbl.textContent = filtered.length + " article" + (filtered.length > 1 ? "s" : "");
+
+  if (!filtered.length) {
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:50px 0;font-size:13px">Aucune actualité dans cette catégorie.<br><small style="font-size:11px;display:block;margin-top:6px">YARO IA surveille Google News toutes les 15 minutes.</small></div>';
+    return;
+  }
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (_vSort === "date_desc")   return _vDate(b) - _vDate(a);
+    if (_vSort === "date_asc")    return _vDate(a) - _vDate(b);
+    return _vScore(b) - _vScore(a);
+  });
+
+  list.innerHTML = sorted.map(a => {
+    const catLabel = (a.category||"bininga") === "loi_justice" ? "📜 Lois & Justice"
+                   : (a.category||"bininga") === "recherche"   ? "🔍 Recherche"
+                   : "🧑‍⚖️ Sur Bininga";
+    const catColor = (a.category||"bininga") === "loi_justice" ? "#2ecc71"
+                   : (a.category||"bininga") === "recherche"   ? "#3498db"
+                   : "var(--rl)";
+    const dateStr = a.published_at || a.date
+      ? new Date(a.published_at||a.date).toLocaleString("fr-FR",{day:"2-digit",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"})
+      : "";
+    const summary = esc(a.summary || a.description || "").slice(0, 280);
+    const unread  = !a.read;
+
+    return `<div style="background:${unread ? "rgba(52,152,219,.06)" : "rgba(255,255,255,.025)"};border:1px solid ${unread ? "rgba(52,152,219,.18)" : "rgba(255,255,255,.07)"};border-radius:12px;padding:16px 18px;transition:all .2s">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            ${unread ? '<span style="width:7px;height:7px;border-radius:50%;background:#3498db;flex-shrink:0;display:inline-block"></span>' : ''}
+            <span style="font-size:10px;font-weight:700;color:${catColor};letter-spacing:.5px;text-transform:uppercase">${catLabel}</span>
+            ${a.source ? `<span style="font-size:10px;color:rgba(255,255,255,.3)">· ${esc(a.source)}</span>` : ""}
+            ${dateStr ? `<span style="font-size:10px;color:rgba(255,255,255,.25);margin-left:auto">${dateStr}</span>` : ""}
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.4">${esc(a.title||"Sans titre")}</div>
+          ${summary ? `<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.55;margin-bottom:10px">${summary}${(a.summary||a.description||"").length > 280 ? "…" : ""}</div>` : ""}
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:700;color:#3498db;text-decoration:none;padding:4px 10px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.2);border-radius:6px">🔗 Lire l'article</a>` : ""}
+            ${unread ? `<button onclick="vMarkRead('${esc(a.id||"")}',this)" style="font-size:11px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:4px 10px;cursor:pointer">✓ Marquer lu</button>` : '<span style="font-size:11px;color:rgba(255,255,255,.2);padding:4px 0">✓ Lu</span>'}
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+async function vMarkRead(id, btn) {
+  if (!id) return;
+  try {
+    await fetch("/api/news/mark-read", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Admin-Token": SESSION_TOKEN, "X-CSRF-Token": SESSION_CSRF },
+      body: JSON.stringify({ id })
+    });
+    const item = _vItems.find(a => a.id === id);
+    if (item) item.read = true;
+    const unread = _vItems.filter(a => !a.read).length;
+    const ntv = document.getElementById("nt-veille");
+    if (ntv) ntv.textContent = unread > 0 ? unread : "";
+    vRenderItems();
+  } catch (_) { showToast("Erreur réseau", true); }
+}
+
+async function vMarkAllRead() {
+  try {
+    await fetch("/api/news/mark-read", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Admin-Token": SESSION_TOKEN, "X-CSRF-Token": SESSION_CSRF },
+      body: JSON.stringify({ all: true })
+    });
+    _vItems.forEach(a => a.read = true);
+    const ntv = document.getElementById("nt-veille");
+    if (ntv) ntv.textContent = "";
+    vRenderItems();
+    showToast("Tous les articles marqués comme lus");
+  } catch (_) { showToast("Erreur réseau", true); }
+}
+
+async function vRunVeille(preset) {
+  const fb  = document.getElementById("v-run-feedback");
+  fb.style.display = "none";
+  try {
+    const res  = await fetch("/api/news/run", {
+      method: "POST",
+      headers: { "Content-Type":"application/json", "X-Admin-Token": SESSION_TOKEN, "X-CSRF-Token": SESSION_CSRF },
+      body: JSON.stringify({ query: preset || "" })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      fb.style.display = "block";
+      fb.textContent = "✅ Veille lancée. Les résultats arriveront dans ~1 minute.";
+      setTimeout(() => { fb.style.display = "none"; }, 7000);
+      setTimeout(loadNews, 12000);
+    } else {
+      showToast(data.error || "Erreur lors du lancement", true);
+    }
+  } catch (_) { showToast("Erreur réseau", true); }
 }
 
 // ══════════════════════════════════════════════════════════
