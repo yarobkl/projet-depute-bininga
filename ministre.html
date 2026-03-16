@@ -525,11 +525,6 @@ async function doLogin() {
         showErr("Accès réservé à l'espace du Député.");
         return;
       }
-      if (data.role === "admin") {
-        // Admin → rediriger vers admin.html (qui a son propre formulaire de login)
-        window.location.href = "admin.html";
-        return;
-      }
       SESSION_TOKEN = data.token;
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_NOM   = data.nom;
