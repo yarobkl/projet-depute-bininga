@@ -35,6 +35,7 @@ async function doLogin() {
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_ROLE  = data.role;
       SESSION_NOM   = data.nom;
+      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
@@ -63,6 +64,7 @@ async function logout() {
   SESSION_TOKEN = "";
   SESSION_ROLE  = "";
   SESSION_NOM   = "";
+  localStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";

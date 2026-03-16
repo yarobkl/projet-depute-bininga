@@ -529,16 +529,21 @@ async function doLogin() {
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_NOM   = data.nom;
       SESSION_ROLE  = data.role;
-      document.getElementById("login").classList.add("hidden");
-      document.getElementById("app").classList.add("visible");
-      document.getElementById("hdr-nom").textContent = data.nom;
-      updateHeaderDate();
-      init();
+      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
+      openApp(data.nom);
     } else {
       showErr("Identifiant ou mot de passe incorrect.");
     }
   } catch { showErr("Erreur de connexion au serveur."); }
   finally { btn.disabled = false; btn.textContent = "Accéder à l'espace"; }
+}
+
+function openApp(nom) {
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("app").classList.add("visible");
+  document.getElementById("hdr-nom").textContent = nom;
+  updateHeaderDate();
+  init();
 }
 
 function showErr(msg) {
@@ -547,11 +552,30 @@ function showErr(msg) {
   setTimeout(() => el.textContent = "", 3500);
 }
 
+// Auto-connexion si une session admin est déjà active
+(async function tryAutoLogin() {
+  try {
+    const saved = JSON.parse(localStorage.getItem("bininga_session") || "null");
+    if (!saved || !saved.token) return;
+    // Vérifier que le token est encore valide
+    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": saved.token } });
+    const data = await res.json();
+    if (data.ok !== false) {
+      SESSION_TOKEN = saved.token;
+      SESSION_CSRF  = saved.csrf  || "";
+      SESSION_NOM   = saved.nom   || "Bininga";
+      SESSION_ROLE  = saved.role  || "";
+      openApp(SESSION_NOM);
+    }
+  } catch (_) {}
+})();
+
 async function logout() {
   try {
     await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
   } catch (_) {}
   SESSION_TOKEN = "";
+  localStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
