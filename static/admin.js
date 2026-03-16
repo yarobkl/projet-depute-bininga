@@ -1363,14 +1363,14 @@ function renderNewsItems() {
   const list = document.getElementById("veille-list");
   if (!list) return;
   const filtered = _newsFilter === "all"
-    ? _newsItems.filter(a => (a.category || "bininga") !== "bininga")
+    ? _newsItems
     : _newsItems.filter(a => (a.category || "bininga") === _newsFilter);
 
   // Mise à jour compteurs onglets
   const bCount = _newsItems.filter(a => (a.category || "bininga") === "bininga").length;
-  const aCount = _newsItems.filter(a => (a.category || "bininga") !== "bininga").length;
+  const aCount = _newsItems.length;
   const bUnread = _newsItems.filter(a => (a.category || "bininga") === "bininga" && !a.read).length;
-  const aUnread = _newsItems.filter(a => (a.category || "bininga") !== "bininga" && !a.read).length;
+  const aUnread = _newsItems.filter(a => !a.read).length;
   const tbc = document.getElementById("tab-bininga-count");
   const tac = document.getElementById("tab-all-count");
   if (tbc) tbc.textContent = bUnread > 0 ? `${bUnread} non lu${bUnread>1?"s":""}` : bCount;
