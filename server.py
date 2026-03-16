@@ -661,6 +661,40 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "users": users})
             return
 
+        # ── /api/files — Navigateur de dossiers images ──
+        if path == "/api/files":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            req_dir = qs.get("dir", ["images"])[0]
+            # Sécurité : autoriser uniquement les sous-dossiers de images/
+            safe_dir = posixpath.normpath(req_dir).lstrip("/")
+            if not safe_dir.startswith("images"):
+                safe_dir = "images"
+            abs_dir = os.path.realpath(os.path.join(BASE_DIR, safe_dir))
+            if not abs_dir.startswith(BASE_DIR + os.sep) and abs_dir != BASE_DIR:
+                self._json({"ok": False, "message": "Chemin non autorisé"}, 403)
+                return
+            IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+            files = []
+            folders = []
+            try:
+                for entry in sorted(os.scandir(abs_dir), key=lambda e: (not e.is_dir(), e.name.lower())):
+                    if entry.is_dir():
+                        folders.append({"name": entry.name, "path": safe_dir + "/" + entry.name})
+                    elif entry.is_file():
+                        ext = os.path.splitext(entry.name)[1].lower()
+                        if ext in IMAGE_EXTS:
+                            rel = safe_dir + "/" + entry.name
+                            files.append({"name": entry.name, "path": rel})
+            except FileNotFoundError:
+                pass
+            self._json({"ok": True, "dir": safe_dir, "folders": folders, "files": files})
+            return
+
         # ── /api/news — Veille IA ──
         if path == "/api/news":
             token = self.headers.get("X-Admin-Token", "")

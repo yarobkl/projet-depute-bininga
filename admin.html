@@ -796,6 +796,34 @@
 
 <div id="toast"></div>
 
+<!-- ── NAVIGATEUR DE DOSSIERS D'IMAGES ── -->
+<div id="file-browser-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center">
+  <div style="background:#0e0e0e;border:1px solid rgba(200,16,46,.25);border-radius:16px;width:min(760px,95vw);max-height:85vh;display:flex;flex-direction:column;box-shadow:0 40px 120px rgba(0,0,0,.8)">
+    <!-- En-tête -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid rgba(255,255,255,.06)">
+      <div>
+        <div style="font-size:15px;font-weight:700">📁 Navigateur d'images</div>
+        <div id="fb-breadcrumb" style="font-size:11px;color:rgba(255,255,255,.3);margin-top:3px">images/</div>
+      </div>
+      <button onclick="closeBrowser()" style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:12px">✕ Fermer</button>
+    </div>
+    <!-- Barre d'outils -->
+    <div style="padding:12px 24px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;gap:10px">
+      <button id="fb-back-btn" onclick="fbGoBack()" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.5);border-radius:7px;padding:5px 12px;cursor:pointer;font-size:12px" disabled>← Retour</button>
+      <span style="font-size:11px;color:rgba(255,255,255,.25)" id="fb-path-label">images/</span>
+    </div>
+    <!-- Grille de fichiers/dossiers -->
+    <div id="fb-grid" style="flex:1;overflow-y:auto;padding:16px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:12px;min-height:200px">
+      <div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.25);padding:40px 0;font-size:13px">Chargement…</div>
+    </div>
+    <!-- Pied de page -->
+    <div style="padding:14px 24px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
+      <div id="fb-selected-preview" style="display:flex;align-items:center;gap:10px;font-size:12px;color:rgba(255,255,255,.4)">Aucune image sélectionnée</div>
+      <button id="fb-confirm-btn" onclick="confirmBrowserSelection()" disabled style="background:#C8102E;color:#fff;border:none;border-radius:8px;padding:9px 22px;cursor:pointer;font-weight:700;font-size:13px;opacity:.4">Sélectionner</button>
+    </div>
+  </div>
+</div>
+
 <script src="static/admin.js" defer></script>
 </body>
 </html>

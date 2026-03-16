@@ -358,7 +358,7 @@ function uploadImage(callback) {
 }
 
 function uploadForSlide(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
     siteData.gallery.slides[i].image = path;
     renderSlides();
@@ -366,7 +366,7 @@ function uploadForSlide(i) {
 }
 
 function uploadForGrid(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
     siteData.gallery.grid[i].image = path;
     renderGrid();
@@ -374,7 +374,7 @@ function uploadForGrid(i) {
 }
 
 function uploadFeaturedImage() {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
     if (!siteData.actus.featured) siteData.actus.featured = {};
     siteData.actus.featured.image = path;
@@ -462,7 +462,7 @@ function renderActuSlides() {
 }
 function updActuSlide(i, f, v) { if (siteData.actus.slides[i]) siteData.actus.slides[i][f] = v; }
 function uploadForActuSlide(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (siteData.actus.slides[i]) siteData.actus.slides[i].image = path;
     const el = document.getElementById("actu-slide-img-" + i);
     if (el) el.value = path;
@@ -516,7 +516,7 @@ function renderActuVedettes() {
 }
 function updActuVedette(i, f, v) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i][f] = v; }
 function uploadForActuVedette(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].image = path;
     const el = document.getElementById("actu-vedette-img-" + i);
     if (el) el.value = path;
@@ -1849,4 +1849,166 @@ function closeSidebar() {
   if (btn) { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
   if (ov)  ov.classList.remove("open");
   document.body.style.overflow = "";
+}
+
+// ── Navigateur de dossiers d'images ─────────────────────────────────────────
+let _fbCallback   = null;
+let _fbCurrentDir = "images";
+let _fbHistory    = [];
+let _fbSelected   = null;
+
+function openBrowser(callback) {
+  _fbCallback   = callback;
+  _fbHistory    = [];
+  _fbSelected   = null;
+  _fbCurrentDir = "images";
+  const ov = document.getElementById("file-browser-overlay");
+  ov.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  fbLoad("images");
+}
+
+function closeBrowser() {
+  const ov = document.getElementById("file-browser-overlay");
+  ov.style.display = "none";
+  document.body.style.overflow = "";
+  _fbCallback  = null;
+  _fbSelected  = null;
+}
+
+function fbGoBack() {
+  if (_fbHistory.length > 0) {
+    const prev = _fbHistory.pop();
+    _fbCurrentDir = prev;
+    fbLoad(prev, false);
+  }
+}
+
+async function fbLoad(dir, pushHistory = true) {
+  if (pushHistory && dir !== _fbCurrentDir) {
+    _fbHistory.push(_fbCurrentDir);
+  }
+  _fbCurrentDir = dir;
+  _fbSelected   = null;
+
+  const grid    = document.getElementById("fb-grid");
+  const bcEl    = document.getElementById("fb-breadcrumb");
+  const pathEl  = document.getElementById("fb-path-label");
+  const backBtn = document.getElementById("fb-back-btn");
+  const confBtn = document.getElementById("fb-confirm-btn");
+
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.25);padding:40px 0;font-size:13px">Chargement…</div>';
+  if (bcEl)   bcEl.textContent   = dir + "/";
+  if (pathEl) pathEl.textContent = dir + "/";
+  if (backBtn) backBtn.disabled = _fbHistory.length === 0;
+  if (confBtn) { confBtn.disabled = true; confBtn.style.opacity = ".4"; }
+  fbSetPreview(null);
+
+  try {
+    const res  = await fetch("/api/files?dir=" + encodeURIComponent(dir), {
+      headers: { "X-Admin-Token": SESSION_TOKEN }
+    });
+    const data = await res.json();
+    if (!data.ok) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ff7070;padding:40px 0;font-size:13px">Erreur : ' + esc(data.message||"inconnu") + '</div>'; return; }
+
+    const items = [];
+
+    // Dossiers
+    (data.folders || []).forEach(f => {
+      items.push(`
+        <div onclick="fbLoad('${esc(f.path)}')"
+             style="cursor:pointer;background:#161616;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 8px;text-align:center;transition:all .2s"
+             onmouseover="this.style.borderColor='rgba(200,16,46,.4)';this.style.background='#1e1e1e'"
+             onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.background='#161616'">
+          <div style="font-size:28px;margin-bottom:8px">📁</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.7);word-break:break-word;line-height:1.3">${esc(f.name)}</div>
+        </div>`);
+    });
+
+    // Fichiers image
+    (data.files || []).forEach(f => {
+      items.push(`
+        <div onclick="fbSelectFile('${esc(f.path)}', this)"
+             data-path="${esc(f.path)}"
+             style="cursor:pointer;background:#161616;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:6px;transition:all .2s;position:relative"
+             onmouseover="if(!this.classList.contains('fb-sel'))this.style.borderColor='rgba(200,16,46,.3)'"
+             onmouseout="if(!this.classList.contains('fb-sel'))this.style.borderColor='rgba(255,255,255,.07)'">
+          <img src="${esc(f.path)}" alt="${esc(f.name)}"
+               style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;aspect-ratio:1;background:#1e1e1e;border-radius:6px;align-items:center;justify-content:center;font-size:22px">🖼️</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:5px;word-break:break-word;line-height:1.3;padding:0 2px">${esc(f.name)}</div>
+        </div>`);
+    });
+
+    if (items.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.2);padding:40px 0;font-size:13px">Dossier vide</div>';
+    } else {
+      grid.innerHTML = items.join("");
+    }
+  } catch(e) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ff7070;padding:40px 0;font-size:13px">Serveur non disponible</div>';
+  }
+}
+
+function fbSelectFile(path, el) {
+  // Désélectionner l'ancien
+  document.querySelectorAll("#fb-grid .fb-sel").forEach(e => {
+    e.classList.remove("fb-sel");
+    e.style.borderColor = "rgba(255,255,255,.07)";
+    e.style.background  = "#161616";
+  });
+  // Sélectionner le nouveau
+  el.classList.add("fb-sel");
+  el.style.borderColor = "#C8102E";
+  el.style.background  = "rgba(200,16,46,.08)";
+  _fbSelected = path;
+  fbSetPreview(path);
+  const confBtn = document.getElementById("fb-confirm-btn");
+  if (confBtn) { confBtn.disabled = false; confBtn.style.opacity = "1"; }
+}
+
+function fbSetPreview(path) {
+  const el = document.getElementById("fb-selected-preview");
+  if (!el) return;
+  if (!path) { el.innerHTML = 'Aucune image sélectionnée'; return; }
+  el.innerHTML = `<img src="${esc(path)}" style="height:36px;width:36px;object-fit:cover;border-radius:5px;border:1px solid rgba(255,255,255,.1)"><span style="color:rgba(255,255,255,.6)">${esc(path)}</span>`;
+}
+
+function confirmBrowserSelection() {
+  if (!_fbSelected || !_fbCallback) return;
+  const cb = _fbCallback;
+  const sel = _fbSelected;
+  closeBrowser();
+  cb(sel);
+}
+
+// Surcharge de uploadImage pour proposer aussi la navigation
+function pickOrUploadImage(callback) {
+  const modal = document.createElement("div");
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2500;display:flex;align-items:center;justify-content:center";
+  modal.innerHTML = `
+    <div style="background:#0e0e0e;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:32px;text-align:center;width:300px;box-shadow:0 30px 80px rgba(0,0,0,.8)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Choisir une image</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:24px">Parcourez les dossiers ou uploadez un nouveau fichier</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button id="pick-browse" style="padding:11px 20px;background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📁 Parcourir les dossiers</button>
+        <button id="pick-upload" style="padding:11px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:13px">⬆️ Uploader un fichier</button>
+        <button id="pick-cancel" style="padding:9px 20px;background:transparent;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:12px">Annuler</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  modal.querySelector("#pick-browse").onclick = () => {
+    document.body.removeChild(modal);
+    openBrowser(callback);
+  };
+  modal.querySelector("#pick-upload").onclick = () => {
+    document.body.removeChild(modal);
+    uploadImage(callback);
+  };
+  modal.querySelector("#pick-cancel").onclick = () => {
+    document.body.removeChild(modal);
+  };
+  modal.onclick = e => { if (e.target === modal) { document.body.removeChild(modal); } };
 }
