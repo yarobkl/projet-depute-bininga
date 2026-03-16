@@ -1302,6 +1302,24 @@ async function runVeille(preset) {
   }
 }
 
+async function restartMonitor() {
+  try {
+    const res  = await fetch("/api/monitor-restart", {
+      method: "POST",
+      headers: { "X-Admin-Token": SESSION_TOKEN },
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ YARO IA redémarré avec succès");
+      setTimeout(loadNews, 2000);
+    } else {
+      alert("❌ Erreur : " + data.message);
+    }
+  } catch(e) {
+    alert("❌ Erreur réseau lors du redémarrage");
+  }
+}
+
 async function toggleMonitorLog() {
   const box = document.getElementById("monitor-log-box");
   if (!box) return;

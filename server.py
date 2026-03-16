@@ -1182,6 +1182,33 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": str(e)}, 500)
             return
 
+        # ── /api/monitor-restart ── redémarrage forcé de YARO IA ──
+        if path == "/api/monitor-restart":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                base     = os.path.dirname(os.path.abspath(__file__))
+                pid_file = os.path.join(base, "monitor.pid")
+                # Tuer le process existant s'il tourne encore
+                if os.path.isfile(pid_file):
+                    try:
+                        pid = int(open(pid_file).read().strip())
+                        os.kill(pid, 15)   # SIGTERM
+                        time.sleep(1)
+                    except Exception:
+                        pass
+                    try:
+                        os.remove(pid_file)
+                    except Exception:
+                        pass
+                start_monitor()
+                audit_log("SAVE", ip, "YARO IA redémarré manuellement")
+                self._json({"ok": True, "message": "YARO IA redémarré"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         self._error(404, "Route non trouvée")
 
     # ── Helpers ────────────────────────────────────────────
@@ -1319,15 +1346,23 @@ def start_monitor():
         stderr=log_fd,
         start_new_session=True,
     )
+    # Écrire le PID immédiatement (monitor.py l'écrit aussi, mais avec un léger délai)
+    try:
+        with open(pid_file, "w") as pf:
+            pf.write(str(proc.pid))
+    except Exception as e:
+        print(f"[BININGA] ⚠️  Impossible d'écrire monitor.pid : {e}")
     print(f"[BININGA] 🤖 YARO IA lancé (PID {proc.pid}) — logs : {log_path}")
 
 
 def _monitor_watchdog():
-    """Thread watchdog : vérifie toutes les 5 min si YARO IA tourne, le relance si mort."""
+    """Thread watchdog : vérifie régulièrement si YARO IA tourne, le relance si mort."""
     import threading
     def _check():
+        first_check = True
         while True:
-            time.sleep(300)   # 5 minutes
+            time.sleep(30 if first_check else 120)   # 30s au démarrage, puis toutes les 2 min
+            first_check = False
             try:
                 base     = os.path.dirname(os.path.abspath(__file__))
                 pid_file = os.path.join(base, "monitor.pid")
