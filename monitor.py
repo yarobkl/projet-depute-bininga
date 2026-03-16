@@ -217,6 +217,19 @@ def _fetch(url: str, timeout: int = 15) -> bytes | None:
     return None
 
 
+def gdelt_url(query: str, days: int = 7) -> str:
+    """GDELT Article Search API — accès public, pas bloqué sur cloud."""
+    params = urlencode({
+        "query":      query,
+        "mode":       "artlist",
+        "format":     "rss",
+        "maxrecords": "25",
+        "timespan":   f"{days}d",
+        "sourcelang": "fr",
+    })
+    return f"https://api.gdeltproject.org/api/v2/doc/doc?{params}"
+
+
 def google_news_url(query: str) -> str:
     params = urlencode({"q": query, "hl": "fr", "gl": "CG", "ceid": "CG:fr"})
     return f"https://news.google.com/rss/search?{params}"
@@ -265,20 +278,28 @@ def parse_rss(xml_bytes: bytes, source_label: str) -> list[dict]:
 
 
 def fetch_google_news(query: str) -> list[dict]:
+    # 1. GDELT — API ouverte, pas bloquée sur Railway/cloud
+    url_gdelt = gdelt_url(query)
+    data_gdelt = _fetch(url_gdelt)
+    if data_gdelt:
+        results = parse_rss(data_gdelt, f"GDELT — {query}")
+        if results:
+            return results
+
+    # 2. Fallback : Google News
     url = google_news_url(query)
     data = _fetch(url)
     if data:
-        label = f"Google News — {query}"
-        results = parse_rss(data, label)
+        results = parse_rss(data, f"Google News — {query}")
         if results:
             return results
-    # Fallback : Bing News si Google News échoue
+
+    # 3. Fallback : Bing News
     url2 = bing_news_url(query)
     data2 = _fetch(url2)
     if not data2:
         return []
-    label2 = f"Bing News — {query}"
-    return parse_rss(data2, label2)
+    return parse_rss(data2, f"Bing News — {query}")
 
 
 def fetch_nitter(query: str) -> list[dict]:
@@ -482,7 +503,10 @@ def main():
 
     data = load_news()
     data.setdefault("items", [])
-    data.setdefault("stats", {"total_found": 0, "runs": 0})
+    if not isinstance(data.get("stats"), dict) or "runs" not in data.get("stats", {}):
+        data["stats"] = {"total_found": 0, "runs": 0}
+    data["stats"].setdefault("runs", 0)
+    data["stats"].setdefault("total_found", 0)
 
     while running:
         try:
