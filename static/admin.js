@@ -220,6 +220,15 @@ function init() {
     .then(r => r.json())
     .then(d => { if(d.ok) setBadge("badge-veille", (d.items||[]).filter(a=>!a.read).length); })
     .catch(()=>{});
+  // Auto-sauvegarde : écoute tous les inputs/textareas/selects du panneau admin
+  document.getElementById("app").addEventListener("input", e => {
+    const tag = e.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") scheduleAutoSave();
+  });
+  document.getElementById("app").addEventListener("change", e => {
+    const tag = e.target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") scheduleAutoSave();
+  });
 }
 
 // ── Synchronisation des messages depuis le serveur ──────────────────────
@@ -709,18 +718,45 @@ function renderEngCards() {
     </div>`).join("");
 }
 
-function saveData() {
+// ── Auto-sauvegarde ───────────────────────────────────────────────────
+let _autoSaveTimer = null;
+let _autoSaving = false;
+
+function scheduleAutoSave() {
+  clearTimeout(_autoSaveTimer);
+  const ind = document.getElementById("autosave-indicator");
+  if (ind) { ind.textContent = "Modification en cours…"; ind.className = "autosave-pending"; }
+  _autoSaveTimer = setTimeout(() => saveData(true), 1500);
+}
+
+function saveData(silent = false) {
+  if (_autoSaving) return;
+  _autoSaving = true;
   collectForm();
   collectActus();
   collectProgramme();
+  const ind = document.getElementById("autosave-indicator");
+  if (ind) { ind.textContent = "Sauvegarde…"; ind.className = "autosave-saving"; }
   fetch("/api/save", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(siteData)
   })
   .then(r => r.json())
-  .then(res => showToast(res.ok ? "Contenu sauvegardé !" : res.message, !res.ok))
-  .catch(() => showToast("Serveur non disponible (mode GitHub Pages)", true));
+  .then(res => {
+    if (res.ok) {
+      if (!silent) showToast("Contenu sauvegardé !");
+      if (ind) { ind.textContent = "Sauvegardé ✓"; ind.className = "autosave-ok"; setTimeout(() => { if(ind) ind.textContent = ""; ind.className = ""; }, 3000); }
+    } else {
+      showToast(res.message, true);
+      if (ind) { ind.textContent = "Erreur sauvegarde"; ind.className = "autosave-err"; }
+    }
+  })
+  .catch(() => {
+    showToast("Serveur non disponible (mode GitHub Pages)", true);
+    if (ind) { ind.textContent = "Hors ligne"; ind.className = "autosave-err"; }
+  })
+  .finally(() => { _autoSaving = false; });
 }
 
 // ══════════════════════════════════════════════════════════════════════════

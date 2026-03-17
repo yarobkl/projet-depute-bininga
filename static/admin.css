@@ -53,6 +53,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .topbar{background:rgba(17,17,17,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:0 28px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
 .topbar-title{font-size:15px;font-weight:700}
 .topbar-info{font-size:11px;color:rgba(255,255,255,.25)}
+#autosave-indicator{font-size:11px;padding:3px 10px;border-radius:20px;transition:all .3s;white-space:nowrap}
+#autosave-indicator.autosave-pending{color:rgba(255,200,0,.7);background:rgba(255,200,0,.08)}
+#autosave-indicator.autosave-saving{color:rgba(100,160,255,.8);background:rgba(100,160,255,.08)}
+#autosave-indicator.autosave-ok{color:rgba(80,220,130,.9);background:rgba(80,220,130,.1)}
+#autosave-indicator.autosave-err{color:rgba(255,80,80,.9);background:rgba(255,80,80,.1)}
 .content{padding:28px}
 
 /* ── PANELS ── */
