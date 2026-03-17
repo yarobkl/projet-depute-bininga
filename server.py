@@ -1471,10 +1471,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     key = (c.get("email",""), c.get("nom",""), c.get("created_at","")[:10])
                     existing_keys.add(key)
                 TYPE_MAP = {
-                    "bininga_audiences": "audience",
-                    "reclamation": "reclamation",
-                    "contact": "contact",
-                    "signalement": "signalement",
+                    "bininga_audiences":  "audience",
+                    "bininga_newsletter": "newsletter",
+                    "reclamation":        "reclamation",
+                    "contact":            "contact",
+                    "signalement":        "signalement",
                 }
                 imported = 0
                 for raw in all_contacts:
@@ -1482,9 +1483,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     key     = (raw.get("email",""), raw.get("nom",""), ts_raw[:10])
                     if key in existing_keys:
                         continue
-                    src_type = TYPE_MAP.get(raw.get("type",""), raw.get("type","contact"))
+                    raw_type = raw.get("type", "contact")
+                    src_type = TYPE_MAP.get(raw_type, raw_type)
+                    is_nl    = raw_type == "bininga_newsletter"
                     contact  = {
-                        "id":         secrets.token_hex(8),
+                        "id":         raw.get("_id", secrets.token_hex(8)),
                         "created_at": ts_raw,
                         "expires_at": exp_str,
                         "source":     src_type,
@@ -1495,9 +1498,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         "sujet":      str(raw.get("sujet",    raw.get("objet", "")))[:500],
                         "message":    str(raw.get("message",  raw.get("demande",
                                         raw.get("raison", ""))))[:2000],
-                        "tags":       [src_type],
+                        "tags":       ["newsletter"] if is_nl else [src_type],
                         "statut":     "nouveau",
-                        "newsletter": bool(raw.get("email", "")),
+                        "newsletter": is_nl,
                         "notes":      [],
                         "historique": [{"ts": now_str, "action": "importe",
                                         "detail": f"Importé depuis contacts.json par {who}"}],

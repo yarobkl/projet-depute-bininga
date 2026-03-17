@@ -2062,6 +2062,7 @@ const CRM_SOURCE_BADGE = {
   contact:     `<span class="crm-tag crm-tag-ct">✉️ Contact</span>`,
   reclamation: `<span class="crm-tag crm-tag-recl">⚠️ Réclamation</span>`,
   signalement: `<span class="crm-tag crm-tag-sig">🚩 Signalement</span>`,
+  newsletter:  `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>`,
   manuel:      `<span class="crm-tag crm-tag-man">✏️ Manuel</span>`,
 };
 
