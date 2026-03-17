@@ -427,6 +427,7 @@ function delSlide(i) {
   if (!confirm("Supprimer cette slide ?")) return;
   siteData.gallery.slides.splice(i, 1);
   renderSlides();
+  saveData(true);
   showToast("Slide supprimée");
 }
 function addSlide() {
@@ -451,6 +452,7 @@ function delGrid(i) {
   if (!confirm("Supprimer cette photo ?")) return;
   siteData.gallery.grid.splice(i, 1);
   renderGrid();
+  saveData(true);
   showToast("Photo supprimée");
 }
 function addGridPhoto() {
@@ -509,7 +511,7 @@ function addActuSlide() {
 }
 function delActuSlide(i) {
   if (!confirm("Supprimer cette slide ?")) return;
-  siteData.actus.slides.splice(i, 1); renderActuSlides(); showToast("Slide supprimée");
+  siteData.actus.slides.splice(i, 1); renderActuSlides(); saveData(true); showToast("Slide supprimée");
 }
 
 // ── VEDETTES ──────────────────────────────────────────────────────────
@@ -564,7 +566,7 @@ function addActuVedette() {
 }
 function delActuVedette(i) {
   if (!confirm("Supprimer cet article vedette ?")) return;
-  siteData.actus.vedettes.splice(i, 1); renderActuVedettes(); showToast("Article supprimé");
+  siteData.actus.vedettes.splice(i, 1); renderActuVedettes(); saveData(true); showToast("Article supprimé");
 }
 
 // ── CARDS ─────────────────────────────────────────────────────────────
@@ -603,7 +605,7 @@ function addActuCard() {
 }
 function delActuCard(i) {
   if (!confirm("Supprimer cette carte ?")) return;
-  siteData.actus.cards.splice(i, 1); renderActuCards(); showToast("Carte supprimée");
+  siteData.actus.cards.splice(i, 1); renderActuCards(); saveData(true); showToast("Carte supprimée");
 }
 
 function collectActus() {
@@ -1749,6 +1751,7 @@ function delParcoursItem(i) {
   if (!confirm("Supprimer cette étape du parcours ?")) return;
   siteData.parcours.splice(i, 1);
   renderParcours();
+  saveData(true);
   showToast("Étape supprimée");
 }
 function moveParcours(i, dir) {
@@ -1829,6 +1832,7 @@ function delAxe(i) {
   if (!confirm("Supprimer cet axe ?")) return;
   siteData.programme.axes.splice(i, 1);
   renderAxes();
+  saveData(true);
   showToast("Axe supprimé");
 }
 function moveAxe(i, dir) {
