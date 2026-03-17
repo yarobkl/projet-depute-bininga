@@ -119,10 +119,22 @@ function toggleUserForm(show) {
 }
 
 function canDeleteUser(u) {
-  // Impossible de supprimer : le ministre, soi-même, ou un autre admin si on n'est pas l'admin principal
+  // Impossible de supprimer : le ministre, soi-même, ou l'admin principal
   if (u.role === "ministre") return false;
   if (u.username === SESSION_USERNAME) return false;
-  if (u.role === "admin" && !SESSION_IS_MAIN_ADMIN) return false;
+  // Un admin ne peut supprimer un autre admin que s'il l'a créé (ou s'il est l'admin principal)
+  if (u.role === "admin") {
+    if (SESSION_IS_MAIN_ADMIN) return true;
+    return u.created_by === SESSION_USERNAME;
+  }
+  return true;
+}
+
+function canEditUser(u) {
+  // Impossible de modifier un admin si on ne l'a pas créé (sauf l'admin principal)
+  if (u.role === "admin" && !SESSION_IS_MAIN_ADMIN) {
+    return u.created_by === SESSION_USERNAME;
+  }
   return true;
 }
 
@@ -147,7 +159,7 @@ async function loadUsers() {
           <div class="user-meta">${esc(u.username)}</div>
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
-        <button class="sbtn sbtn-progress btn-edit-user" style="margin-left:8px">✏️ Modifier</button>
+        ${canEditUser(u) ? `<button class="sbtn sbtn-progress btn-edit-user" style="margin-left:8px">✏️ Modifier</button>` : ''}
         ${canDeleteUser(u) ? `<button class="btn-danger btn-delete-user" style="padding:5px 10px">🗑</button>` : ''}
       </div>
     `).join("");

@@ -692,7 +692,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             # Le ministre ne voit pas le compte protégé (Rodrin)
             if session and session["role"] == "ministre":
                 all_users = [u for u in all_users if u["username"] != PROTECTED_USER]
-            users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
+            users = [{"username": u["username"], "role": u["role"], "nom": u["nom"],
+                      "created_by": u.get("created_by", "")}
                      for u in all_users]
             self._json({"ok": True, "users": users})
             return
@@ -1153,10 +1154,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 users    = load_users()
                 existing = next((u for u in users if u["username"] == uname), None)
-                # Seul l'admin principal peut modifier un compte administrateur existant
+                # Seul l'admin principal (ou le créateur) peut modifier un compte administrateur existant
                 if existing and existing["role"] == "admin" and session and session["username"] != ADMIN_USER:
-                    self._json({"ok": False, "message": "Seul l'admin principal peut modifier un compte administrateur"}, 403)
-                    return
+                    created_by = existing.get("created_by", "")
+                    if created_by != session["username"]:
+                        self._json({"ok": False, "message": "Vous ne pouvez modifier que les comptes admin que vous avez créés"}, 403)
+                        return
                 if existing:
                     existing["nom"]  = nom or existing["nom"]
                     existing["role"] = role
@@ -1166,7 +1169,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     if not pwd:
                         self._json({"ok": False, "message": "Mot de passe requis"}, 400)
                         return
-                    users.append({"username": uname, "password_hash": _hash_new(pwd), "role": role, "nom": nom or uname})
+                    users.append({"username": uname, "password_hash": _hash_new(pwd), "role": role, "nom": nom or uname,
+                                  "created_by": session["username"] if session else ""})
                 save_users(users)
                 action = "Modification" if existing else "Création"
                 audit_log("USER_UPSERT", ip, f"{action} utilisateur : {uname} ({role})")
@@ -1193,9 +1197,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if target_user and target_user["role"] == "ministre":
                     self._json({"ok": False, "message": "Le compte ministre ne peut pas être supprimé"}, 403)
                     return
-                # Seul l'admin principal peut supprimer un compte administrateur
+                # Seul l'admin principal (ou le créateur) peut supprimer un compte administrateur
                 if target_user and target_user["role"] == "admin" and session["username"] != ADMIN_USER:
-                    self._json({"ok": False, "message": "Seul l'admin principal peut supprimer un compte administrateur"}, 403)
+                    created_by = target_user.get("created_by", "")
+                    if created_by != session["username"]:
+                        self._json({"ok": False, "message": "Vous ne pouvez supprimer que les comptes admin que vous avez créés"}, 403)
+                        return
+                # Personne ne peut supprimer l'admin principal lui-même
+                if uname == ADMIN_USER:
+                    self._json({"ok": False, "message": "Le compte admin principal ne peut pas être supprimé"}, 403)
                     return
                 users = [u for u in all_users if u["username"] != uname]
                 save_users(users)
