@@ -2037,13 +2037,9 @@ async function loadCrm() {
     // KPI
     const total = _crmContacts.length;
     const nlCnt = _crmContacts.filter(c => c.newsletter && c.email).length;
-    const nCnt  = _crmContacts.filter(c => c.statut === "nouveau").length;
-    const dCnt  = _crmContacts.filter(c => c.statut === "traite").length;
     setText("crm-kpi-total", total);
     setText("crm-kpi-nl",    nlCnt);
-    setText("crm-kpi-new",   nCnt);
-    setText("crm-kpi-done",  dCnt);
-    setBadge("badge-crm", nCnt);
+    setBadge("badge-crm", total);
     renderCrmList();
     renderNlHistory();
   } catch(e) {
@@ -2061,12 +2057,6 @@ function crmTab(tab, btn) {
 }
 
 // ── Rendu de la liste de contacts ────────────────────────────────────────
-const CRM_STATUT_BADGE = {
-  nouveau:  `<span class="badge badge-wait">🆕 Nouveau</span>`,
-  en_cours: `<span class="badge badge-progress">🔄 En cours</span>`,
-  traite:   `<span class="badge badge-done">✅ Traité</span>`,
-  archive:  `<span class="badge badge-read">🗃️ Archivé</span>`,
-};
 const CRM_SOURCE_BADGE = {
   audience:    `<span class="crm-tag crm-tag-aud">📋 Audience</span>`,
   contact:     `<span class="crm-tag crm-tag-ct">✉️ Contact</span>`,
@@ -2079,12 +2069,10 @@ function renderCrmList() {
   const el     = document.getElementById("crm-list");
   if (!el) return;
   const q      = (document.getElementById("crm-search")?.value || "").toLowerCase();
-  const fStat  = document.getElementById("crm-filter-statut")?.value  || "";
   const fSrc   = document.getElementById("crm-filter-source")?.value  || "";
   const fNl    = document.getElementById("crm-filter-nl")?.value      || "";
 
   let list = _crmContacts.filter(c => {
-    if (fStat && c.statut  !== fStat) return false;
     if (fSrc  && c.source  !== fSrc)  return false;
     if (fNl === "oui" && !(c.newsletter && c.email)) return false;
     if (fNl === "non" && (c.newsletter && c.email))  return false;
@@ -2101,7 +2089,6 @@ function renderCrmList() {
   }
 
   el.innerHTML = list.map(c => {
-    const badge   = CRM_STATUT_BADGE[c.statut] || CRM_STATUT_BADGE.nouveau;
     const srcTag  = CRM_SOURCE_BADGE[c.source]  || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
     const nlBadge = c.newsletter && c.email
       ? `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>` : "";
@@ -2118,7 +2105,7 @@ function renderCrmList() {
             <span title="Expiration">🗓️ jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
           </div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${badge}${srcTag}${nlBadge}${tags}</div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${srcTag}${nlBadge}${tags}</div>
       </div>
       ${c.sujet ? `<div class="crm-card-sujet">${esc(c.sujet)}</div>` : ""}
       <div class="crm-card-footer">
@@ -2170,7 +2157,6 @@ function crmAddModal() {
     const el = document.getElementById(id); if (el) el.value = "";
   });
   document.getElementById("crm-f-source").value  = "manuel";
-  document.getElementById("crm-f-statut").value  = "nouveau";
   document.getElementById("crm-f-nl").checked    = false;
   document.getElementById("crm-modal").style.display = "flex";
 }
@@ -2188,7 +2174,6 @@ function crmEditModal(id) {
   document.getElementById("crm-f-sujet").value   = c.sujet    || "";
   document.getElementById("crm-f-message").value = c.message  || "";
   document.getElementById("crm-f-source").value  = c.source   || "manuel";
-  document.getElementById("crm-f-statut").value  = c.statut   || "nouveau";
   document.getElementById("crm-f-tags").value    = (c.tags || []).join(", ");
   document.getElementById("crm-f-nl").checked    = !!c.newsletter;
   document.getElementById("crm-modal").style.display = "flex";
@@ -2211,7 +2196,6 @@ async function crmSave() {
     sujet:     document.getElementById("crm-f-sujet").value.trim(),
     message:   document.getElementById("crm-f-message").value.trim(),
     source:    document.getElementById("crm-f-source").value,
-    statut:    document.getElementById("crm-f-statut").value,
     tags:      tagsRaw.split(",").map(t=>t.trim()).filter(Boolean),
     newsletter: document.getElementById("crm-f-nl").checked,
   };
@@ -2239,7 +2223,6 @@ function crmDetail(id) {
     `Fiche : ${c.prenom || ""} ${c.nom || ""}`.trim();
 
   const srcTag  = CRM_SOURCE_BADGE[c.source] || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
-  const badge   = CRM_STATUT_BADGE[c.statut] || CRM_STATUT_BADGE.nouveau;
   const notesCnt = (c.notes || []).length;
 
   // Notes
@@ -2258,7 +2241,7 @@ function crmDetail(id) {
 
   body.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
-      ${badge} ${srcTag}
+      ${srcTag}
       ${c.newsletter && c.email ? '<span class="crm-tag crm-tag-nl">📧 Newsletter</span>' : ""}
       ${(c.tags||[]).map(t=>`<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("")}
     </div>
@@ -2268,15 +2251,6 @@ function crmDetail(id) {
       <div class="crm-detail-field"><div class="crm-detail-label">Téléphone</div>${c.telephone ? `<a href="tel:${esc(c.telephone)}" style="color:#3498db">${esc(c.telephone)}</a>` : "—"}</div>
       <div class="crm-detail-field"><div class="crm-detail-label">Créé le</div>${esc((c.created_at||"").slice(0,10))}</div>
       <div class="crm-detail-field"><div class="crm-detail-label">Expire le</div>${esc((c.expires_at||"").slice(0,10))}</div>
-      <div class="crm-detail-field"><div class="crm-detail-label">Statut</div>
-        <select onchange="crmQuickStatus('${esc(c.id)}',this.value)"
-          style="background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;font-family:inherit;outline:none">
-          <option value="nouveau"  ${c.statut==="nouveau" ?"selected":""}>Nouveau</option>
-          <option value="en_cours" ${c.statut==="en_cours"?"selected":""}>En cours</option>
-          <option value="traite"   ${c.statut==="traite"  ?"selected":""}>Traité</option>
-          <option value="archive"  ${c.statut==="archive" ?"selected":""}>Archivé</option>
-        </select>
-      </div>
     </div>
     ${c.sujet ? `<div class="crm-detail-field" style="margin-bottom:12px"><div class="crm-detail-label">Sujet</div>${esc(c.sujet)}</div>` : ""}
     ${c.message ? `<div class="crm-detail-field" style="margin-bottom:18px"><div class="crm-detail-label">Message</div><div style="white-space:pre-wrap;font-size:13px;color:rgba(255,255,255,.7)">${esc(c.message)}</div></div>` : ""}
@@ -2309,19 +2283,6 @@ function closeCrmDetail() {
   document.getElementById("crm-detail-modal").style.display = "none";
 }
 
-// ── Changement rapide de statut depuis la fiche ──────────────────────────
-async function crmQuickStatus(id, statut) {
-  try {
-    await fetch("/api/crm/upsert", {
-      method: "POST", headers: authHeaders(),
-      body: JSON.stringify({ id, statut })
-    });
-    const c = _crmContacts.find(x => x.id === id);
-    if (c) c.statut = statut;
-    renderCrmList();
-    showToast("Statut mis à jour");
-  } catch { showToast("Erreur", true); }
-}
 
 // ── Ajouter une note depuis la fiche ────────────────────────────────────
 async function crmAddNote(id) {
