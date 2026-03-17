@@ -928,6 +928,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
                     self._json({"ok": True, "token": token, "csrf_token": csrf_token,
                                 "role": user["role"], "nom": user.get("nom", username),
+                                "username": user["username"],
                                 "is_main_admin": username == ADMIN_USER})
                 else:
                     _record_failed_login(ip)
@@ -1184,12 +1185,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if uname == session["username"]:
                     self._json({"ok": False, "message": "Impossible de supprimer son propre compte"}, 400)
                     return
-                # Le ministre ne peut pas supprimer le compte protégé
-                if session and session["role"] == "ministre" and uname == PROTECTED_USER:
-                    self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être supprimé"}, 403)
-                    return
                 all_users = load_users()
                 target_user = next((u for u in all_users if u["username"] == uname), None)
+                # Le compte ministre ne peut jamais être supprimé
+                if target_user and target_user["role"] == "ministre":
+                    self._json({"ok": False, "message": "Le compte ministre ne peut pas être supprimé"}, 403)
+                    return
                 # Seul l'admin principal peut supprimer un compte administrateur
                 if target_user and target_user["role"] == "admin" and session["username"] != ADMIN_USER:
                     self._json({"ok": False, "message": "Seul l'admin principal peut supprimer un compte administrateur"}, 403)
