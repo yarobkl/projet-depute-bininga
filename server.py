@@ -1756,23 +1756,15 @@ def start_monitor():
         stderr=log_fd,
         start_new_session=True,
     )
-    # Écrire le PID immédiatement (monitor.py l'écrit aussi, mais avec un léger délai)
-    try:
-        with open(pid_file, "w") as pf:
-            pf.write(str(proc.pid))
-    except Exception as e:
-        print(f"[BININGA] ⚠️  Impossible d'écrire monitor.pid : {e}")
     print(f"[BININGA] 🤖 YARO IA lancé (PID {proc.pid}) — logs : {log_path}")
 
 
 def _monitor_watchdog():
-    """Thread watchdog : vérifie régulièrement si YARO IA tourne, le relance si mort."""
+    """Thread watchdog : vérifie toutes les 5 min si YARO IA tourne, le relance si mort."""
     import threading
     def _check():
-        first_check = True
         while True:
-            time.sleep(30 if first_check else 120)   # 30s au démarrage, puis toutes les 2 min
-            first_check = False
+            time.sleep(300)   # 5 minutes
             try:
                 base     = os.path.dirname(os.path.abspath(__file__))
                 pid_file = os.path.join(base, "monitor.pid")
