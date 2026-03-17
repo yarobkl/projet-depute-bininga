@@ -3,10 +3,11 @@
 //  Les identifiants ne sont jamais stockés en clair dans le code.
 // ══════════════════════════════════════════════════════════════════════════
 // Session — jamais codée en dur ici, jamais dans sessionStorage
-let SESSION_TOKEN = "";
-let SESSION_CSRF  = "";
-let SESSION_ROLE  = "";
-let SESSION_NOM   = "";
+let SESSION_TOKEN        = "";
+let SESSION_CSRF         = "";
+let SESSION_ROLE         = "";
+let SESSION_NOM          = "";
+let SESSION_IS_MAIN_ADMIN = false;
 
 // Helper : headers authentifiés avec CSRF
 function authHeaders(extra) {
@@ -31,11 +32,12 @@ async function doLogin() {
     });
     const data = await res.json();
     if (data.ok) {
-      SESSION_TOKEN = data.token;
-      SESSION_CSRF  = data.csrf_token || "";
-      SESSION_ROLE  = data.role;
-      SESSION_NOM   = data.nom;
-      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
+      SESSION_TOKEN         = data.token;
+      SESSION_CSRF          = data.csrf_token || "";
+      SESSION_ROLE          = data.role;
+      SESSION_NOM           = data.nom;
+      SESSION_IS_MAIN_ADMIN = data.is_main_admin || false;
+      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, is_main_admin: data.is_main_admin || false }));
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
@@ -61,9 +63,10 @@ async function logout() {
   try {
     await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
   } catch (_) {}
-  SESSION_TOKEN = "";
-  SESSION_ROLE  = "";
-  SESSION_NOM   = "";
+  SESSION_TOKEN         = "";
+  SESSION_ROLE          = "";
+  SESSION_NOM           = "";
+  SESSION_IS_MAIN_ADMIN = false;
   localStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
@@ -135,7 +138,7 @@ async function loadUsers() {
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
         <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(u.username)},${JSON.stringify(u.nom)},${JSON.stringify(u.role)})">✏️ Modifier</button>
-        <button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>
+        ${(u.role !== "admin" || SESSION_IS_MAIN_ADMIN) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>` : ''}
       </div>
     `).join("");
   } catch {
