@@ -927,7 +927,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
                     self._json({"ok": True, "token": token, "csrf_token": csrf_token,
-                                "role": user["role"], "nom": user.get("nom", username)})
+                                "role": user["role"], "nom": user.get("nom", username),
+                                "is_main_admin": username == ADMIN_USER})
                 else:
                     _record_failed_login(ip)
                     record_attack(ip, "LOGIN_FAIL", 2, f"Échec login user: {username}")
@@ -1149,6 +1150,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 users    = load_users()
                 existing = next((u for u in users if u["username"] == uname), None)
+                # Seul l'admin principal peut modifier un compte administrateur existant
+                if existing and existing["role"] == "admin" and session and session["username"] != ADMIN_USER:
+                    self._json({"ok": False, "message": "Seul l'admin principal peut modifier un compte administrateur"}, 403)
+                    return
                 if existing:
                     existing["nom"]  = nom or existing["nom"]
                     existing["role"] = role
@@ -1183,7 +1188,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if session and session["role"] == "ministre" and uname == PROTECTED_USER:
                     self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être supprimé"}, 403)
                     return
-                users = [u for u in load_users() if u["username"] != uname]
+                all_users = load_users()
+                target_user = next((u for u in all_users if u["username"] == uname), None)
+                # Seul l'admin principal peut supprimer un compte administrateur
+                if target_user and target_user["role"] == "admin" and session["username"] != ADMIN_USER:
+                    self._json({"ok": False, "message": "Seul l'admin principal peut supprimer un compte administrateur"}, 403)
+                    return
+                users = [u for u in all_users if u["username"] != uname]
                 save_users(users)
                 audit_log("USER_DELETE", ip, f"Suppression utilisateur : {uname}")
                 self._json({"ok": True})
