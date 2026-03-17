@@ -910,7 +910,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
 
     // Bouton Répondre (uniquement si email disponible)
     const replyBtn = m.email
-      ? `<a class="sbtn sbtn-progress" href="mailto:${encodeURIComponent(m.email)}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">📧 Répondre</a>`
+      ? `<a class="sbtn sbtn-progress" href="mailto:${m.email}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">📧 Répondre</a>`
       : (m.telephone ? `<span class="sbtn" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:default">📞 ${esc(m.telephone)}</span>` : "");
 
     // Identifiant HTML-safe pour les boutons

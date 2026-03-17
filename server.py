@@ -652,7 +652,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 except Exception:
                     all_contacts = []
             audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
-            contacts  = [c for c in all_contacts if c.get("type") != "bininga_audiences"]
+            contacts  = [c for c in all_contacts if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
             return
 
@@ -1013,6 +1013,36 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
+                # ── Inscription newsletter → ajout automatique au CRM ──
+                if etype == "bininga_newsletter":
+                    email_nl = entry.get("email", "").strip()
+                    if email_nl:
+                        crm = load_crm()
+                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_nl.lower()), None)
+                        if existing is None:
+                            new_contact = {
+                                "id":         entry.get("_id", f"nl-{int(datetime.now().timestamp()*1000)}"),
+                                "nom":        "",
+                                "prenom":     "",
+                                "email":      email_nl,
+                                "telephone":  "",
+                                "source":     "newsletter",
+                                "tags":       ["newsletter"],
+                                "newsletter": True,
+                                "statut":     "nouveau",
+                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "expires_at": _crm_expire_date(),
+                                "notes":      [],
+                                "historique": [{"ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "action": "inscription_newsletter", "detail": "Inscription via le site public"}],
+                                "newsletters": [],
+                            }
+                            crm["contacts"].append(new_contact)
+                        else:
+                            # Marquer newsletter=True si déjà présent
+                            existing["newsletter"] = True
+                            if "newsletter" not in existing.get("tags", []):
+                                existing.setdefault("tags", []).append("newsletter")
+                        save_crm(crm)
                 self._json({"ok": True, "message": "Message reçu"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)

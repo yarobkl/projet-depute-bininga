@@ -924,12 +924,12 @@ function buildCard(m, storageKey, mode) {
           <span class="reply-edit-btn" onclick="openReply('${safeId}','${storageKey}')">✏️ Modifier la réponse</span>
         </div>
         <div class="reply-panel" id="rp-${safeId}">
-          ${buildReplyForm(safeId, storageKey, m._reply)}
+          ${buildReplyForm(safeId, storageKey, m._reply, m.email||"", m.prenom||"", m.nom||"")}
         </div>`;
     } else {
       replySection = `
         <div class="reply-panel" id="rp-${safeId}">
-          ${buildReplyForm(safeId, storageKey, "")}
+          ${buildReplyForm(safeId, storageKey, "", m.email||"", m.prenom||"", m.nom||"")}
         </div>`;
     }
   }
@@ -972,7 +972,10 @@ function buildCard(m, storageKey, mode) {
   </div>`;
 }
 
-function buildReplyForm(safeId, storageKey, existingText) {
+function buildReplyForm(safeId, storageKey, existingText, email, prenom, nom) {
+  const emailBtn = email
+    ? `<button class="btn-send" style="background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3)" onclick="openMailReply('${safeId}','${email.replace(/'/g,"\\'")}','${(prenom||"").replace(/'/g,"\\'")}','${(nom||"").replace(/'/g,"\\'")}')">📧 Envoyer par email</button>`
+    : "";
   return `<div class="reply-panel-title">✉️ Rédiger une réponse</div>
     <textarea class="reply-textarea" id="rt-${safeId}" placeholder="Votre réponse…">${esc(existingText || SIGNATURE())}</textarea>
     <div class="reply-meta">
@@ -980,9 +983,18 @@ function buildReplyForm(safeId, storageKey, existingText) {
       <span id="rc-${safeId}">${(existingText || SIGNATURE()).length} caractères</span>
     </div>
     <div class="reply-actions">
-      <button class="btn-send" onclick="saveReply('${safeId}','${storageKey}')">💬 Enregistrer la réponse</button>
+      <button class="btn-send" onclick="saveReply('${safeId}','${storageKey}')">💬 Enregistrer</button>
+      ${emailBtn}
       <button class="btn-cancel-reply" onclick="closeReply('${safeId}')">Annuler</button>
     </div>`;
+}
+
+function openMailReply(safeId, email, prenom, nom) {
+  const ta   = document.getElementById("rt-" + safeId);
+  const body = ta ? ta.value : "";
+  window.location.href = "mailto:" + email
+    + "?subject=" + encodeURIComponent("Réponse — Cabinet Aimé BININGA")
+    + "&body="    + encodeURIComponent(body || ("Bonjour " + prenom + " " + nom + ",\n\n"));
 }
 
 // ══════════════════════════════════════════════════════════
