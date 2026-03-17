@@ -794,138 +794,120 @@
         </div>
       </div>
 
+      <!-- ══ CRM CONTACTS ══ -->
+      <div class="panel" id="panel-crm">
+
+        <!-- KPI -->
+        <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+          <div class="kpi-card red">
+            <div class="kpi-label">Total contacts</div>
+            <div class="kpi-val" id="crm-kpi-total">0</div>
+            <div class="kpi-sub">dans le CRM</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Abonnés newsletter</div>
+            <div class="kpi-val" id="crm-kpi-nl">0</div>
+            <div class="kpi-sub">avec email</div>
+          </div>
+        </div>
+
+        <!-- Onglets -->
+        <div class="tabs">
+          <button class="tab active" onclick="crmTab('contacts',this)">👥 Contacts</button>
+          <button class="tab" onclick="crmTab('newsletter',this)">📧 Newsletter</button>
+        </div>
+
+        <!-- ══ ONGLET CONTACTS ══ -->
+        <div id="crm-tab-contacts">
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Base de contacts (rétention 10 ans)</div>
+              <div class="card-actions">
+                <button class="sbtn sbtn-progress" onclick="crmImport()">⬇️ Importer demandes</button>
+                <button class="sbtn sbtn-done" onclick="crmAddModal()">＋ Ajouter contact</button>
+                <a href="/api/crm/export" class="sbtn" style="background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600">📥 Export CSV</a>
+              </div>
+            </div>
+
+            <!-- Barre de recherche & filtres -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+              <input type="text" id="crm-search" placeholder="🔍 Rechercher nom, email, tél…"
+                oninput="renderCrmList()"
+                style="flex:1;min-width:200px;padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none">
+              <select id="crm-filter-source" onchange="renderCrmList()"
+                style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
+                <option value="">Toutes sources</option>
+                <option value="audience">Audience</option>
+                <option value="contact">Contact</option>
+                <option value="reclamation">Réclamation</option>
+                <option value="signalement">Signalement</option>
+                <option value="manuel">Manuel</option>
+              </select>
+              <select id="crm-filter-nl" onchange="renderCrmList()"
+                style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
+                <option value="">Tous contacts</option>
+                <option value="oui">Abonnés newsletter</option>
+                <option value="non">Non abonnés</option>
+              </select>
+            </div>
+
+            <div id="crm-list"><div class="msg-empty">Chargement…</div></div>
+          </div>
+        </div>
+
+        <!-- ══ ONGLET NEWSLETTER ══ -->
+        <div id="crm-tab-newsletter" style="display:none">
+
+          <!-- Composer -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">✍️ Composer une newsletter</div>
+            </div>
+            <div class="form-group">
+              <label>Destinataires</label>
+              <select id="nl-filtre" style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
+                <option value="newsletter">Abonnés newsletter uniquement (recommandé)</option>
+                <option value="tous">Tous les contacts avec email</option>
+                <option value="audience">Tag : Audience</option>
+                <option value="contact">Tag : Contact</option>
+                <option value="reclamation">Tag : Réclamation</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Objet du message</label>
+              <input type="text" id="nl-sujet" placeholder="Ex : Actualités du député BININGA — Mars 2026"
+                style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
+            </div>
+            <div class="form-group">
+              <label>Corps du message (HTML ou texte — <code style="color:#d4b96a">{{nom}}</code> sera remplacé par le prénom du destinataire)</label>
+              <textarea id="nl-corps" rows="10" placeholder="Bonjour {{nom}},&#10;&#10;Nous avons le plaisir de vous informer que…"
+                style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:200px"></textarea>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <button onclick="nlSend()" id="btn-nl-send"
+                style="padding:12px 24px;background:var(--r);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+                📧 Envoyer la newsletter
+              </button>
+              <div id="nl-feedback" style="font-size:12px;display:none"></div>
+            </div>
+          </div>
+
+          <!-- Historique des newsletters -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">📋 Historique des envois</div>
+            </div>
+            <div id="nl-history"><div class="msg-empty">Aucune newsletter envoyée.</div></div>
+          </div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
 
 <div id="toast"></div>
 
-<!-- ── NAVIGATEUR DE DOSSIERS D'IMAGES ── -->
-<!-- ══════════════════ CRM CONTACTS ══════════════════ -->
-<div class="panel" id="panel-crm">
-
-  <!-- KPI -->
-  <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
-    <div class="kpi-card red">
-      <div class="kpi-label">Total contacts</div>
-      <div class="kpi-val" id="crm-kpi-total">0</div>
-      <div class="kpi-sub">dans le CRM</div>
-    </div>
-    <div class="kpi-card blue">
-      <div class="kpi-label">Abonnés newsletter</div>
-      <div class="kpi-val" id="crm-kpi-nl">0</div>
-      <div class="kpi-sub">avec email</div>
-    </div>
-    <div class="kpi-card orange">
-      <div class="kpi-label">Nouveaux</div>
-      <div class="kpi-val" id="crm-kpi-new">0</div>
-      <div class="kpi-sub">à traiter</div>
-    </div>
-    <div class="kpi-card green">
-      <div class="kpi-label">Traités</div>
-      <div class="kpi-val" id="crm-kpi-done">0</div>
-      <div class="kpi-sub">dossiers clôturés</div>
-    </div>
-  </div>
-
-  <!-- Onglets -->
-  <div class="tabs">
-    <button class="tab active" onclick="crmTab('contacts',this)">👥 Contacts</button>
-    <button class="tab" onclick="crmTab('newsletter',this)">📧 Newsletter</button>
-  </div>
-
-  <!-- ══ ONGLET CONTACTS ══ -->
-  <div id="crm-tab-contacts">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Base de contacts (rétention 10 ans)</div>
-        <div class="card-actions">
-          <button class="sbtn sbtn-progress" onclick="crmImport()">⬇️ Importer demandes</button>
-          <button class="sbtn sbtn-done" onclick="crmAddModal()">＋ Ajouter contact</button>
-          <a href="/api/crm/export" class="sbtn" style="background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600">📥 Export CSV</a>
-        </div>
-      </div>
-
-      <!-- Barre de recherche & filtres -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-        <input type="text" id="crm-search" placeholder="🔍 Rechercher nom, email, tél…"
-          oninput="renderCrmList()"
-          style="flex:1;min-width:200px;padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none">
-        <select id="crm-filter-statut" onchange="renderCrmList()"
-          style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
-          <option value="">Tous statuts</option>
-          <option value="nouveau">Nouveau</option>
-          <option value="en_cours">En cours</option>
-          <option value="traite">Traité</option>
-          <option value="archive">Archivé</option>
-        </select>
-        <select id="crm-filter-source" onchange="renderCrmList()"
-          style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
-          <option value="">Toutes sources</option>
-          <option value="audience">Audience</option>
-          <option value="contact">Contact</option>
-          <option value="reclamation">Réclamation</option>
-          <option value="signalement">Signalement</option>
-          <option value="manuel">Manuel</option>
-        </select>
-        <select id="crm-filter-nl" onchange="renderCrmList()"
-          style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
-          <option value="">Tous contacts</option>
-          <option value="oui">Abonnés newsletter</option>
-          <option value="non">Non abonnés</option>
-        </select>
-      </div>
-
-      <div id="crm-list"><div class="msg-empty">Chargement…</div></div>
-    </div>
-  </div>
-
-  <!-- ══ ONGLET NEWSLETTER ══ -->
-  <div id="crm-tab-newsletter" style="display:none">
-
-    <!-- Composer -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">✍️ Composer une newsletter</div>
-      </div>
-      <div class="form-group">
-        <label>Destinataires</label>
-        <select id="nl-filtre" style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
-          <option value="newsletter">Abonnés newsletter uniquement (recommandé)</option>
-          <option value="tous">Tous les contacts avec email</option>
-          <option value="audience">Tag : Audience</option>
-          <option value="contact">Tag : Contact</option>
-          <option value="reclamation">Tag : Réclamation</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Objet du message</label>
-        <input type="text" id="nl-sujet" placeholder="Ex : Actualités du député BININGA — Mars 2026"
-          style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
-      </div>
-      <div class="form-group">
-        <label>Corps du message (HTML ou texte — <code style="color:#d4b96a">{{nom}}</code> sera remplacé par le prénom du destinataire)</label>
-        <textarea id="nl-corps" rows="10" placeholder="Bonjour {{nom}},&#10;&#10;Nous avons le plaisir de vous informer que…"
-          style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none;resize:vertical;min-height:200px"></textarea>
-      </div>
-      <div style="display:flex;align-items:center;gap:12px">
-        <button onclick="nlSend()" id="btn-nl-send"
-          style="padding:12px 24px;background:var(--r);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
-          📧 Envoyer la newsletter
-        </button>
-        <div id="nl-feedback" style="font-size:12px;display:none"></div>
-      </div>
-    </div>
-
-    <!-- Historique des newsletters -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">📋 Historique des envois</div>
-      </div>
-      <div id="nl-history"><div class="msg-empty">Aucune newsletter envoyée.</div></div>
-    </div>
-  </div>
-</div>
 
 <!-- ══ MODAL : Ajouter / Modifier contact CRM ══ -->
 <div id="crm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:3000;align-items:center;justify-content:center;overflow-y:auto">
@@ -944,7 +926,7 @@
       </div>
       <div class="form-group"><label>Sujet / Objet de la demande</label><input type="text" id="crm-f-sujet" placeholder="Demande d'audience, Signalement route…"></div>
       <div class="form-group"><label>Message / Description</label><textarea id="crm-f-message" rows="4" placeholder="Détails du contact…"></textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
         <div class="form-group">
           <label>Source</label>
           <select id="crm-f-source" style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
@@ -953,15 +935,6 @@
             <option value="contact">Contact</option>
             <option value="reclamation">Réclamation</option>
             <option value="signalement">Signalement</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Statut</label>
-          <select id="crm-f-statut" style="width:100%;padding:11px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none">
-            <option value="nouveau">Nouveau</option>
-            <option value="en_cours">En cours</option>
-            <option value="traite">Traité</option>
-            <option value="archive">Archivé</option>
           </select>
         </div>
         <div class="form-group">
