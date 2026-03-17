@@ -7,6 +7,7 @@ let SESSION_TOKEN        = "";
 let SESSION_CSRF         = "";
 let SESSION_ROLE         = "";
 let SESSION_NOM          = "";
+let SESSION_USERNAME     = "";
 let SESSION_IS_MAIN_ADMIN = false;
 
 // Helper : headers authentifiés avec CSRF
@@ -36,8 +37,9 @@ async function doLogin() {
       SESSION_CSRF          = data.csrf_token || "";
       SESSION_ROLE          = data.role;
       SESSION_NOM           = data.nom;
+      SESSION_USERNAME      = data.username || "";
       SESSION_IS_MAIN_ADMIN = data.is_main_admin || false;
-      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, is_main_admin: data.is_main_admin || false }));
+      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, username: data.username || "", is_main_admin: data.is_main_admin || false }));
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
@@ -116,6 +118,14 @@ function toggleUserForm(show) {
   if (!visible) resetUserForm();
 }
 
+function canDeleteUser(u) {
+  // Impossible de supprimer : le ministre, soi-même, ou un autre admin si on n'est pas l'admin principal
+  if (u.role === "ministre") return false;
+  if (u.username === SESSION_USERNAME) return false;
+  if (u.role === "admin" && !SESSION_IS_MAIN_ADMIN) return false;
+  return true;
+}
+
 async function loadUsers() {
   const el = document.getElementById("user-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
@@ -138,7 +148,7 @@ async function loadUsers() {
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
         <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(u.username)},${JSON.stringify(u.nom)},${JSON.stringify(u.role)})">✏️ Modifier</button>
-        ${(u.role !== "admin" || SESSION_IS_MAIN_ADMIN) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>` : ''}
+        ${canDeleteUser(u) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>` : ''}
       </div>
     `).join("");
   } catch {
