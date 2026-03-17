@@ -35,6 +35,7 @@ async function doLogin() {
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_ROLE  = data.role;
       SESSION_NOM   = data.nom;
+      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
@@ -63,6 +64,7 @@ async function logout() {
   SESSION_TOKEN = "";
   SESSION_ROLE  = "";
   SESSION_NOM   = "";
+  localStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
@@ -358,7 +360,7 @@ function uploadImage(callback) {
 }
 
 function uploadForSlide(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
     siteData.gallery.slides[i].image = path;
     renderSlides();
@@ -366,7 +368,7 @@ function uploadForSlide(i) {
 }
 
 function uploadForGrid(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
     siteData.gallery.grid[i].image = path;
     renderGrid();
@@ -374,7 +376,7 @@ function uploadForGrid(i) {
 }
 
 function uploadFeaturedImage() {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (!siteData.actus) siteData.actus = { featured: {}, items: [] };
     if (!siteData.actus.featured) siteData.actus.featured = {};
     siteData.actus.featured.image = path;
@@ -462,7 +464,7 @@ function renderActuSlides() {
 }
 function updActuSlide(i, f, v) { if (siteData.actus.slides[i]) siteData.actus.slides[i][f] = v; }
 function uploadForActuSlide(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (siteData.actus.slides[i]) siteData.actus.slides[i].image = path;
     const el = document.getElementById("actu-slide-img-" + i);
     if (el) el.value = path;
@@ -516,7 +518,7 @@ function renderActuVedettes() {
 }
 function updActuVedette(i, f, v) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i][f] = v; }
 function uploadForActuVedette(i) {
-  uploadImage(path => {
+  pickOrUploadImage(path => {
     if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].image = path;
     const el = document.getElementById("actu-vedette-img-" + i);
     if (el) el.value = path;
@@ -1302,6 +1304,40 @@ async function runVeille(preset) {
   }
 }
 
+async function restartMonitor() {
+  try {
+    const res  = await fetch("/api/monitor-restart", {
+      method: "POST",
+      headers: { "X-Admin-Token": SESSION_TOKEN },
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert("✅ YARO IA redémarré avec succès");
+      setTimeout(loadNews, 2000);
+    } else {
+      alert("❌ Erreur : " + data.message);
+    }
+  } catch(e) {
+    alert("❌ Erreur réseau lors du redémarrage");
+  }
+}
+
+async function toggleMonitorLog() {
+  const box = document.getElementById("monitor-log-box");
+  if (!box) return;
+  if (box.style.display !== "none") { box.style.display = "none"; return; }
+  box.style.display = "block";
+  box.textContent = "Chargement…";
+  try {
+    const res  = await fetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    box.textContent = data.ok ? (data.lines.join("\n") || "(log vide)") : "Erreur : " + data.message;
+    box.scrollTop = box.scrollHeight;
+  } catch(e) {
+    box.textContent = "Erreur réseau";
+  }
+}
+
 const CAT_LABELS = {
   bininga:     { label: "Bininga",      color: "rgba(200,16,46,.8)",    bg: "rgba(200,16,46,.12)" },
   loi_justice: { label: "⚖️ Lois & Justice", color: "rgba(46,204,113,.9)", bg: "rgba(46,204,113,.1)" },
@@ -1329,14 +1365,14 @@ function renderNewsItems() {
   const list = document.getElementById("veille-list");
   if (!list) return;
   const filtered = _newsFilter === "all"
-    ? _newsItems.filter(a => (a.category || "bininga") !== "bininga")
+    ? _newsItems
     : _newsItems.filter(a => (a.category || "bininga") === _newsFilter);
 
   // Mise à jour compteurs onglets
   const bCount = _newsItems.filter(a => (a.category || "bininga") === "bininga").length;
-  const aCount = _newsItems.filter(a => (a.category || "bininga") !== "bininga").length;
+  const aCount = _newsItems.length;
   const bUnread = _newsItems.filter(a => (a.category || "bininga") === "bininga" && !a.read).length;
-  const aUnread = _newsItems.filter(a => (a.category || "bininga") !== "bininga" && !a.read).length;
+  const aUnread = _newsItems.filter(a => !a.read).length;
   const tbc = document.getElementById("tab-bininga-count");
   const tac = document.getElementById("tab-all-count");
   if (tbc) tbc.textContent = bUnread > 0 ? `${bUnread} non lu${bUnread>1?"s":""}` : bCount;
@@ -1501,6 +1537,7 @@ async function loadAuditLogs() {
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
+  crm:"👥 CRM — Base de contacts",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
@@ -1526,6 +1563,7 @@ function showPanel(name, el) {
   if (name === "users")        loadUsers();
   if (name === "security")     loadSecurity();
   if (name === "veille")       loadNews();
+  if (name === "crm")          loadCrm();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1815,4 +1853,557 @@ function closeSidebar() {
   if (btn) { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
   if (ov)  ov.classList.remove("open");
   document.body.style.overflow = "";
+}
+
+// ── Navigateur de dossiers d'images ─────────────────────────────────────────
+let _fbCallback   = null;
+let _fbCurrentDir = "images";
+let _fbHistory    = [];
+let _fbSelected   = null;
+
+function openBrowser(callback) {
+  _fbCallback   = callback;
+  _fbHistory    = [];
+  _fbSelected   = null;
+  _fbCurrentDir = "images";
+  const ov = document.getElementById("file-browser-overlay");
+  ov.style.display = "flex";
+  document.body.style.overflow = "hidden";
+  fbLoad("images");
+}
+
+function closeBrowser() {
+  const ov = document.getElementById("file-browser-overlay");
+  ov.style.display = "none";
+  document.body.style.overflow = "";
+  _fbCallback  = null;
+  _fbSelected  = null;
+}
+
+function fbGoBack() {
+  if (_fbHistory.length > 0) {
+    const prev = _fbHistory.pop();
+    _fbCurrentDir = prev;
+    fbLoad(prev, false);
+  }
+}
+
+async function fbLoad(dir, pushHistory = true) {
+  if (pushHistory && dir !== _fbCurrentDir) {
+    _fbHistory.push(_fbCurrentDir);
+  }
+  _fbCurrentDir = dir;
+  _fbSelected   = null;
+
+  const grid    = document.getElementById("fb-grid");
+  const bcEl    = document.getElementById("fb-breadcrumb");
+  const pathEl  = document.getElementById("fb-path-label");
+  const backBtn = document.getElementById("fb-back-btn");
+  const confBtn = document.getElementById("fb-confirm-btn");
+
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.25);padding:40px 0;font-size:13px">Chargement…</div>';
+  if (bcEl)   bcEl.textContent   = dir + "/";
+  if (pathEl) pathEl.textContent = dir + "/";
+  if (backBtn) backBtn.disabled = _fbHistory.length === 0;
+  if (confBtn) { confBtn.disabled = true; confBtn.style.opacity = ".4"; }
+  fbSetPreview(null);
+
+  try {
+    const res  = await fetch("/api/files?dir=" + encodeURIComponent(dir), {
+      headers: { "X-Admin-Token": SESSION_TOKEN }
+    });
+    const data = await res.json();
+    if (!data.ok) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ff7070;padding:40px 0;font-size:13px">Erreur : ' + esc(data.message||"inconnu") + '</div>'; return; }
+
+    const items = [];
+
+    // Dossiers
+    (data.folders || []).forEach(f => {
+      items.push(`
+        <div onclick="fbLoad('${esc(f.path)}')"
+             style="cursor:pointer;background:#161616;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 8px;text-align:center;transition:all .2s"
+             onmouseover="this.style.borderColor='rgba(200,16,46,.4)';this.style.background='#1e1e1e'"
+             onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.background='#161616'">
+          <div style="font-size:28px;margin-bottom:8px">📁</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.7);word-break:break-word;line-height:1.3">${esc(f.name)}</div>
+        </div>`);
+    });
+
+    // Fichiers image
+    (data.files || []).forEach(f => {
+      items.push(`
+        <div onclick="fbSelectFile('${esc(f.path)}', this)"
+             data-path="${esc(f.path)}"
+             style="cursor:pointer;background:#161616;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:6px;transition:all .2s;position:relative"
+             onmouseover="if(!this.classList.contains('fb-sel'))this.style.borderColor='rgba(200,16,46,.3)'"
+             onmouseout="if(!this.classList.contains('fb-sel'))this.style.borderColor='rgba(255,255,255,.07)'">
+          <img src="${esc(f.path)}" alt="${esc(f.name)}"
+               style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div style="display:none;width:100%;aspect-ratio:1;background:#1e1e1e;border-radius:6px;align-items:center;justify-content:center;font-size:22px">🖼️</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:5px;word-break:break-word;line-height:1.3;padding:0 2px">${esc(f.name)}</div>
+        </div>`);
+    });
+
+    if (items.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:rgba(255,255,255,.2);padding:40px 0;font-size:13px">Dossier vide</div>';
+    } else {
+      grid.innerHTML = items.join("");
+    }
+  } catch(e) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#ff7070;padding:40px 0;font-size:13px">Serveur non disponible</div>';
+  }
+}
+
+function fbSelectFile(path, el) {
+  // Désélectionner l'ancien
+  document.querySelectorAll("#fb-grid .fb-sel").forEach(e => {
+    e.classList.remove("fb-sel");
+    e.style.borderColor = "rgba(255,255,255,.07)";
+    e.style.background  = "#161616";
+  });
+  // Sélectionner le nouveau
+  el.classList.add("fb-sel");
+  el.style.borderColor = "#C8102E";
+  el.style.background  = "rgba(200,16,46,.08)";
+  _fbSelected = path;
+  fbSetPreview(path);
+  const confBtn = document.getElementById("fb-confirm-btn");
+  if (confBtn) { confBtn.disabled = false; confBtn.style.opacity = "1"; }
+}
+
+function fbSetPreview(path) {
+  const el = document.getElementById("fb-selected-preview");
+  if (!el) return;
+  if (!path) { el.innerHTML = 'Aucune image sélectionnée'; return; }
+  el.innerHTML = `<img src="${esc(path)}" style="height:36px;width:36px;object-fit:cover;border-radius:5px;border:1px solid rgba(255,255,255,.1)"><span style="color:rgba(255,255,255,.6)">${esc(path)}</span>`;
+}
+
+function confirmBrowserSelection() {
+  if (!_fbSelected || !_fbCallback) return;
+  const cb = _fbCallback;
+  const sel = _fbSelected;
+  closeBrowser();
+  cb(sel);
+}
+
+// Surcharge de uploadImage pour proposer aussi la navigation
+function pickOrUploadImage(callback) {
+  const modal = document.createElement("div");
+  modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:2500;display:flex;align-items:center;justify-content:center";
+  modal.innerHTML = `
+    <div style="background:#0e0e0e;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:32px;text-align:center;width:300px;box-shadow:0 30px 80px rgba(0,0,0,.8)">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">Choisir une image</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:24px">Parcourez les dossiers ou uploadez un nouveau fichier</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <button id="pick-browse" style="padding:11px 20px;background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📁 Parcourir les dossiers</button>
+        <button id="pick-upload" style="padding:11px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:13px">⬆️ Uploader un fichier</button>
+        <button id="pick-cancel" style="padding:9px 20px;background:transparent;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:12px">Annuler</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  modal.querySelector("#pick-browse").onclick = () => {
+    document.body.removeChild(modal);
+    openBrowser(callback);
+  };
+  modal.querySelector("#pick-upload").onclick = () => {
+    document.body.removeChild(modal);
+    uploadImage(callback);
+  };
+  modal.querySelector("#pick-cancel").onclick = () => {
+    document.body.removeChild(modal);
+  };
+  modal.onclick = e => { if (e.target === modal) { document.body.removeChild(modal); } };
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CRM — Gestion des contacts (admin uniquement)
+// ══════════════════════════════════════════════════════════════════════════
+let _crmContacts    = [];
+let _crmNewsletters = [];
+let _crmTab         = "contacts";
+
+// ── Chargement depuis le serveur ─────────────────────────────────────────
+async function loadCrm() {
+  const el = document.getElementById("crm-list");
+  if (el) el.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  try {
+    const res  = await fetch("/api/crm", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) { if (el) el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
+    _crmContacts    = data.contacts    || [];
+    _crmNewsletters = data.newsletters || [];
+    // KPI
+    const total = _crmContacts.length;
+    const nlCnt = _crmContacts.filter(c => c.newsletter && c.email).length;
+    const nCnt  = _crmContacts.filter(c => c.statut === "nouveau").length;
+    const dCnt  = _crmContacts.filter(c => c.statut === "traite").length;
+    setText("crm-kpi-total", total);
+    setText("crm-kpi-nl",    nlCnt);
+    setText("crm-kpi-new",   nCnt);
+    setText("crm-kpi-done",  dCnt);
+    setBadge("badge-crm", nCnt);
+    renderCrmList();
+    renderNlHistory();
+  } catch(e) {
+    if (el) el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
+  }
+}
+
+// ── Navigation entre onglets ─────────────────────────────────────────────
+function crmTab(tab, btn) {
+  _crmTab = tab;
+  document.querySelectorAll("#panel-crm .tab").forEach(t => t.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  document.getElementById("crm-tab-contacts").style.display   = tab === "contacts"   ? "" : "none";
+  document.getElementById("crm-tab-newsletter").style.display = tab === "newsletter" ? "" : "none";
+}
+
+// ── Rendu de la liste de contacts ────────────────────────────────────────
+const CRM_STATUT_BADGE = {
+  nouveau:  `<span class="badge badge-wait">🆕 Nouveau</span>`,
+  en_cours: `<span class="badge badge-progress">🔄 En cours</span>`,
+  traite:   `<span class="badge badge-done">✅ Traité</span>`,
+  archive:  `<span class="badge badge-read">🗃️ Archivé</span>`,
+};
+const CRM_SOURCE_BADGE = {
+  audience:    `<span class="crm-tag crm-tag-aud">📋 Audience</span>`,
+  contact:     `<span class="crm-tag crm-tag-ct">✉️ Contact</span>`,
+  reclamation: `<span class="crm-tag crm-tag-recl">⚠️ Réclamation</span>`,
+  signalement: `<span class="crm-tag crm-tag-sig">🚩 Signalement</span>`,
+  manuel:      `<span class="crm-tag crm-tag-man">✏️ Manuel</span>`,
+};
+
+function renderCrmList() {
+  const el     = document.getElementById("crm-list");
+  if (!el) return;
+  const q      = (document.getElementById("crm-search")?.value || "").toLowerCase();
+  const fStat  = document.getElementById("crm-filter-statut")?.value  || "";
+  const fSrc   = document.getElementById("crm-filter-source")?.value  || "";
+  const fNl    = document.getElementById("crm-filter-nl")?.value      || "";
+
+  let list = _crmContacts.filter(c => {
+    if (fStat && c.statut  !== fStat) return false;
+    if (fSrc  && c.source  !== fSrc)  return false;
+    if (fNl === "oui" && !(c.newsletter && c.email)) return false;
+    if (fNl === "non" && (c.newsletter && c.email))  return false;
+    if (q) {
+      const hay = `${c.nom} ${c.prenom} ${c.email} ${c.telephone} ${c.sujet} ${(c.tags||[]).join(" ")}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  if (!list.length) {
+    el.innerHTML = '<div class="msg-empty">Aucun contact ne correspond aux filtres.</div>';
+    return;
+  }
+
+  el.innerHTML = list.map(c => {
+    const badge   = CRM_STATUT_BADGE[c.statut] || CRM_STATUT_BADGE.nouveau;
+    const srcTag  = CRM_SOURCE_BADGE[c.source]  || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
+    const nlBadge = c.newsletter && c.email
+      ? `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>` : "";
+    const tags    = (c.tags || []).map(t => `<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("");
+    const notesCnt = (c.notes || []).length;
+    return `
+    <div class="crm-card">
+      <div class="crm-card-top">
+        <div>
+          <div class="crm-card-name">${esc(c.prenom || "")} ${esc(c.nom || "")}</div>
+          <div class="crm-card-meta">
+            ${c.email ? `<span>📧 ${esc(c.email)}</span>` : ""}
+            ${c.telephone ? `<span>📞 ${esc(c.telephone)}</span>` : ""}
+            <span title="Expiration">🗓️ jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${badge}${srcTag}${nlBadge}${tags}</div>
+      </div>
+      ${c.sujet ? `<div class="crm-card-sujet">${esc(c.sujet)}</div>` : ""}
+      <div class="crm-card-footer">
+        <div style="font-size:11px;color:rgba(255,255,255,.3)">
+          Créé le ${esc((c.created_at||"").slice(0,10))}
+          ${notesCnt ? `· 💬 ${notesCnt} note${notesCnt>1?"s":""}` : ""}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="sbtn sbtn-progress" onclick="crmDetail('${esc(c.id)}')">👁 Voir</button>
+          <button class="sbtn sbtn-read"     onclick="crmEditModal('${esc(c.id)}')">✏️ Modifier</button>
+          <button class="btn-danger" style="padding:4px 9px" onclick="crmDelete('${esc(c.id)}')">🗑</button>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+// ── Import depuis contacts.json ──────────────────────────────────────────
+async function crmImport() {
+  if (!confirm("Importer toutes les demandes reçues (audiences, contacts, réclamations) dans le CRM ?\nLes doublons seront ignorés.")) return;
+  try {
+    const res  = await fetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✅ ${data.imported} contact(s) importé(s) !`);
+      loadCrm();
+    } else {
+      showToast(data.message || "Erreur", true);
+    }
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+// ── Suppression ──────────────────────────────────────────────────────────
+async function crmDelete(id) {
+  if (!confirm("Supprimer ce contact du CRM ? Cette action est irréversible.")) return;
+  try {
+    const res  = await fetch("/api/crm/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
+    const data = await res.json();
+    if (data.ok) { showToast("Contact supprimé"); loadCrm(); }
+    else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+// ── Modal Ajouter ────────────────────────────────────────────────────────
+function crmAddModal() {
+  document.getElementById("crm-edit-id").value      = "";
+  document.getElementById("crm-modal-title").textContent = "Ajouter un contact";
+  ["crm-f-nom","crm-f-prenom","crm-f-email","crm-f-tel","crm-f-sujet","crm-f-message","crm-f-tags"].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = "";
+  });
+  document.getElementById("crm-f-source").value  = "manuel";
+  document.getElementById("crm-f-statut").value  = "nouveau";
+  document.getElementById("crm-f-nl").checked    = false;
+  document.getElementById("crm-modal").style.display = "flex";
+}
+
+// ── Modal Modifier ───────────────────────────────────────────────────────
+function crmEditModal(id) {
+  const c = _crmContacts.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById("crm-edit-id").value = c.id;
+  document.getElementById("crm-modal-title").textContent = `Modifier : ${c.prenom || ""} ${c.nom || ""}`.trim();
+  document.getElementById("crm-f-nom").value     = c.nom      || "";
+  document.getElementById("crm-f-prenom").value  = c.prenom   || "";
+  document.getElementById("crm-f-email").value   = c.email    || "";
+  document.getElementById("crm-f-tel").value     = c.telephone|| "";
+  document.getElementById("crm-f-sujet").value   = c.sujet    || "";
+  document.getElementById("crm-f-message").value = c.message  || "";
+  document.getElementById("crm-f-source").value  = c.source   || "manuel";
+  document.getElementById("crm-f-statut").value  = c.statut   || "nouveau";
+  document.getElementById("crm-f-tags").value    = (c.tags || []).join(", ");
+  document.getElementById("crm-f-nl").checked    = !!c.newsletter;
+  document.getElementById("crm-modal").style.display = "flex";
+}
+
+function closeCrmModal() {
+  document.getElementById("crm-modal").style.display = "none";
+}
+
+// ── Sauvegarde (création ou modification) ────────────────────────────────
+async function crmSave() {
+  const id    = document.getElementById("crm-edit-id").value.trim();
+  const tagsRaw = document.getElementById("crm-f-tags").value;
+  const payload = {
+    id,
+    nom:       document.getElementById("crm-f-nom").value.trim(),
+    prenom:    document.getElementById("crm-f-prenom").value.trim(),
+    email:     document.getElementById("crm-f-email").value.trim(),
+    telephone: document.getElementById("crm-f-tel").value.trim(),
+    sujet:     document.getElementById("crm-f-sujet").value.trim(),
+    message:   document.getElementById("crm-f-message").value.trim(),
+    source:    document.getElementById("crm-f-source").value,
+    statut:    document.getElementById("crm-f-statut").value,
+    tags:      tagsRaw.split(",").map(t=>t.trim()).filter(Boolean),
+    newsletter: document.getElementById("crm-f-nl").checked,
+  };
+  if (!payload.nom) { showToast("Le nom est requis", true); return; }
+  try {
+    const res  = await fetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(id ? "Contact modifié !" : "Contact ajouté !");
+      closeCrmModal();
+      loadCrm();
+    } else {
+      showToast(data.message || "Erreur", true);
+    }
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+// ── Fiche détail ─────────────────────────────────────────────────────────
+function crmDetail(id) {
+  const c = _crmContacts.find(x => x.id === id);
+  if (!c) return;
+  const modal = document.getElementById("crm-detail-modal");
+  const body  = document.getElementById("crm-detail-body");
+  document.getElementById("crm-detail-title").textContent =
+    `Fiche : ${c.prenom || ""} ${c.nom || ""}`.trim();
+
+  const srcTag  = CRM_SOURCE_BADGE[c.source] || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
+  const badge   = CRM_STATUT_BADGE[c.statut] || CRM_STATUT_BADGE.nouveau;
+  const notesCnt = (c.notes || []).length;
+
+  // Notes
+  const notesHtml = (c.notes || []).reverse().map(n => `
+    <div class="note-item">
+      <div class="note-meta"><strong>${esc(n.auteur||"Admin")}</strong> · ${esc(n.ts||"")}</div>
+      <div class="note-text">${esc(n.texte)}</div>
+    </div>`).join("") || '<div style="font-size:11px;color:rgba(255,255,255,.2)">Aucune note.</div>';
+
+  // Historique
+  const histHtml = (c.historique || []).slice(-10).reverse().map(h => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="font-size:11px;color:rgba(255,255,255,.25);flex-shrink:0;padding-top:1px">${esc(h.ts||"")}</span>
+      <span style="font-size:12px;color:rgba(255,255,255,.6)">${esc(h.detail||h.action||"")}</span>
+    </div>`).join("") || '<div style="font-size:11px;color:rgba(255,255,255,.2)">Aucun historique.</div>';
+
+  body.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
+      ${badge} ${srcTag}
+      ${c.newsletter && c.email ? '<span class="crm-tag crm-tag-nl">📧 Newsletter</span>' : ""}
+      ${(c.tags||[]).map(t=>`<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("")}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
+      <div class="crm-detail-field"><div class="crm-detail-label">Nom complet</div>${esc(c.prenom||"")} ${esc(c.nom||"")}</div>
+      <div class="crm-detail-field"><div class="crm-detail-label">Email</div>${c.email ? `<a href="mailto:${esc(c.email)}" style="color:#3498db">${esc(c.email)}</a>` : "—"}</div>
+      <div class="crm-detail-field"><div class="crm-detail-label">Téléphone</div>${c.telephone ? `<a href="tel:${esc(c.telephone)}" style="color:#3498db">${esc(c.telephone)}</a>` : "—"}</div>
+      <div class="crm-detail-field"><div class="crm-detail-label">Créé le</div>${esc((c.created_at||"").slice(0,10))}</div>
+      <div class="crm-detail-field"><div class="crm-detail-label">Expire le</div>${esc((c.expires_at||"").slice(0,10))}</div>
+      <div class="crm-detail-field"><div class="crm-detail-label">Statut</div>
+        <select onchange="crmQuickStatus('${esc(c.id)}',this.value)"
+          style="background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:#fff;font-size:12px;padding:4px 8px;font-family:inherit;outline:none">
+          <option value="nouveau"  ${c.statut==="nouveau" ?"selected":""}>Nouveau</option>
+          <option value="en_cours" ${c.statut==="en_cours"?"selected":""}>En cours</option>
+          <option value="traite"   ${c.statut==="traite"  ?"selected":""}>Traité</option>
+          <option value="archive"  ${c.statut==="archive" ?"selected":""}>Archivé</option>
+        </select>
+      </div>
+    </div>
+    ${c.sujet ? `<div class="crm-detail-field" style="margin-bottom:12px"><div class="crm-detail-label">Sujet</div>${esc(c.sujet)}</div>` : ""}
+    ${c.message ? `<div class="crm-detail-field" style="margin-bottom:18px"><div class="crm-detail-label">Message</div><div style="white-space:pre-wrap;font-size:13px;color:rgba(255,255,255,.7)">${esc(c.message)}</div></div>` : ""}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div>
+        <div class="notes-title">💬 Notes internes (${notesCnt})</div>
+        <div id="crm-notes-list-${esc(c.id)}">${notesHtml}</div>
+        <div class="note-form" style="margin-top:10px">
+          <textarea id="crm-note-ta-${esc(c.id)}" placeholder="Ajouter une note…" rows="2"></textarea>
+          <button onclick="crmAddNote('${esc(c.id)}')">💬 Ajouter</button>
+        </div>
+      </div>
+      <div>
+        <div class="notes-title">📋 Historique</div>
+        <div style="font-size:12px">${histHtml}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
+      ${c.email ? `<a href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Réponse Cabinet BININGA')}" class="sbtn sbtn-progress" style="text-decoration:none">📧 Envoyer un email</a>` : ""}
+      <button class="sbtn sbtn-read" onclick="crmEditModal('${esc(c.id)}');closeCrmDetail()">✏️ Modifier</button>
+      <button class="btn-danger" style="padding:5px 11px" onclick="if(confirm('Supprimer ce contact ?')){crmDelete('${esc(c.id)}');closeCrmDetail();}">🗑 Supprimer</button>
+    </div>`;
+
+  modal.style.display = "flex";
+}
+
+function closeCrmDetail() {
+  document.getElementById("crm-detail-modal").style.display = "none";
+}
+
+// ── Changement rapide de statut depuis la fiche ──────────────────────────
+async function crmQuickStatus(id, statut) {
+  try {
+    await fetch("/api/crm/upsert", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ id, statut })
+    });
+    const c = _crmContacts.find(x => x.id === id);
+    if (c) c.statut = statut;
+    renderCrmList();
+    showToast("Statut mis à jour");
+  } catch { showToast("Erreur", true); }
+}
+
+// ── Ajouter une note depuis la fiche ────────────────────────────────────
+async function crmAddNote(id) {
+  const ta = document.getElementById(`crm-note-ta-${id}`);
+  const texte = ta ? ta.value.trim() : "";
+  if (!texte) { showToast("Note vide", true); return; }
+  try {
+    const res  = await fetch("/api/crm/note", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ id, texte })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Note ajoutée");
+      if (ta) ta.value = "";
+      await loadCrm();
+      crmDetail(id);  // Recharger la fiche
+    } else { showToast(data.message || "Erreur", true); }
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NEWSLETTER CRM
+// ══════════════════════════════════════════════════════════════════════════
+
+async function nlSend() {
+  const sujet  = document.getElementById("nl-sujet").value.trim();
+  const corps  = document.getElementById("nl-corps").value.trim();
+  const filtre = document.getElementById("nl-filtre").value;
+  const btn    = document.getElementById("btn-nl-send");
+  const fb     = document.getElementById("nl-feedback");
+  if (!sujet || !corps) { showToast("Sujet et corps requis", true); return; }
+  const nlCount = filtre === "newsletter" ? _crmContacts.filter(c => c.newsletter && c.email).length
+                : filtre === "tous"       ? _crmContacts.filter(c => c.email).length
+                : _crmContacts.filter(c => c.email && c.tags && c.tags.includes(filtre)).length;
+  if (!confirm(`Envoyer cette newsletter à ${nlCount} destinataire(s) ?`)) return;
+  btn.disabled = true; btn.textContent = "⏳ Envoi en cours…";
+  fb.style.display = "none";
+  try {
+    const res  = await fetch("/api/crm/newsletter/send", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ sujet, corps, filtre })
+    });
+    const data = await res.json();
+    fb.style.display = "block";
+    if (data.erreur) {
+      fb.style.color   = "#f39c12";
+      fb.innerHTML = `⚠️ Envoyé à ${data.envoyes}/${data.total} destinataires.<br><small>${esc(data.erreur)}</small>`;
+    } else {
+      fb.style.color   = "#2ecc71";
+      fb.textContent   = `✅ Newsletter envoyée à ${data.envoyes} destinataire(s) !`;
+      document.getElementById("nl-sujet").value = "";
+      document.getElementById("nl-corps").value = "";
+    }
+    loadCrm();
+  } catch(e) {
+    fb.style.display = "block";
+    fb.style.color   = "#e74c3c";
+    fb.textContent   = "❌ Erreur de connexion au serveur.";
+  } finally {
+    btn.disabled = false; btn.textContent = "📧 Envoyer la newsletter";
+  }
+}
+
+function renderNlHistory() {
+  const el = document.getElementById("nl-history");
+  if (!el) return;
+  if (!_crmNewsletters.length) {
+    el.innerHTML = '<div class="msg-empty">Aucune newsletter envoyée.</div>';
+    return;
+  }
+  el.innerHTML = _crmNewsletters.map(nl => `
+    <div class="crm-nl-row">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px">${esc(nl.sujet)}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:6px">${esc(nl.ts)} · ${nl.envoyes||0}/${nl.destinataires||0} envoyés</div>
+        ${nl.apercu ? `<div style="font-size:12px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nl.apercu)}</div>` : ""}
+        ${nl.erreur ? `<div style="font-size:11px;color:#f39c12;margin-top:4px">⚠️ ${esc(nl.erreur)}</div>` : ""}
+      </div>
+      <span class="badge ${nl.statut === 'envoye' ? 'badge-done' : 'badge-wait'}" style="flex-shrink:0">
+        ${nl.statut === 'envoye' ? '✅ Envoyé' : '⚠️ Erreur'}
+      </span>
+    </div>
+  `).join("");
 }

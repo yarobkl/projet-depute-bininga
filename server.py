@@ -43,6 +43,10 @@ CONTACT_FILE = "contacts.json"
 # Fichier de veille IA
 NEWS_FILE = "news_monitor.json"
 
+# Fichier CRM — rétention 10 ans
+CRM_FILE             = "crm.json"
+CRM_RETENTION_YEARS  = 10
+
 # Rate limiting : ip → {count, blocked_until}
 LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
@@ -506,6 +510,38 @@ def save_news(data: dict):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
+# ── CRM ────────────────────────────────────────────────────
+def _crm_expire_date() -> str:
+    """Date d'expiration = maintenant + 10 ans (rétention légale)."""
+    now = datetime.now()
+    try:
+        return now.replace(year=now.year + CRM_RETENTION_YEARS).strftime("%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        return now.replace(year=now.year + CRM_RETENTION_YEARS, day=28).strftime("%Y-%m-%d %H:%M:%S")
+
+def load_crm() -> dict:
+    """Charge le fichier CRM et purge les contacts expirés."""
+    if not os.path.exists(CRM_FILE):
+        return {"contacts": [], "newsletters": []}
+    try:
+        with open(CRM_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        data["contacts"] = [c for c in data.get("contacts", [])
+                            if c.get("expires_at", "9999-99-99") >= now_str]
+        if "newsletters" not in data:
+            data["newsletters"] = []
+        return data
+    except Exception:
+        return {"contacts": [], "newsletters": []}
+
+def save_crm(data: dict):
+    try:
+        with open(CRM_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde CRM: {e}")
+
 # ── Init au chargement du module ───────────────────────────
 init_users()
 load_sessions()
@@ -659,6 +695,86 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
                      for u in all_users]
             self._json({"ok": True, "users": users})
+            return
+
+        # ── /api/files — Navigateur de dossiers images ──
+        if path == "/api/files":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            from urllib.parse import parse_qs
+            qs = parse_qs(urlparse(self.path).query)
+            req_dir = qs.get("dir", ["images"])[0]
+            # Sécurité : autoriser uniquement les sous-dossiers de images/
+            safe_dir = posixpath.normpath(req_dir).lstrip("/")
+            if not safe_dir.startswith("images"):
+                safe_dir = "images"
+            abs_dir = os.path.realpath(os.path.join(BASE_DIR, safe_dir))
+            if not abs_dir.startswith(BASE_DIR + os.sep) and abs_dir != BASE_DIR:
+                self._json({"ok": False, "message": "Chemin non autorisé"}, 403)
+                return
+            IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+            files = []
+            folders = []
+            try:
+                for entry in sorted(os.scandir(abs_dir), key=lambda e: (not e.is_dir(), e.name.lower())):
+                    if entry.is_dir():
+                        folders.append({"name": entry.name, "path": safe_dir + "/" + entry.name})
+                    elif entry.is_file():
+                        ext = os.path.splitext(entry.name)[1].lower()
+                        if ext in IMAGE_EXTS:
+                            rel = safe_dir + "/" + entry.name
+                            files.append({"name": entry.name, "path": rel})
+            except FileNotFoundError:
+                pass
+            self._json({"ok": True, "dir": safe_dir, "folders": folders, "files": files})
+            return
+
+        # ── /api/crm — Liste des contacts CRM (admin uniquement) ──
+        if path == "/api/crm":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            crm = load_crm()
+            self._json({
+                "ok": True,
+                "contacts":    crm.get("contacts", []),
+                "newsletters": crm.get("newsletters", []),
+                "total":       len(crm.get("contacts", [])),
+                "newsletter_count": sum(1 for c in crm.get("contacts", []) if c.get("newsletter") and c.get("email")),
+            })
+            return
+
+        # ── /api/crm/export — Export CSV ──
+        if path == "/api/crm/export":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            import csv as _csv, io as _io
+            crm = load_crm()
+            contacts = crm.get("contacts", [])
+            out = _io.StringIO()
+            fields = ["id", "created_at", "expires_at", "source", "nom", "prenom",
+                      "email", "telephone", "sujet", "message", "tags", "statut", "newsletter"]
+            writer = _csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
+            writer.writeheader()
+            for c in contacts:
+                row = {k: c.get(k, "") for k in fields}
+                row["tags"]       = ", ".join(c.get("tags", []))
+                row["newsletter"] = "oui" if c.get("newsletter") else "non"
+                writer.writerow(row)
+            csv_bytes = ("\ufeff" + out.getvalue()).encode("utf-8")  # BOM Excel
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv; charset=utf-8")
+            self.send_header("Content-Disposition", 'attachment; filename="crm_contacts.csv"')
+            self.send_header("Content-Length", len(csv_bytes))
+            self._security_headers()
+            self.end_headers()
+            self.wfile.write(csv_bytes)
+            audit_log("CRM_EXPORT", self.client_address[0], "Export CSV CRM")
             return
 
         # ── /api/news — Veille IA ──
@@ -910,7 +1026,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
         # Validation CSRF sur routes d'écriture
-        if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear"):
+        if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear",
+                    "/api/crm/upsert", "/api/crm/delete", "/api/crm/import",
+                    "/api/crm/note", "/api/crm/newsletter/send"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
             if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
@@ -1162,6 +1280,343 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, "message": msg})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/monitor-log ── dernières lignes du log YARO IA ──
+        if path == "/api/monitor-log":
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.log")
+            try:
+                if not os.path.isfile(log_path):
+                    self._json({"ok": True, "lines": ["(monitor.log introuvable — agent pas encore démarré)"]})
+                    return
+                with open(log_path, "r", encoding="utf-8", errors="replace") as f:
+                    lines = f.readlines()
+                last = [l.rstrip() for l in lines[-100:]]
+                self._json({"ok": True, "lines": last})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/monitor-restart ── redémarrage forcé de YARO IA ──
+        if path == "/api/monitor-restart":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                base     = os.path.dirname(os.path.abspath(__file__))
+                pid_file = os.path.join(base, "monitor.pid")
+                # Tuer le process existant s'il tourne encore
+                if os.path.isfile(pid_file):
+                    try:
+                        pid = int(open(pid_file).read().strip())
+                        os.kill(pid, 15)   # SIGTERM
+                        time.sleep(1)
+                    except Exception:
+                        pass
+                    try:
+                        os.remove(pid_file)
+                    except Exception:
+                        pass
+                start_monitor()
+                audit_log("SAVE", ip, "YARO IA redémarré manuellement")
+                self._json({"ok": True, "message": "YARO IA redémarré"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/crm/upsert — Créer ou modifier un contact CRM ──
+        if path == "/api/crm/upsert":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data        = json.loads(body.decode("utf-8"))
+                contact_id  = str(data.get("id", "")).strip()
+                crm         = load_crm()
+                now_str     = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                STATUTS     = {"nouveau", "en_cours", "traite", "archive"}
+                SOURCES     = {"audience", "contact", "reclamation", "signalement", "manuel"}
+                ALLOWED     = {"nom", "prenom", "email", "telephone", "sujet",
+                               "message", "tags", "statut", "newsletter", "source"}
+                who         = session["username"] if session else "admin"
+                if contact_id:
+                    # Modification
+                    found = False
+                    for c in crm["contacts"]:
+                        if c["id"] == contact_id:
+                            for k, v in data.items():
+                                if k not in ALLOWED:
+                                    continue
+                                if k == "statut" and v not in STATUTS:
+                                    continue
+                                if k == "source" and v not in SOURCES:
+                                    continue
+                                if k == "tags":
+                                    v = [str(t)[:50] for t in (v if isinstance(v, list) else []) ][:10]
+                                if k == "newsletter":
+                                    v = bool(v)
+                                if isinstance(v, str):
+                                    v = v[:2000]
+                                c[k] = v
+                            c.setdefault("historique", []).append({
+                                "ts": now_str, "action": "modifie",
+                                "detail": f"Modifié par {who}"
+                            })
+                            found = True
+                            break
+                    if not found:
+                        self._json({"ok": False, "message": "Contact introuvable"}, 404)
+                        return
+                    audit_log("CRM_UPDATE", ip, f"Contact CRM modifié : {data.get('nom','?')} ({contact_id})")
+                else:
+                    # Création
+                    new_id  = secrets.token_hex(8)
+                    statut  = data.get("statut", "nouveau")
+                    source  = data.get("source", "manuel")
+                    contact = {
+                        "id":          new_id,
+                        "created_at":  now_str,
+                        "expires_at":  _crm_expire_date(),
+                        "source":      source  if source  in SOURCES  else "manuel",
+                        "nom":         str(data.get("nom",       ""))[:200],
+                        "prenom":      str(data.get("prenom",    ""))[:200],
+                        "email":       str(data.get("email",     ""))[:200],
+                        "telephone":   str(data.get("telephone", ""))[:50],
+                        "sujet":       str(data.get("sujet",     ""))[:500],
+                        "message":     str(data.get("message",   ""))[:2000],
+                        "tags":        [str(t)[:50] for t in data.get("tags", []) if isinstance(t, str)][:10],
+                        "statut":      statut if statut in STATUTS else "nouveau",
+                        "newsletter":  bool(data.get("newsletter", False)),
+                        "notes":       [],
+                        "historique":  [{"ts": now_str, "action": "cree",
+                                         "detail": f"Créé manuellement par {who}"}],
+                    }
+                    crm["contacts"].append(contact)
+                    audit_log("CRM_CREATE", ip,
+                              f"Contact CRM créé : {contact['nom']} {contact['prenom']} ({contact['email']})")
+                save_crm(crm)
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/crm/delete ──
+        if path == "/api/crm/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data       = json.loads(body.decode("utf-8"))
+                contact_id = str(data.get("id", "")).strip()
+                crm        = load_crm()
+                before     = len(crm["contacts"])
+                crm["contacts"] = [c for c in crm["contacts"] if c["id"] != contact_id]
+                save_crm(crm)
+                audit_log("CRM_DELETE", ip, f"Contact CRM supprimé : {contact_id}")
+                self._json({"ok": True, "deleted": before - len(crm["contacts"])})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/crm/import — Importer depuis contacts.json ──
+        if path == "/api/crm/import":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                all_contacts = []
+                if os.path.exists(CONTACT_FILE):
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_contacts = json.load(f)
+                crm     = load_crm()
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                exp_str = _crm_expire_date()
+                who     = session["username"] if session else "admin"
+                # Index des contacts existants pour éviter les doublons
+                existing_keys = set()
+                for c in crm["contacts"]:
+                    key = (c.get("email",""), c.get("nom",""), c.get("created_at","")[:10])
+                    existing_keys.add(key)
+                TYPE_MAP = {
+                    "bininga_audiences": "audience",
+                    "reclamation": "reclamation",
+                    "contact": "contact",
+                    "signalement": "signalement",
+                }
+                imported = 0
+                for raw in all_contacts:
+                    ts_raw  = raw.get("ts", now_str)
+                    key     = (raw.get("email",""), raw.get("nom",""), ts_raw[:10])
+                    if key in existing_keys:
+                        continue
+                    src_type = TYPE_MAP.get(raw.get("type",""), raw.get("type","contact"))
+                    contact  = {
+                        "id":         secrets.token_hex(8),
+                        "created_at": ts_raw,
+                        "expires_at": exp_str,
+                        "source":     src_type,
+                        "nom":        str(raw.get("nom",      ""))[:200],
+                        "prenom":     str(raw.get("prenom",   ""))[:200],
+                        "email":      str(raw.get("email",    ""))[:200],
+                        "telephone":  str(raw.get("telephone", raw.get("tel", "")))[:50],
+                        "sujet":      str(raw.get("sujet",    raw.get("objet", "")))[:500],
+                        "message":    str(raw.get("message",  raw.get("demande",
+                                        raw.get("raison", ""))))[:2000],
+                        "tags":       [src_type],
+                        "statut":     "nouveau",
+                        "newsletter": bool(raw.get("email", "")),
+                        "notes":      [],
+                        "historique": [{"ts": now_str, "action": "importe",
+                                        "detail": f"Importé depuis contacts.json par {who}"}],
+                    }
+                    crm["contacts"].append(contact)
+                    existing_keys.add(key)
+                    imported += 1
+                save_crm(crm)
+                audit_log("CRM_IMPORT", ip,
+                          f"{imported} contacts importés depuis contacts.json par {who}")
+                self._json({"ok": True, "imported": imported})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/crm/note — Ajouter une note à un contact CRM ──
+        if path == "/api/crm/note":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data       = json.loads(body.decode("utf-8"))
+                contact_id = str(data.get("id", "")).strip()
+                texte      = str(data.get("texte", "")).strip()[:1000]
+                if not contact_id or not texte:
+                    self._json({"ok": False, "message": "ID et texte requis"}, 400)
+                    return
+                crm     = load_crm()
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                who     = session["username"] if session else "admin"
+                found   = False
+                for c in crm["contacts"]:
+                    if c["id"] == contact_id:
+                        c.setdefault("notes", []).append(
+                            {"ts": now_str, "texte": texte, "auteur": who}
+                        )
+                        c.setdefault("historique", []).append(
+                            {"ts": now_str, "action": "note",
+                             "detail": f"Note ajoutée par {who}"}
+                        )
+                        found = True
+                        break
+                if not found:
+                    self._json({"ok": False, "message": "Contact introuvable"}, 404)
+                    return
+                save_crm(crm)
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/crm/newsletter/send — Envoi de newsletter CRM ──
+        if path == "/api/crm/newsletter/send":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data    = json.loads(body.decode("utf-8"))
+                sujet   = str(data.get("sujet", "")).strip()[:300]
+                corps   = str(data.get("corps", "")).strip()[:100000]
+                filtre  = data.get("filtre", "newsletter")
+                if not sujet or not corps:
+                    self._json({"ok": False, "message": "Sujet et corps requis"}, 400)
+                    return
+                crm = load_crm()
+                # Sélection des destinataires
+                if filtre == "newsletter":
+                    destinataires = [c for c in crm["contacts"]
+                                     if c.get("newsletter") and c.get("email")]
+                elif filtre == "tous":
+                    destinataires = [c for c in crm["contacts"] if c.get("email")]
+                elif isinstance(filtre, list):
+                    destinataires = [c for c in crm["contacts"]
+                                     if c.get("email") and
+                                     any(t in c.get("tags", []) for t in filtre)]
+                else:
+                    destinataires = [c for c in crm["contacts"]
+                                     if c.get("email") and filtre in c.get("tags", [])]
+                smtp_host = os.environ.get("SMTP_HOST", "")
+                smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+                smtp_user = os.environ.get("SMTP_USER", "")
+                smtp_pass = os.environ.get("SMTP_PASS", "")
+                smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+                now_str   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                nl_id     = secrets.token_hex(6)
+                erreur    = None
+                envoyes   = 0
+                if smtp_host and smtp_user:
+                    import smtplib
+                    from email.mime.multipart import MIMEMultipart
+                    from email.mime.text import MIMEText
+                    try:
+                        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as srv:
+                            srv.ehlo()
+                            srv.starttls()
+                            srv.login(smtp_user, smtp_pass)
+                            for dest in destinataires:
+                                email_dest = dest.get("email", "").strip()
+                                if not email_dest:
+                                    continue
+                                nom_dest = (
+                                    f"{dest.get('prenom','')} {dest.get('nom','')}".strip()
+                                    or email_dest
+                                )
+                                corps_perso = corps.replace("{{nom}}", nom_dest)
+                                msg = MIMEMultipart("alternative")
+                                msg["Subject"] = sujet
+                                msg["From"]    = smtp_from
+                                msg["To"]      = email_dest
+                                msg.attach(MIMEText(corps_perso, "html", "utf-8"))
+                                try:
+                                    srv.sendmail(smtp_from, email_dest, msg.as_string())
+                                    envoyes += 1
+                                    dest.setdefault("historique", []).append({
+                                        "ts": now_str,
+                                        "action": "newsletter_envoyee",
+                                        "detail": f"Newsletter envoyée : {sujet}"
+                                    })
+                                except Exception:
+                                    pass
+                    except Exception as e_smtp:
+                        erreur = str(e_smtp)
+                else:
+                    erreur = ("SMTP non configuré. "
+                              "Définissez SMTP_HOST, SMTP_USER, SMTP_PASS dans les variables d'environnement.")
+                # Historiser la newsletter
+                nl_entry = {
+                    "id":           nl_id,
+                    "ts":           now_str,
+                    "sujet":        sujet,
+                    "apercu":       corps[:400] + ("…" if len(corps) > 400 else ""),
+                    "destinataires": len(destinataires),
+                    "envoyes":      envoyes,
+                    "statut":       "erreur" if erreur else "envoye",
+                    "erreur":       erreur,
+                }
+                crm.setdefault("newsletters", []).insert(0, nl_entry)
+                save_crm(crm)
+                who = session["username"] if session else "admin"
+                audit_log("CRM_NEWSLETTER", ip,
+                          f"Newsletter par {who} : '{sujet}' → {envoyes}/{len(destinataires)}")
+                self._json({
+                    "ok":      True,
+                    "envoyes": envoyes,
+                    "total":   len(destinataires),
+                    "erreur":  erreur,
+                })
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
             return
 
         self._error(404, "Route non trouvée")

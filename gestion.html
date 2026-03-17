@@ -61,5 +61,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
 <a href="index.html" class="back">← Retour au site</a>
 
+<script>
+(function(){
+  try {
+    var s = JSON.parse(localStorage.getItem("bininga_session") || "{}");
+    var role = s.role || "";
+    if (role === "ministre") {
+      document.querySelector(".card.admin").style.display = "none";
+    } else if (role === "editeur" || role === "lecteur") {
+      document.querySelector(".card.depute").style.display = "none";
+    }
+  } catch(e) {}
+})();
+</script>
+
 </body>
 </html>
