@@ -140,17 +140,27 @@ async function loadUsers() {
     const roleLabels = { admin: "Admin", editeur: "Éditeur", lecteur: "Lecteur" };
     const initials   = u => (u.nom || u.username).charAt(0).toUpperCase();
     el.innerHTML = data.users.map(u => `
-      <div class="user-item">
+      <div class="user-item" data-username="${esc(u.username)}" data-nom="${esc(u.nom||u.username)}" data-role="${esc(u.role)}">
         <div class="user-avatar ${esc(u.role)}">${initials(u)}</div>
         <div class="user-info">
           <div class="user-name">${esc(u.nom || u.username)}</div>
           <div class="user-meta">${esc(u.username)}</div>
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
-        <button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(${JSON.stringify(u.username)},${JSON.stringify(u.nom)},${JSON.stringify(u.role)})">✏️ Modifier</button>
-        ${canDeleteUser(u) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(${JSON.stringify(u.username)})">🗑</button>` : ''}
+        <button class="sbtn sbtn-progress btn-edit-user" style="margin-left:8px">✏️ Modifier</button>
+        ${canDeleteUser(u) ? `<button class="btn-danger btn-delete-user" style="padding:5px 10px">🗑</button>` : ''}
       </div>
     `).join("");
+    // Attacher les événements via JS pour éviter les problèmes de guillemets dans les attributs HTML
+    el.querySelectorAll(".user-item").forEach(row => {
+      const uname = row.dataset.username;
+      const unom  = row.dataset.nom;
+      const urole = row.dataset.role;
+      const btnEdit = row.querySelector(".btn-edit-user");
+      const btnDel  = row.querySelector(".btn-delete-user");
+      if (btnEdit) btnEdit.addEventListener("click", () => editUser(uname, unom, urole));
+      if (btnDel)  btnDel.addEventListener("click",  () => deleteUser(uname));
+    });
   } catch {
     el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
   }
