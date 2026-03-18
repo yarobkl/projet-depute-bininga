@@ -831,8 +831,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_header("Vary", "Origin")
                 if mime.startswith("text/html") or mime == "application/json":
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                elif mime.startswith("image/") or mime == "text/css":
+                elif mime.startswith("image/"):
                     self.send_header("Cache-Control", "public, max-age=86400")
+                elif mime == "text/css":
+                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 elif mime == "text/javascript":
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self._security_headers()
