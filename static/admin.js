@@ -159,20 +159,10 @@ async function loadUsers() {
           <div class="user-meta">${esc(u.username)}</div>
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
-        ${canEditUser(u) ? `<button class="sbtn sbtn-progress btn-edit-user" style="margin-left:8px">✏️ Modifier</button>` : ''}
-        ${canDeleteUser(u) ? `<button class="btn-danger btn-delete-user" style="padding:5px 10px">🗑</button>` : ''}
+        ${canEditUser(u) ? `<button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(this.closest('.user-item').dataset.username,this.closest('.user-item').dataset.nom,this.closest('.user-item').dataset.role)">✏️ Modifier</button>` : ''}
+        ${canDeleteUser(u) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(this.closest('.user-item').dataset.username)">🗑</button>` : ''}
       </div>
     `).join("");
-    // Attacher les événements via JS pour éviter les problèmes de guillemets dans les attributs HTML
-    el.querySelectorAll(".user-item").forEach(row => {
-      const uname = row.dataset.username;
-      const unom  = row.dataset.nom;
-      const urole = row.dataset.role;
-      const btnEdit = row.querySelector(".btn-edit-user");
-      const btnDel  = row.querySelector(".btn-delete-user");
-      if (btnEdit) btnEdit.addEventListener("click", () => editUser(uname, unom, urole));
-      if (btnDel)  btnDel.addEventListener("click",  () => deleteUser(uname));
-    });
   } catch {
     el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
   }
