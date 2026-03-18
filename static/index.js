@@ -774,6 +774,48 @@ function loadVideo(placeholder) {
 document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
 document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
 
+// ── BOTTOM TABBAR — active state selon le scroll ──────────
+(function(){
+  const tabs = document.querySelectorAll(".mob-tab-item");
+  if(!tabs.length) return;
+
+  // Correspondance tab → sections
+  const tabMap = {
+    accueil:  ["main-content"],
+    profil:   ["about","parcours","publication"],
+    actu:     ["galerie","actu","video-section"],
+    audience: ["engagement"],
+    contact:  ["cta-band-section","contact","newsletter"]
+  };
+
+  function setActive(tabName){
+    tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tabName));
+  }
+
+  // Smooth scroll sur clic (déjà géré globalement mais on force sur la tabbar)
+  tabs.forEach(tab => {
+    tab.addEventListener("click", e => {
+      const href = tab.getAttribute("href");
+      if(!href || !href.startsWith("#")) return;
+      const target = document.querySelector(href);
+      if(target){ e.preventDefault(); target.scrollIntoView({behavior:"smooth",block:"start"}); }
+    });
+  });
+
+  // Scroll spy
+  const allSections = document.querySelectorAll("[data-mob-tab]");
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if(entry.isIntersecting){
+        const tabName = entry.target.dataset.mobTab;
+        if(tabName) setActive(tabName);
+      }
+    });
+  }, { threshold: 0.35, rootMargin: "-10% 0px -40% 0px" });
+
+  allSections.forEach(s => obs.observe(s));
+})();
+
 // ── ACTU HERO SLIDESHOW ───────────────────────────────────
 let _actuTimer = null;
 function initActuSlider() {
