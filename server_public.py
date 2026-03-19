@@ -178,7 +178,7 @@ class PublicHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(404)
         self.send_header("Content-Type", "text/html")
         self.end_headers()
-        self.wfile.write(b"<h1>404 - Page non trouvée</h1>")
+        self.wfile.write("<h1>404 - Page non trouvee</h1>".encode("utf-8"))
 
     def do_POST(self):
         parsed  = urlparse(self.path)
