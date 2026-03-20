@@ -438,7 +438,7 @@ def _rotate_audit_if_needed():
         os.rename(AUDIT_FILE, archive)
     except Exception:
         return
-    archives = sorted(f for f in os.listdir(".") if f.startswith("audit_") and f.endswith(".log"))
+    archives = sorted(os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.startswith("audit_") and f.endswith(".log"))
     for old in archives[:-MAX_LOG_ARCHIVES]:
         try:
             os.remove(old)
@@ -491,7 +491,7 @@ def save_data(data):
         with open(DATA_FILE, "rb") as src, open(backup, "wb") as dst:
             dst.write(src.read())
         # Garder uniquement les 5 derniers backups
-        backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
+        backups = sorted(os.path.join(DATA_DIR, f) for f in os.listdir(DATA_DIR) if f.startswith("data_backup_"))
         for old in backups[:-5]:
             try:
                 os.remove(old)

@@ -32,8 +32,15 @@ BLOCKED_FILES = {
     "admin.js", "admin.css",
 }
 
-# Pages réservées à l'admin — redirigées vers le site public
+# Pages réservées à l'admin — accès interdit (404)
 ADMIN_PAGES = {"/admin.html", "/gestion.html", "/ministre.html"}
+
+# Origines autorisées pour CORS
+ALLOWED_ORIGINS = {
+    "https://bininga.cg", "https://www.bininga.cg",
+    "https://bininga-public-production.up.railway.app",
+    "http://localhost:8080", "http://127.0.0.1:8080",
+}
 
 
 def _safe_path(relative: str):
@@ -93,7 +100,11 @@ def _proxy_to_admin(handler, method: str, path: str, body: bytes = b""):
 
 
 def _cors_headers(handler):
-    handler.send_header("Access-Control-Allow-Origin", "*")
+    origin = handler.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        handler.send_header("Access-Control-Allow-Origin", origin)
+    else:
+        handler.send_header("Access-Control-Allow-Origin", "https://bininga.cg")
     handler.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
     handler.send_header("Access-Control-Allow-Headers", "Content-Type, X-Admin-Token")
 
@@ -155,9 +166,10 @@ class PublicHandler(http.server.BaseHTTPRequestHandler):
 
         # Bloquer l'accès aux pages admin
         if path in ADMIN_PAGES:
-            self.send_response(301)
-            self.send_header("Location", "/")
+            self.send_response(404)
+            self.send_header("Content-Type", "text/html")
             self.end_headers()
+            self.wfile.write(b"<h1>404 - Page non trouvee</h1>")
             return
 
         # Données du site → proxy vers l'admin
