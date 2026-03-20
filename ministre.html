@@ -522,14 +522,15 @@ async function doLogin() {
     const data = await res.json();
     if (data.ok) {
       if (!["admin","ministre"].includes(data.role)) {
-        showErr("Accès réservé à l'espace du Député.");
+        showErr("Accès non autorisé.");
         return;
       }
       SESSION_TOKEN = data.token;
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_NOM   = data.nom;
       SESSION_ROLE  = data.role;
-      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
+      sessionStorage.setItem("bininga_ministre_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
+      // NB : pas de persistance localStorage — session effacée à la fermeture de l'onglet
       openApp(data.nom);
     } else {
       showErr("Identifiant ou mot de passe incorrect.");
@@ -552,30 +553,14 @@ function showErr(msg) {
   setTimeout(() => el.textContent = "", 3500);
 }
 
-// Auto-connexion si une session admin est déjà active
-(async function tryAutoLogin() {
-  try {
-    const saved = JSON.parse(localStorage.getItem("bininga_session") || "null");
-    if (!saved || !saved.token) return;
-    // Vérifier que le token est encore valide
-    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": saved.token } });
-    const data = await res.json();
-    if (data.ok !== false) {
-      SESSION_TOKEN = saved.token;
-      SESSION_CSRF  = saved.csrf  || "";
-      SESSION_NOM   = saved.nom   || "Bininga";
-      SESSION_ROLE  = saved.role  || "";
-      openApp(SESSION_NOM);
-    }
-  } catch (_) {}
-})();
+// Pas d'auto-connexion — l'espace député exige toujours une saisie explicite du mot de passe
 
 async function logout() {
   try {
     await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
   } catch (_) {}
   SESSION_TOKEN = "";
-  localStorage.removeItem("bininga_session");
+  sessionStorage.removeItem("bininga_ministre_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
