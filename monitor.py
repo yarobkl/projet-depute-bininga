@@ -33,13 +33,15 @@ from pathlib import Path
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 BASE_DIR   = Path(__file__).parent
-NEWS_FILE  = BASE_DIR / "news_monitor.json"
-PID_FILE   = BASE_DIR / "monitor.pid"
+# Répertoire de données persistant (volume Railway /data si disponible)
+_DATA_DIR  = Path(os.environ.get("DATA_DIR", "/data" if Path("/data").is_dir() else str(BASE_DIR)))
+NEWS_FILE  = _DATA_DIR / "news_monitor.json"
+PID_FILE   = _DATA_DIR / "monitor.pid"
 LOG_PREFIX = "[YARO IA]"
 INTERVAL   = int(os.environ.get("MONITOR_INTERVAL", 900))   # 15 min par défaut
 
 # ── Fichier de déclenchement manuel ──────────────────────────────────────────
-TRIGGER_FILE = BASE_DIR / "monitor.trigger"
+TRIGGER_FILE = _DATA_DIR / "monitor.trigger"
 
 # Requêtes de recherche — Actualités Bininga
 QUERIES = [
