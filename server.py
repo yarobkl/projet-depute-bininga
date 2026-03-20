@@ -788,9 +788,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     all_contacts = []
             # Exclure newsletters pures (pas de contenu textuel)
             messages = [c for c in all_contacts if c.get("type") not in ("bininga_newsletter", "bininga_commande_livre") or c.get("message")]
-            messages.sort(key=lambda x: x.get("ts", ""), reverse=True)
+            # Garantir que chaque message a un _id unique
+            import uuid as _uuid
+            for m in messages:
+                if not m.get("_id"):
+                    m["_id"] = _uuid.uuid4().hex[:16]
+            # Trier par date décroissante (date ou ts)
+            messages.sort(key=lambda x: x.get("date") or x.get("ts", ""), reverse=True)
             unread = sum(1 for m in messages if not m.get("_read"))
-            self._json({"ok": True, "messages": messages, "unread": unread})
+            self._json({"ok": True, "messages": messages, "unread_count": unread})
             return
 
         if path == "/api/logs":

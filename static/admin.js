@@ -2489,7 +2489,7 @@ function renderMsgInbox(filter) {
           style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
                  border-radius:6px;padding:10px;color:#fff;font-size:13px;resize:vertical;min-height:80px;box-sizing:border-box"></textarea>
         <div style="display:flex;gap:8px;margin-top:8px">
-          <button class="sbtn sbtn-progress" onclick="replyToMessage('${id}','${email}','${nom}')">📤 Envoyer la réponse</button>
+          <button class="sbtn sbtn-progress" id="reply-btn-${id}" onclick="replyToMessage('${id}','${email}','${nom}')">📤 Envoyer la réponse</button>
           <button class="sbtn" style="background:rgba(255,255,255,.05)" onclick="document.getElementById('reply-form-${id}').style.display='none'">Annuler</button>
         </div>
       </div>` : ""}
@@ -2498,11 +2498,12 @@ function renderMsgInbox(filter) {
 }
 
 function openReplyForm(id) {
-  const form = document.getElementById(`reply-form-${id}`);
-  if (!form) return;
-  form.style.display = form.style.display === "none" ? "block" : "none";
-  if (form.style.display === "block") {
-    const ta = document.getElementById(`reply-ta-${id}`);
+  const form = document.getElementById("reply-form-" + id);
+  if (!form) { showToast("Formulaire introuvable — rechargez la messagerie", true); return; }
+  const isHidden = form.style.display === "none" || form.style.display === "";
+  form.style.display = isHidden ? "block" : "none";
+  if (isHidden) {
+    const ta = document.getElementById("reply-ta-" + id);
     if (ta) ta.focus();
   }
 }
@@ -2548,10 +2549,10 @@ async function markAllRead() {
 }
 
 async function replyToMessage(id, email, nom) {
-  const ta    = document.getElementById(`reply-ta-${id}`);
+  const ta    = document.getElementById("reply-ta-" + id);
   const corps = ta ? ta.value.trim() : "";
-  if (!corps) { showToast("Le message de réponse est vide", true); return; }
-  const btn = ta.closest("[id^='reply-form-']").querySelector("button.sbtn-progress");
+  if (!corps) { showToast("Écrivez votre réponse avant d'envoyer", true); return; }
+  const btn = document.getElementById("reply-btn-" + id);
   if (btn) { btn.disabled = true; btn.textContent = "⏳ Envoi…"; }
   try {
     const res  = await fetch("/api/messages/reply", {
@@ -2576,8 +2577,8 @@ async function replyToMessage(id, email, nom) {
       showToast(data.message || "Erreur lors de l'envoi", true);
       if (btn) { btn.disabled = false; btn.textContent = "📤 Envoyer la réponse"; }
     }
-  } catch {
-    showToast("Serveur non disponible", true);
+  } catch(e) {
+    showToast("Serveur non disponible : " + e.message, true);
     if (btn) { btn.disabled = false; btn.textContent = "📤 Envoyer la réponse"; }
   }
 }
