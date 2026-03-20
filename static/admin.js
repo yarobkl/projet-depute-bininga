@@ -212,10 +212,15 @@ function init() {
   loadSiteData();
   syncMessages().then(() => refreshDashboard());
   startNewsPoller();
-  // Badge initial
+  // Badge initial veille
   fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
     .then(d => { if(d.ok) setBadge("badge-veille", (d.items||[]).filter(a=>!a.read).length); })
+    .catch(()=>{});
+  // Badge initial messagerie
+  fetch("/api/messages", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    .then(r => r.json())
+    .then(d => { if(d.ok) setBadge("badge-msg", d.unread_count || 0); })
     .catch(()=>{});
 }
 
@@ -1564,6 +1569,7 @@ function showPanel(name, el) {
   if (name === "security")     loadSecurity();
   if (name === "veille")       loadNews();
   if (name === "crm")          loadCrm();
+  if (name === "messagerie")   loadMessagerie();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -2368,4 +2374,210 @@ function renderNlHistory() {
       </span>
     </div>
   `).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MESSAGERIE UNIFIÉE
+// ══════════════════════════════════════════════════════════════════════════
+let _msgAll      = [];   // tous les messages chargés
+let _msgFilter   = "tous"; // filtre actif
+
+const MSG_TYPE_LABEL = {
+  audience:    "Audience",
+  contact:     "Contact",
+  reclamation: "Réclamation",
+  newsletter:  "Newsletter"
+};
+
+async function loadMessagerie() {
+  const inbox = document.getElementById("msg-inbox");
+  if (!inbox) return;
+  inbox.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  try {
+    const res  = await fetch("/api/messages", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) { inbox.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
+    _msgAll = data.messages || [];
+    // Mettre à jour le badge messagerie avec les non lus
+    const unread = data.unread_count || _msgAll.filter(m => !m._read).length;
+    setBadge("badge-msg", unread);
+    renderMsgInbox(_msgFilter);
+  } catch {
+    inbox.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
+  }
+}
+
+function filterMsg(type, el) {
+  _msgFilter = type;
+  document.querySelectorAll("#msg-filters .tab").forEach(t => t.classList.remove("active"));
+  if (el) el.classList.add("active");
+  renderMsgInbox(type);
+}
+
+function renderMsgInbox(filter) {
+  const inbox = document.getElementById("msg-inbox");
+  if (!inbox) return;
+
+  let list = _msgAll;
+  if (filter === "nonlus" || filter === "non_lu") list = _msgAll.filter(m => !m._read);
+  else if (filter === "repondus" || filter === "repondu") list = _msgAll.filter(m => m._replied);
+  else if (filter !== "tous")    list = _msgAll.filter(m => m.type === filter);
+
+  if (!list.length) {
+    inbox.innerHTML = '<div class="msg-empty">Aucun message dans cette catégorie.</div>';
+    return;
+  }
+
+  inbox.innerHTML = list.map(m => {
+    const isRead    = m._read;
+    const isReplied = m._replied;
+    const typeLabel = MSG_TYPE_LABEL[m.type] || m.type;
+    const typeCls   = { audience: "badge-wait", contact: "badge-info", reclamation: "badge-danger", newsletter: "badge-done" }[m.type] || "";
+    const date      = m.date ? new Date(m.date).toLocaleString("fr-FR") : "—";
+    const nom       = esc(m.nom || m.prenom || "Anonyme");
+    const email     = esc(m.email || "");
+    const tel       = m.tel || m.telephone ? esc(m.tel || m.telephone) : "";
+    const sujet     = esc(m.sujet || m.objet || "");
+    const msg       = esc(m.message || m.besoin || m.description || m.texte || "");
+    const id        = esc(m._id || "");
+
+    // Historique des réponses
+    const replies   = (m._replies || []);
+    const replyHtml = replies.length
+      ? `<div style="margin-top:10px;border-top:1px solid rgba(255,255,255,.06);padding-top:8px">
+          <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">💬 ${replies.length} réponse(s) :</div>
+          ${replies.map(r => `
+            <div style="background:rgba(52,152,219,.08);border-left:2px solid #3498db;padding:6px 10px;border-radius:0 4px 4px 0;margin-bottom:4px;font-size:12px">
+              <div style="color:rgba(255,255,255,.4);font-size:10px;margin-bottom:2px">${esc(r.ts)} · ${esc(r.expediteur||"Admin")}</div>
+              <div>${esc(r.corps)}</div>
+            </div>
+          `).join("")}
+        </div>` : "";
+
+    return `
+    <div class="msg-card${isRead ? "" : " msg-unread"}" id="msgcard-${id}" style="
+        background:${isRead ? "rgba(255,255,255,.03)" : "rgba(52,152,219,.07)"};
+        border:1px solid ${isRead ? "rgba(255,255,255,.06)" : "rgba(52,152,219,.25)"};
+        border-radius:10px;padding:16px 18px;margin-bottom:12px;transition:.2s">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:200px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+            ${!isRead ? '<span style="width:8px;height:8px;border-radius:50%;background:#3498db;display:inline-block;flex-shrink:0"></span>' : ""}
+            <span style="font-weight:700;font-size:14px">${nom}</span>
+            <span class="badge ${typeCls}" style="font-size:10px;padding:2px 7px">${typeLabel}</span>
+            ${isReplied ? '<span class="badge badge-done" style="font-size:10px;padding:2px 7px">✅ Répondu</span>' : ""}
+          </div>
+          ${email ? `<div style="font-size:12px;color:rgba(255,255,255,.5)">📧 ${email}</div>` : ""}
+          ${tel   ? `<div style="font-size:12px;color:rgba(255,255,255,.5)">📞 ${tel}</div>` : ""}
+          ${sujet ? `<div style="font-size:13px;font-weight:600;margin-top:6px">📌 ${sujet}</div>` : ""}
+          ${msg   ? `<div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:6px;white-space:pre-wrap">${msg}</div>` : ""}
+          <div style="font-size:11px;color:rgba(255,255,255,.3);margin-top:8px">🕐 ${date}</div>
+          ${replyHtml}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end">
+          ${!isRead ? `<button class="sbtn sbtn-read" style="font-size:11px;padding:5px 10px"
+              onclick="markMessageRead('${id}')">✓ Lu</button>` : ""}
+          ${email ? `<button class="sbtn sbtn-progress" style="font-size:11px;padding:5px 10px"
+              onclick="openReplyForm('${id}')">↩️ Répondre</button>` : ""}
+        </div>
+      </div>
+      <!-- Formulaire de réponse (masqué par défaut) -->
+      ${email ? `
+      <div id="reply-form-${id}" style="display:none;margin-top:14px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px">
+        <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px">Répondre à ${email} :</div>
+        <textarea id="reply-ta-${id}" placeholder="Votre réponse…"
+          style="width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+                 border-radius:6px;padding:10px;color:#fff;font-size:13px;resize:vertical;min-height:80px;box-sizing:border-box"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="sbtn sbtn-progress" onclick="replyToMessage('${id}','${email}','${nom}')">📤 Envoyer la réponse</button>
+          <button class="sbtn" style="background:rgba(255,255,255,.05)" onclick="document.getElementById('reply-form-${id}').style.display='none'">Annuler</button>
+        </div>
+      </div>` : ""}
+    </div>`;
+  }).join("");
+}
+
+function openReplyForm(id) {
+  const form = document.getElementById(`reply-form-${id}`);
+  if (!form) return;
+  form.style.display = form.style.display === "none" ? "block" : "none";
+  if (form.style.display === "block") {
+    const ta = document.getElementById(`reply-ta-${id}`);
+    if (ta) ta.focus();
+  }
+}
+
+async function markMessageRead(id) {
+  try {
+    await fetch("/api/messages/read", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id })
+    });
+  } catch (_) {}
+  // Marquer localement
+  const m = _msgAll.find(x => x._id === id);
+  if (m) m._read = true;
+  // Mettre à jour la carte visuellement
+  const card = document.getElementById(`msgcard-${id}`);
+  if (card) {
+    card.style.background    = "rgba(255,255,255,.03)";
+    card.style.border        = "1px solid rgba(255,255,255,.06)";
+  }
+  // Recalculer le badge
+  const unread = _msgAll.filter(x => !x._read).length;
+  setBadge("badge-msg", unread);
+  renderMsgInbox(_msgFilter);
+}
+
+async function markAllRead() {
+  const unread = _msgAll.filter(m => !m._read);
+  for (const m of unread) {
+    try {
+      await fetch("/api/messages/read", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ id: m._id })
+      });
+    } catch (_) {}
+    m._read = true;
+  }
+  setBadge("badge-msg", 0);
+  renderMsgInbox(_msgFilter);
+  showToast("Tous les messages marqués comme lus");
+}
+
+async function replyToMessage(id, email, nom) {
+  const ta    = document.getElementById(`reply-ta-${id}`);
+  const corps = ta ? ta.value.trim() : "";
+  if (!corps) { showToast("Le message de réponse est vide", true); return; }
+  const btn = ta.closest("[id^='reply-form-']").querySelector("button.sbtn-progress");
+  if (btn) { btn.disabled = true; btn.textContent = "⏳ Envoi…"; }
+  try {
+    const res  = await fetch("/api/messages/reply", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id, email, nom, corps })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("Réponse envoyée !");
+      // Mettre à jour localement
+      const m = _msgAll.find(x => x._id === id);
+      if (m) {
+        m._replied = true;
+        m._read    = true;
+        if (!m._replies) m._replies = [];
+        m._replies.push({ ts: new Date().toLocaleString("fr-FR"), corps, expediteur: SESSION_NOM || "Admin" });
+      }
+      setBadge("badge-msg", _msgAll.filter(x => !x._read).length);
+      renderMsgInbox(_msgFilter);
+    } else {
+      showToast(data.message || "Erreur lors de l'envoi", true);
+      if (btn) { btn.disabled = false; btn.textContent = "📤 Envoyer la réponse"; }
+    }
+  } catch {
+    showToast("Serveur non disponible", true);
+    if (btn) { btn.disabled = false; btn.textContent = "📤 Envoyer la réponse"; }
+  }
 }

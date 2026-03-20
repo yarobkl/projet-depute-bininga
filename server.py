@@ -773,6 +773,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
             return
 
+        # ── /api/messages — Boîte de réception unifiée ──────────────────
+        if path == "/api/messages":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            all_contacts = []
+            if os.path.exists(CONTACT_FILE):
+                try:
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_contacts = json.load(f)
+                except Exception:
+                    all_contacts = []
+            # Exclure newsletters pures (pas de contenu textuel)
+            messages = [c for c in all_contacts if c.get("type") not in ("bininga_newsletter", "bininga_commande_livre") or c.get("message")]
+            messages.sort(key=lambda x: x.get("ts", ""), reverse=True)
+            unread = sum(1 for m in messages if not m.get("_read"))
+            self._json({"ok": True, "messages": messages, "unread": unread})
+            return
+
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "ministre"):
@@ -1162,6 +1182,107 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
                 self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
                 return
+
+        # ── /api/messages/read — Marquer message(s) comme lu ────────────
+        if path == "/api/messages/read":
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            try:
+                data    = json.loads(body.decode("utf-8"))
+                msg_ids = data.get("ids") or ([data["id"]] if data.get("id") else [])
+                all_c   = []
+                if os.path.exists(CONTACT_FILE):
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_c = json.load(f)
+                updated = 0
+                for c in all_c:
+                    if c.get("_id") in msg_ids or not msg_ids:
+                        if not c.get("_read"):
+                            c["_read"] = True
+                            c["_read_ts"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            updated += 1
+                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                    json.dump(all_c, f, indent=2, ensure_ascii=False)
+                self._json({"ok": True, "updated": updated})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/messages/reply — Répondre à un message ──────────────────
+        if path == "/api/messages/reply":
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data       = json.loads(body.decode("utf-8"))
+                msg_id     = data.get("id", "")
+                reply_text = data.get("reply", "").strip()
+                dest_email = data.get("email", "").strip()
+                dest_nom   = data.get("nom", "")
+                if not reply_text:
+                    self._json({"ok": False, "message": "Réponse vide"}, 400)
+                    return
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                # Sauvegarder la réponse dans contacts.json
+                all_c = []
+                if os.path.exists(CONTACT_FILE):
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_c = json.load(f)
+                for c in all_c:
+                    if c.get("_id") == msg_id:
+                        c["_read"]       = True
+                        c["_replied"]    = True
+                        c["_reply_text"] = reply_text
+                        c["_reply_ts"]   = now_str
+                        c["_reply_by"]   = session.get("nom", "Admin") if session else "Admin"
+                        break
+                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                    json.dump(all_c, f, indent=2, ensure_ascii=False)
+                # Envoyer par email si SMTP configuré et email disponible
+                sent = False
+                smtp_host = os.environ.get("SMTP_HOST", "")
+                smtp_user = os.environ.get("SMTP_USER", "")
+                smtp_pass = os.environ.get("SMTP_PASS", "")
+                smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+                smtp_from = os.environ.get("SMTP_FROM", smtp_user)
+                if smtp_host and smtp_user and dest_email:
+                    try:
+                        import smtplib
+                        from email.mime.multipart import MIMEMultipart
+                        from email.mime.text import MIMEText
+                        corps_html = f"""
+                        <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                          <div style="background:#c8102e;padding:20px;text-align:center">
+                            <h2 style="color:#fff;margin:0">Cabinet Aimé BININGA</h2>
+                            <p style="color:rgba(255,255,255,.8);margin:4px 0 0">Réponse à votre message</p>
+                          </div>
+                          <div style="padding:30px;background:#fff">
+                            <p>Bonjour {dest_nom or dest_email},</p>
+                            <div style="border-left:3px solid #c8102e;padding:12px 16px;background:#f9f9f9;margin:20px 0">
+                              {reply_text.replace(chr(10),'<br>')}
+                            </div>
+                            <p style="color:#666;font-size:13px">Cabinet du Député Aimé Wilfrid BININGA<br>Deputé d'Ewo · Garde des Sceaux</p>
+                          </div>
+                        </div>"""
+                        msg = MIMEMultipart("alternative")
+                        msg["Subject"] = "Réponse à votre message — Cabinet BININGA"
+                        msg["From"]    = smtp_from
+                        msg["To"]      = dest_email
+                        msg.attach(MIMEText(corps_html, "html", "utf-8"))
+                        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as srv:
+                            srv.ehlo(); srv.starttls(); srv.login(smtp_user, smtp_pass)
+                            srv.sendmail(smtp_from, dest_email, msg.as_string())
+                        sent = True
+                    except Exception as e_smtp:
+                        pass  # Réponse sauvegardée même si email échoue
+                who = session.get("username", "?") if session else "?"
+                audit_log("MSG_REPLY", ip, f"Réponse à {dest_email} par {who}")
+                self._json({"ok": True, "sent_email": sent,
+                            "message": "Réponse envoyée par email" if sent else "Réponse sauvegardée (SMTP non configuré)"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
 
         # ── /api/contacts/clear ──
         if path == "/api/contacts/clear":

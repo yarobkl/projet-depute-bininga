@@ -45,6 +45,10 @@
       <div class="sb-item active" onclick="showPanel('dashboard',this)">
         <span class="icon">📊</span> Tableau de bord
       </div>
+      <div class="sb-item" onclick="showPanel('messagerie',this)" id="sb-messagerie" style="background:rgba(52,152,219,.08);border:1px solid rgba(52,152,219,.18);border-radius:8px;margin-bottom:4px">
+        <span class="icon">📬</span> Messagerie
+        <span class="sb-badge" id="badge-msg" style="display:none;background:#3498db"></span>
+      </div>
 
       <div class="sb-section">Gestion</div>
       <div class="sb-item" onclick="showPanel('audiences',this)">
@@ -263,6 +267,28 @@
             <button class="tab" onclick="filterCt('lu',this)">✓ Lus</button>
           </div>
           <div class="msg-list" id="list-contacts"></div>
+        </div>
+      </div>
+
+      <!-- ══ MESSAGERIE ══ -->
+      <div class="panel" id="panel-messagerie">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📬 Messagerie</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="loadMessagerie()">🔄 Actualiser</button>
+              <button class="sbtn" onclick="markAllRead()" style="background:rgba(52,152,219,.1);color:#3498db;border:1px solid rgba(52,152,219,.2)">✅ Tout marquer lu</button>
+            </div>
+          </div>
+          <div class="tabs" id="msg-filters">
+            <button class="tab active" onclick="filterMsg('tous',this)">📥 Tous</button>
+            <button class="tab" onclick="filterMsg('non_lu',this)">🔵 Non lus <span id="msg-unread-count" style="background:#3498db;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-left:4px"></span></button>
+            <button class="tab" onclick="filterMsg('repondu',this)">✅ Répondus</button>
+            <button class="tab" onclick="filterMsg('audience',this)">📋 Audiences</button>
+            <button class="tab" onclick="filterMsg('contact',this)">✉️ Contacts</button>
+            <button class="tab" onclick="filterMsg('reclamation',this)">⚠️ Réclamations</button>
+          </div>
+          <div class="msg-list" id="msg-inbox" style="max-height:none"></div>
         </div>
       </div>
 
