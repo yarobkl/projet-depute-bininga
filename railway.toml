@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "python3 server.py"
+startCommand = "python3 -c \"import os,subprocess,sys; subprocess.run([sys.executable, 'server_public.py' if os.environ.get('SERVER_MODE')=='public' else 'server.py'])\""
 healthcheckPath = "/"
 healthcheckTimeout = 60
 restartPolicyType = "on_failure"
