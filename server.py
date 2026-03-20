@@ -16,10 +16,17 @@ from urllib.parse import urlparse, unquote
 from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
-DATA_FILE       = "data.json"
-AUDIT_FILE      = "audit.log"
-USERS_FILE      = "users.json"
-SESSIONS_FILE   = "sessions.json"
+# Répertoire persistant (volume Railway monté sur /data, fallback sur cwd)
+DATA_DIR        = os.environ.get("DATA_DIR", "/data" if os.path.isdir("/data") else os.getcwd())
+
+def _df(filename):
+    """Retourne le chemin complet d'un fichier de données persistant."""
+    return os.path.join(DATA_DIR, filename)
+
+DATA_FILE       = _df("data.json")
+AUDIT_FILE      = _df("audit.log")
+USERS_FILE      = _df("users.json")
+SESSIONS_FILE   = _df("sessions.json")
 BININGA_TEST    = os.environ.get("BININGA_TEST", "") == "1"  # Mode test uniquement
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
@@ -38,13 +45,13 @@ ACTIVE_SESSIONS = {}
 SESSION_TTL     = 86400  # 24 heures
 
 # Fichier de contact
-CONTACT_FILE = "contacts.json"
+CONTACT_FILE = _df("contacts.json")
 
 # Fichier de veille IA
-NEWS_FILE = "news_monitor.json"
+NEWS_FILE = _df("news_monitor.json")
 
 # Fichier CRM — rétention 10 ans
-CRM_FILE             = "crm.json"
+CRM_FILE             = _df("crm.json")
 CRM_RETENTION_YEARS  = 10
 
 # Rate limiting : ip → {count, blocked_until}
@@ -129,8 +136,8 @@ def _reset_login_attempts(ip: str):
 # ██  MODULE ANTI-INTRUSION — BININGA SECURITY ENGINE     ██
 # ══════════════════════════════════════════════════════════
 
-BLOCKED_IPS_FILE  = "blocked_ips.json"
-ATTACK_LOG_FILE   = "attacks.log"
+BLOCKED_IPS_FILE  = _df("blocked_ips.json")
+ATTACK_LOG_FILE   = _df("attacks.log")
 USE_SSL           = False   # mis à jour dans __main__
 
 # ── IPs définitivement bannies ─────────────────────────────
@@ -785,7 +792,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
             data = load_news()
             # Vérifie si monitor.py tourne
-            pid_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.pid")
+            pid_file = _df("monitor.pid")
             monitor_running = False
             if os.path.exists(pid_file):
                 try:
@@ -1317,7 +1324,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 403)
                 return
-            log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "monitor.log")
+            log_path = _df("monitor.log")
             try:
                 if not os.path.isfile(log_path):
                     self._json({"ok": True, "lines": ["(monitor.log introuvable — agent pas encore démarré)"]})
@@ -1336,8 +1343,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 403)
                 return
             try:
-                base     = os.path.dirname(os.path.abspath(__file__))
-                pid_file = os.path.join(base, "monitor.pid")
+                pid_file = _df("monitor.pid")
                 # Tuer le process existant s'il tourne encore
                 if os.path.isfile(pid_file):
                     try:
@@ -1763,9 +1769,9 @@ def start_monitor():
     """Lance monitor.py en sous-processus daemon si pas déjà actif."""
     import subprocess, sys
     base = os.path.dirname(os.path.abspath(__file__))
-    pid_file     = os.path.join(base, "monitor.pid")
+    pid_file     = _df("monitor.pid")
     monitor_path = os.path.join(base, "monitor.py")
-    log_path     = os.path.join(base, "monitor.log")
+    log_path     = _df("monitor.log")
 
     if not os.path.isfile(monitor_path):
         print("[BININGA] ⚠️  monitor.py introuvable — veille désactivée")
@@ -1799,8 +1805,7 @@ def _monitor_watchdog():
         while True:
             time.sleep(300)   # 5 minutes
             try:
-                base     = os.path.dirname(os.path.abspath(__file__))
-                pid_file = os.path.join(base, "monitor.pid")
+                pid_file = _df("monitor.pid")
                 alive = False
                 if os.path.isfile(pid_file):
                     try:
@@ -1819,6 +1824,8 @@ def _monitor_watchdog():
 
 
 if __name__ == "__main__":
+    # Créer le répertoire de données persistant si nécessaire
+    os.makedirs(DATA_DIR, exist_ok=True)
     init_users()
     load_blocked_ips()
     start_monitor()
