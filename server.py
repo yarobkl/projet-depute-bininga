@@ -528,7 +528,7 @@ def save_news(data: dict):
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
 # ── CRM ────────────────────────────────────────────────────
-_CRM_LOCK = threading.Lock()
+_CRM_LOCK = threading.RLock()  # Reentrant — peut être acquis plusieurs fois par le même thread
 
 def _valid_email(email: str) -> bool:
     """Validation basique du format email."""
