@@ -64,6 +64,16 @@ MAX_LOG_SIZE     = 500 * 1024   # 500 Ko
 MAX_LOG_ARCHIVES = 5
 
 # ── Sécurité — mots de passe ────────────────────────────────
+def _anonymize_ip(ip: str) -> str:
+    """Anonymise une IP pour conformité RGPD : masque le dernier octet (IPv4) ou les 2 derniers groupes (IPv6)."""
+    if ":" in ip:  # IPv6
+        parts = ip.split(":")
+        return ":".join(parts[:4]) + ":xxxx:xxxx:xxxx:xxxx"
+    parts = ip.split(".")
+    if len(parts) == 4:
+        return f"{parts[0]}.{parts[1]}.{parts[2]}.x"
+    return "x.x.x.x"
+
 def _hash_new(password: str) -> str:
     """Hash pbkdf2-sha256 avec sel aléatoire (format: pbkdf2:sha256:<salt>:<hash>)."""
     salt = secrets.token_hex(16)
@@ -586,16 +596,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                          "camera=(), microphone=(), geolocation=(self), payment=()")
         csp = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self' 'unsafe-inline' https://plausible.io; "
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: blob: https://*.tile.openstreetmap.org "
             "https://www.openstreetmap.org; "
             "frame-src https://www.openstreetmap.org; "
-            "connect-src 'self'; "
+            "connect-src 'self' https://plausible.io; "
             "object-src 'none'; "
             "base-uri 'self'; "
-            "form-action 'self'"
+            "form-action 'self'; "
+            "frame-ancestors 'none'"
         )
         if USE_SSL:
             csp += "; upgrade-insecure-requests"
@@ -996,7 +1007,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 PROTECTED = {"ts", "ip"}
                 entry = {
                     "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "ip": ip,
+                    "ip": _anonymize_ip(ip),
                 }
                 for k, v in data.items():
                     k = str(k)[:64]
