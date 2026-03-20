@@ -1217,7 +1217,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 data       = json.loads(body.decode("utf-8"))
                 msg_id     = data.get("id", "")
-                reply_text = data.get("reply", "").strip()
+                reply_text = (data.get("corps") or data.get("reply") or "").strip()
                 dest_email = data.get("email", "").strip()
                 dest_nom   = data.get("nom", "")
                 if not reply_text:
@@ -1236,6 +1236,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         c["_reply_text"] = reply_text
                         c["_reply_ts"]   = now_str
                         c["_reply_by"]   = session.get("nom", "Admin") if session else "Admin"
+                        if "_replies" not in c:
+                            c["_replies"] = []
+                        c["_replies"].append({
+                            "ts":          now_str,
+                            "corps":       reply_text,
+                            "expediteur":  session.get("nom", "Admin") if session else "Admin"
+                        })
                         break
                 with open(CONTACT_FILE, "w", encoding="utf-8") as f:
                     json.dump(all_c, f, indent=2, ensure_ascii=False)
