@@ -528,6 +528,13 @@ def save_news(data: dict):
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
 # ── CRM ────────────────────────────────────────────────────
+_CRM_LOCK = threading.Lock()
+
+def _valid_email(email: str) -> bool:
+    """Validation basique du format email."""
+    import re as _re
+    return bool(_re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]{2,}$', email.strip()))
+
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
     now = datetime.now()
@@ -553,11 +560,103 @@ def load_crm() -> dict:
         return {"contacts": [], "newsletters": []}
 
 def save_crm(data: dict):
-    try:
-        with open(CRM_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        print(f"[BININGA] Erreur sauvegarde CRM: {e}")
+    with _CRM_LOCK:
+        try:
+            with open(CRM_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[BININGA] Erreur sauvegarde CRM: {e}")
+
+# ── CRM auto-intégration ────────────────────────────────────
+# Types de formulaires → libellé source CRM
+_CRM_SOURCE_LABELS = {
+    "bininga_contacts":     "contact",
+    "bininga_audiences":    "audience",
+    "bininga_newsletter":   "newsletter",
+    "bininga_commande_livre": "commande_livre",
+    "contact":              "contact",
+    "audience":             "audience",
+}
+
+def _upsert_crm_from_entry(entry: dict):
+    """
+    Ajoute ou met à jour automatiquement un contact dans le CRM
+    à partir de n'importe quel formulaire du site.
+    Champs exploités : nom, prenom, email, telephone, type.
+    """
+    email = entry.get("email", "").strip().lower()
+    nom   = entry.get("nom", "").strip()
+    prenom = entry.get("prenom", "").strip()
+    tel   = entry.get("telephone", entry.get("tel", entry.get("phone", ""))).strip()
+    type_ = entry.get("type", "contact")
+    source = _CRM_SOURCE_LABELS.get(type_, "contact")
+    is_newsletter = (type_ == "bininga_newsletter")
+
+    # Pas d'email ni de nom → rien à faire
+    if not email and not nom:
+        return
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    with _CRM_LOCK:
+        crm = load_crm()
+
+        # Chercher contact existant par email (si email fourni)
+        existing = None
+        if email:
+            existing = next((c for c in crm["contacts"]
+                             if c.get("email", "").lower() == email), None)
+
+        if existing:
+            # Mise à jour des champs manquants
+            updated = False
+            if nom and not existing.get("nom"):
+                existing["nom"] = nom; updated = True
+            if prenom and not existing.get("prenom"):
+                existing["prenom"] = prenom; updated = True
+            if tel and not existing.get("telephone"):
+                existing["telephone"] = tel; updated = True
+            if is_newsletter:
+                existing["newsletter"] = True
+                if "newsletter" not in existing.get("tags", []):
+                    existing.setdefault("tags", []).append("newsletter")
+                    updated = True
+            if source not in existing.get("tags", []):
+                existing.setdefault("tags", []).append(source)
+                updated = True
+            if updated:
+                existing["historique"].append({
+                    "ts": now_str,
+                    "action": f"mise_a_jour_{source}",
+                    "detail": f"Nouveau contact via {source}"
+                })
+        else:
+            tags = [source]
+            if is_newsletter:
+                tags.append("newsletter")
+            new_contact = {
+                "id":         f"{source}-{int(datetime.now().timestamp()*1000)}",
+                "nom":        nom,
+                "prenom":     prenom,
+                "email":      email,
+                "telephone":  tel,
+                "source":     source,
+                "tags":       tags,
+                "newsletter": is_newsletter,
+                "statut":     "nouveau",
+                "created_at": now_str,
+                "expires_at": _crm_expire_date(),
+                "notes":      [],
+                "historique": [{
+                    "ts":     now_str,
+                    "action": f"creation_{source}",
+                    "detail": f"Entrée automatique via {source}"
+                }],
+                "newsletters": [],
+            }
+            crm["contacts"].append(new_contact)
+
+        save_crm(crm)
 
 # ── Init au chargement du module ───────────────────────────
 init_users()
@@ -1017,6 +1116,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
+                # Validation email si présent
+                email_val = entry.get("email", "")
+                if email_val and not _valid_email(email_val):
+                    self._json({"ok": False, "message": "Adresse email invalide"}, 400)
+                    return
                 contacts = []
                 if os.path.exists(CONTACT_FILE):
                     try:
@@ -1031,36 +1135,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
-                # ── Inscription newsletter → ajout automatique au CRM ──
-                if etype == "bininga_newsletter":
-                    email_nl = entry.get("email", "").strip()
-                    if email_nl:
-                        crm = load_crm()
-                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_nl.lower()), None)
-                        if existing is None:
-                            new_contact = {
-                                "id":         entry.get("_id", f"nl-{int(datetime.now().timestamp()*1000)}"),
-                                "nom":        "",
-                                "prenom":     "",
-                                "email":      email_nl,
-                                "telephone":  "",
-                                "source":     "newsletter",
-                                "tags":       ["newsletter"],
-                                "newsletter": True,
-                                "statut":     "nouveau",
-                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                "expires_at": _crm_expire_date(),
-                                "notes":      [],
-                                "historique": [{"ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "action": "inscription_newsletter", "detail": "Inscription via le site public"}],
-                                "newsletters": [],
-                            }
-                            crm["contacts"].append(new_contact)
-                        else:
-                            # Marquer newsletter=True si déjà présent
-                            existing["newsletter"] = True
-                            if "newsletter" not in existing.get("tags", []):
-                                existing.setdefault("tags", []).append("newsletter")
-                        save_crm(crm)
+                # ── Auto-intégration CRM pour tous les formulaires ──
+                try:
+                    _upsert_crm_from_entry(entry)
+                except Exception:
+                    pass  # Ne jamais bloquer la réponse en cas d'erreur CRM
                 self._json({"ok": True, "message": "Message reçu"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)

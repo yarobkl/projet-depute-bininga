@@ -243,6 +243,8 @@ def bing_news_url(query: str) -> str:
 
 def parse_rss(xml_bytes: bytes, source_label: str) -> list[dict]:
     articles = []
+    if len(xml_bytes) > 2 * 1024 * 1024:  # Limite 2 Mo
+        return articles
     try:
         root = ET.fromstring(xml_bytes)
         # Support atom + rss
