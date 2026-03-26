@@ -20,16 +20,19 @@ function authHeaders(extra) {
 }
 
 async function doLogin() {
-  const u = document.getElementById("u").value.trim();
-  const p = document.getElementById("p").value;
-  const btn = document.querySelector(".login-btn");
+  const u    = document.getElementById("u").value.trim();
+  const p    = document.getElementById("p").value;
+  const totp = (document.getElementById("totp")?.value || "").trim();
+  const btn  = document.querySelector(".login-btn");
   btn.disabled = true;
   btn.textContent = "Connexion…";
   try {
+    const payload = { username: u, password: p };
+    if (totp) payload.totp_code = totp;
     const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: u, password: p })
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
     if (data.ok) {
@@ -39,16 +42,27 @@ async function doLogin() {
       SESSION_NOM           = data.nom;
       SESSION_USERNAME      = data.username || "";
       SESSION_IS_MAIN_ADMIN = data.is_main_admin || false;
-      localStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, username: data.username || "", is_main_admin: data.is_main_admin || false }));
+      window._sessionHas2fa = data.has_2fa || false;
+      sessionStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, username: data.username || "", is_main_admin: data.is_main_admin || false, has_2fa: data.has_2fa || false }));
+      // Masquer le champ 2FA après connexion
+      const totpRow = document.getElementById("totp-row");
+      if (totpRow) totpRow.style.display = "none";
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
       document.getElementById("topbar-user").textContent = data.nom + " · " + data.role;
       applyRoleUI(data.role);
       init();
+    } else if (data.require_2fa) {
+      // Afficher le champ 2FA
+      const totpRow = document.getElementById("totp-row");
+      if (totpRow) { totpRow.style.display = ""; document.getElementById("totp")?.focus(); }
+      const errEl = document.getElementById("err");
+      errEl.textContent = "Entrez votre code 2FA (application d'authentification).";
+      setTimeout(() => errEl.textContent = "", 5000);
     } else {
       const errEl = document.getElementById("err");
-      errEl.textContent = "Identifiant ou mot de passe incorrect.";
+      errEl.textContent = data.message || "Identifiant ou mot de passe incorrect.";
       setTimeout(() => errEl.textContent = "", 3500);
     }
   } catch(e) {
@@ -69,7 +83,7 @@ async function logout() {
   SESSION_ROLE          = "";
   SESSION_NOM           = "";
   SESSION_IS_MAIN_ADMIN = false;
-  localStorage.removeItem("bininga_session");
+  sessionStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
@@ -373,22 +387,46 @@ function uploadImage(callback) {
   const input = document.createElement("input");
   input.type = "file";
   input.accept = "image/*";
-  input.onchange = async e => {
+  input.onchange = e => {
     const file = e.target.files[0];
     if (!file) return;
-    showToast("⏳ Upload en cours…");
+
+    // Barre de progression
+    const progressBar = document.getElementById("upload-progress-bar");
+    const progressWrap = document.getElementById("upload-progress-wrap");
+    if (progressWrap) progressWrap.style.display = "block";
+    if (progressBar) { progressBar.style.width = "0%"; progressBar.textContent = "0%"; }
+
     const formData = new FormData();
     formData.append("file", file);
-    try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        headers: { "X-Admin-Token": SESSION_TOKEN, "X-CSRF-Token": SESSION_CSRF },
-        body: formData
-      });
-      const data = await res.json();
-      if (data.ok) { callback(data.path); showToast("Photo uploadée !"); }
-      else showToast("Erreur : " + data.message, true);
-    } catch { showToast("Serveur non disponible", true); }
+    const xhr = new XMLHttpRequest();
+
+    xhr.upload.addEventListener("progress", ev => {
+      if (ev.lengthComputable && progressBar) {
+        const pct = Math.round((ev.loaded / ev.total) * 100);
+        progressBar.style.width = pct + "%";
+        progressBar.textContent = pct + "%";
+      }
+    });
+
+    xhr.addEventListener("load", () => {
+      if (progressWrap) progressWrap.style.display = "none";
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (data.ok) { callback(data.path); showToast("Photo uploadée !"); }
+        else showToast("Erreur : " + data.message, true);
+      } catch { showToast("Réponse invalide du serveur", true); }
+    });
+
+    xhr.addEventListener("error", () => {
+      if (progressWrap) progressWrap.style.display = "none";
+      showToast("Serveur non disponible", true);
+    });
+
+    xhr.open("POST", "/api/upload");
+    xhr.setRequestHeader("X-Admin-Token", SESSION_TOKEN);
+    xhr.setRequestHeader("X-CSRF-Token", SESSION_CSRF);
+    xhr.send(formData);
   };
   input.click();
 }
@@ -1146,8 +1184,17 @@ async function loadSecurity() {
   const listSuspects = document.getElementById("sec-suspects-list");
   const listAttacks  = document.getElementById("sec-attacks-list");
   [listBlocked, listSuspects, listAttacks].forEach(e => {
-    e.innerHTML = '<div class="msg-empty">Chargement…</div>';
+    if (e) e.innerHTML = '<div class="msg-empty">Chargement…</div>';
   });
+  // Initialiser le statut 2FA pour l'utilisateur courant
+  try {
+    const tfaRes  = await fetch("/api/2fa/status", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const tfaData = await tfaRes.json();
+    if (tfaData.ok) {
+      window._sessionHas2fa = tfaData.has_2fa;
+      tfaRefreshStatus(tfaData.has_2fa);
+    }
+  } catch { tfaRefreshStatus(window._sessionHas2fa || false); }
 
   try {
     const res  = await fetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
@@ -2088,28 +2135,49 @@ function pickOrUploadImage(callback) {
 let _crmContacts    = [];
 let _crmNewsletters = [];
 let _crmTab         = "contacts";
+let _crmPage        = 1;
+let _crmTotalPages  = 1;
+let _crmTotal       = 0;
+let _crmSelected    = new Set();   // IDs sélectionnés pour bulk actions
+const _CRM_LIMIT    = 50;
 
-// ── Chargement depuis le serveur ─────────────────────────────────────────
-async function loadCrm() {
+// ── Chargement depuis le serveur (avec pagination & filtres server-side) ──
+async function loadCrm(page) {
+  if (page !== undefined) _crmPage = page;
   const el = document.getElementById("crm-list");
   if (el) el.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  const q    = (document.getElementById("crm-search")?.value || "").trim();
+  const fSrc = document.getElementById("crm-filter-source")?.value || "";
+  const fNl  = document.getElementById("crm-filter-nl")?.value  || "";
+  const params = new URLSearchParams({ page: _crmPage, limit: _CRM_LIMIT });
+  if (q)    params.set("q",      q);
+  if (fSrc) params.set("source", fSrc);
+  if (fNl)  params.set("nl",     fNl);
   try {
-    const res  = await fetch("/api/crm", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await fetch("/api/crm?" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { if (el) el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
     _crmContacts    = data.contacts    || [];
     _crmNewsletters = data.newsletters || [];
-    // KPI
-    const total = _crmContacts.length;
-    const nlCnt = _crmContacts.filter(c => c.newsletter && c.email).length;
-    setText("crm-kpi-total", total);
-    setText("crm-kpi-nl",    nlCnt);
-    setBadge("badge-crm", total);
+    _crmTotal       = data.total       || 0;
+    _crmTotalPages  = data.pages       || 1;
+    _crmPage        = data.page        || 1;
+    // KPI (total général)
+    setText("crm-kpi-total", data.total || 0);
+    setText("crm-kpi-nl",    data.newsletter_count || 0);
+    setBadge("badge-crm", data.total || 0);
+    _crmSelected.clear();
     renderCrmList();
     renderNlHistory();
   } catch(e) {
     if (el) el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
   }
+}
+
+function crmChangePage(delta) {
+  const newPage = _crmPage + delta;
+  if (newPage < 1 || newPage > _crmTotalPages) return;
+  loadCrm(newPage);
 }
 
 // ── Navigation entre onglets ─────────────────────────────────────────────
@@ -2131,62 +2199,108 @@ const CRM_SOURCE_BADGE = {
   manuel:      `<span class="crm-tag crm-tag-man">✏️ Manuel</span>`,
 };
 
-function renderCrmList() {
-  const el     = document.getElementById("crm-list");
-  if (!el) return;
-  const q      = (document.getElementById("crm-search")?.value || "").toLowerCase();
-  const fSrc   = document.getElementById("crm-filter-source")?.value  || "";
-  const fNl    = document.getElementById("crm-filter-nl")?.value      || "";
+function _updateBulkBar() {
+  const bar   = document.getElementById("crm-bulk-bar");
+  const cnt   = document.getElementById("crm-bulk-count");
+  if (!bar) return;
+  const n = _crmSelected.size;
+  bar.style.display = n > 0 ? "flex" : "none";
+  if (cnt) cnt.textContent = `${n} sélectionné(s)`;
+}
 
-  let list = _crmContacts.filter(c => {
-    if (fSrc  && c.source  !== fSrc)  return false;
-    if (fNl === "oui" && !(c.newsletter && c.email)) return false;
-    if (fNl === "non" && (c.newsletter && c.email))  return false;
-    if (q) {
-      const hay = `${c.nom} ${c.prenom} ${c.email} ${c.telephone} ${c.sujet} ${(c.tags||[]).join(" ")}`.toLowerCase();
-      if (!hay.includes(q)) return false;
-    }
-    return true;
-  });
+function crmToggleSelect(id, checked) {
+  if (checked) _crmSelected.add(id);
+  else _crmSelected.delete(id);
+  _updateBulkBar();
+}
+
+function crmDeselectAll() {
+  _crmSelected.clear();
+  document.querySelectorAll(".crm-check").forEach(cb => cb.checked = false);
+  _updateBulkBar();
+}
+
+async function crmBulkDelete() {
+  if (!_crmSelected.size) return;
+  const n = _crmSelected.size;
+  if (!confirm(`Supprimer ${n} contact(s) sélectionné(s) ? Cette action est irréversible.`)) return;
+  try {
+    const res  = await fetch("/api/crm/bulk-delete", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ ids: [..._crmSelected] })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✅ ${data.deleted} contact(s) supprimé(s)`);
+      _crmSelected.clear();
+      loadCrm(_crmPage);
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+function renderCrmList() {
+  const el = document.getElementById("crm-list");
+  if (!el) return;
+
+  // Pagination UI
+  const pagWrap = document.getElementById("crm-pagination");
+  const prevBtn = document.getElementById("crm-prev");
+  const nextBtn = document.getElementById("crm-next");
+  const pageInfo = document.getElementById("crm-page-info");
+  if (pagWrap) pagWrap.style.display = _crmTotalPages > 1 ? "flex" : "none";
+  if (pageInfo) pageInfo.textContent = `Page ${_crmPage}/${_crmTotalPages} · ${_crmTotal} contact(s)`;
+  if (prevBtn)  prevBtn.disabled = _crmPage <= 1;
+  if (nextBtn)  nextBtn.disabled = _crmPage >= _crmTotalPages;
+
+  const list = _crmContacts;
 
   if (!list.length) {
     el.innerHTML = '<div class="msg-empty">Aucun contact ne correspond aux filtres.</div>';
+    _updateBulkBar();
     return;
   }
 
   el.innerHTML = list.map(c => {
+    const checked = _crmSelected.has(c.id) ? "checked" : "";
     const srcTag  = CRM_SOURCE_BADGE[c.source]  || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
     const nlBadge = c.newsletter && c.email
       ? `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>` : "";
     const tags    = (c.tags || []).map(t => `<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("");
     const notesCnt = (c.notes || []).length;
     return `
-    <div class="crm-card">
-      <div class="crm-card-top">
-        <div>
-          <div class="crm-card-name">${esc(c.prenom || "")} ${esc(c.nom || "")}</div>
-          <div class="crm-card-meta">
-            ${c.email ? `<span>📧 ${esc(c.email)}</span>` : ""}
-            ${c.telephone ? `<span>📞 ${esc(c.telephone)}</span>` : ""}
-            <span title="Expiration">🗓️ jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
+    <div class="crm-card" style="display:flex;gap:10px;align-items:flex-start">
+      <input type="checkbox" class="crm-check" ${checked}
+        style="margin-top:4px;width:16px;height:16px;accent-color:var(--r);flex-shrink:0;cursor:pointer"
+        onchange="crmToggleSelect('${esc(c.id)}',this.checked)">
+      <div style="flex:1;min-width:0">
+        <div class="crm-card-top">
+          <div>
+            <div class="crm-card-name">${esc(c.prenom || "")} ${esc(c.nom || "")}</div>
+            <div class="crm-card-meta">
+              ${c.email ? `<span>📧 ${esc(c.email)}</span>` : ""}
+              ${c.telephone ? `<span>📞 ${esc(c.telephone)}</span>` : ""}
+              <span title="Expiration">🗓️ jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
+            </div>
           </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${srcTag}${nlBadge}${tags}</div>
         </div>
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${srcTag}${nlBadge}${tags}</div>
-      </div>
-      ${c.sujet ? `<div class="crm-card-sujet">${esc(c.sujet)}</div>` : ""}
-      <div class="crm-card-footer">
-        <div style="font-size:11px;color:rgba(255,255,255,.3)">
-          Créé le ${esc((c.created_at||"").slice(0,10))}
-          ${notesCnt ? `· 💬 ${notesCnt} note${notesCnt>1?"s":""}` : ""}
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="sbtn sbtn-progress" onclick="crmDetail('${esc(c.id)}')">👁 Voir</button>
-          <button class="sbtn sbtn-read"     onclick="crmEditModal('${esc(c.id)}')">✏️ Modifier</button>
-          <button class="btn-danger" style="padding:4px 9px" onclick="crmDelete('${esc(c.id)}')">🗑</button>
+        ${c.sujet ? `<div class="crm-card-sujet">${esc(c.sujet)}</div>` : ""}
+        <div class="crm-card-footer">
+          <div style="font-size:11px;color:rgba(255,255,255,.3)">
+            Créé le ${esc((c.created_at||"").slice(0,10))}
+            ${notesCnt ? `· 💬 ${notesCnt} note${notesCnt>1?"s":""}` : ""}
+          </div>
+          <div style="display:flex;gap:6px">
+            <button class="sbtn sbtn-progress" onclick="crmDetail('${esc(c.id)}')">👁 Voir</button>
+            <button class="sbtn sbtn-read"     onclick="crmEditModal('${esc(c.id)}')">✏️ Modifier</button>
+            <button class="btn-danger" style="padding:4px 9px" onclick="crmDelete('${esc(c.id)}')">🗑</button>
+          </div>
         </div>
       </div>
     </div>`;
   }).join("");
+  _updateBulkBar();
 }
 
 // ── Import depuis contacts.json ──────────────────────────────────────────
@@ -2433,4 +2547,82 @@ function renderNlHistory() {
       </span>
     </div>
   `).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  2FA — Authentification à deux facteurs (TOTP)
+// ══════════════════════════════════════════════════════════════════════════
+let _tfaHas2fa = false;
+
+function tfaRefreshStatus(has2fa) {
+  _tfaHas2fa = !!has2fa;
+  const status   = document.getElementById("tfa-status");
+  const btnSetup = document.getElementById("tfa-btn-setup");
+  const btnDis   = document.getElementById("tfa-btn-disable");
+  if (status) {
+    status.innerHTML = _tfaHas2fa
+      ? '<span style="color:#2ecc71">✅ 2FA activé — votre compte est protégé</span>'
+      : '<span style="color:rgba(255,255,255,.4)">⚠️ 2FA non activé — recommandé pour les admins</span>';
+  }
+  if (btnSetup) btnSetup.style.display = _tfaHas2fa ? "none" : "";
+  if (btnDis)   btnDis.style.display   = _tfaHas2fa ? "" : "none";
+}
+
+async function tfaStartSetup() {
+  try {
+    const res  = await fetch("/api/2fa/setup", { method: "POST", headers: authHeaders(), body: "{}" });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.message || "Erreur", true); return; }
+    document.getElementById("tfa-secret").textContent   = data.secret;
+    document.getElementById("tfa-qr-uri").textContent   = data.uri;
+    document.getElementById("tfa-setup-box").style.display  = "";
+    document.getElementById("tfa-actions").style.display    = "none";
+    document.getElementById("tfa-confirm-code").value = "";
+    document.getElementById("tfa-confirm-code").focus();
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+function tfaCancel() {
+  document.getElementById("tfa-setup-box").style.display = "none";
+  document.getElementById("tfa-actions").style.display   = "";
+}
+
+async function tfaActivate() {
+  const code = document.getElementById("tfa-confirm-code").value.trim();
+  if (code.length !== 6) { showToast("Code invalide (6 chiffres)", true); return; }
+  try {
+    const res  = await fetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("✅ 2FA activé avec succès !");
+      tfaCancel();
+      tfaRefreshStatus(true);
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+function tfaStartDisable() {
+  document.getElementById("tfa-disable-box").style.display = "";
+  document.getElementById("tfa-actions").style.display     = "none";
+  document.getElementById("tfa-disable-code").value = "";
+  document.getElementById("tfa-disable-code").focus();
+}
+
+function tfaCancelDisable() {
+  document.getElementById("tfa-disable-box").style.display = "none";
+  document.getElementById("tfa-actions").style.display     = "";
+}
+
+async function tfaDisable() {
+  const code = document.getElementById("tfa-disable-code").value.trim();
+  if (!code) { showToast("Code requis", true); return; }
+  try {
+    const res  = await fetch("/api/2fa/disable", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("2FA désactivé");
+      tfaCancelDisable();
+      tfaRefreshStatus(false);
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
 }
