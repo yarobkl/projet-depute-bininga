@@ -975,13 +975,45 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         safe = _safe_path(relative)
         if safe and os.path.isfile(safe):
             try:
+                mime   = self._mime(safe)
+                origin = self._cors_origin()
+                is_video = mime.startswith("video/") or mime.startswith("audio/")
+                file_size = os.path.getsize(safe)
+
+                # ── Range request (indispensable pour la lecture vidéo) ──
+                range_header = self.headers.get("Range", "")
+                if is_video and range_header.startswith("bytes="):
+                    try:
+                        rng    = range_header[6:]
+                        start_s, end_s = rng.split("-", 1)
+                        start  = int(start_s) if start_s else 0
+                        end    = int(end_s)   if end_s   else file_size - 1
+                        end    = min(end, file_size - 1)
+                        length = end - start + 1
+                        with open(safe, "rb") as f:
+                            f.seek(start)
+                            chunk = f.read(length)
+                        self.send_response(206)
+                        self.send_header("Content-Type", mime)
+                        self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+                        self.send_header("Content-Length", length)
+                        self.send_header("Accept-Ranges", "bytes")
+                        self.send_header("Cache-Control", "public, max-age=86400")
+                        if origin:
+                            self.send_header("Access-Control-Allow-Origin", origin)
+                        self._security_headers()
+                        self.end_headers()
+                        self.wfile.write(chunk)
+                        return
+                    except Exception:
+                        pass  # Fallback vers la réponse complète
+
                 with open(safe, "rb") as f:
                     content = f.read()
-                mime = self._mime(safe)
-                origin = self._cors_origin()
-                # Gzip compression pour texte/HTML/CSS/JS/JSON
+
+                # Gzip compression pour texte/HTML/CSS/JS/JSON (pas pour vidéo)
                 accept_enc = self.headers.get("Accept-Encoding", "")
-                can_gzip = "gzip" in accept_enc and mime.startswith((
+                can_gzip = not is_video and "gzip" in accept_enc and mime.startswith((
                     "text/", "application/json", "application/javascript"
                 ))
                 if can_gzip:
@@ -989,6 +1021,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
+                if is_video:
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Cache-Control", "public, max-age=86400")
                 if can_gzip:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
@@ -999,9 +1034,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 elif mime.startswith("image/"):
                     self.send_header("Cache-Control", "public, max-age=86400")
-                elif mime == "text/css":
-                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                elif mime == "text/javascript":
+                elif mime in ("text/css", "text/javascript"):
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self._security_headers()
                 self.end_headers()
@@ -2001,6 +2034,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             "svg":  "image/svg+xml",
             "webp": "image/webp",
             "ico":  "image/x-icon",
+            "mp4":  "video/mp4",
+            "webm": "video/webm",
+            "ogg":  "video/ogg",
+            "mp3":  "audio/mpeg",
         }.get(ext, "application/octet-stream")
 
     def _json(self, data, status=200):
