@@ -529,7 +529,7 @@ async function doLogin() {
       SESSION_CSRF  = data.csrf_token || "";
       SESSION_NOM   = data.nom;
       SESSION_ROLE  = data.role;
-      localStorage.setItem("bininga_ministre_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
+      sessionStorage.setItem("bininga_ministre_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom }));
       openApp(data.nom);
     } else {
       showErr("Identifiant ou mot de passe incorrect.");
@@ -555,7 +555,7 @@ function showErr(msg) {
 // Auto-connexion si une session admin est déjà active
 (async function tryAutoLogin() {
   try {
-    const saved = JSON.parse(localStorage.getItem("bininga_ministre_session") || "null");
+    const saved = JSON.parse(sessionStorage.getItem("bininga_ministre_session") || "null");
     if (!saved || !saved.token) return;
     // Vérifier que le token est encore valide
     const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": saved.token } });
@@ -575,7 +575,7 @@ async function logout() {
     await fetch("/api/logout", { method: "POST", headers: { "X-Admin-Token": SESSION_TOKEN } });
   } catch (_) {}
   SESSION_TOKEN = "";
-  localStorage.removeItem("bininga_ministre_session");
+  sessionStorage.removeItem("bininga_ministre_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
