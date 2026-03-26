@@ -12,16 +12,28 @@
 </button>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
+<!-- Barre de progression upload (globale, visible pendant un upload) -->
+<div id="upload-progress-wrap" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;height:4px;background:rgba(0,0,0,.3)">
+  <div id="upload-progress-bar" style="height:100%;background:var(--r);width:0%;transition:width .2s ease;font-size:0;line-height:0;color:transparent"></div>
+</div>
+
 <!-- ═══════════════════════════════ LOGIN ═══════════════════════════════ -->
 <div id="login">
   <div class="login-box">
     <div class="login-logo">B</div>
     <h1>Espace Administration</h1>
     <p>BININGA — Député d'Ewo · Accès sécurisé</p>
-    <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username">
-    <input class="login-field" type="password" id="p" placeholder="Mot de passe" autocomplete="current-password">
+    <label for="u" class="sr-only">Identifiant</label>
+    <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username" aria-label="Identifiant">
+    <label for="p" class="sr-only">Mot de passe</label>
+    <input class="login-field" type="password" id="p" placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe">
+    <!-- Champ 2FA — affiché uniquement si le serveur signale require_2fa -->
+    <div id="totp-row" style="display:none">
+      <label for="totp" class="sr-only">Code d'authentification 2FA</label>
+      <input class="login-field" type="text" id="totp" placeholder="Code 2FA (6 chiffres)" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" aria-label="Code 2FA">
+    </div>
     <button class="login-btn" onclick="doLogin()">Connexion</button>
-    <div class="login-err" id="err"></div>
+    <div class="login-err" id="err" role="alert" aria-live="polite"></div>
   </div>
 </div>
 
@@ -135,6 +147,7 @@
   <div class="main">
     <div class="topbar">
       <div class="topbar-title" id="topbar-title">Tableau de bord</div>
+      <span id="autosave-indicator"></span>
       <div class="topbar-info"><span id="topbar-user">—</span> · <span id="last-login">—</span></div>
     </div>
 
@@ -700,6 +713,49 @@
           <div id="sec-attacks-list" class="msg-empty">Chargement…</div>
         </div>
 
+        <!-- Carte 2FA -->
+        <div class="card" style="margin-top:16px">
+          <div class="card-header">
+            <div class="card-title">🔐 Authentification à deux facteurs (2FA)</div>
+          </div>
+          <div style="padding:16px">
+            <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:16px">
+              Protégez votre compte avec une application TOTP (Google Authenticator, Authy, etc.).
+            </p>
+            <div id="tfa-status" style="margin-bottom:16px;font-size:13px;font-weight:600"></div>
+            <!-- Setup -->
+            <div id="tfa-setup-box" style="display:none">
+              <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:8px">
+                Scannez ce QR code avec votre application, puis confirmez avec le code généré.
+              </p>
+              <div id="tfa-qr-uri" style="word-break:break-all;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:8px;padding:8px;background:var(--n3);border-radius:6px"></div>
+              <p style="font-size:11px;color:rgba(255,255,255,.35);margin-bottom:12px">
+                Ou saisissez le secret manuellement dans votre app : <code id="tfa-secret" style="color:#d4b96a;font-size:11px"></code>
+              </p>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input type="text" id="tfa-confirm-code" placeholder="Code 6 chiffres" maxlength="6" inputmode="numeric"
+                  style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none;width:160px">
+                <button onclick="tfaActivate()" style="padding:9px 18px;background:var(--r);color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">✅ Activer</button>
+                <button onclick="tfaCancel()" style="padding:9px 12px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer">Annuler</button>
+              </div>
+            </div>
+            <!-- Disable -->
+            <div id="tfa-disable-box" style="display:none">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <input type="text" id="tfa-disable-code" placeholder="Code 2FA actuel" maxlength="6" inputmode="numeric"
+                  style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none;width:180px">
+                <button onclick="tfaDisable()" style="padding:9px 18px;background:#e74c3c;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">🗑 Désactiver le 2FA</button>
+                <button onclick="tfaCancelDisable()" style="padding:9px 12px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer">Annuler</button>
+              </div>
+            </div>
+            <!-- Actions principales -->
+            <div id="tfa-actions" style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="tfa-btn-setup" onclick="tfaStartSetup()" style="padding:9px 18px;background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:none">🔑 Configurer le 2FA</button>
+              <button id="tfa-btn-disable" onclick="tfaStartDisable()" style="padding:9px 18px;background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);border-radius:7px;font-size:13px;cursor:pointer;display:none">🗑 Désactiver</button>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <!-- ── LOGS D'AUDIT ── -->
@@ -832,9 +888,9 @@
             <!-- Barre de recherche & filtres -->
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
               <input type="text" id="crm-search" placeholder="🔍 Rechercher nom, email, tél…"
-                oninput="renderCrmList()"
+                oninput="loadCrm(1)"
                 style="flex:1;min-width:200px;padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none">
-              <select id="crm-filter-source" onchange="renderCrmList()"
+              <select id="crm-filter-source" onchange="loadCrm(1)"
                 style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
                 <option value="">Toutes sources</option>
                 <option value="audience">Audience</option>
@@ -843,7 +899,7 @@
                 <option value="signalement">Signalement</option>
                 <option value="manuel">Manuel</option>
               </select>
-              <select id="crm-filter-nl" onchange="renderCrmList()"
+              <select id="crm-filter-nl" onchange="loadCrm(1)"
                 style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;font-family:inherit;outline:none">
                 <option value="">Tous contacts</option>
                 <option value="oui">Abonnés newsletter</option>
@@ -851,7 +907,21 @@
               </select>
             </div>
 
+            <!-- Barre d'actions en masse -->
+            <div id="crm-bulk-bar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.2);border-radius:8px">
+              <span id="crm-bulk-count" style="font-size:13px;font-weight:600;color:var(--r)">0 sélectionné(s)</span>
+              <button onclick="crmBulkDelete()" style="padding:5px 12px;background:var(--r);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Supprimer la sélection</button>
+              <button onclick="crmDeselectAll()" style="padding:5px 12px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:12px;cursor:pointer">✕ Déselectionner</button>
+            </div>
+
             <div id="crm-list"><div class="msg-empty">Chargement…</div></div>
+
+            <!-- Pagination CRM -->
+            <div id="crm-pagination" style="display:none;justify-content:center;align-items:center;gap:8px;margin-top:16px;flex-wrap:wrap">
+              <button id="crm-prev" onclick="crmChangePage(-1)" style="padding:6px 14px;background:var(--n3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px;font-size:12px;cursor:pointer">← Précédent</button>
+              <span id="crm-page-info" style="font-size:12px;color:rgba(255,255,255,.4)">Page 1/1</span>
+              <button id="crm-next" onclick="crmChangePage(1)" style="padding:6px 14px;background:var(--n3);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:6px;font-size:12px;cursor:pointer">Suivant →</button>
+            </div>
           </div>
         </div>
 
@@ -992,6 +1062,6 @@
   </div>
 </div>
 
-<script src="static/admin.js" defer></script>
+<script src="static/admin.js?v=user-onclick-fix" defer></script>
 </body>
 </html>

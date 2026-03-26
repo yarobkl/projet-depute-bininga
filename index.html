@@ -353,6 +353,10 @@
     <div class="video-frame-wrap">
       <video
         controls
+        autoplay
+        muted
+        playsinline
+        loop
         style="width:100%;aspect-ratio:16/9;border-radius:12px;display:block;background:#000">
         <source src="/images/video/COOPERATION JUDICIAIRE_ GERALD DARMANIN RECOIT SON HOMOLOGUE CONGOLAIS A. A.WILFRID BININGA A PARIS.mp4" type="video/mp4">
       </video>
@@ -360,7 +364,7 @@
   </div>
 </section>
 
-<section id="engagement" data-mob-tab="contact">
+<section id="engagement" data-mob-tab="audience">
   <div class="eng-wrap">
     <div class="eng-left">
       <span class="stag" id="dyn-eng-tag">Contactez-nous</span>
@@ -532,7 +536,29 @@
   </div>
 </footer>
 
-
+<!-- BARRE DE NAVIGATION MOBILE (bottom tabbar) -->
+<nav class="mob-tabbar" id="mobTabbar" aria-label="Navigation rapide">
+  <a href="#hero" class="mob-tab-item active" data-tab="accueil">
+    <span class="mob-tab-icon">🏠</span>
+    <span class="mob-tab-lbl">Accueil</span>
+  </a>
+  <a href="#about" class="mob-tab-item" data-tab="profil">
+    <span class="mob-tab-icon">👤</span>
+    <span class="mob-tab-lbl">Biographie</span>
+  </a>
+  <a href="#actu" class="mob-tab-item" data-tab="actu">
+    <span class="mob-tab-icon">📰</span>
+    <span class="mob-tab-lbl">Actualités</span>
+  </a>
+  <a href="#engagement" class="mob-tab-item" data-tab="audience">
+    <span class="mob-tab-icon">🤝</span>
+    <span class="mob-tab-lbl">Audience</span>
+  </a>
+  <a href="#contact" class="mob-tab-item" data-tab="contact">
+    <span class="mob-tab-icon">✉️</span>
+    <span class="mob-tab-lbl">Contact</span>
+  </a>
+</nav>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="static/index.js" defer></script>

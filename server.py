@@ -5,14 +5,18 @@ import io
 import ssl
 import secrets
 import hashlib
+import hmac
+import struct
 import time
 import threading
 import posixpath
 import re
 import gzip
+import base64
+import html as _html
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qs
 from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
@@ -52,6 +56,11 @@ LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 1800  # 30 minutes
 
+# Rate limiting par token (API calls) : token → {count, window_start}
+TOKEN_RATE_COUNTS: dict = {}
+TOKEN_RATE_LIMIT  = 300     # requêtes / 60 s / token
+TOKEN_RATE_WINDOW = 60      # secondes
+
 # Rotation des logs
 MAX_LOG_SIZE     = 500 * 1024   # 500 Ko
 MAX_LOG_ARCHIVES = 5
@@ -74,6 +83,38 @@ def _verify_password(password: str, stored: str) -> bool:
         return secrets.compare_digest(dk.hex(), dk_stored)
     # Legacy SHA-256 sans sel — accepté jusqu'au prochain changement de mot de passe
     return secrets.compare_digest(hashlib.sha256(password.encode()).hexdigest(), stored)
+
+# ── Sécurité — 2FA TOTP (RFC 6238, HMAC-SHA1) ──────────────
+def _totp_generate_secret() -> str:
+    """Génère un secret TOTP encodé en base32 (20 octets = 160 bits)."""
+    return base64.b32encode(secrets.token_bytes(20)).decode("utf-8")
+
+def _totp_hotp(secret: str, counter: int) -> int:
+    """HOTP(K, C) = Truncate(HMAC-SHA1(K, C)) — RFC 4226."""
+    key = base64.b32decode(secret.upper() + "=" * ((8 - len(secret) % 8) % 8))
+    msg = struct.pack(">Q", counter)
+    h   = hmac.new(key, msg, "sha1").digest()
+    offset = h[-1] & 0x0F
+    code = struct.unpack(">I", h[offset:offset + 4])[0] & 0x7FFFFFFF
+    return code % 1_000_000
+
+def _totp_verify(secret: str, token: str, window: int = 1) -> bool:
+    """Vérifie un code TOTP ± window intervalles de 30 s."""
+    try:
+        code = int(token.strip())
+    except (ValueError, TypeError):
+        return False
+    counter = int(time.time()) // 30
+    for delta in range(-window, window + 1):
+        if secrets.compare_digest(str(_totp_hotp(secret, counter + delta)).zfill(6), str(code).zfill(6)):
+            return True
+    return False
+
+def _totp_uri(secret: str, username: str, issuer: str = "BININGA") -> str:
+    """Retourne l'URI otpauth:// pour QR code."""
+    from urllib.parse import quote
+    return (f"otpauth://totp/{quote(issuer)}:{quote(username)}"
+            f"?secret={secret}&issuer={quote(issuer)}&algorithm=SHA1&digits=6&period=30")
 
 # ── Sécurité — path traversal ──────────────────────────────
 # Fichiers serveur à ne jamais servir comme statiques
@@ -129,9 +170,10 @@ def _reset_login_attempts(ip: str):
 # ██  MODULE ANTI-INTRUSION — BININGA SECURITY ENGINE     ██
 # ══════════════════════════════════════════════════════════
 
-BLOCKED_IPS_FILE  = "blocked_ips.json"
-ATTACK_LOG_FILE   = "attacks.log"
-USE_SSL           = False   # mis à jour dans __main__
+BLOCKED_IPS_FILE    = "blocked_ips.json"
+ATTACK_LOG_FILE     = "attacks.log"
+ATTACK_SCORES_FILE  = "attack_scores.json"
+USE_SSL             = False   # mis à jour dans __main__
 
 # ── IPs définitivement bannies ─────────────────────────────
 BLOCKED_IPS: set = set()
@@ -224,9 +266,33 @@ def save_blocked_ips():
     except Exception:
         pass
 
+def load_attack_scores():
+    """Recharge les scores d'attaque depuis le fichier de persistance."""
+    global ATTACK_SCORES
+    if not os.path.exists(ATTACK_SCORES_FILE):
+        return
+    try:
+        with open(ATTACK_SCORES_FILE, "r", encoding="utf-8") as f:
+            ATTACK_SCORES = json.load(f)
+    except Exception:
+        pass
+
+def save_attack_scores():
+    """Persiste les scores d'attaque sur disque (survit aux redémarrages)."""
+    try:
+        with open(ATTACK_SCORES_FILE, "w", encoding="utf-8") as f:
+            json.dump(ATTACK_SCORES, f, ensure_ascii=False)
+    except Exception:
+        pass
+
+# ── Compteur pour flush périodique des scores ──────────────
+_ATTACK_SAVE_COUNTER = 0
+_ATTACK_SAVE_EVERY   = 10   # Sauvegarder tous les 10 événements
+
 # ── Enregistrer un événement d'attaque ─────────────────────
 def record_attack(ip: str, event_type: str, score: int, detail: str = ""):
     """Cumule le score d'attaque de l'IP et bannit si seuil atteint."""
+    global _ATTACK_SAVE_COUNTER
     entry = ATTACK_SCORES.setdefault(ip, {"score": 0, "events": []})
     entry["score"] += score
     entry["events"].append({
@@ -248,16 +314,35 @@ def record_attack(ip: str, event_type: str, score: int, detail: str = ""):
     except Exception:
         pass
 
+    # Persistance périodique des scores (tous les N événements)
+    _ATTACK_SAVE_COUNTER += 1
+    if _ATTACK_SAVE_COUNTER >= _ATTACK_SAVE_EVERY:
+        _ATTACK_SAVE_COUNTER = 0
+        save_attack_scores()
+
     # Bannissement automatique si seuil dépassé
     if entry["score"] >= ATTACK_BAN_THRESHOLD and ip not in BLOCKED_IPS:
         BLOCKED_IPS.add(ip)
         save_blocked_ips()
+        save_attack_scores()
         audit_log("AUTO_BAN", ip, f"Bannissement automatique — score {entry['score']} ({event_type})")
         print(f"[BININGA] 🚫 IP bannie automatiquement : {ip} (score={entry['score']})")
 
 def check_and_ban_ip(ip: str) -> bool:
     """Retourne True si l'IP est bloquée."""
     return ip in BLOCKED_IPS
+
+def check_token_rate(token: str) -> bool:
+    """Retourne True si le token a dépassé la limite de requêtes."""
+    if not token:
+        return False
+    now = time.time()
+    rec = TOKEN_RATE_COUNTS.get(token)
+    if not rec or now - rec["t"] > TOKEN_RATE_WINDOW:
+        TOKEN_RATE_COUNTS[token] = {"n": 1, "t": now}
+        return False
+    rec["n"] += 1
+    return rec["n"] > TOKEN_RATE_LIMIT
 
 # ── Rate limiting global ────────────────────────────────────
 def check_global_rate(ip: str) -> bool:
@@ -360,6 +445,19 @@ def load_users():
         return []
 
 def save_users(users):
+    # Backup automatique avant écrasement (garder 3 derniers)
+    if os.path.exists(USERS_FILE):
+        try:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup = USERS_FILE.replace(".json", f"_backup_{ts}.json")
+            with open(USERS_FILE, "rb") as src, open(backup, "wb") as dst:
+                dst.write(src.read())
+            backups = sorted(f for f in os.listdir(".") if f.startswith("users_backup_"))
+            for old in backups[:-3]:
+                try: os.remove(old)
+                except Exception: pass
+        except Exception:
+            pass
     with open(USERS_FILE, "w", encoding="utf-8") as f:
         json.dump(users, f, indent=2, ensure_ascii=False)
 
@@ -379,7 +477,13 @@ def init_users():
         }])
         print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
     elif not ADMIN_PASS:
-        print(f"[BININGA] ⚠️  BININGA_PASS non défini — définissez la variable d'environnement.")
+        # En production (Railway) : bloquer le démarrage sans mot de passe défini
+        on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
+        if on_railway:
+            print("[BININGA] ❌ BININGA_PASS est obligatoire en production. Ajoutez la variable d'environnement.")
+            import sys; sys.exit(1)
+        else:
+            print(f"[BININGA] ⚠️  BININGA_PASS non défini — définissez la variable d'environnement.")
 
 def find_user(username):
     return next((u for u in load_users() if u["username"] == username), None)
@@ -537,6 +641,19 @@ def load_crm() -> dict:
 
 def save_crm(data: dict):
     try:
+        # Backup automatique avant écrasement (garder 3 derniers)
+        if os.path.exists(CRM_FILE):
+            try:
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup = CRM_FILE.replace(".json", f"_backup_{ts}.json")
+                with open(CRM_FILE, "rb") as src, open(backup, "wb") as dst:
+                    dst.write(src.read())
+                backups = sorted(f for f in os.listdir(".") if f.startswith("crm_backup_"))
+                for old in backups[:-3]:
+                    try: os.remove(old)
+                    except Exception: pass
+            except Exception:
+                pass
         with open(CRM_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
@@ -635,6 +752,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._error(404, "Fichier non trouvé")
             return
 
+        # ── /health — Healthcheck Railway / monitoring ──
+        if path == "/health":
+            self._json({
+                "ok":      True,
+                "status":  "healthy",
+                "ts":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "sessions": len(ACTIVE_SESSIONS),
+                "blocked":  len(BLOCKED_IPS),
+            })
+            return
+
         if path in ("/api/load", "/data.json"):
             self._json(load_data())
             return
@@ -682,6 +810,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        if path == "/api/2fa/status":
+            token = self.headers.get("X-Admin-Token", "")
+            session = get_session(token)
+            if not session:
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            user = find_user(session["username"])
+            self._json({"ok": True, "has_2fa": bool((user or {}).get("totp_secret", ""))})
+            return
+
         if path == "/api/users":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "ministre"):
@@ -692,7 +830,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             # Le ministre ne voit pas le compte protégé (Rodrin)
             if session and session["role"] == "ministre":
                 all_users = [u for u in all_users if u["username"] != PROTECTED_USER]
-            users = [{"username": u["username"], "role": u["role"], "nom": u["nom"]}
+            users = [{"username": u["username"], "role": u["role"], "nom": u["nom"],
+                      "created_by": u.get("created_by", "")}
                      for u in all_users]
             self._json({"ok": True, "users": users})
             return
@@ -731,19 +870,47 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "dir": safe_dir, "folders": folders, "files": files})
             return
 
-        # ── /api/crm — Liste des contacts CRM (admin uniquement) ──
+        # ── /api/crm — Liste des contacts CRM avec pagination et recherche ──
         if path == "/api/crm":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin"):
                 self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
                 return
-            crm = load_crm()
+            qs      = parse_qs(urlparse(self.path).query)
+            page    = max(1, int(qs.get("page",  ["1"])[0]))
+            limit   = min(200, max(10, int(qs.get("limit", ["50"])[0])))
+            q       = qs.get("q",      [""])[0].lower().strip()
+            f_src   = qs.get("source", [""])[0]
+            f_nl    = qs.get("nl",     [""])[0]    # "oui" / "non"
+            crm     = load_crm()
+            all_c   = crm.get("contacts", [])
+            # Filtrage
+            filtered = []
+            for c in all_c:
+                if f_src and c.get("source") != f_src:
+                    continue
+                if f_nl == "oui" and not (c.get("newsletter") and c.get("email")):
+                    continue
+                if f_nl == "non" and (c.get("newsletter") and c.get("email")):
+                    continue
+                if q:
+                    hay = f"{c.get('nom','')} {c.get('prenom','')} {c.get('email','')} {c.get('telephone','')} {c.get('sujet','')} {' '.join(c.get('tags',[]))}".lower()
+                    if q not in hay:
+                        continue
+                filtered.append(c)
+            total    = len(filtered)
+            pages    = max(1, (total + limit - 1) // limit)
+            start    = (page - 1) * limit
+            contacts = filtered[start:start + limit]
             self._json({
-                "ok": True,
-                "contacts":    crm.get("contacts", []),
+                "ok":        True,
+                "contacts":  contacts,
                 "newsletters": crm.get("newsletters", []),
-                "total":       len(crm.get("contacts", [])),
-                "newsletter_count": sum(1 for c in crm.get("contacts", []) if c.get("newsletter") and c.get("email")),
+                "total":     total,
+                "page":      page,
+                "pages":     pages,
+                "limit":     limit,
+                "newsletter_count": sum(1 for c in all_c if c.get("newsletter") and c.get("email")),
             })
             return
 
@@ -808,13 +975,45 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         safe = _safe_path(relative)
         if safe and os.path.isfile(safe):
             try:
+                mime   = self._mime(safe)
+                origin = self._cors_origin()
+                is_video = mime.startswith("video/") or mime.startswith("audio/")
+                file_size = os.path.getsize(safe)
+
+                # ── Range request (indispensable pour la lecture vidéo) ──
+                range_header = self.headers.get("Range", "")
+                if is_video and range_header.startswith("bytes="):
+                    try:
+                        rng    = range_header[6:]
+                        start_s, end_s = rng.split("-", 1)
+                        start  = int(start_s) if start_s else 0
+                        end    = int(end_s)   if end_s   else file_size - 1
+                        end    = min(end, file_size - 1)
+                        length = end - start + 1
+                        with open(safe, "rb") as f:
+                            f.seek(start)
+                            chunk = f.read(length)
+                        self.send_response(206)
+                        self.send_header("Content-Type", mime)
+                        self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
+                        self.send_header("Content-Length", length)
+                        self.send_header("Accept-Ranges", "bytes")
+                        self.send_header("Cache-Control", "public, max-age=86400")
+                        if origin:
+                            self.send_header("Access-Control-Allow-Origin", origin)
+                        self._security_headers()
+                        self.end_headers()
+                        self.wfile.write(chunk)
+                        return
+                    except Exception:
+                        pass  # Fallback vers la réponse complète
+
                 with open(safe, "rb") as f:
                     content = f.read()
-                mime = self._mime(safe)
-                origin = self._cors_origin()
-                # Gzip compression pour texte/HTML/CSS/JS/JSON
+
+                # Gzip compression pour texte/HTML/CSS/JS/JSON (pas pour vidéo)
                 accept_enc = self.headers.get("Accept-Encoding", "")
-                can_gzip = "gzip" in accept_enc and mime.startswith((
+                can_gzip = not is_video and "gzip" in accept_enc and mime.startswith((
                     "text/", "application/json", "application/javascript"
                 ))
                 if can_gzip:
@@ -822,6 +1021,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header("Content-Type", mime)
                 self.send_header("Content-Length", len(content))
+                if is_video:
+                    self.send_header("Accept-Ranges", "bytes")
+                    self.send_header("Cache-Control", "public, max-age=86400")
                 if can_gzip:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
@@ -830,8 +1032,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self.send_header("Vary", "Origin")
                 if mime.startswith("text/html") or mime == "application/json":
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
-                elif mime.startswith("image/") or mime in ("text/css", "text/javascript"):
+                elif mime.startswith("image/"):
                     self.send_header("Cache-Control", "public, max-age=86400")
+                elif mime in ("text/css", "text/javascript"):
+                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self._security_headers()
                 self.end_headers()
                 self.wfile.write(content)
@@ -902,8 +1106,25 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 creds    = json.loads(body.decode("utf-8"))
                 username = creds.get("username", "")
                 password = creds.get("password", "")
+                totp_code = str(creds.get("totp_code", "")).strip()
                 user     = find_user(username)
                 if user and _verify_password(password, user.get("password_hash", "")):
+                    # Vérification 2FA si activé
+                    totp_secret = user.get("totp_secret", "")
+                    if totp_secret:
+                        if not totp_code:
+                            # Signaler que 2FA est requis sans bloquer
+                            time.sleep(LOGIN_FAIL_DELAY)
+                            self._json({"ok": False, "require_2fa": True,
+                                        "message": "Code d'authentification 2FA requis"}, 401)
+                            return
+                        if not _totp_verify(totp_secret, totp_code):
+                            _record_failed_login(ip)
+                            record_attack(ip, "2FA_FAIL", 3, f"2FA échoué pour {username}")
+                            audit_log("2FA_FAIL", ip, f"Code 2FA invalide pour {username}")
+                            time.sleep(LOGIN_FAIL_DELAY)
+                            self._json({"ok": False, "message": "Code 2FA invalide"}, 401)
+                            return
                     # Mise à niveau automatique sha256 legacy → pbkdf2
                     if not user["password_hash"].startswith("pbkdf2:"):
                         users = load_users()
@@ -925,9 +1146,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     }
                     save_sessions()
                     print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
-                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']})")
+                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']}){' [2FA]' if totp_secret else ''}")
                     self._json({"ok": True, "token": token, "csrf_token": csrf_token,
-                                "role": user["role"], "nom": user.get("nom", username)})
+                                "role": user["role"], "nom": user.get("nom", username),
+                                "username": user["username"],
+                                "is_main_admin": username == ADMIN_USER,
+                                "has_2fa": bool(totp_secret)})
                 else:
                     _record_failed_login(ip)
                     record_attack(ip, "LOGIN_FAIL", 2, f"Échec login user: {username}")
@@ -1055,10 +1279,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if not session:
             self._json({"ok": False, "message": "Non autorisé"}, 401)
             return
+
+        # Rate limiting par token authentifié
+        if check_token_rate(token):
+            self._json({"ok": False, "message": "Trop de requêtes — ralentissez"}, 429)
+            return
         # Validation CSRF sur routes d'écriture
         if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear",
-                    "/api/crm/upsert", "/api/crm/delete", "/api/crm/import",
-                    "/api/crm/note", "/api/crm/newsletter/send"):
+                    "/api/crm/upsert", "/api/crm/delete", "/api/crm/bulk-delete", "/api/crm/import",
+                    "/api/crm/note", "/api/crm/newsletter/send",
+                    "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
             if not csrf_expected or not secrets.compare_digest(csrf_received, csrf_expected):
@@ -1149,6 +1379,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
                 users    = load_users()
                 existing = next((u for u in users if u["username"] == uname), None)
+                # Seul l'admin principal (ou le créateur) peut modifier un compte administrateur existant
+                if existing and existing["role"] == "admin" and session and session["username"] != ADMIN_USER:
+                    created_by = existing.get("created_by", "")
+                    if created_by != session["username"]:
+                        self._json({"ok": False, "message": "Vous ne pouvez modifier que les comptes admin que vous avez créés"}, 403)
+                        return
                 if existing:
                     existing["nom"]  = nom or existing["nom"]
                     existing["role"] = role
@@ -1158,7 +1394,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     if not pwd:
                         self._json({"ok": False, "message": "Mot de passe requis"}, 400)
                         return
-                    users.append({"username": uname, "password_hash": _hash_new(pwd), "role": role, "nom": nom or uname})
+                    users.append({"username": uname, "password_hash": _hash_new(pwd), "role": role, "nom": nom or uname,
+                                  "created_by": session["username"] if session else ""})
                 save_users(users)
                 action = "Modification" if existing else "Création"
                 audit_log("USER_UPSERT", ip, f"{action} utilisateur : {uname} ({role})")
@@ -1179,11 +1416,23 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if uname == session["username"]:
                     self._json({"ok": False, "message": "Impossible de supprimer son propre compte"}, 400)
                     return
-                # Le ministre ne peut pas supprimer le compte protégé
-                if session and session["role"] == "ministre" and uname == PROTECTED_USER:
-                    self._json({"ok": False, "message": "Ce compte est protégé et ne peut pas être supprimé"}, 403)
+                all_users = load_users()
+                target_user = next((u for u in all_users if u["username"] == uname), None)
+                # Le compte ministre ne peut jamais être supprimé
+                if target_user and target_user["role"] == "ministre":
+                    self._json({"ok": False, "message": "Le compte ministre ne peut pas être supprimé"}, 403)
                     return
-                users = [u for u in load_users() if u["username"] != uname]
+                # Seul l'admin principal (ou le créateur) peut supprimer un compte administrateur
+                if target_user and target_user["role"] == "admin" and session["username"] != ADMIN_USER:
+                    created_by = target_user.get("created_by", "")
+                    if created_by != session["username"]:
+                        self._json({"ok": False, "message": "Vous ne pouvez supprimer que les comptes admin que vous avez créés"}, 403)
+                        return
+                # Personne ne peut supprimer l'admin principal lui-même
+                if uname == ADMIN_USER:
+                    self._json({"ok": False, "message": "Le compte admin principal ne peut pas être supprimé"}, 403)
+                    return
+                users = [u for u in all_users if u["username"] != uname]
                 save_users(users)
                 audit_log("USER_DELETE", ip, f"Suppression utilisateur : {uname}")
                 self._json({"ok": True})
@@ -1322,6 +1571,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if not os.path.isfile(log_path):
                     self._json({"ok": True, "lines": ["(monitor.log introuvable — agent pas encore démarré)"]})
                     return
+                # Rotation automatique si monitor.log > 1 Mo
+                if os.path.getsize(log_path) > 1024 * 1024:
+                    ts_rot = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    archive = log_path.replace(".log", f"_{ts_rot}.log")
+                    try:
+                        os.rename(log_path, archive)
+                        # Supprimer les vieilles archives (garder 3)
+                        base_dir = os.path.dirname(log_path)
+                        archives = sorted(f for f in os.listdir(base_dir) if f.startswith("monitor_") and f.endswith(".log"))
+                        for old in archives[:-3]:
+                            try: os.remove(os.path.join(base_dir, old))
+                            except Exception: pass
+                    except Exception:
+                        pass
                 with open(log_path, "r", encoding="utf-8", errors="replace") as f:
                     lines = f.readlines()
                 last = [l.rstrip() for l in lines[-100:]]
@@ -1447,6 +1710,98 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 save_crm(crm)
                 audit_log("CRM_DELETE", ip, f"Contact CRM supprimé : {contact_id}")
                 self._json({"ok": True, "deleted": before - len(crm["contacts"])})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/crm/bulk-delete — Suppression en masse ──
+        if path == "/api/crm/bulk-delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data = json.loads(body.decode("utf-8"))
+                ids  = [str(i).strip() for i in data.get("ids", []) if i]
+                if not ids:
+                    self._json({"ok": False, "message": "Liste d'IDs requise"}, 400)
+                    return
+                crm    = load_crm()
+                before = len(crm["contacts"])
+                id_set = set(ids)
+                crm["contacts"] = [c for c in crm["contacts"] if c["id"] not in id_set]
+                save_crm(crm)
+                deleted = before - len(crm["contacts"])
+                who     = session["username"] if session else "admin"
+                audit_log("CRM_BULK_DELETE", ip, f"{deleted} contact(s) supprimé(s) en masse par {who}")
+                self._json({"ok": True, "deleted": deleted})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/2fa/setup — Générer un secret TOTP pour l'utilisateur ──
+        if path == "/api/2fa/setup":
+            try:
+                who    = session["username"]
+                secret = _totp_generate_secret()
+                uri    = _totp_uri(secret, who)
+                # Stocker le secret temporairement dans la session (pas encore activé)
+                ACTIVE_SESSIONS[token]["pending_totp"] = secret
+                save_sessions()
+                self._json({"ok": True, "secret": secret, "uri": uri})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/2fa/activate — Confirmer et activer le 2FA ──
+        if path == "/api/2fa/activate":
+            try:
+                data       = json.loads(body.decode("utf-8"))
+                totp_code  = str(data.get("code", "")).strip()
+                pending    = ACTIVE_SESSIONS.get(token, {}).get("pending_totp", "")
+                if not pending:
+                    self._json({"ok": False, "message": "Aucun secret en attente. Relancez /api/2fa/setup."}, 400)
+                    return
+                if not _totp_verify(pending, totp_code):
+                    self._json({"ok": False, "message": "Code TOTP invalide — vérifiez votre application"}, 400)
+                    return
+                # Activer le 2FA
+                who   = session["username"]
+                users = load_users()
+                for u in users:
+                    if u["username"] == who:
+                        u["totp_secret"] = pending
+                        break
+                save_users(users)
+                ACTIVE_SESSIONS[token].pop("pending_totp", None)
+                save_sessions()
+                audit_log("2FA_ENABLED", ip, f"2FA activé pour {who}")
+                self._json({"ok": True, "message": "2FA activé avec succès"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/2fa/disable — Désactiver le 2FA ──
+        if path == "/api/2fa/disable":
+            try:
+                data      = json.loads(body.decode("utf-8"))
+                totp_code = str(data.get("code", "")).strip()
+                who       = session["username"]
+                user      = find_user(who)
+                secret    = (user or {}).get("totp_secret", "")
+                if not secret:
+                    self._json({"ok": False, "message": "2FA non activé"}, 400)
+                    return
+                if not _totp_verify(secret, totp_code):
+                    self._json({"ok": False, "message": "Code TOTP invalide"}, 400)
+                    return
+                users = load_users()
+                for u in users:
+                    if u["username"] == who:
+                        u.pop("totp_secret", None)
+                        break
+                save_users(users)
+                audit_log("2FA_DISABLED", ip, f"2FA désactivé pour {who}")
+                self._json({"ok": True, "message": "2FA désactivé"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
@@ -1588,6 +1943,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 nl_id     = secrets.token_hex(6)
                 erreur    = None
                 envoyes   = 0
+                echecs = 0
                 if smtp_host and smtp_user:
                     import smtplib
                     from email.mime.multipart import MIMEMultipart
@@ -1619,13 +1975,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                                         "action": "newsletter_envoyee",
                                         "detail": f"Newsletter envoyée : {sujet}"
                                     })
-                                except Exception:
-                                    pass
+                                except Exception as e_dest:
+                                    echecs += 1
+                                    print(f"[BININGA] ⚠️  Envoi échoué pour {email_dest}: {e_dest}")
+                    except smtplib.SMTPAuthenticationError:
+                        erreur = "Authentification SMTP échouée — vérifiez SMTP_USER et SMTP_PASS."
+                        print(f"[BININGA] ❌ SMTP auth error: {smtp_host}")
+                    except smtplib.SMTPConnectError:
+                        erreur = f"Impossible de se connecter au serveur SMTP ({smtp_host}:{smtp_port})."
+                        print(f"[BININGA] ❌ SMTP connect error: {smtp_host}:{smtp_port}")
                     except Exception as e_smtp:
-                        erreur = str(e_smtp)
+                        erreur = f"Erreur SMTP : {str(e_smtp)}"
+                        print(f"[BININGA] ❌ SMTP error: {e_smtp}")
                 else:
                     erreur = ("SMTP non configuré. "
                               "Définissez SMTP_HOST, SMTP_USER, SMTP_PASS dans les variables d'environnement.")
+                    print("[BININGA] ⚠️  Newsletter demandée mais SMTP non configuré.")
                 # Historiser la newsletter
                 nl_entry = {
                     "id":           nl_id,
@@ -1645,6 +2010,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({
                     "ok":      True,
                     "envoyes": envoyes,
+                    "echecs":  echecs,
                     "total":   len(destinataires),
                     "erreur":  erreur,
                 })
@@ -1668,6 +2034,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             "svg":  "image/svg+xml",
             "webp": "image/webp",
             "ico":  "image/x-icon",
+            "mp4":  "video/mp4",
+            "webm": "video/webm",
+            "ogg":  "video/ogg",
+            "mp3":  "audio/mpeg",
         }.get(ext, "application/octet-stream")
 
     def _json(self, data, status=200):
@@ -1694,7 +2064,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(response)
 
     def _error(self, code, message):
-        response = f"<h1>{code}</h1><p>{message}</p>".encode("utf-8")
+        safe_msg = _html.escape(str(message))
+        response = f"<h1>{code}</h1><p>{safe_msg}</p>".encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", len(response))
@@ -1821,6 +2192,7 @@ def _monitor_watchdog():
 if __name__ == "__main__":
     init_users()
     load_blocked_ips()
+    load_attack_scores()
     start_monitor()
     _monitor_watchdog()
 
