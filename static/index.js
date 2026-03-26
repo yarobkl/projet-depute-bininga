@@ -759,6 +759,22 @@ async function subNewsletter(e, f) {
   ok.style.display = "block";
 }
 
+// ── AUTOPLAY VIDÉO — déclenche play() quand la vidéo entre dans le viewport ──
+(function(){
+  const vid = document.querySelector("#video-section video");
+  if(!vid) return;
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if(e.isIntersecting){
+        vid.play().catch(()=>{});
+      } else {
+        vid.pause();
+      }
+    });
+  }, { threshold: 0.3 });
+  obs.observe(vid);
+})();
+
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
   const videoId = "D_aj4bxOsJY";
