@@ -759,6 +759,39 @@ async function subNewsletter(e, f) {
   ok.style.display = "block";
 }
 
+// ── AUTOPLAY VIDÉO ──────────────────────────────────────────
+(function(){
+  const vid = document.querySelector("#video-section video");
+  if(!vid) return;
+
+  function tryPlay(){ vid.muted = true; vid.play().catch(()=>{}); }
+
+  // 1. Tentative immédiate au chargement
+  tryPlay();
+
+  // 2. IntersectionObserver — seuil très bas (1% visible suffit)
+  if("IntersectionObserver" in window){
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting) tryPlay();
+        else vid.pause();
+      });
+    }, { threshold: 0.01 });
+    obs.observe(vid);
+  }
+
+  // 3. Fallback : premier scroll ou touch utilisateur (lève la restriction navigateur)
+  function onInteract(){
+    tryPlay();
+    window.removeEventListener("scroll", onInteract);
+    window.removeEventListener("touchstart", onInteract);
+    window.removeEventListener("click", onInteract);
+  }
+  window.addEventListener("scroll",     onInteract, { passive: true });
+  window.addEventListener("touchstart", onInteract, { passive: true });
+  window.addEventListener("click",      onInteract, { once: true });
+})();
+
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
   const videoId = "D_aj4bxOsJY";

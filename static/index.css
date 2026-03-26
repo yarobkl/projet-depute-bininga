@@ -517,7 +517,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .video-inner .stag{margin-bottom:14px;display:inline-block}
 .video-inner .stitle{margin-bottom:10px}
 .video-inner .ssub{font-size:16px;color:rgba(255,255,255,.4);margin-bottom:48px;line-height:1.7}
-.video-frame-wrap{position:relative;width:100%;padding-bottom:56.25%;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 40px 100px rgba(0,0,0,.7);border:1px solid rgba(200,16,46,.15)}
+.video-frame-wrap{position:relative;width:100%;border-radius:14px;overflow:hidden;background:#000;box-shadow:0 40px 100px rgba(0,0,0,.7);border:1px solid rgba(200,16,46,.15)}
 .video-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
 .video-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--n2);cursor:pointer}
 .video-placeholder-icon{font-size:64px;opacity:.6}
