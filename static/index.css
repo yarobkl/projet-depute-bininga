@@ -30,7 +30,7 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .ncta{background:var(--r)!important;color:var(--w)!important;padding:10px 22px;border-radius:3px;font-weight:600!important}
 .ncta::after{display:none!important}
 .ncta:hover{background:var(--rd)!important;opacity:1}
-.hbg{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:5px}
+.hbg{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:5px;background:none;border:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 .hbg span{width:24px;height:1.5px;background:var(--w);transition:var(--t);display:block}
 
 /* HERO */
