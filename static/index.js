@@ -382,9 +382,13 @@ window.addEventListener("scroll",()=>nav.classList.toggle("sc",scrollY>60));
 
 // mobile nav
 const hbg=document.getElementById("hbg"),mob=document.getElementById("mobNav");
-hbg.onclick=()=>mob.classList.add("open");
-document.getElementById("mobClose").onclick=()=>mob.classList.remove("open");
-function cMob(){mob.classList.remove("open")}
+function mobOpen(v){
+  mob.classList.toggle("open",v);
+  hbg.setAttribute("aria-expanded", mob.classList.contains("open"));
+  document.body.style.overflow = mob.classList.contains("open") ? "hidden" : "";
+}
+hbg.addEventListener("click",()=>mobOpen());
+function cMob(){mobOpen(false)}
 
 // slider
 let cs=0, galSlides=[], galDotEls=[], galTrackEl=null, galTimer=null;
