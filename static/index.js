@@ -382,8 +382,7 @@ window.addEventListener("scroll",()=>nav.classList.toggle("sc",scrollY>60));
 
 // mobile nav
 const hbg=document.getElementById("hbg"),mob=document.getElementById("mobNav");
-hbg.onclick=()=>mob.classList.add("open");
-document.getElementById("mobClose").onclick=()=>mob.classList.remove("open");
+hbg.onclick=()=>mob.classList.toggle("open");
 function cMob(){mob.classList.remove("open")}
 
 // slider
