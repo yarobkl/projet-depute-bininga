@@ -79,6 +79,23 @@ function loadContent() {
         if (lblEl) lblEl.textContent = s.label;
       });
 
+      // Ticker mobile — dupliquer les items pour une boucle sans fin
+      if (window.innerWidth <= 768) {
+        const track = document.getElementById('stat-ticker-track');
+        if (track) {
+          const origItems = Array.from(track.querySelectorAll('.hstat'));
+          origItems.forEach(item => {
+            const clone = item.cloneNode(true);
+            // Supprimer les IDs du clone pour éviter les doublons
+            clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+            // Afficher la valeur finale dans le clone (data-c ou textContent déjà défini)
+            const numEl = clone.querySelector('.hstat-num');
+            if (numEl && numEl.dataset.c) numEl.textContent = numEl.dataset.c;
+            track.appendChild(clone);
+          });
+        }
+      }
+
       // Parcours — en-tête de section
       const pSec = d.parcoursSection || {};
       const pTagEl    = document.getElementById("dyn-parcours-tag");
