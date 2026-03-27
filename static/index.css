@@ -543,16 +543,9 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 @media(max-width:600px){.nl-form{flex-direction:column}.nl-form button{width:100%}}
 @media(max-width:768px){#video-section{padding:70px 4%}}
 
-/* ── BARRE DE NAVIGATION MOBILE (bottom tabbar) ── */
-.mob-tabbar{display:none;position:fixed;bottom:0;left:0;right:0;z-index:1100;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(200,16,46,.18);padding:0 0 env(safe-area-inset-bottom,0)}
-.mob-tab-item{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:10px 4px 8px;text-decoration:none;color:rgba(255,255,255,.38);transition:color .25s,transform .2s;gap:3px;min-width:0}
-.mob-tab-item:hover,.mob-tab-item.active{color:var(--r);transform:translateY(-2px)}
-.mob-tab-icon{font-size:20px;line-height:1;display:block}
-.mob-tab-lbl{font-size:9px;font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60px}
-.mob-tab-item.active .mob-tab-icon{filter:drop-shadow(0 0 6px rgba(200,16,46,.7))}
+/* ── BARRE DE NAVIGATION MOBILE (bottom tabbar) — DÉSACTIVÉE v2 ── */
+.mob-tabbar{display:none!important}
 @media(max-width:768px){
-  .mob-tabbar{display:flex}
-  body{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))}
   .hero-stat-strip{position:relative;bottom:auto}
   #hero{min-height:100svh;min-height:100vh}
 }
