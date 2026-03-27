@@ -543,7 +543,7 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 @media(max-width:600px){.nl-form{flex-direction:column}.nl-form button{width:100%}}
 @media(max-width:768px){#video-section{padding:70px 4%}}
 
-/* ── BARRE DE NAVIGATION MOBILE (bottom tabbar) — désactivée ── */
+/* ── BARRE DE NAVIGATION MOBILE (bottom tabbar) — DÉSACTIVÉE v2 ── */
 .mob-tabbar{display:none!important}
 @media(max-width:768px){
   .hero-stat-strip{position:relative;bottom:auto}
