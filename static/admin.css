@@ -327,4 +327,30 @@ select.form-input:focus{border-color:var(--r)}
   .sidebar.open { left: 0 !important; }
   .sidebar-overlay.open { display: block; }
   .main { margin-left: 0 !important; }
+  .topbar { padding-left: 70px; }
+}
+
+@media (max-width: 600px) {
+  .content { padding: 14px; }
+  .card { padding: 16px; }
+  .kpi-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
+  .kpi-val { font-size: 26px; }
+  .kpi-card { padding: 14px 12px; }
+  .sec-grid { grid-template-columns: 1fr; }
+  .user-form-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: 1fr; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .card-actions { width: 100%; justify-content: flex-end; }
+  .msg-top { flex-direction: column; gap: 8px; }
+  .msg-footer { flex-wrap: wrap; justify-content: flex-start; }
+  .topbar { padding-left: 70px; padding-right: 14px; height: auto; min-height: 58px; flex-wrap: wrap; gap: 6px; padding-top: 8px; padding-bottom: 8px; }
+  .topbar-title { font-size: 13px; }
+  .tabs { gap: 6px; }
+  .tab { padding: 6px 10px; font-size: 11px; }
+  #toast { left: 14px; right: 14px; bottom: 14px; text-align: center; }
+  .log-detail { white-space: normal; }
+  .crm-card-top { flex-direction: column; }
+  .crm-card-footer { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .user-item { flex-wrap: wrap; }
+  .login-box { padding: 32px 22px; margin: 16px; }
 }
