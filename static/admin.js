@@ -1925,27 +1925,6 @@ function showToast(msg, err=false) {
   setTimeout(() => t.className = "", 3500);
 }
 
-function toggleSidebar() {
-  const sb = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov = document.getElementById("sidebar-overlay");
-  const open = sb.classList.toggle("open");
-  btn.classList.toggle("open", open);
-  btn.setAttribute("aria-expanded", open);
-  ov.classList.toggle("open", open);
-  document.body.style.overflow = open ? "hidden" : "";
-}
-function closeSidebar() {
-  const sb = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov = document.getElementById("sidebar-overlay");
-  sb.classList.remove("open");
-  btn.classList.remove("open");
-  btn.setAttribute("aria-expanded", "false");
-  ov.classList.remove("open");
-  document.body.style.overflow = "";
-}
-
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
 function toggleSidebar() {
   const sb  = document.getElementById("sidebar");
