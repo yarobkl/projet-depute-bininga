@@ -1674,6 +1674,10 @@ function showPanel(name, el) {
   if (name === "security")     loadSecurity();
   if (name === "veille")       loadNews();
   if (name === "crm")          loadCrm();
+  const formPanels = ["hero","about","seo","engagement","cta","contact-info","footer"];
+  if (formPanels.includes(name)) populateForm();
+  // Fermer la sidebar sur mobile après sélection
+  if (window.innerWidth <= 768) closeSidebar();
 }
 
 // ══════════════════════════════════════════════════════════════════════════

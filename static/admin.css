@@ -334,6 +334,7 @@ select.form-input:focus{border-color:var(--r)}
 }
 
 @media (max-width: 600px) {
+  .dashboard-bottom-grid { grid-template-columns: 1fr !important; }
   .content { padding: 14px; }
   .card { padding: 16px; }
   .kpi-grid { grid-template-columns: repeat(4,1fr); gap: 6px; }
