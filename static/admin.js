@@ -1927,22 +1927,26 @@ function showToast(msg, err=false) {
 
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
 function toggleSidebar() {
-  const sb  = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov  = document.getElementById("sidebar-overlay");
+  const sb   = document.getElementById("sidebar");
+  const btn  = document.getElementById("hamburger");
+  const ov   = document.getElementById("sidebar-overlay");
+  const pull = document.getElementById("sb-pull");
   if (!sb) return;
   const open = sb.classList.toggle("open");
-  if (btn) { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
-  if (ov)  ov.classList.toggle("open", open);
+  if (btn)  { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
+  if (ov)   ov.classList.toggle("open", open);
+  if (pull) pull.classList.toggle("visible", open);
   document.body.style.overflow = open ? "hidden" : "";
 }
 function closeSidebar() {
-  const sb  = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov  = document.getElementById("sidebar-overlay");
-  if (sb)  sb.classList.remove("open");
-  if (btn) { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
-  if (ov)  ov.classList.remove("open");
+  const sb   = document.getElementById("sidebar");
+  const btn  = document.getElementById("hamburger");
+  const ov   = document.getElementById("sidebar-overlay");
+  const pull = document.getElementById("sb-pull");
+  if (sb)   sb.classList.remove("open");
+  if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
+  if (ov)   ov.classList.remove("open");
+  if (pull) pull.classList.remove("visible");
   document.body.style.overflow = "";
 }
 
