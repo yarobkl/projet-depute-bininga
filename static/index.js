@@ -787,17 +787,14 @@ async function subNewsletter(e, f) {
 
   function tryPlay(){ vid.muted = true; vid.play().catch(()=>{}); }
 
-  // 1. Tentative immédiate au chargement
-  tryPlay();
-
-  // 2. IntersectionObserver — seuil très bas (1% visible suffit)
+  // Démarre uniquement quand la vidéo est visible à l'écran
   if("IntersectionObserver" in window){
     const obs = new IntersectionObserver(entries => {
       entries.forEach(e => {
         if(e.isIntersecting) tryPlay();
         else vid.pause();
       });
-    }, { threshold: 0.01 });
+    }, { threshold: 0.5 });
     obs.observe(vid);
   }
 
