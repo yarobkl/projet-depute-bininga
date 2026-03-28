@@ -331,9 +331,11 @@ select.form-input:focus{border-color:var(--r)}
 @media (max-width: 600px) {
   .content { padding: 14px; }
   .card { padding: 16px; }
-  .kpi-grid { grid-template-columns: repeat(2,1fr); gap: 10px; }
-  .kpi-val { font-size: 26px; }
-  .kpi-card { padding: 14px 12px; }
+  .kpi-grid { grid-template-columns: repeat(4,1fr); gap: 6px; }
+  .kpi-val { font-size: 20px; }
+  .kpi-card { padding: 10px 8px; }
+  .kpi-label { font-size: 8px; letter-spacing: 1px; margin-bottom: 6px; }
+  .kpi-sub { font-size: 9px; }
   .sec-grid { grid-template-columns: 1fr; }
   .user-form-grid { grid-template-columns: 1fr; }
   .stats-row { grid-template-columns: 1fr; }
