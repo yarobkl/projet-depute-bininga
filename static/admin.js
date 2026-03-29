@@ -2891,10 +2891,14 @@ async function generateEditorial(newsItem) {
   if (!titre || !resume) { showToast("Titre et résumé requis", true); return; }
   if (btn) { btn.textContent = "⏳ Génération en cours…"; btn.disabled = true; }
   try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55000); // 55s timeout
     const res  = await apiFetch("/api/editorial/generate", {
       method: "POST", headers: authHeaders(),
-      body: JSON.stringify({ news_id: newsId, titre, resume, source, url, date })
+      body: JSON.stringify({ news_id: newsId, titre, resume, source, url, date }),
+      signal: controller.signal
     });
+    clearTimeout(timer);
     const data = await res.json();
     if (data.ok) {
       _editorialData.unshift(data.article);
@@ -2908,7 +2912,10 @@ async function generateEditorial(newsItem) {
       // Reset formulaire
       ["ed-titre","ed-resume","ed-source","ed-url"].forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
     } else showToast(data.message || "Erreur génération", true);
-  } catch (e) { showToast("Erreur : " + e.message, true); }
+  } catch (e) {
+    if (e.name === "AbortError") showToast("⏱️ Délai dépassé — réessayez", true);
+    else showToast("Erreur : " + e.message, true);
+  }
   finally { if (btn) { btn.textContent = "⚡ Générer l'article éditorial"; btn.disabled = false; } }
 }
 

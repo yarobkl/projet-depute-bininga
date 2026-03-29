@@ -649,7 +649,7 @@ _PG_CONN = None
 def _pg():
     """Retourne une connexion PostgreSQL active, ou None si indisponible."""
     global _PG_CONN
-    raw_url = os.environ.get("DATABASE_URL", "")
+    raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
     # Railway renvoie parfois postgres:// au lieu de postgresql://
@@ -1410,6 +1410,109 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "path": "images/sinistres/" + fname})
             return
 
+        # ── /api/chat (public — chatbot assistant du site) ──
+        if path == "/api/chat":
+            try:
+                payload  = json.loads(body.decode("utf-8"))
+                question = str(payload.get("message", "")).strip()[:1000]
+                history  = payload.get("history", [])[-6:]  # max 6 messages précédents
+                if not question:
+                    self._json({"ok": False, "message": "Message vide"}, 400)
+                    return
+
+                key = os.environ.get("GROQ_API_KEY", "")
+                if not key:
+                    self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer plus tard ou contacter directement l'équipe via le formulaire de contact."})
+                    return
+
+                # Charger les données du site pour le contexte
+                site_context = ""
+                try:
+                    with open(DATA_FILE, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    hero  = data.get("hero", {})
+                    about = data.get("about", {})
+                    stats = data.get("stats", {})
+                    actus = data.get("actus", {})
+                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip()
+                    role  = hero.get("role", "")
+                    site_context = f"""
+INFORMATIONS SUR LE SITE :
+Nom : {nom_complet}
+Rôle : {role}
+Slogan : {hero.get('slogan','').replace('<em>','').replace('</em>','').replace('<br>','  ')}
+Subtitle : {hero.get('subtitle','')}
+
+À propos : {about.get('texte','')}
+
+Chiffres clés : {json.dumps(stats, ensure_ascii=False)[:500]}
+
+Actualités récentes : {json.dumps([a.get('titre','') for a in actus.get('liste',[])[:5] if isinstance(a,dict)], ensure_ascii=False)}
+"""
+                except Exception:
+                    site_context = "Informations sur Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
+
+                system_prompt = f"""Tu es l'assistant officiel présent sur ce site. Tu réponds directement aux utilisateurs comme si tu faisais partie de l'équipe de {nom_complet if nom_complet else "cette personnalité publique"}.
+
+Tu dois répondre à toutes les questions en utilisant uniquement les informations disponibles sur le site. Tu exploites au maximum tout le contenu du site (biographie, actualités, pages, informations, détails, etc.).
+
+Tu peux répondre sur :
+- la biographie
+- les fonctions et mandats
+- les actions et projets
+- les campagnes
+- les actualités
+- toute information présente sur le site
+
+Règles :
+- Réponds de manière naturelle, claire et professionnelle
+- Réponses courtes (2 à 5 lignes maximum)
+- N'invente jamais d'informations
+- Si l'information n'existe pas sur le site, dis simplement que l'information n'est pas disponible
+- Priorise les informations les plus récentes
+- Pour contacter → indique la page contact du site
+- Pour une demande de rendez-vous ou d'audience → explique que la demande se fait via le formulaire du site
+- Tu es naturel, humain et accessible
+
+{site_context}"""
+
+                messages = [{"role": "system", "content": system_prompt}]
+                for h in history:
+                    if h.get("role") in ("user", "assistant") and h.get("content"):
+                        messages.append({"role": h["role"], "content": str(h["content"])[:500]})
+                messages.append({"role": "user", "content": question})
+
+                import urllib.request as ur
+                api_payload = json.dumps({
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": messages,
+                    "max_tokens": 400,
+                    "temperature": 0.5,
+                }).encode()
+                req = ur.Request(
+                    "https://api.groq.com/openai/v1/chat/completions",
+                    data=api_payload,
+                    headers={
+                        "Authorization": f"Bearer {key}",
+                        "content-type": "application/json",
+                    },
+                )
+                try:
+                    with ur.urlopen(req, timeout=20) as r:
+                        resp  = json.loads(r.read())
+                        reply = resp["choices"][0]["message"]["content"].strip()
+                    self._json({"ok": True, "reply": reply})
+                except Exception as e:
+                    err_body = ""
+                    try:
+                        if hasattr(e, 'read'): err_body = e.read().decode()
+                    except Exception: pass
+                    print(f"[CHAT] Erreur Groq : {e} — {err_body}")
+                    self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer ou utiliser le formulaire de contact."})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         # ── /api/contact (public — formulaires du site) ──
         if path == "/api/contact":
             try:
@@ -1971,7 +2074,7 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                     },
                 )
                 try:
-                    with ur.urlopen(req, timeout=30) as r:
+                    with ur.urlopen(req, timeout=50) as r:
                         resp = json.loads(r.read())
                         raw  = resp["choices"][0]["message"]["content"].strip()
                 except Exception as api_err:
