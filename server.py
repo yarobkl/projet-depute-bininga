@@ -1971,7 +1971,7 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                     },
                 )
                 try:
-                    with ur.urlopen(req, timeout=30) as r:
+                    with ur.urlopen(req, timeout=50) as r:
                         resp = json.loads(r.read())
                         raw  = resp["choices"][0]["message"]["content"].strip()
                 except Exception as api_err:
