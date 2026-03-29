@@ -60,4 +60,6 @@ jobs:
 
       # ── 4. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP
+        env:
+          BININGA_PASS: bininga2025
         run: python tests/test_server.py
