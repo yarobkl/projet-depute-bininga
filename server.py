@@ -503,7 +503,8 @@ def has_role(token, *roles):
 
 # ── Sessions persistantes ───────────────────────────────────
 def save_sessions():
-    """Persiste les sessions actives dans sessions.json."""
+    """Persiste les sessions dans PostgreSQL ET sessions.json."""
+    _pg_save("sessions", ACTIVE_SESSIONS)  # _pg_save résolu à l'appel
     try:
         with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
             json.dump(ACTIVE_SESSIONS, f, ensure_ascii=False)
@@ -511,22 +512,28 @@ def save_sessions():
         pass
 
 def load_sessions():
-    """Recharge les sessions au démarrage et expurge les expirées."""
+    """Recharge les sessions : PostgreSQL en priorité, fichier en fallback."""
     global ACTIVE_SESSIONS
-    if not os.path.exists(SESSIONS_FILE):
-        return
-    try:
-        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
-            stored = json.load(f)
-        now = time.time()
-        ACTIVE_SESSIONS = {
-            token: sess for token, sess in stored.items()
-            if now - sess.get("created_at", 0) < SESSION_TTL
-        }
-        if len(ACTIVE_SESSIONS) != len(stored):
-            save_sessions()  # Réécrire sans les sessions expirées
-    except Exception:
-        pass
+    now = time.time()
+
+    # Essayer PostgreSQL en priorité
+    stored = _pg_load("sessions")  # _pg_load résolu à l'appel
+    if stored is None:
+        # Fallback fichier
+        if not os.path.exists(SESSIONS_FILE):
+            return
+        try:
+            with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
+                stored = json.load(f)
+        except Exception:
+            return
+
+    ACTIVE_SESSIONS = {
+        token: sess for token, sess in stored.items()
+        if now - sess.get("created_at", 0) < SESSION_TTL
+    }
+    if len(ACTIVE_SESSIONS) != len(stored):
+        save_sessions()  # Purger les sessions expirées
 
 # ── Audit ──────────────────────────────────────────────────
 def _rotate_audit_if_needed():
@@ -620,6 +627,102 @@ def save_news(data: dict):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
+# ══════════════════════════════════════════════════════════════════════════
+# ██  COUCHE BASE DE DONNÉES — PostgreSQL + fallback fichiers JSON          ██
+# ══════════════════════════════════════════════════════════════════════════
+# Utilise PostgreSQL si DATABASE_URL est défini (addon Railway PostgreSQL).
+# Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
+# Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
+
+_PG_CONN = None
+
+def _pg():
+    """Retourne une connexion PostgreSQL active, ou None si indisponible."""
+    global _PG_CONN
+    raw_url = os.environ.get("DATABASE_URL", "")
+    if not raw_url:
+        return None
+    # Railway renvoie parfois postgres:// au lieu de postgresql://
+    url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
+    try:
+        import psycopg2
+        if _PG_CONN is None or _PG_CONN.closed:
+            _PG_CONN = psycopg2.connect(url, connect_timeout=5)
+            _PG_CONN.autocommit = True
+            with _PG_CONN.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS bininga_store (
+                        key         TEXT PRIMARY KEY,
+                        data        TEXT NOT NULL,
+                        updated_at  TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
+        return _PG_CONN
+    except Exception as e:
+        print(f"[DB] PostgreSQL indisponible : {e}")
+        _PG_CONN = None
+        return None
+
+def _pg_load(key: str):
+    """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
+    conn = _pg()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
+            row = cur.fetchone()
+            return json.loads(row[0]) if row else None
+    except Exception:
+        return None
+
+def _pg_save(key: str, value) -> bool:
+    """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
+    conn = _pg()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO bininga_store (key, data, updated_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (key) DO UPDATE
+                SET data = EXCLUDED.data, updated_at = NOW()
+            """, (key, json.dumps(value, ensure_ascii=False)))
+        return True
+    except Exception as e:
+        print(f"[DB] Erreur écriture '{key}' : {e}")
+        return False
+
+# ── Contacts (formulaires publics) ──────────────────────────
+def load_contacts() -> list:
+    """Charge les contacts : PostgreSQL en priorité, fichier en fallback."""
+    db = _pg_load("contacts")
+    if db is not None:
+        return db
+    if not os.path.exists(CONTACT_FILE):
+        return []
+    try:
+        with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_contacts(contacts: list):
+    """Persiste les contacts dans PostgreSQL ET dans le fichier."""
+    _pg_save("contacts", contacts)
+    try:
+        with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+            json.dump(contacts, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde contacts : {e}")
+
+def append_contact(entry: dict):
+    """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
+    contacts = load_contacts()
+    contacts.append(entry)
+    save_contacts(contacts)
+
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
@@ -630,36 +733,36 @@ def _crm_expire_date() -> str:
         return now.replace(year=now.year + CRM_RETENTION_YEARS, day=28).strftime("%Y-%m-%d %H:%M:%S")
 
 def load_crm() -> dict:
-    """Charge le fichier CRM et purge les contacts expirés."""
-    if not os.path.exists(CRM_FILE):
-        return {"contacts": [], "newsletters": []}
-    try:
-        with open(CRM_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Charge le CRM : PostgreSQL en priorité, fichier en fallback. Purge les expirés."""
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def _purge(data):
         data["contacts"] = [c for c in data.get("contacts", [])
                             if c.get("expires_at", "9999-99-99") >= now_str]
         if "newsletters" not in data:
             data["newsletters"] = []
         return data
+
+    # PostgreSQL en priorité
+    db = _pg_load("crm")
+    if db is not None:
+        return _purge(db)
+
+    # Fallback fichier
+    if not os.path.exists(CRM_FILE):
+        return {"contacts": [], "newsletters": []}
+    try:
+        with open(CRM_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return _purge(data)
     except Exception:
         return {"contacts": [], "newsletters": []}
 
 def save_crm(data: dict):
+    # PostgreSQL (source de vérité)
+    _pg_save("crm", data)
+    # Fichier JSON (backup local)
     try:
-        # Backup automatique avant écrasement (garder 3 derniers)
-        if os.path.exists(CRM_FILE):
-            try:
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup = CRM_FILE.replace(".json", f"_backup_{ts}.json")
-                with open(CRM_FILE, "rb") as src, open(backup, "wb") as dst:
-                    dst.write(src.read())
-                backups = sorted(f for f in os.listdir(".") if f.startswith("crm_backup_"))
-                for old in backups[:-3]:
-                    try: os.remove(old)
-                    except Exception: pass
-            except Exception:
-                pass
         with open(CRM_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
@@ -778,13 +881,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            all_contacts = []
-            if os.path.exists(CONTACT_FILE):
-                try:
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
-                except Exception:
-                    all_contacts = []
+            all_contacts = load_contacts()
             audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
             contacts  = [c for c in all_contacts if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
@@ -795,13 +892,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            all_c = []
-            if os.path.exists(CONTACT_FILE):
-                try:
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_c = json.load(f)
-                except Exception:
-                    all_c = []
+            all_c = load_contacts()
             audiences = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") != "Réclamation"]
             recls     = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") == "Réclamation"]
             contacts  = [c for c in all_c if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
@@ -1258,16 +1349,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
-                contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    try:
-                        with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                            contacts = json.load(f)
-                    except Exception:
-                        contacts = []
-                contacts.append(entry)
-                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(contacts, f, indent=2, ensure_ascii=False)
+                append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("type", "contact")
@@ -1380,13 +1462,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if not msg_type:
                     self._json({"ok": False, "message": "Type requis"}, 400)
                     return
-                all_contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
+                all_contacts = load_contacts()
                 kept = [c for c in all_contacts if c.get("type") != msg_type]
-                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(kept, f, indent=2, ensure_ascii=False)
+                save_contacts(kept)
                 who = session["username"] if session else "?"
                 audit_log("CLEAR_CONTACTS", ip, f"Suppression type={msg_type} par {who}")
                 self._json({"ok": True})
@@ -1404,22 +1482,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if not cid:
                     self._json({"ok": False, "message": "ID requis"}, 400)
                     return
-                all_c = []
-                if os.path.exists(CONTACT_FILE):
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_c = json.load(f)
+                all_c   = load_contacts()
                 updated = False
                 for c in all_c:
                     if c.get("_id") == cid:
-                        if "status"  in data: c["_status"]  = data["status"]
-                        if "notes"   in data: c["_notes"]   = data["notes"]
-                        if "pinged"  in data: c["_pinged"]  = data["pinged"]
+                        if "status"     in data: c["_status"]     = data["status"]
+                        if "notes"      in data: c["_notes"]      = data["notes"]
+                        if "pinged"     in data: c["_pinged"]     = data["pinged"]
                         if "pinged_date" in data: c["_pinged_date"] = data["pinged_date"]
                         updated = True
                         break
                 if updated:
-                    with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                        json.dump(all_c, f, indent=2, ensure_ascii=False)
+                    save_contacts(all_c)
                 self._json({"ok": True, "updated": updated})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -1435,8 +1509,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 who     = session["username"] if session else "admin"
                 results = {}
                 if "contacts" in targets:
-                    with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                        json.dump([], f)
+                    save_contacts([])
                     results["contacts"] = True
                     audit_log("RESET", ip, f"Contacts réinitialisés par {who}")
                 if "crm" in targets:
@@ -1962,10 +2035,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
                 return
             try:
-                all_contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
+                all_contacts = load_contacts()
                 crm     = load_crm()
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 exp_str = _crm_expire_date()
