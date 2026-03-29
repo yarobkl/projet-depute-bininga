@@ -649,7 +649,7 @@ _PG_CONN = None
 def _pg():
     """Retourne une connexion PostgreSQL active, ou None si indisponible."""
     global _PG_CONN
-    raw_url = os.environ.get("DATABASE_URL", "")
+    raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
     # Railway renvoie parfois postgres:// au lieu de postgresql://
