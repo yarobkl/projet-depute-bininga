@@ -999,7 +999,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            from urllib.parse import parse_qs
             qs = parse_qs(urlparse(self.path).query)
             req_dir = qs.get("dir", ["images"])[0]
             # Sécurité : autoriser uniquement les sous-dossiers de images/
