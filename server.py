@@ -673,6 +673,26 @@ def _pg():
         _PG_CONN = None
         return None
 
+# ── Helper IA — Gemini (gratuit) ───────────────────────────
+def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
+    """Appelle Gemini Flash et retourne le texte généré."""
+    import urllib.request as ur
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise ValueError("GEMINI_API_KEY non configuré")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-1.5-flash:generateContent?key={key}"
+    )
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
+    }).encode()
+    req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+    with ur.urlopen(req, timeout=30) as r:
+        resp = json.loads(r.read())
+    return resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
     conn = _pg()
@@ -1420,7 +1440,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self._json({"ok": False, "message": "Message vide"}, 400)
                     return
 
-                key = os.environ.get("GROQ_API_KEY", "")
+                key = os.environ.get("GEMINI_API_KEY", "").strip()
                 if not key:
                     self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer plus tard ou contacter directement l'équipe via le formulaire de contact."})
                     return
@@ -1482,32 +1502,21 @@ Règles :
                         messages.append({"role": h["role"], "content": str(h["content"])[:500]})
                 messages.append({"role": "user", "content": question})
 
-                import urllib.request as ur
-                api_payload = json.dumps({
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": messages,
-                    "max_tokens": 400,
-                    "temperature": 0.5,
-                }).encode()
-                req = ur.Request(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    data=api_payload,
-                    headers={
-                        "Authorization": f"Bearer {key}",
-                        "content-type": "application/json",
-                    },
-                )
+                # Construire le prompt complet pour Gemini
+                conv = "\n".join([
+                    f"{'Utilisateur' if m['role']=='user' else 'Assistant'} : {m['content']}"
+                    for m in messages[1:]  # skip system
+                ])
+                full_prompt = messages[0]["content"] + "\n\n" + conv if conv else messages[0]["content"]
                 try:
-                    with ur.urlopen(req, timeout=20) as r:
-                        resp  = json.loads(r.read())
-                        reply = resp["choices"][0]["message"]["content"].strip()
+                    reply = _gemini_call(full_prompt, max_tokens=400)
                     self._json({"ok": True, "reply": reply})
                 except Exception as e:
                     err_body = ""
                     try:
                         if hasattr(e, 'read'): err_body = e.read().decode()
                     except Exception: pass
-                    print(f"[CHAT] Erreur Groq : {e} — {err_body}")
+                    print(f"[CHAT] Erreur Gemini : {e} — {err_body}")
                     self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer ou utiliser le formulaire de contact."})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
@@ -2025,9 +2034,9 @@ Règles :
                 url_src   = payload.get("url", "")
                 date_src  = payload.get("date", "")
 
-                key = os.environ.get("GROQ_API_KEY", "")
+                key = os.environ.get("GEMINI_API_KEY", "").strip()
                 if not key:
-                    self._json({"ok": False, "message": "GROQ_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
+                    self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
                     return
 
                 prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
@@ -2058,36 +2067,15 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
   "sources": ["{source_nm} — {url_src}"]
 }}"""
 
-                import urllib.request as ur
-                api_payload = json.dumps({
-                    "model": "llama-3.3-70b-versatile",
-                    "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 1200,
-                    "temperature": 0.3,
-                }).encode()
-                req = ur.Request(
-                    "https://api.groq.com/openai/v1/chat/completions",
-                    data=api_payload,
-                    headers={
-                        "Authorization": f"Bearer {key}",
-                        "content-type": "application/json",
-                    },
-                )
                 try:
-                    with ur.urlopen(req, timeout=50) as r:
-                        resp = json.loads(r.read())
-                        raw  = resp["choices"][0]["message"]["content"].strip()
+                    raw = _gemini_call(prompt, max_tokens=1200)
                 except Exception as api_err:
-                    err_str = str(api_err)
-                    if hasattr(api_err, 'read'):
-                        try:
-                            body = json.loads(api_err.read())
-                            msg  = body.get("error", {}).get("message", err_str)
-                            self._json({"ok": False, "message": f"Erreur API Groq : {msg}"}, 500)
-                            return
-                        except Exception:
-                            pass
-                    self._json({"ok": False, "message": f"Erreur API Groq : {api_err}"}, 500)
+                    err_body = ""
+                    try:
+                        if hasattr(api_err, 'read'): err_body = api_err.read().decode()
+                    except Exception: pass
+                    print(f"[EDITORIAL] Erreur Gemini : {api_err} — {err_body}")
+                    self._json({"ok": False, "message": f"Erreur API Gemini : {api_err}"}, 500)
                     return
 
                 # Nettoyer le JSON (enlever éventuels blocs markdown)
