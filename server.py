@@ -1901,9 +1901,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 url_src   = payload.get("url", "")
                 date_src  = payload.get("date", "")
 
-                key = os.environ.get("ANTHROPIC_API_KEY", "")
+                key = os.environ.get("GROQ_API_KEY", "")
                 if not key:
-                    self._json({"ok": False, "message": "ANTHROPIC_API_KEY non configuré"}, 400)
+                    self._json({"ok": False, "message": "GROQ_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
                     return
 
                 prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
@@ -1936,37 +1936,34 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
 
                 import urllib.request as ur
                 api_payload = json.dumps({
-                    "model": "claude-haiku-4-5-20251001",
-                    "max_tokens": 1200,
+                    "model": "llama-3.3-70b-versatile",
                     "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": 1200,
+                    "temperature": 0.3,
                 }).encode()
                 req = ur.Request(
-                    "https://api.anthropic.com/v1/messages",
+                    "https://api.groq.com/openai/v1/chat/completions",
                     data=api_payload,
                     headers={
-                        "x-api-key": key,
-                        "anthropic-version": "2023-06-01",
+                        "Authorization": f"Bearer {key}",
                         "content-type": "application/json",
                     },
                 )
                 try:
                     with ur.urlopen(req, timeout=30) as r:
                         resp = json.loads(r.read())
-                        raw  = resp["content"][0]["text"].strip()
+                        raw  = resp["choices"][0]["message"]["content"].strip()
                 except Exception as api_err:
                     err_str = str(api_err)
-                    if "400" in err_str or "credit" in err_str.lower():
+                    if hasattr(api_err, 'read'):
                         try:
-                            import urllib.error
-                            if hasattr(api_err, 'read'):
-                                body = json.loads(api_err.read())
-                                msg  = body.get("error", {}).get("message", err_str)
-                                if "credit" in msg.lower() or "balance" in msg.lower():
-                                    self._json({"ok": False, "message": "Solde Anthropic insuffisant — rechargez vos crédits sur console.anthropic.com/billing"}, 402)
-                                    return
+                            body = json.loads(api_err.read())
+                            msg  = body.get("error", {}).get("message", err_str)
+                            self._json({"ok": False, "message": f"Erreur API Groq : {msg}"}, 500)
+                            return
                         except Exception:
                             pass
-                    self._json({"ok": False, "message": f"Erreur API Claude : {api_err}"}, 500)
+                    self._json({"ok": False, "message": f"Erreur API Groq : {api_err}"}, 500)
                     return
 
                 # Nettoyer le JSON (enlever éventuels blocs markdown)
