@@ -39,7 +39,6 @@
 
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
-    <button class="sb-pull" id="sb-pull" onclick="closeSidebar()" aria-label="Fermer le menu">&#8249;</button>
     <div class="sb-header">
       <div class="sb-logo">
         <div class="sb-logo-badge">B</div>
@@ -141,6 +140,9 @@
     </div>
   </div>
 
+  <!-- Poignée rideau sidebar -->
+  <button class="sb-pull" id="sb-pull" onclick="closeSidebar()" aria-label="Fermer le menu">&#8249;</button>
+
   <!-- MAIN -->
   <div class="main">
     <div class="topbar">
@@ -206,7 +208,7 @@
         </div>
 
         <!-- Ligne 3 : Détails -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+        <div class="dashboard-bottom-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
           <div class="card">
             <div class="card-header">
               <div class="card-title">Activité récente</div>
