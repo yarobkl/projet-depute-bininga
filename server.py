@@ -1396,13 +1396,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         source_map = {
                             "bininga_newsletter":      "newsletter",
                             "bininga_audiences":       "audience",
-                            "bininga_commande_livre":  "contact",
+                            "bininga_contacts":        "contact",
+                            "bininga_commande_livre":  "livre",
                         }
                         source = source_map.get(etype, "contact")
                         action_map = {
                             "newsletter": "inscription_newsletter",
                             "audience":   "demande_audience",
                             "contact":    "message_contact",
+                            "livre":      "commande_livre",
                         }
                         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         # Déduplication : email en priorité, sinon téléphone
