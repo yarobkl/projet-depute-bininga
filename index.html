@@ -757,5 +757,39 @@
   </div>
 </div>
 
+<!-- ── CHATBOT WIDGET ────────────────────────────────────── -->
+<link rel="stylesheet" href="static/chat.css">
+
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant">
+  <img src="images/bininga.jpg" alt="Assistant" class="chat-fab-img" id="chatFabImg">
+  <span class="chat-fab-close" id="chatFabClose">✕</span>
+  <span class="chat-fab-badge" id="chatFabBadge" style="display:none">1</span>
+</button>
+
+<div class="chat-window" id="chatWindow" aria-hidden="true">
+  <div class="chat-header">
+    <img src="images/bininga.jpg" alt="Bininga" class="chat-header-img">
+    <div class="chat-header-info">
+      <div class="chat-header-name">Assistant officiel</div>
+      <div class="chat-header-status"><span class="chat-dot"></span> En ligne</div>
+    </div>
+    <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-msg chat-msg-bot">
+      <div class="chat-bubble">Bonjour ! Je suis l'assistant officiel du Député Bininga. Comment puis-je vous aider ?</div>
+    </div>
+  </div>
+  <div class="chat-input-area">
+    <input type="text" class="chat-input" id="chatInput" placeholder="Votre question…" maxlength="500"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
+    <button class="chat-send" id="chatSend" onclick="sendChat()" aria-label="Envoyer">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+
+<script src="static/chat.js" defer></script>
+
 </body>
 </html>
