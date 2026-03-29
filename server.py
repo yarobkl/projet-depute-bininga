@@ -768,9 +768,41 @@ def save_crm(data: dict):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde CRM: {e}")
 
+# ── Migration fichiers → PostgreSQL au démarrage ───────────
+def _migrate_files_to_db():
+    """Importe les fichiers JSON dans PostgreSQL si la DB est vide (migration initiale)."""
+    if not _pg():
+        return
+    # Contacts
+    if _pg_load("contacts") is None and os.path.exists(CONTACT_FILE):
+        try:
+            with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("contacts", data)
+                print(f"[DB] Migration : {len(data)} contact(s) importé(s) depuis contacts.json")
+        except Exception:
+            pass
+    # CRM
+    if _pg_load("crm") is None and os.path.exists(CRM_FILE):
+        try:
+            with open(CRM_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data.get("contacts") or data.get("newsletters"):
+                _pg_save("crm", data)
+                print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
+        except Exception:
+            pass
+
 # ── Init au chargement du module ───────────────────────────
 init_users()
+_migrate_files_to_db()
 load_sessions()
+# Log statut DB
+if os.environ.get("DATABASE_URL"):
+    print("[DB] ✅ PostgreSQL connecté — persistance activée")
+else:
+    print("[DB] ⚠️  Pas de DATABASE_URL — stockage fichiers uniquement (éphémère sur Railway)")
 
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
