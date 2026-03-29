@@ -19,6 +19,18 @@ from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 from datetime import datetime
 
+# ── Version build (cache-busting) ──────────────────────────
+def _get_build_version():
+    try:
+        import subprocess
+        h = subprocess.check_output(["git","rev-parse","--short","HEAD"],
+                                    stderr=subprocess.DEVNULL).decode().strip()
+        return h if h else str(int(datetime.now().timestamp()))
+    except Exception:
+        return str(int(datetime.now().timestamp()))
+
+BUILD_VERSION = _get_build_version()
+
 # ── Configuration ──────────────────────────────────────────
 # DATA_DIR : répertoire persistant (ex: volume Railway /data).
 # Si non défini, utilise le répertoire courant (éphémère sur Railway free tier).
@@ -1194,6 +1206,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 with open(safe, "rb") as f:
                     content = f.read()
+
+                # Injection version build dans les HTML pour cache-busting automatique
+                if mime.startswith("text/html"):
+                    text = content.decode("utf-8", errors="replace")
+                    text = text.replace("static/admin.js", f"static/admin.js?v={BUILD_VERSION}")
+                    text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
+                    text = text.replace("static/index.js", f"static/index.js?v={BUILD_VERSION}")
+                    text = text.replace("static/index.css", f"static/index.css?v={BUILD_VERSION}")
+                    content = text.encode("utf-8")
 
                 # Gzip compression pour texte/HTML/CSS/JS/JSON (pas pour vidéo)
                 accept_enc = self.headers.get("Accept-Encoding", "")
