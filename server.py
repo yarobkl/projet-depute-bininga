@@ -1503,6 +1503,11 @@ Règles :
                         reply = resp["choices"][0]["message"]["content"].strip()
                     self._json({"ok": True, "reply": reply})
                 except Exception as e:
+                    err_body = ""
+                    try:
+                        if hasattr(e, 'read'): err_body = e.read().decode()
+                    except Exception: pass
+                    print(f"[CHAT] Erreur Groq : {e} — {err_body}")
                     self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer ou utiliser le formulaire de contact."})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
