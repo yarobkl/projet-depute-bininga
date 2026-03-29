@@ -1411,7 +1411,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
-                etype  = entry.get("type", "contact")
+                etype  = entry.get("source") or entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
@@ -2027,14 +2027,26 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                             arts = json.load(f)
                     except Exception:
                         arts = []
-                found = next((a for a in arts if a["id"] == article_id), None)
+                found = next((a for a in arts if a["id"] == article_id), None) if article_id else None
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 if not found:
-                    self._json({"ok": False, "message": "Article introuvable"}, 404)
-                    return
-                for field in ("titre", "resume", "article", "points_cles", "statut"):
+                    # Création d'un nouvel article
+                    found = {
+                        "id":         secrets.token_hex(12),
+                        "statut":     "brouillon",
+                        "created_at": now_str,
+                        "source":     "manuel",
+                        "titre":      "",
+                        "resume":     "",
+                        "contenu":    "",
+                        "tags":       [],
+                        "points_cles": [],
+                    }
+                    arts.append(found)
+                for field in ("titre", "resume", "contenu", "article", "points_cles", "tags", "statut", "source_url"):
                     if field in payload:
                         found[field] = payload[field]
-                found["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                found["updated_at"] = now_str
                 _pg_save("editorial", arts)
                 try:
                     with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
