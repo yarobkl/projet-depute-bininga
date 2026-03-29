@@ -442,6 +442,9 @@ def _parse_multipart(content_type: str, body: bytes) -> dict:
 
 # ── Utilisateurs ────────────────────────────────────────────
 def load_users():
+    db = _pg_load("users")
+    if db is not None:
+        return db
     if not os.path.exists(USERS_FILE):
         return []
     try:
@@ -451,25 +454,17 @@ def load_users():
         return []
 
 def save_users(users):
-    # Backup automatique avant écrasement (garder 3 derniers)
-    if os.path.exists(USERS_FILE):
-        try:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup = USERS_FILE.replace(".json", f"_backup_{ts}.json")
-            with open(USERS_FILE, "rb") as src, open(backup, "wb") as dst:
-                dst.write(src.read())
-            backups = sorted(f for f in os.listdir(".") if f.startswith("users_backup_"))
-            for old in backups[:-3]:
-                try: os.remove(old)
-                except Exception: pass
-        except Exception:
-            pass
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=2, ensure_ascii=False)
+    _pg_save("users", users)
+    try:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde users fichier : {e}")
 
 def init_users():
-    """Crée users.json par défaut si inexistant."""
-    if not os.path.exists(USERS_FILE):
+    """Crée le compte admin par défaut si inexistant (DB ou fichier)."""
+    existing = load_users()
+    if not existing:
         password = ADMIN_PASS
         if not password:
             password = secrets.token_urlsafe(16)
@@ -481,7 +476,7 @@ def init_users():
             "role": "admin",
             "nom": "Rodrin Bakala"
         }])
-        print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
+        print(f"[BININGA] 📁 Compte admin créé ({ADMIN_USER})")
     elif not ADMIN_PASS:
         # En production (Railway) : bloquer le démarrage sans mot de passe défini
         on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
@@ -793,10 +788,22 @@ def _migrate_files_to_db():
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
         except Exception:
             pass
+    # Users
+    if _pg_load("users") is None and os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("users", data)
+                print(f"[DB] Migration : {len(data)} utilisateur(s) importé(s) depuis users.json")
+        except Exception:
+            pass
 
 # ── Init au chargement du module ───────────────────────────
-init_users()
+# 1. Migrer les fichiers JSON → PostgreSQL (avant init_users pour récupérer le compte existant)
 _migrate_files_to_db()
+# 2. Créer le compte admin si inexistant (vérifie DB en priorité)
+init_users()
 load_sessions()
 # Log statut DB
 if os.environ.get("DATABASE_URL"):
