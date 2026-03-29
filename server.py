@@ -1516,8 +1516,10 @@ Règles :
                     try:
                         if hasattr(e, 'read'): err_body = e.read().decode()
                     except Exception: pass
-                    print(f"[CHAT] Erreur Gemini : {e} — {err_body}")
-                    self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer ou utiliser le formulaire de contact."})
+                    err_msg = f"{e} — {err_body}" if err_body else str(e)
+                    print(f"[CHAT] Erreur Gemini : {err_msg}")
+                    # Retourner l'erreur visible pour diagnostic
+                    self._json({"ok": True, "reply": f"⚠️ Erreur IA : {err_msg[:200]}"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
             return
