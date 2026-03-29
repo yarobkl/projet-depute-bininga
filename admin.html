@@ -116,6 +116,10 @@
         <span class="icon">🤖</span> YARO IA
         <span class="sb-badge" id="badge-veille" style="display:none"></span>
       </div>
+      <div class="sb-item role-ministre" style="display:none" onclick="showPanel('editorial',this)">
+        <span class="icon">✍️</span> Éditorial IA
+        <span class="sb-badge" id="badge-editorial" style="display:none"></span>
+      </div>
 
       <div class="sb-section role-admin" style="display:none">Système</div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
@@ -843,6 +847,88 @@
 
           <div id="veille-list" style="display:flex;flex-direction:column;gap:10px">
             <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Chargement des actualités….</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ ÉDITORIAL IA ══ -->
+      <div class="panel" id="panel-editorial">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">✍️ Éditorial IA</div>
+            <div class="card-actions">
+              <button class="sbtn sbtn-progress" onclick="loadEditorial()">🔄 Actualiser</button>
+            </div>
+          </div>
+
+          <!-- Infos clés -->
+          <div style="padding:10px 14px;background:rgba(52,152,219,.06);border:1px solid rgba(52,152,219,.15);border-radius:8px;font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;line-height:1.6">
+            🤖 Sélectionnez un article de la veille YARO IA et transformez-le en contenu éditorial structuré prêt à publier.<br>
+            <span style="color:rgba(255,255,255,.25)">Seuls les articles concernant le Député Bininga sont transformables.</span>
+          </div>
+
+          <!-- Onglets -->
+          <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <button onclick="editorialTab('articles',this)" id="etab-articles"
+              style="flex:1;padding:9px 8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px">
+              📄 Articles
+              <span id="badge-editorial-count" style="margin-left:4px;background:var(--r);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px">0</span>
+            </button>
+            <button onclick="editorialTab('generer',this)" id="etab-generer"
+              style="flex:1;padding:9px 8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px">
+              ⚡ Générer
+            </button>
+          </div>
+
+          <!-- Tab : liste articles -->
+          <div id="editorial-tab-articles">
+            <!-- Filtres statut -->
+            <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
+              <button onclick="filterEditorial('tous',this)" class="ef-btn ef-active" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;cursor:pointer">Tous</button>
+              <button onclick="filterEditorial('brouillon',this)" class="ef-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(243,156,18,.3);background:rgba(243,156,18,.06);color:#f39c12;cursor:pointer">Brouillons</button>
+              <button onclick="filterEditorial('valide',this)" class="ef-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.06);color:#2ecc71;cursor:pointer">Validés</button>
+              <button onclick="filterEditorial('publie',this)" class="ef-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.06);color:#3498db;cursor:pointer">Publiés</button>
+            </div>
+            <div id="editorial-list" style="display:flex;flex-direction:column;gap:12px">
+              <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- Tab : générer depuis veille -->
+          <div id="editorial-tab-generer" style="display:none">
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:12px">
+              <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Saisie manuelle</div>
+              <input id="ed-titre" type="text" placeholder="Titre de l'article source *" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:8px">
+              <textarea id="ed-resume" placeholder="Résumé / contenu de l'article source *" rows="4" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;resize:vertical;margin-bottom:8px"></textarea>
+              <input id="ed-source" type="text" placeholder="Nom du média (ex: Les Dépêches de Brazzaville)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:8px">
+              <input id="ed-url" type="url" placeholder="URL de l'article (optionnel)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:12px">
+              <button onclick="generateEditorial()" id="btn-generate-ed" class="sbtn sbtn-progress" style="width:100%;justify-content:center;font-size:13px;padding:11px">
+                ⚡ Générer l'article éditorial
+              </button>
+            </div>
+
+            <!-- Articles récents de la veille à transformer -->
+            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;margin-top:4px">Ou choisir depuis la veille YARO IA</div>
+            <div id="ed-news-picker" style="display:flex;flex-direction:column;gap:8px">
+              <div style="text-align:center;color:rgba(255,255,255,.3);padding:20px 0;font-size:12px">Chargement des actualités…</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Modal article éditorial -->
+      <div id="ed-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);overflow-y:auto;-webkit-overflow-scrolling:touch">
+        <div style="max-width:640px;margin:0 auto;padding:16px">
+          <div style="background:#1a1a2e;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">
+            <!-- Header modal -->
+            <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
+              <div style="flex:1;font-size:14px;font-weight:700;color:#fff" id="ed-modal-titre-h">Article éditorial</div>
+              <button onclick="closeEdModal()" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px">✕</button>
+            </div>
+            <div style="padding:16px" id="ed-modal-body">
+              <!-- rempli par JS -->
+            </div>
           </div>
         </div>
       </div>

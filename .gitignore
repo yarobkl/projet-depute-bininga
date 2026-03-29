@@ -21,9 +21,20 @@ images/sinistres/*
 # Sessions runtime
 sessions.json
 
+# Données runtime (générées au démarrage, non versionnées)
+users.json
+contacts.json
+crm.json
+news_monitor.json
+blocked_ips.json
+attack_scores.json
+audit.log
+attacks.log
+
 # PID files
 *.pid
 
 # OS
 .DS_Store
 Thumbs.db
+editorial.json
