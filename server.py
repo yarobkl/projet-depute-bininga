@@ -1136,6 +1136,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # ── /api/editorial — liste des articles éditoriaux (GET) ──
+        if path == "/api/editorial":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            data = _pg_load("editorial")
+            if data is None:
+                data = []
+                if os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    except Exception:
+                        data = []
+            self._json({"ok": True, "articles": data, "total": len(data)})
+            return
+
         # ── Fichiers statiques avec protection path traversal ──
         relative = "index.html" if path in ("/", "") else path.lstrip("/")
         safe = _safe_path(relative)
@@ -1869,23 +1887,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # ── ÉDITORIAL IA ──────────────────────────────────────────
         # ══════════════════════════════════════════════════════════
 
-        # ── /api/editorial — liste des articles éditoriaux ──
-        if path == "/api/editorial":
-            if not has_role(token, "admin", "ministre", "editeur"):
-                self._json({"ok": False, "message": "Non autorisé"}, 403)
-                return
-            data = _pg_load("editorial")
-            if data is None:
-                data = []
-                if os.path.exists(EDITORIAL_FILE):
-                    try:
-                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
-                            data = json.load(f)
-                    except Exception:
-                        data = []
-            self._json({"ok": True, "articles": data, "total": len(data)})
-            return
-
         # ── /api/editorial/generate — génère un article éditorial depuis une actu ──
         if path == "/api/editorial/generate":
             if not has_role(token, "admin", "ministre", "editeur"):
@@ -1948,9 +1949,25 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                         "content-type": "application/json",
                     },
                 )
-                with ur.urlopen(req, timeout=30) as r:
-                    resp = json.loads(r.read())
-                    raw  = resp["content"][0]["text"].strip()
+                try:
+                    with ur.urlopen(req, timeout=30) as r:
+                        resp = json.loads(r.read())
+                        raw  = resp["content"][0]["text"].strip()
+                except Exception as api_err:
+                    err_str = str(api_err)
+                    if "400" in err_str or "credit" in err_str.lower():
+                        try:
+                            import urllib.error
+                            if hasattr(api_err, 'read'):
+                                body = json.loads(api_err.read())
+                                msg  = body.get("error", {}).get("message", err_str)
+                                if "credit" in msg.lower() or "balance" in msg.lower():
+                                    self._json({"ok": False, "message": "Solde Anthropic insuffisant — rechargez vos crédits sur console.anthropic.com/billing"}, 402)
+                                    return
+                        except Exception:
+                            pass
+                    self._json({"ok": False, "message": f"Erreur API Claude : {api_err}"}, 500)
+                    return
 
                 # Nettoyer le JSON (enlever éventuels blocs markdown)
                 if raw.startswith("```"):
