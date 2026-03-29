@@ -19,6 +19,22 @@ function authHeaders(extra) {
   }, extra);
 }
 
+// Wrapper fetch avec détection session expirée
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    showToast("⚠️ Session expirée — reconnexion…", true);
+    setTimeout(() => {
+      SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
+      document.getElementById("app").classList.remove("visible");
+      document.getElementById("login").classList.remove("hidden");
+      document.getElementById("u").value = "";
+      document.getElementById("p").value = "";
+    }, 1500);
+  }
+  return res;
+}
+
 async function doLogin() {
   const u    = document.getElementById("u").value.trim();
   const p    = document.getElementById("p").value;
@@ -1091,7 +1107,7 @@ function setStatus(storageKey, idOrIdx, status) {
     // Persister au serveur si l'entrée a un _id
     const cid = all[idx]._id;
     if (cid) {
-      fetch("/api/contacts/update", {
+      apiFetch("/api/contacts/update", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ id: cid, status })
@@ -2414,7 +2430,7 @@ async function crmSave() {
   };
   if (!payload.nom) { showToast("Le nom est requis", true); return; }
   try {
-    const res  = await fetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+    const res  = await apiFetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok) {
       showToast(id ? "Contact modifié !" : "Contact ajouté !");
