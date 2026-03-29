@@ -20,10 +20,16 @@ from urllib.parse import urlparse, unquote, parse_qs
 from datetime import datetime
 
 # ── Configuration ──────────────────────────────────────────
-DATA_FILE       = "data.json"
-AUDIT_FILE      = "audit.log"
-USERS_FILE      = "users.json"
-SESSIONS_FILE   = "sessions.json"
+# DATA_DIR : répertoire persistant (ex: volume Railway /data).
+# Si non défini, utilise le répertoire courant (éphémère sur Railway free tier).
+DATA_DIR        = os.environ.get("DATA_DIR", ".")
+if DATA_DIR != ".":
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+DATA_FILE       = "data.json"   # Contenu du site — NE PAS mettre dans DATA_DIR
+AUDIT_FILE      = os.path.join(DATA_DIR, "audit.log")
+USERS_FILE      = os.path.join(DATA_DIR, "users.json")
+SESSIONS_FILE   = os.path.join(DATA_DIR, "sessions.json")
 BININGA_TEST    = os.environ.get("BININGA_TEST", "") == "1"  # Mode test uniquement
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
@@ -42,13 +48,13 @@ ACTIVE_SESSIONS = {}
 SESSION_TTL     = 86400  # 24 heures
 
 # Fichier de contact
-CONTACT_FILE = "contacts.json"
+CONTACT_FILE = os.path.join(DATA_DIR, "contacts.json")
 
 # Fichier de veille IA
-NEWS_FILE = "news_monitor.json"
+NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
 
 # Fichier CRM — rétention 10 ans
-CRM_FILE             = "crm.json"
+CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
 
 # Rate limiting : ip → {count, blocked_until}
@@ -170,9 +176,9 @@ def _reset_login_attempts(ip: str):
 # ██  MODULE ANTI-INTRUSION — BININGA SECURITY ENGINE     ██
 # ══════════════════════════════════════════════════════════
 
-BLOCKED_IPS_FILE    = "blocked_ips.json"
-ATTACK_LOG_FILE     = "attacks.log"
-ATTACK_SCORES_FILE  = "attack_scores.json"
+BLOCKED_IPS_FILE    = os.path.join(DATA_DIR, "blocked_ips.json")
+ATTACK_LOG_FILE     = os.path.join(DATA_DIR, "attacks.log")
+ATTACK_SCORES_FILE  = os.path.join(DATA_DIR, "attack_scores.json")
 USE_SSL             = False   # mis à jour dans __main__
 
 # ── IPs définitivement bannies ─────────────────────────────
@@ -1266,15 +1272,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
-                # ── Tout type de contact → ajout/mise à jour automatique au CRM ──
+                # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
-                if email_contact:
+                phone_contact = entry.get("telephone", "").strip()
+                # Créer une entrée CRM si email OU téléphone fourni
+                if email_contact or phone_contact:
                     try:
                         crm = load_crm()
                         is_newsletter = etype == "bininga_newsletter"
                         source_map = {
-                            "bininga_newsletter": "newsletter",
-                            "bininga_audiences":  "audience",
+                            "bininga_newsletter":      "newsletter",
+                            "bininga_audiences":       "audience",
+                            "bininga_commande_livre":  "contact",
                         }
                         source = source_map.get(etype, "contact")
                         action_map = {
@@ -1282,8 +1291,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             "audience":   "demande_audience",
                             "contact":    "message_contact",
                         }
-                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_contact.lower()), None)
                         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        # Déduplication : email en priorité, sinon téléphone
+                        existing = None
+                        if email_contact:
+                            existing = next((c for c in crm["contacts"]
+                                             if c.get("email", "").strip().lower() == email_contact.lower()), None)
+                        if existing is None and phone_contact:
+                            existing = next((c for c in crm["contacts"]
+                                             if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
                         if existing is None:
                             tags = [source]
                             if is_newsletter and "newsletter" not in tags:
@@ -1293,7 +1309,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                                 "nom":        nom,
                                 "prenom":     prenom,
                                 "email":      email_contact,
-                                "telephone":  entry.get("telephone", ""),
+                                "telephone":  phone_contact,
                                 "source":     source,
                                 "tags":       tags,
                                 "newsletter": is_newsletter,
@@ -1306,16 +1322,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             })
                         else:
                             # Mise à jour des infos si manquantes
-                            if not existing.get("nom")    and nom:    existing["nom"]    = nom
-                            if not existing.get("prenom") and prenom: existing["prenom"] = prenom
-                            if not existing.get("telephone") and entry.get("telephone"): existing["telephone"] = entry["telephone"]
+                            if not existing.get("nom")       and nom:           existing["nom"]       = nom
+                            if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
+                            if not existing.get("email")     and email_contact: existing["email"]     = email_contact
+                            if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
                             if is_newsletter:
                                 existing["newsletter"] = True
                                 if "newsletter" not in existing.get("tags", []):
                                     existing.setdefault("tags", []).append("newsletter")
                             if source not in existing.get("tags", []):
                                 existing.setdefault("tags", []).append(source)
-                            existing.setdefault("historique", []).append({"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Nouveau message via le site ({etype})"})
+                            existing.setdefault("historique", []).append({
+                                "ts": now_str, "action": action_map.get(source, "contact"),
+                                "detail": f"Nouveau message via le site ({etype})"
+                            })
                         save_crm(crm)
                     except Exception:
                         pass  # CRM non bloquant
