@@ -19,6 +19,22 @@ function authHeaders(extra) {
   }, extra);
 }
 
+// Wrapper fetch avec détection session expirée
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    showToast("⚠️ Session expirée — reconnexion…", true);
+    setTimeout(() => {
+      SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
+      document.getElementById("app").classList.remove("visible");
+      document.getElementById("login").classList.remove("hidden");
+      document.getElementById("u").value = "";
+      document.getElementById("p").value = "";
+    }, 1500);
+  }
+  return res;
+}
+
 async function doLogin() {
   const u    = document.getElementById("u").value.trim();
   const p    = document.getElementById("p").value;
@@ -156,7 +172,7 @@ async function loadUsers() {
   const el = document.getElementById("user-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
   try {
-    const res  = await fetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     setBadge("badge-users", data.ok ? data.users.length : 0);
     if (!data.ok || !data.users.length) {
@@ -212,7 +228,7 @@ async function submitUserForm() {
   };
   if (!payload.username) { showToast("L'identifiant est requis", true); return; }
   try {
-    const res  = await fetch("/api/users/upsert", {
+    const res  = await apiFetch("/api/users/upsert", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload)
@@ -231,7 +247,7 @@ async function submitUserForm() {
 async function deleteUser(username) {
   if (!confirm(`Supprimer l'utilisateur « ${username} » ?`)) return;
   try {
-    const res  = await fetch("/api/users/delete", {
+    const res  = await apiFetch("/api/users/delete", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ username })
@@ -252,7 +268,7 @@ function init() {
   syncMessages().then(() => refreshDashboard());
   startNewsPoller();
   // Badge initial
-  fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+  apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
     .then(d => { if(d.ok) setBadge("badge-veille", (d.items||[]).filter(a=>!a.read).length); })
     .catch(()=>{});
@@ -270,7 +286,7 @@ function init() {
 // ── Synchronisation des messages depuis le serveur ──────────────────────
 async function syncMessages() {
   try {
-    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res = await apiFetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) return;
 
@@ -296,8 +312,8 @@ async function syncMessages() {
         });
       });
 
-      // Conserver les entrées locales non encore synchronisées avec le serveur
-      localList.filter(m => m._id && !serverIds.has(m._id)).forEach(m => merged.push(m));
+      // Conserver les entrées locales absentes du serveur (redéploiement ou hors-ligne)
+      localList.filter(m => !serverIds.has(m._id || "__none__")).forEach(m => merged.push(m));
 
       localStorage.setItem(key, JSON.stringify(merged));
     }
@@ -656,7 +672,7 @@ function collectActus() {
 //  CONTENU DU SITE (data.json via server.py)
 // ══════════════════════════════════════════════════════════════════════════
 function loadSiteData() {
-  fetch("/api/load")
+  apiFetch("/api/load")
     .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(applyData)
     .catch(() => {
@@ -799,7 +815,7 @@ function saveData(silent = false) {
   collectProgramme();
   const ind = document.getElementById("autosave-indicator");
   if (ind) { ind.textContent = "Sauvegarde…"; ind.className = "autosave-saving"; }
-  fetch("/api/save", {
+  apiFetch("/api/save", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(siteData)
@@ -826,7 +842,7 @@ function saveData(silent = false) {
 // ══════════════════════════════════════════════════════════════════════════
 function refreshDashboard() {
   // Récupérer les stats réelles depuis le serveur, fallback localStorage
-  fetch("/api/stats", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+  apiFetch("/api/stats", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
     .then(s => {
       if (!s.ok) throw new Error("stats ko");
@@ -1091,7 +1107,7 @@ function setStatus(storageKey, idOrIdx, status) {
     // Persister au serveur si l'entrée a un _id
     const cid = all[idx]._id;
     if (cid) {
-      fetch("/api/contacts/update", {
+      apiFetch("/api/contacts/update", {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ id: cid, status })
@@ -1142,7 +1158,7 @@ function addNote(storageKey, idOrIdx) {
   saveAll(storageKey, all);
   const cid = all[idx]._id;
   if (cid) {
-    fetch("/api/contacts/update", {
+    apiFetch("/api/contacts/update", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ id: cid, notes: all[idx]._notes })
@@ -1173,7 +1189,7 @@ function pingDepute(storageKey, idOrIdx) {
   saveAll(storageKey, all);
   const cid = all[idx]._id;
   if (cid) {
-    fetch("/api/contacts/update", {
+    apiFetch("/api/contacts/update", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ id: cid, pinged: true, pinged_date: all[idx]._pinged_date })
@@ -1213,7 +1229,7 @@ async function loadSecurity() {
   });
   // Initialiser le statut 2FA pour l'utilisateur courant
   try {
-    const tfaRes  = await fetch("/api/2fa/status", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const tfaRes  = await apiFetch("/api/2fa/status", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const tfaData = await tfaRes.json();
     if (tfaData.ok) {
       window._sessionHas2fa = tfaData.has_2fa;
@@ -1222,7 +1238,7 @@ async function loadSecurity() {
   } catch { tfaRefreshStatus(window._sessionHas2fa || false); }
 
   try {
-    const res  = await fetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { listBlocked.innerHTML = '<div class="msg-empty">Erreur.</div>'; return; }
 
@@ -1297,7 +1313,7 @@ async function loadSecurity() {
 async function unblockIp(ip) {
   if (!confirm(`Débloquer l'IP ${ip} ?`)) return;
   try {
-    const res  = await fetch("/api/security/unblock", {
+    const res  = await apiFetch("/api/security/unblock", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip })
@@ -1311,7 +1327,7 @@ async function unblockIp(ip) {
 async function manualBlockIp(ip) {
   if (!confirm(`Bannir manuellement l'IP ${ip} ?`)) return;
   try {
-    const res  = await fetch("/api/security/block", {
+    const res  = await apiFetch("/api/security/block", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip, reason: "Blocage manuel depuis admin" })
@@ -1345,7 +1361,7 @@ async function loadNews() {
   const list = document.getElementById("veille-list");
   if (!list) return;
   try {
-    const res  = await fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0">Erreur de chargement.</div>'; return; }
     _newsItems = data.items || [];
@@ -1419,7 +1435,7 @@ async function runVeille(preset) {
   const fb    = document.getElementById("veille-run-feedback");
   if (btn) { btn.disabled = true; btn.textContent = "⏳ En cours…"; }
   try {
-    const res  = await fetch("/api/news/run", {
+    const res  = await apiFetch("/api/news/run", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
@@ -1441,7 +1457,7 @@ async function runVeille(preset) {
 
 async function restartMonitor() {
   try {
-    const res  = await fetch("/api/monitor-restart", {
+    const res  = await apiFetch("/api/monitor-restart", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN },
     });
@@ -1464,7 +1480,7 @@ async function toggleMonitorLog() {
   box.style.display = "block";
   box.textContent = "Chargement…";
   try {
-    const res  = await fetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     box.textContent = data.ok ? (data.lines.join("\n") || "(log vide)") : "Erreur : " + data.message;
     box.scrollTop = box.scrollHeight;
@@ -1575,7 +1591,7 @@ function renderNewsItems() {
 
 async function markNewsRead(id) {
   try {
-    await fetch("/api/news/mark-read", {
+    await apiFetch("/api/news/mark-read", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -1590,7 +1606,7 @@ async function markNewsRead(id) {
 
 async function markAllNewsRead() {
   try {
-    await fetch("/api/news/mark-read", {
+    await apiFetch("/api/news/mark-read", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ all: true }),
@@ -1604,7 +1620,7 @@ async function markAllNewsRead() {
 
 async function deleteNewsItem(id) {
   try {
-    await fetch("/api/news/delete", {
+    await apiFetch("/api/news/delete", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -1620,7 +1636,7 @@ function startNewsPoller() {
   if (_newsPoller) return;
   _newsPoller = setInterval(() => {
     // Polling silencieux (badge seulement, pas de re-render si pas sur le panel)
-    fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
       .then(r => r.json())
       .then(data => {
         if (!data.ok) return;
@@ -1640,7 +1656,7 @@ async function loadAuditLogs() {
   const el = document.getElementById("log-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
   try {
-    const res = await fetch("/api/logs", {
+    const res = await apiFetch("/api/logs", {
       headers: { "X-Admin-Token": SESSION_TOKEN }
     });
     const data = await res.json();
@@ -1720,7 +1736,7 @@ async function resetSystem(targets) {
   if (!confirm(`⚠️ RÉINITIALISATION GLOBALE\n\nCette action supprimera définitivement :\n→ ${desc}\n\nConfirmez-vous ?`)) return;
   if (!confirm("Dernière confirmation — cette action est irréversible. Continuer ?")) return;
   try {
-    const res  = await fetch("/api/reset", { method: "POST", headers: authHeaders(), body: JSON.stringify({ targets }) });
+    const res  = await apiFetch("/api/reset", { method: "POST", headers: authHeaders(), body: JSON.stringify({ targets }) });
     const data = await res.json();
     if (!data.ok) { showToast("Erreur : " + (data.message || "inconnue"), true); return; }
     // Vider localStorage
@@ -1739,7 +1755,7 @@ async function clearAll(storageKey, panel) {
   if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ? Cette action est irréversible.")) return;
   // Suppression côté serveur
   try {
-    await fetch("/api/contacts/clear", {
+    await apiFetch("/api/contacts/clear", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ type: storageKey })
@@ -2054,7 +2070,7 @@ async function fbLoad(dir, pushHistory = true) {
   fbSetPreview(null);
 
   try {
-    const res  = await fetch("/api/files?dir=" + encodeURIComponent(dir), {
+    const res  = await apiFetch("/api/files?dir=" + encodeURIComponent(dir), {
       headers: { "X-Admin-Token": SESSION_TOKEN }
     });
     const data = await res.json();
@@ -2163,6 +2179,44 @@ function pickOrUploadImage(callback) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  CRM — Sauvegarde locale (survie aux redéploiements Railway)
+// ══════════════════════════════════════════════════════════════════════════
+function _crmSaveBackup(contacts) {
+  try {
+    localStorage.setItem("bininga_crm_backup", JSON.stringify({
+      contacts, saved_at: new Date().toISOString()
+    }));
+  } catch (_) {}
+}
+
+async function _crmRestoreFromBackup() {
+  const raw = localStorage.getItem("bininga_crm_backup");
+  if (!raw) return 0;
+  let contacts;
+  try { contacts = JSON.parse(raw).contacts || []; } catch { return 0; }
+  if (!contacts.length) return 0;
+  let ok = 0;
+  for (const c of contacts) {
+    try {
+      const res = await apiFetch("/api/crm/upsert", {
+        method: "POST", headers: authHeaders(), body: JSON.stringify(c)
+      });
+      const d = await res.json();
+      if (d.ok) ok++;
+    } catch (_) {}
+  }
+  return ok;
+}
+
+async function _crmBackupAllInBackground() {
+  try {
+    const res = await apiFetch("/api/crm?limit=5000", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (data.ok && (data.contacts || []).length > 0) _crmSaveBackup(data.contacts);
+  } catch (_) {}
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  CRM — Gestion des contacts (admin uniquement)
 // ══════════════════════════════════════════════════════════════════════════
 let _crmContacts    = [];
@@ -2187,21 +2241,37 @@ async function loadCrm(page) {
   if (fSrc) params.set("source", fSrc);
   if (fNl)  params.set("nl",     fNl);
   try {
-    const res  = await fetch("/api/crm?" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/crm?" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { if (el) el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
+
+    // ── Restauration automatique depuis localStorage si le serveur est vide ──
+    if ((data.total || 0) === 0 && !q && !fSrc && !fNl) {
+      const raw = localStorage.getItem("bininga_crm_backup");
+      if (raw) {
+        let cached = [];
+        try { cached = JSON.parse(raw).contacts || []; } catch { }
+        if (cached.length > 0) {
+          if (el) el.innerHTML = `<div class="msg-empty">🔄 Restauration de ${cached.length} contact(s) CRM depuis la sauvegarde locale…</div>`;
+          const ok = await _crmRestoreFromBackup();
+          if (ok > 0) { showToast(`✅ ${ok} contact(s) CRM restaurés automatiquement`); loadCrm(1); return; }
+        }
+      }
+    }
+
     _crmContacts    = data.contacts    || [];
     _crmNewsletters = data.newsletters || [];
     _crmTotal       = data.total       || 0;
     _crmTotalPages  = data.pages       || 1;
     _crmPage        = data.page        || 1;
-    // KPI (total général)
     setText("crm-kpi-total", data.total || 0);
     setText("crm-kpi-nl",    data.newsletter_count || 0);
     setBadge("badge-crm", data.total || 0);
     _crmSelected.clear();
     renderCrmList();
     renderNlHistory();
+    // Mettre à jour la sauvegarde locale en arrière-plan
+    if (data.total > 0) setTimeout(_crmBackupAllInBackground, 1500);
   } catch(e) {
     if (el) el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
   }
@@ -2258,7 +2328,7 @@ async function crmBulkDelete() {
   const n = _crmSelected.size;
   if (!confirm(`Supprimer ${n} contact(s) sélectionné(s) ? Cette action est irréversible.`)) return;
   try {
-    const res  = await fetch("/api/crm/bulk-delete", {
+    const res  = await apiFetch("/api/crm/bulk-delete", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ids: [..._crmSelected] })
@@ -2267,7 +2337,8 @@ async function crmBulkDelete() {
     if (data.ok) {
       showToast(`✅ ${data.deleted} contact(s) supprimé(s)`);
       _crmSelected.clear();
-      loadCrm(_crmPage);
+      await loadCrm(_crmPage);
+      setTimeout(_crmBackupAllInBackground, 500);
     } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
 }
@@ -2340,7 +2411,7 @@ function renderCrmList() {
 async function crmImport() {
   if (!confirm("Importer toutes les demandes reçues (audiences, contacts, réclamations) dans le CRM ?\nLes doublons seront ignorés.")) return;
   try {
-    const res  = await fetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
+    const res  = await apiFetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
     const data = await res.json();
     if (data.ok) {
       showToast(`✅ ${data.imported} contact(s) importé(s) !`);
@@ -2355,10 +2426,13 @@ async function crmImport() {
 async function crmDelete(id) {
   if (!confirm("Supprimer ce contact du CRM ? Cette action est irréversible.")) return;
   try {
-    const res  = await fetch("/api/crm/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
+    const res  = await apiFetch("/api/crm/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
     const data = await res.json();
-    if (data.ok) { showToast("Contact supprimé"); loadCrm(); }
-    else showToast(data.message || "Erreur", true);
+    if (data.ok) {
+      showToast("Contact supprimé");
+      await loadCrm();
+      setTimeout(_crmBackupAllInBackground, 500);
+    } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
 }
 
@@ -2414,12 +2488,13 @@ async function crmSave() {
   };
   if (!payload.nom) { showToast("Le nom est requis", true); return; }
   try {
-    const res  = await fetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+    const res  = await apiFetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok) {
       showToast(id ? "Contact modifié !" : "Contact ajouté !");
       closeCrmModal();
-      loadCrm();
+      await loadCrm();
+      setTimeout(_crmBackupAllInBackground, 500);
     } else {
       showToast(data.message || "Erreur", true);
     }
@@ -2503,7 +2578,7 @@ async function crmAddNote(id) {
   const texte = ta ? ta.value.trim() : "";
   if (!texte) { showToast("Note vide", true); return; }
   try {
-    const res  = await fetch("/api/crm/note", {
+    const res  = await apiFetch("/api/crm/note", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({ id, texte })
     });
@@ -2535,7 +2610,7 @@ async function nlSend() {
   btn.disabled = true; btn.textContent = "⏳ Envoi en cours…";
   fb.style.display = "none";
   try {
-    const res  = await fetch("/api/crm/newsletter/send", {
+    const res  = await apiFetch("/api/crm/newsletter/send", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({ sujet, corps, filtre })
     });
@@ -2603,7 +2678,7 @@ function tfaRefreshStatus(has2fa) {
 
 async function tfaStartSetup() {
   try {
-    const res  = await fetch("/api/2fa/setup", { method: "POST", headers: authHeaders(), body: "{}" });
+    const res  = await apiFetch("/api/2fa/setup", { method: "POST", headers: authHeaders(), body: "{}" });
     const data = await res.json();
     if (!data.ok) { showToast(data.message || "Erreur", true); return; }
     document.getElementById("tfa-secret").textContent   = data.secret;
@@ -2624,7 +2699,7 @@ async function tfaActivate() {
   const code = document.getElementById("tfa-confirm-code").value.trim();
   if (code.length !== 6) { showToast("Code invalide (6 chiffres)", true); return; }
   try {
-    const res  = await fetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const res  = await apiFetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.ok) {
       showToast("✅ 2FA activé avec succès !");
@@ -2650,7 +2725,7 @@ async function tfaDisable() {
   const code = document.getElementById("tfa-disable-code").value.trim();
   if (!code) { showToast("Code requis", true); return; }
   try {
-    const res  = await fetch("/api/2fa/disable", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const res  = await apiFetch("/api/2fa/disable", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.ok) {
       showToast("2FA désactivé");

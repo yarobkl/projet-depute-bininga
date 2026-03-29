@@ -906,7 +906,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
             qs      = parse_qs(urlparse(self.path).query)
             page    = max(1, int(qs.get("page",  ["1"])[0]))
-            limit   = min(200, max(10, int(qs.get("limit", ["50"])[0])))
+            limit   = min(5000, max(10, int(qs.get("limit", ["50"])[0])))
             q       = qs.get("q",      [""])[0].lower().strip()
             f_src   = qs.get("source", [""])[0]
             f_nl    = qs.get("nl",     [""])[0]    # "oui" / "non"
@@ -1744,8 +1744,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 ALLOWED     = {"nom", "prenom", "email", "telephone", "sujet",
                                "message", "tags", "statut", "newsletter", "source"}
                 who         = session["username"] if session else "admin"
+                statut  = data.get("statut", "nouveau")
+                source  = data.get("source", "manuel")
                 if contact_id:
-                    # Modification
+                    # Modification ou restauration (vrai upsert)
                     found = False
                     for c in crm["contacts"]:
                         if c["id"] == contact_id:
@@ -1770,14 +1772,33 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             found = True
                             break
                     if not found:
-                        self._json({"ok": False, "message": "Contact introuvable"}, 404)
-                        return
-                    audit_log("CRM_UPDATE", ip, f"Contact CRM modifié : {data.get('nom','?')} ({contact_id})")
+                        # Contact absent (ex: après redéploiement) — recréer avec l'ID d'origine
+                        contact = {
+                            "id":          contact_id,
+                            "created_at":  str(data.get("created_at", now_str))[:30],
+                            "expires_at":  str(data.get("expires_at", _crm_expire_date()))[:30],
+                            "source":      source if source in SOURCES else "manuel",
+                            "nom":         str(data.get("nom",       ""))[:200],
+                            "prenom":      str(data.get("prenom",    ""))[:200],
+                            "email":       str(data.get("email",     ""))[:200],
+                            "telephone":   str(data.get("telephone", ""))[:50],
+                            "sujet":       str(data.get("sujet",     ""))[:500],
+                            "message":     str(data.get("message",   ""))[:2000],
+                            "tags":        [str(t)[:50] for t in data.get("tags", []) if isinstance(t, str)][:10],
+                            "statut":      statut if statut in STATUTS else "nouveau",
+                            "newsletter":  bool(data.get("newsletter", False)),
+                            "notes":       data.get("notes", []),
+                            "historique":  data.get("historique", [{"ts": now_str, "action": "restaure",
+                                                                     "detail": "Restauré depuis sauvegarde locale"}]),
+                        }
+                        crm["contacts"].append(contact)
+                        audit_log("CRM_RESTORE", ip,
+                                  f"Contact CRM restauré : {contact['nom']} {contact['prenom']} ({contact_id})")
+                    else:
+                        audit_log("CRM_UPDATE", ip, f"Contact CRM modifié : {data.get('nom','?')} ({contact_id})")
                 else:
-                    # Création
+                    # Création avec nouvel ID
                     new_id  = secrets.token_hex(8)
-                    statut  = data.get("statut", "nouveau")
-                    source  = data.get("source", "manuel")
                     contact = {
                         "id":          new_id,
                         "created_at":  now_str,
