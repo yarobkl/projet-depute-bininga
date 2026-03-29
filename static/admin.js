@@ -1692,7 +1692,8 @@ const PANEL_TITLES = {
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
-  veille:"🤖 YARO IA — Actualités Bininga"
+  veille:"🤖 YARO IA — Actualités Bininga",
+  editorial:"✍️ Éditorial IA — Contenus"
 };
 
 function showPanel(name, el) {
@@ -1714,6 +1715,7 @@ function showPanel(name, el) {
   if (name === "users")        loadUsers();
   if (name === "security")     loadSecurity();
   if (name === "veille")       loadNews();
+  if (name === "editorial")    loadEditorial();
   if (name === "crm")          loadCrm();
   const formPanels = ["hero","about","seo","engagement","cta","contact-info","footer"];
   if (formPanels.includes(name)) populateForm();
@@ -2733,4 +2735,201 @@ async function tfaDisable() {
       tfaRefreshStatus(false);
     } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
+}
+
+// ════════════════════════════════════════════════════════════
+// ── ÉDITORIAL IA ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+let _editorialData   = [];
+let _editorialFilter = "tous";
+
+function editorialTab(tab, btn) {
+  document.getElementById("editorial-tab-articles").style.display = tab === "articles" ? "" : "none";
+  document.getElementById("editorial-tab-generer").style.display  = tab === "generer"  ? "" : "none";
+  document.querySelectorAll("#panel-editorial .etab-btn, #etab-articles, #etab-generer").forEach(b => {
+    b.style.color         = "rgba(255,255,255,.4)";
+    b.style.borderBottom  = "2px solid transparent";
+  });
+  const active = document.getElementById("etab-" + tab);
+  if (active) { active.style.color = "#fff"; active.style.borderBottom = "2px solid var(--r)"; }
+  if (tab === "generer") loadEdNewsPicker();
+}
+
+function filterEditorial(statut, btn) {
+  _editorialFilter = statut;
+  document.querySelectorAll(".ef-btn").forEach(b => {
+    b.style.background = "rgba(255,255,255,.04)";
+    b.style.color      = "rgba(255,255,255,.4)";
+    b.style.border     = "1px solid rgba(255,255,255,.1)";
+  });
+  if (btn) {
+    const colors = { brouillon: ["rgba(243,156,18,.06)","#f39c12","rgba(243,156,18,.3)"], valide: ["rgba(46,204,113,.06)","#2ecc71","rgba(46,204,113,.3)"], publie: ["rgba(52,152,219,.06)","#3498db","rgba(52,152,219,.3)"], tous: ["rgba(255,255,255,.08)","#fff","rgba(255,255,255,.15)"] };
+    const c = colors[statut] || colors.tous;
+    btn.style.background = c[0]; btn.style.color = c[1]; btn.style.border = `1px solid ${c[2]}`;
+  }
+  renderEditorialList();
+}
+
+async function loadEditorial() {
+  const list = document.getElementById("editorial-list");
+  list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px 0;font-size:13px">Chargement…</div>';
+  try {
+    const res  = await apiFetch("/api/editorial", { headers: authHeaders() });
+    const data = await res.json();
+    if (!data.ok) { list.innerHTML = `<div style="color:#e74c3c;font-size:13px;padding:20px 0">${data.message}</div>`; return; }
+    _editorialData = data.articles || [];
+    const badge = document.getElementById("badge-editorial");
+    const cnt   = document.getElementById("badge-editorial-count");
+    if (_editorialData.length > 0) { if (badge) { badge.textContent = _editorialData.length; badge.style.display = ""; } }
+    if (cnt) cnt.textContent = _editorialData.length;
+    renderEditorialList();
+  } catch { list.innerHTML = '<div style="color:#e74c3c;font-size:13px;padding:20px 0">Serveur non disponible</div>'; }
+}
+
+function renderEditorialList() {
+  const list = document.getElementById("editorial-list");
+  const arts  = _editorialFilter === "tous" ? _editorialData : _editorialData.filter(a => a.statut === _editorialFilter);
+  if (!arts.length) {
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucun article' + (_editorialFilter !== "tous" ? " dans cette catégorie" : "") + '.<br><small style="font-size:11px;margin-top:6px;display:block">Utilisez l\'onglet ⚡ Générer pour créer un premier article.</small></div>';
+    return;
+  }
+  const statutBadge = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
+  list.innerHTML = arts.map(a => {
+    const sb  = statutBadge[a.statut] || ['#888','?'];
+    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">• ${p}</div>`).join("");
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openEdModal('${a.id}')">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${a.titre || "Sans titre"}</div>
+        <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sb[0]}22;color:${sb[0]};border:1px solid ${sb[0]}44">${sb[1]}</span>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px;line-height:1.5">${(a.resume || "").slice(0,120)}${(a.resume||"").length>120?"…":""}</div>
+      ${pts}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span style="font-size:10px;color:rgba(255,255,255,.25)">${a.source_nom||""} · ${a.created_at||""}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.35)">Voir →</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function openEdModal(id) {
+  const a = _editorialData.find(x => x.id === id);
+  if (!a) return;
+  const sb = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
+  const s  = sb[a.statut] || ['#888','?'];
+  document.getElementById("ed-modal-titre-h").textContent = a.titre || "Article éditorial";
+  const pts = (a.points_cles || []).map(p => `<li style="margin-bottom:4px">${p}</li>`).join("");
+  const srcs= (a.sources || []).map(s => `<div style="font-size:11px;color:#3498db;word-break:break-all">${s}</div>`).join("");
+  document.getElementById("ed-modal-body").innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${s[0]}22;color:${s[0]};border:1px solid ${s[0]}44">${s[1]}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.3)">${a.source_nom||""}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.25)">${a.created_at||""}</span>
+    </div>
+    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4">${a.titre||""}</div>
+    <div style="background:rgba(52,152,219,.06);border-left:3px solid #3498db;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#3498db;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Résumé</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6">${(a.resume||"").replace(/\n/g,"<br>")}</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${a.article||""}</div>
+    ${pts ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Points clés</div><ul style="padding-left:16px;margin:0;color:rgba(255,255,255,.65);font-size:12px;line-height:1.6">${pts}</ul></div>` : ""}
+    ${srcs ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sources</div>${srcs}</div>` : ""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+      <button onclick="changeEdStatut('${a.id}','valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">✅ Valider</button>
+      <button onclick="changeEdStatut('${a.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">🌐 Publier</button>
+      <button onclick="deleteEdArticle('${a.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">🗑</button>
+    </div>`;
+  document.getElementById("ed-modal").style.display = "";
+  document.body.style.overflow = "hidden";
+}
+
+function closeEdModal() {
+  document.getElementById("ed-modal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+async function changeEdStatut(id, statut) {
+  try {
+    const res  = await apiFetch("/api/editorial/save", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id, statut }) });
+    const data = await res.json();
+    if (data.ok) {
+      const a = _editorialData.find(x => x.id === id);
+      if (a) a.statut = statut;
+      closeEdModal();
+      renderEditorialList();
+      showToast("Statut mis à jour");
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+async function deleteEdArticle(id) {
+  if (!confirm("Supprimer cet article éditorial ?")) return;
+  try {
+    const res  = await apiFetch("/api/editorial/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
+    const data = await res.json();
+    if (data.ok) {
+      _editorialData = _editorialData.filter(a => a.id !== id);
+      closeEdModal();
+      renderEditorialList();
+      const cnt = document.getElementById("badge-editorial-count");
+      if (cnt) cnt.textContent = _editorialData.length;
+      showToast("Article supprimé");
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+async function generateEditorial(newsItem) {
+  const btn = document.getElementById("btn-generate-ed");
+  const titre  = newsItem ? newsItem.title   : (document.getElementById("ed-titre")?.value.trim()  || "");
+  const resume = newsItem ? newsItem.summary  : (document.getElementById("ed-resume")?.value.trim() || "");
+  const source = newsItem ? newsItem.source   : (document.getElementById("ed-source")?.value.trim() || "");
+  const url    = newsItem ? newsItem.url      : (document.getElementById("ed-url")?.value.trim()    || "");
+  const date   = newsItem ? newsItem.published: "";
+  const newsId = newsItem ? newsItem.id       : "";
+
+  if (!titre || !resume) { showToast("Titre et résumé requis", true); return; }
+  if (btn) { btn.textContent = "⏳ Génération en cours…"; btn.disabled = true; }
+  try {
+    const res  = await apiFetch("/api/editorial/generate", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ news_id: newsId, titre, resume, source, url, date })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      _editorialData.unshift(data.article);
+      const cnt = document.getElementById("badge-editorial-count");
+      if (cnt) cnt.textContent = _editorialData.length;
+      showToast("Article généré ✅");
+      // Passer sur l'onglet articles et ouvrir
+      editorialTab("articles", document.getElementById("etab-articles"));
+      renderEditorialList();
+      openEdModal(data.article.id);
+      // Reset formulaire
+      ["ed-titre","ed-resume","ed-source","ed-url"].forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+    } else showToast(data.message || "Erreur génération", true);
+  } catch (e) { showToast("Erreur : " + e.message, true); }
+  finally { if (btn) { btn.textContent = "⚡ Générer l'article éditorial"; btn.disabled = false; } }
+}
+
+let _edNewsPicker = [];
+async function loadEdNewsPicker() {
+  const box = document.getElementById("ed-news-picker");
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:16px 0;font-size:12px">Chargement…</div>';
+  try {
+    const res  = await apiFetch("/api/news", { headers: authHeaders() });
+    const data = await res.json();
+    const items = (data.items || []).filter(a => a.category === "bininga" || (a.title + (a.summary||"")).toLowerCase().includes("bininga")).slice(0, 20);
+    _edNewsPicker = items;
+    if (!items.length) { box.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:16px 0;font-size:12px">Aucun article Bininga disponible dans la veille.<br><small>Lancez une recherche dans YARO IA.</small></div>'; return; }
+    box.innerHTML = items.map((a,i) => `
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;cursor:pointer;active:background:rgba(255,255,255,.06)" onclick="generateEditorial(_edNewsPicker[${i}])">
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.4">${a.title||"Sans titre"}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;color:rgba(255,255,255,.3)">${a.source||""} · ${(a.published||"").slice(0,10)}</span>
+          <span style="font-size:11px;color:var(--r);font-weight:700">✍️ Générer →</span>
+        </div>
+      </div>`).join("");
+  } catch { box.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:16px 0">Impossible de charger les actualités.</div>'; }
 }

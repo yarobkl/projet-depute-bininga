@@ -53,6 +53,9 @@ CONTACT_FILE = os.path.join(DATA_DIR, "contacts.json")
 # Fichier de veille IA
 NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
 
+# Fichier éditorial IA
+EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
+
 # Fichier CRM — rétention 10 ans
 CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
@@ -1858,6 +1861,197 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 start_monitor()
                 audit_log("SAVE", ip, "YARO IA redémarré manuellement")
                 self._json({"ok": True, "message": "YARO IA redémarré"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ══════════════════════════════════════════════════════════
+        # ── ÉDITORIAL IA ──────────────────────────────────────────
+        # ══════════════════════════════════════════════════════════
+
+        # ── /api/editorial — liste des articles éditoriaux ──
+        if path == "/api/editorial":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            data = _pg_load("editorial")
+            if data is None:
+                data = []
+                if os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    except Exception:
+                        data = []
+            self._json({"ok": True, "articles": data, "total": len(data)})
+            return
+
+        # ── /api/editorial/generate — génère un article éditorial depuis une actu ──
+        if path == "/api/editorial/generate":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload   = json.loads(body.decode("utf-8"))
+                news_id   = payload.get("news_id", "")
+                titre_src = payload.get("titre", "")
+                resume_src= payload.get("resume", "")
+                source_nm = payload.get("source", "")
+                url_src   = payload.get("url", "")
+                date_src  = payload.get("date", "")
+
+                key = os.environ.get("ANTHROPIC_API_KEY", "")
+                if not key:
+                    self._json({"ok": False, "message": "ANTHROPIC_API_KEY non configuré"}, 400)
+                    return
+
+                prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
+
+Transforme cet article de presse en contenu éditorial structuré pour le site du Député.
+
+⚠️ RÈGLES STRICTES :
+- Ne jamais inventer d'informations
+- Uniquement reformuler et structurer les faits fournis
+- Neutralité totale, ton journalistique professionnel
+- Mentionner les sources
+- Pas d'opinion, pas de biais politique
+- Si information insuffisante, reformuler uniquement ce qui est disponible
+
+ARTICLE SOURCE :
+Titre : {titre_src}
+Résumé : {resume_src}
+Source : {source_nm}
+Date : {date_src}
+URL : {url_src}
+
+Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
+{{
+  "titre": "titre clair et neutre",
+  "resume": "2 à 4 phrases résumant l'information principale",
+  "article": "texte structuré en paragraphes, reformulé professionnellement",
+  "points_cles": ["point 1", "point 2", "point 3"],
+  "sources": ["{source_nm} — {url_src}"]
+}}"""
+
+                import urllib.request as ur
+                api_payload = json.dumps({
+                    "model": "claude-haiku-4-5-20251001",
+                    "max_tokens": 1200,
+                    "messages": [{"role": "user", "content": prompt}],
+                }).encode()
+                req = ur.Request(
+                    "https://api.anthropic.com/v1/messages",
+                    data=api_payload,
+                    headers={
+                        "x-api-key": key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    },
+                )
+                with ur.urlopen(req, timeout=30) as r:
+                    resp = json.loads(r.read())
+                    raw  = resp["content"][0]["text"].strip()
+
+                # Nettoyer le JSON (enlever éventuels blocs markdown)
+                if raw.startswith("```"):
+                    raw = "\n".join(raw.split("\n")[1:])
+                if raw.endswith("```"):
+                    raw = "\n".join(raw.split("\n")[:-1])
+                editorial = json.loads(raw.strip())
+
+                # Sauvegarder le brouillon
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                article_id = secrets.token_hex(10)
+                draft = {
+                    "id":         article_id,
+                    "news_id":    news_id,
+                    "statut":     "brouillon",
+                    "created_at": now_str,
+                    "updated_at": now_str,
+                    "source_url": url_src,
+                    "source_nom": source_nm,
+                    "source_date": date_src,
+                    **editorial,
+                }
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                arts.insert(0, draft)
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                audit_log("EDITORIAL", ip, f"Article éditorial généré : {editorial.get('titre','')[:60]}")
+                self._json({"ok": True, "article": draft})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "message": f"Réponse IA invalide : {e}"}, 500)
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/editorial/save — sauvegarder les modifications d'un article ──
+        if path == "/api/editorial/save":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload    = json.loads(body.decode("utf-8"))
+                article_id = payload.get("id", "")
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                found = next((a for a in arts if a["id"] == article_id), None)
+                if not found:
+                    self._json({"ok": False, "message": "Article introuvable"}, 404)
+                    return
+                for field in ("titre", "resume", "article", "points_cles", "statut"):
+                    if field in payload:
+                        found[field] = payload[field]
+                found["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True, "article": found})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/editorial/delete — supprimer un article éditorial ──
+        if path == "/api/editorial/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                payload    = json.loads(body.decode("utf-8"))
+                article_id = payload.get("id", "")
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                arts = [a for a in arts if a["id"] != article_id]
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
             return
