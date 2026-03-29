@@ -13,8 +13,15 @@
     if (fab) fab.classList.toggle("open", _open);
     if (_open) {
       if (badge) badge.style.display = "none";
-      setTimeout(() => { const inp = document.getElementById("chatInput"); if (inp) inp.focus(); }, 300);
+      // Sur mobile on ne force pas le focus pour éviter le saut de page au clavier
+      const isMobile = window.innerWidth <= 600;
+      if (!isMobile) {
+        setTimeout(() => { const inp = document.getElementById("chatInput"); if (inp) inp.focus(); }, 300);
+      }
       scrollMessages();
+    } else {
+      // Fermeture : enlever le focus pour cacher le clavier mobile
+      if (document.activeElement) document.activeElement.blur();
     }
   }
 
