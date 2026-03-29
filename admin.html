@@ -761,6 +761,17 @@
 
       </div>
 
+      <!-- ── RÉINITIALISATION ── -->
+      <div class="card role-admin" style="border-color:rgba(231,76,60,.25);margin-bottom:0" id="reset-card">
+        <div class="card-header"><div class="card-title" style="color:#e74c3c">⚠️ Zone de réinitialisation</div></div>
+        <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px">Ces actions sont irréversibles. Une double confirmation sera demandée avant chaque opération.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn-danger" onclick="resetSystem(['contacts'])">🗑 Vider messages &amp; audiences</button>
+          <button class="btn-danger" onclick="resetSystem(['crm'])">🗑 Vider le CRM</button>
+          <button class="btn-danger" style="background:rgba(231,76,60,.2);font-weight:700" onclick="resetSystem(['contacts','crm'])">💥 Réinitialisation totale</button>
+        </div>
+      </div>
+
       <!-- ── LOGS D'AUDIT ── -->
       <!-- ── YARO IA ── -->
       <div class="panel" id="panel-veille">

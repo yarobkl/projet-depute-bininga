@@ -784,6 +784,34 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
             return
 
+        if path == "/api/stats":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            all_c = []
+            if os.path.exists(CONTACT_FILE):
+                try:
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_c = json.load(f)
+                except Exception:
+                    all_c = []
+            audiences = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") != "Réclamation"]
+            recls     = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") == "Réclamation"]
+            contacts  = [c for c in all_c if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            self._json({
+                "ok":          True,
+                "aud_total":   len(audiences),
+                "aud_wait":    len([a for a in audiences if not a.get("_status") or a["_status"] == "en_attente"]),
+                "aud_progress":len([a for a in audiences if a.get("_status") == "en_cours"]),
+                "aud_done":    len([a for a in audiences if a.get("_status") == "traite"]),
+                "recl_total":  len(recls),
+                "recl_wait":   len([r for r in recls if not r.get("_status") or r["_status"] != "traite"]),
+                "ct_total":    len(contacts),
+                "ct_unread":   len([c for c in contacts if not c.get("_status") or c["_status"] == "non_lu"]),
+            })
+            return
+
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "ministre"):
@@ -1212,6 +1240,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 # Sauvegarder tous les champs du formulaire (chaines et nombres seulement)
                 PROTECTED = {"ts", "ip"}
                 entry = {
+                    "_id": secrets.token_hex(12),
                     "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "ip": ip,
                 }
@@ -1237,36 +1266,59 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
-                # ── Inscription newsletter → ajout automatique au CRM ──
-                if etype == "bininga_newsletter":
-                    email_nl = entry.get("email", "").strip()
-                    if email_nl:
+                # ── Tout type de contact → ajout/mise à jour automatique au CRM ──
+                email_contact = entry.get("email", "").strip()
+                if email_contact:
+                    try:
                         crm = load_crm()
-                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_nl.lower()), None)
+                        is_newsletter = etype == "bininga_newsletter"
+                        source_map = {
+                            "bininga_newsletter": "newsletter",
+                            "bininga_audiences":  "audience",
+                        }
+                        source = source_map.get(etype, "contact")
+                        action_map = {
+                            "newsletter": "inscription_newsletter",
+                            "audience":   "demande_audience",
+                            "contact":    "message_contact",
+                        }
+                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_contact.lower()), None)
+                        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         if existing is None:
-                            new_contact = {
-                                "id":         entry.get("_id", f"nl-{int(datetime.now().timestamp()*1000)}"),
-                                "nom":        "",
-                                "prenom":     "",
-                                "email":      email_nl,
-                                "telephone":  "",
-                                "source":     "newsletter",
-                                "tags":       ["newsletter"],
-                                "newsletter": True,
+                            tags = [source]
+                            if is_newsletter and "newsletter" not in tags:
+                                tags.append("newsletter")
+                            crm["contacts"].append({
+                                "id":         entry["_id"],
+                                "nom":        nom,
+                                "prenom":     prenom,
+                                "email":      email_contact,
+                                "telephone":  entry.get("telephone", ""),
+                                "source":     source,
+                                "tags":       tags,
+                                "newsletter": is_newsletter,
                                 "statut":     "nouveau",
-                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "created_at": now_str,
                                 "expires_at": _crm_expire_date(),
                                 "notes":      [],
-                                "historique": [{"ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "action": "inscription_newsletter", "detail": "Inscription via le site public"}],
+                                "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
                                 "newsletters": [],
-                            }
-                            crm["contacts"].append(new_contact)
+                            })
                         else:
-                            # Marquer newsletter=True si déjà présent
-                            existing["newsletter"] = True
-                            if "newsletter" not in existing.get("tags", []):
-                                existing.setdefault("tags", []).append("newsletter")
+                            # Mise à jour des infos si manquantes
+                            if not existing.get("nom")    and nom:    existing["nom"]    = nom
+                            if not existing.get("prenom") and prenom: existing["prenom"] = prenom
+                            if not existing.get("telephone") and entry.get("telephone"): existing["telephone"] = entry["telephone"]
+                            if is_newsletter:
+                                existing["newsletter"] = True
+                                if "newsletter" not in existing.get("tags", []):
+                                    existing.setdefault("tags", []).append("newsletter")
+                            if source not in existing.get("tags", []):
+                                existing.setdefault("tags", []).append(source)
+                            existing.setdefault("historique", []).append({"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Nouveau message via le site ({etype})"})
                         save_crm(crm)
+                    except Exception:
+                        pass  # CRM non bloquant
                 self._json({"ok": True, "message": "Message reçu"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -1286,6 +1338,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             return
         # Validation CSRF sur routes d'écriture
         if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear",
+                    "/api/contacts/update", "/api/reset",
                     "/api/crm/upsert", "/api/crm/delete", "/api/crm/bulk-delete", "/api/crm/import",
                     "/api/crm/note", "/api/crm/newsletter/send",
                     "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
@@ -1317,6 +1370,62 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 who = session["username"] if session else "?"
                 audit_log("CLEAR_CONTACTS", ip, f"Suppression type={msg_type} par {who}")
                 self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        if path == "/api/contacts/update":
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                data = json.loads(body.decode("utf-8"))
+                cid  = data.get("id", "").strip()
+                if not cid:
+                    self._json({"ok": False, "message": "ID requis"}, 400)
+                    return
+                all_c = []
+                if os.path.exists(CONTACT_FILE):
+                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                        all_c = json.load(f)
+                updated = False
+                for c in all_c:
+                    if c.get("_id") == cid:
+                        if "status"  in data: c["_status"]  = data["status"]
+                        if "notes"   in data: c["_notes"]   = data["notes"]
+                        if "pinged"  in data: c["_pinged"]  = data["pinged"]
+                        if "pinged_date" in data: c["_pinged_date"] = data["pinged_date"]
+                        updated = True
+                        break
+                if updated:
+                    with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                        json.dump(all_c, f, indent=2, ensure_ascii=False)
+                self._json({"ok": True, "updated": updated})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        if path == "/api/reset":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data    = json.loads(body.decode("utf-8"))
+                targets = data.get("targets", [])
+                who     = session["username"] if session else "admin"
+                results = {}
+                if "contacts" in targets:
+                    with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+                        json.dump([], f)
+                    results["contacts"] = True
+                    audit_log("RESET", ip, f"Contacts réinitialisés par {who}")
+                if "crm" in targets:
+                    crm = load_crm()
+                    crm["contacts"] = []
+                    save_crm(crm)
+                    results["crm"] = True
+                    audit_log("RESET", ip, f"CRM réinitialisé par {who}")
+                self._json({"ok": True, "results": results})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return

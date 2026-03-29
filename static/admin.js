@@ -825,29 +825,41 @@ function saveData(silent = false) {
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 function refreshDashboard() {
+  // Récupérer les stats réelles depuis le serveur, fallback localStorage
+  fetch("/api/stats", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    .then(r => r.json())
+    .then(s => {
+      if (!s.ok) throw new Error("stats ko");
+      setText("kpi-aud-total",    s.aud_total);
+      setText("kpi-aud-wait",     s.aud_wait);
+      setText("kpi-aud-progress", s.aud_progress);
+      setText("kpi-aud-done",     s.aud_done);
+      setText("kpi-recl",         s.recl_wait);
+      setText("kpi-ct",           s.ct_total);
+      setBadge("badge-aud",  s.aud_wait);
+      setBadge("badge-recl", s.recl_wait);
+      setBadge("badge-ct",   s.ct_unread);
+    })
+    .catch(() => _refreshDashboardLocal());
+  _refreshDashboardLocal();
+}
+
+function _refreshDashboardLocal() {
   const aud  = getAll("bininga_audiences");
   const ct   = getAll("bininga_contacts");
   const prog = parseInt(localStorage.getItem("bininga_prog_views") || "0");
   const vis  = parseInt(localStorage.getItem("bininga_visitors")   || "0");
 
-  // Séparer audiences normales et réclamations
   const audiences    = aud.filter(m => m.objet !== "Réclamation");
   const reclamations = aud.filter(m => m.objet === "Réclamation");
-
   const wait     = audiences.filter(m => !m._status || m._status === "en_attente").length;
   const inprog   = audiences.filter(m => m._status === "en_cours").length;
   const done     = audiences.filter(m => m._status === "traite").length;
   const reclWait = reclamations.filter(m => !m._status || m._status !== "traite").length;
   const ctUnread = ct.filter(m => !m._status || m._status === "non_lu").length;
 
-  setText("kpi-aud-total",    audiences.length);
-  setText("kpi-aud-wait",     wait);
-  setText("kpi-aud-progress", inprog);
-  setText("kpi-aud-done",     done);
-  setText("kpi-recl",         reclWait);
-  setText("kpi-ct",           ct.length);
-  setText("kpi-prog",         prog);
-  setText("kpi-visit",        vis);
+  setText("kpi-prog",  prog);
+  setText("kpi-visit", vis);
 
   setBadge("badge-aud",  wait);
   setBadge("badge-recl", reclWait);
@@ -1069,29 +1081,26 @@ function buildBadge(status, objet) {
 
 function setStatus(storageKey, idOrIdx, status) {
   const all = getAll(storageKey);
-  // idOrIdx peut être un _id encodé (string) ou un index numérique (legacy)
   let idx = -1;
   const decoded = decodeURIComponent(String(idOrIdx));
-  // Si ça ressemble à un _id (contient "-"), chercher par _id
-  if (decoded.includes("-")) {
-    idx = all.findIndex(x => x._id === decoded);
-  }
-  // Fallback : index numérique
-  if (idx === -1) {
-    const n = parseInt(idOrIdx, 10);
-    if (!isNaN(n) && all[n]) idx = n;
-  }
+  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
+  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
   if (idx !== -1) {
     all[idx]._status = status;
     saveAll(storageKey, all);
+    // Persister au serveur si l'entrée a un _id
+    const cid = all[idx]._id;
+    if (cid) {
+      fetch("/api/contacts/update", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ id: cid, status })
+      }).catch(() => {});
+    }
   }
   refreshDashboard();
-  if (storageKey === "bininga_audiences") {
-    renderAudiences();
-    renderReclamations();
-  } else {
-    renderContacts();
-  }
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
   showToast("Statut mis à jour");
 }
 
@@ -1129,8 +1138,16 @@ function addNote(storageKey, idOrIdx) {
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
 
   if (!all[idx]._notes) all[idx]._notes = [];
-  all[idx]._notes.push({ auteur: "Admin", texte, date: new Date().toLocaleString("fr-FR") });
+  all[idx]._notes.push({ auteur: SESSION_NOM || SESSION_USERNAME || "Admin", texte, date: new Date().toLocaleString("fr-FR") });
   saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    fetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, notes: all[idx]._notes })
+    }).catch(() => {});
+  }
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
   showToast("Note ajoutée");
@@ -1154,6 +1171,14 @@ function pingDepute(storageKey, idOrIdx) {
   all[idx]._pinged      = true;
   all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
   saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    fetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, pinged: true, pinged_date: all[idx]._pinged_date })
+    }).catch(() => {});
+  }
   refreshDashboard();
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
@@ -1688,6 +1713,27 @@ function saveAll(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
 function setText(id, val)  { const el=document.getElementById(id); if(el) el.textContent=val; }
 function setBadge(id, n)   { const el=document.getElementById(id); if(!el)return; el.style.display=n>0?"inline":"none"; el.textContent=n; }
 function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+async function resetSystem(targets) {
+  const labels = { contacts: "tous les messages/audiences", crm: "les contacts CRM" };
+  const desc   = targets.map(t => labels[t] || t).join(" et ");
+  if (!confirm(`⚠️ RÉINITIALISATION GLOBALE\n\nCette action supprimera définitivement :\n→ ${desc}\n\nConfirmez-vous ?`)) return;
+  if (!confirm("Dernière confirmation — cette action est irréversible. Continuer ?")) return;
+  try {
+    const res  = await fetch("/api/reset", { method: "POST", headers: authHeaders(), body: JSON.stringify({ targets }) });
+    const data = await res.json();
+    if (!data.ok) { showToast("Erreur : " + (data.message || "inconnue"), true); return; }
+    // Vider localStorage
+    if (targets.includes("contacts")) {
+      localStorage.removeItem("bininga_audiences");
+      localStorage.removeItem("bininga_contacts");
+    }
+    syncMessages().then(() => refreshDashboard());
+    showToast("✅ Réinitialisation effectuée");
+  } catch (e) {
+    showToast("Erreur réseau", true);
+  }
+}
 
 async function clearAll(storageKey, panel) {
   if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ? Cette action est irréversible.")) return;

@@ -45,7 +45,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .sb-badge.warn{background:var(--warn)}
 /* Poignée rideau — fixe, suit la sidebar */
 .sb-pull{display:none;position:fixed;top:50%;left:-40px;transform:translateY(-50%);width:36px;height:64px;background:var(--r);border:none;border-radius:0 10px 10px 0;color:#fff;font-size:28px;line-height:64px;text-align:center;cursor:pointer;z-index:1001;padding:0;box-shadow:3px 0 12px rgba(0,0,0,.35);transition:left .25s ease}
-.sb-pull.visible{left:260px}
+.sb-pull.visible{left:220px}
 .sb-footer{padding:14px 10px;border-top:1px solid rgba(255,255,255,.06)}
 .sb-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:var(--t);border:none;font-family:inherit}
 .sb-btn-primary{background:var(--r);color:var(--w);margin-bottom:8px}
