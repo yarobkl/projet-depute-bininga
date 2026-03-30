@@ -215,11 +215,7 @@
       origLeft   = rect.left;
       origBottom = window.innerHeight - rect.bottom;
       fab.style.transition = "none";
-
-      // Explosion de feu au toucher
-      for (let i = 0; i < 8; i++) spawnFlame(pos.x, pos.y);
-      spawnSpark(pos.x, pos.y);
-      if (navigator.vibrate) navigator.vibrate([25, 10, 50]);
+      // Pas d'effet au simple toucher — feu seulement si on glisse
     }
 
     function onMove(e) {
@@ -280,12 +276,18 @@
     }
 
     fab.removeAttribute("onclick");
-    fab.addEventListener("mousedown",  onStart);
-    fab.addEventListener("touchstart", onStart, { passive: true });
-    window.addEventListener("mousemove",  onMove);
-    window.addEventListener("touchmove",  onMove, { passive: false });
-    window.addEventListener("mouseup",    onEnd);
-    window.addEventListener("touchend",   onEnd);
+
+    // Anti double-fire : on utilise touchstart/touchend sur mobile, mousedown/mouseup sur desktop
+    const isTouchDevice = ("ontouchstart" in window);
+    if (isTouchDevice) {
+      fab.addEventListener("touchstart", onStart, { passive: true });
+      window.addEventListener("touchmove",  onMove, { passive: false });
+      window.addEventListener("touchend",   onEnd);
+    } else {
+      fab.addEventListener("mousedown",  onStart);
+      window.addEventListener("mousemove",  onMove);
+      window.addEventListener("mouseup",    onEnd);
+    }
   })();
 
   window.toggleChat = toggleChat;
