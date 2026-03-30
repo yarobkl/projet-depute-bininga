@@ -101,6 +101,28 @@
         "date": "République du Congo, Garde des Sceaux",
         "title": "Ange Aimé Wilfrid BININGA,\nau service de la Justice et de son peuple",
         "subtitle": "Juriste, réformateur, diplomate, Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales."
+      },
+      {
+        "image": "images/bininga.jpg",
+        "alt": "BININGA - Journee internationale des peuples autochtones, 9 aout 2025",
+        "chipColor": "#2e7d32",
+        "chip": "Peuples autochtones · 9 aout 2025",
+        "date": "9 Aout 2025, Brazzaville — Congo",
+        "title": "Journee internationale des peuples autochtones 2025 :\nle Congo reaffirme son engagement",
+        "subtitle": "A l'occasion de la Journee internationale des peuples autochtones, le Congo reaffirme son engagement en faveur de la protection et de la promotion des droits des peuples autochtones, sous l'impulsion du Ministre BININGA.",
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/journee-internationale-des-peuples-autochtones-2025-le-congo-reaffirme-son-engagement-166290"
+      },
+      {
+        "image": "images/bininga.jpg",
+        "alt": "BININGA reelu - Legislatives 2022, dans la continuite",
+        "chipColor": "#1a237e",
+        "chip": "Legislatives 2022",
+        "date": "2022, Ewo — Cuvette-Ouest",
+        "title": "Legislatives 2022 :\nAime Ange Wilfrid BININGA dans la continuite",
+        "subtitle": "Reelu dans la 1re circonscription d'Ewo, Aime Ange Wilfrid BININGA poursuit son engagement au service de sa circonscription et de la Republique. Une confiance renouvelee par les electeurs de la Cuvette-Ouest.",
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/legislatives-2022-aime-ange-wilfrid-bininga-dans-la-continuite-139112"
       }
     ],
     "vedettes": [
@@ -198,6 +220,85 @@
           "Développement",
           "Août 2024"
         ]
+      },
+      {
+        "image": "images/bininga.jpg",
+        "imageBg": "",
+        "placeholderEmoji": "⚖️",
+        "placeholderTitle": "EPU 2024\nGeneve — ONU",
+        "placeholderDate": "30 jan. 2024",
+        "badgeColor": "#1565C0",
+        "badge": "Droits Humains · ONU",
+        "tagColor": "#1976D2",
+        "tag": "Examen Periodique Universel — Geneve",
+        "date": "📅 30 Janvier 2024 · Geneve, Conseil des droits de l'homme ONU",
+        "title": "Droits humains au Congo : des avancees appreciables presentees par BININGA a l'ONU",
+        "text1": "Le 30 janvier 2024, le Ministre BININGA a conduit la delegation congolaise devant le Conseil des droits de l'homme des Nations Unies a Geneve, dans le cadre du 4e Examen Periodique Universel (EPU) du Congo. Devant les 14 Etats examines lors de la 44e session du Groupe de travail EPU, il a presente les avancees significatives realisees par le Congo en matiere de droits humains.",
+        "quote": "Le Congo reaffirme son engagement indefectible en faveur de la protection des droits humains, avec des avancees appreciables notamment pour les peuples autochtones, la justice restaurative et les conditions de detention.",
+        "text2": "La troika composee de la Cote d'Ivoire, du Luxembourg et des Maldives a rapporte les recommandations formulees. Le Groupe de travail a adopte les conclusions le 2 fevrier 2024. Cette mission diplomatique majeure, retransmise en direct par UN WebTV, illustre l'engagement international du Congo sous la conduite du Garde des Sceaux Aime Ange Wilfrid BININGA.",
+        "tags": [
+          "Droits humains",
+          "ONU",
+          "EPU 2024",
+          "Geneve",
+          "Congo",
+          "Bininga",
+          "Peuples autochtones"
+        ],
+        "source": "La Semaine Africaine",
+        "sourceUrl": "https://lasemaineafricaine.info/droits-humains-au-congo-des-avancees-appreciables/",
+        "videoUrl": "https://media.un.org/en/asset/k14/k14xa31o6d"
+      },
+      {
+        "image": "images/bininga.jpg",
+        "imageBg": "",
+        "placeholderEmoji": "⚖️",
+        "placeholderTitle": "Justice restaurative\nCongo",
+        "placeholderDate": "",
+        "badgeColor": "#4a148c",
+        "badge": "Reforme judiciaire",
+        "tagColor": "#7b1fa2",
+        "tag": "Justice restaurative · Avant-projet de loi",
+        "date": "📅 Brazzaville — Republique du Congo",
+        "title": "Droits de l'homme : validation de l'avant-projet de loi instituant la justice restaurative",
+        "text1": "Sous l'impulsion du Ministre BININGA, le Congo a franchi une etape decisive dans la modernisation de son systeme judiciaire avec la validation de l'avant-projet de loi instituant la justice restaurative. Ce dispositif innovant favorise la rehabilitation des auteurs d'infractions et la reparation des prejudices subis par les victimes.",
+        "quote": "La justice restaurative constitue une avancee majeure qui replace l'humain au coeur du systeme judiciaire congolais, en favorisant la reconciliation et la reparation.",
+        "text2": "Cette reforme s'inscrit dans la vision globale de modernisation de la justice portee par le Garde des Sceaux, qui vise a construire une justice plus humaine, plus accessible et plus efficace au service de tous les Congolais.",
+        "tags": [
+          "Justice restaurative",
+          "Reforme judiciaire",
+          "Droits humains",
+          "Congo",
+          "Avant-projet de loi"
+        ],
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/droits-de-lhomme-validation-de-lavant-projet-de-loi-instituant-la-justice-restaurative"
+      },
+      {
+        "image": "images/bininga.jpg",
+        "imageBg": "linear-gradient(135deg,#1b5e20,#2e7d32)",
+        "placeholderEmoji": "🌱",
+        "placeholderTitle": "Jeunesse autochtone\nPriorite nationale",
+        "placeholderDate": "",
+        "badgeColor": "#2e7d32",
+        "badge": "Droits humains · Peuples autochtones",
+        "tagColor": "#388e3c",
+        "tag": "Jeunesse autochtone · Priorite nationale",
+        "date": "📅 Brazzaville — Republique du Congo",
+        "title": "Droits humains : la jeunesse autochtone, priorite du Ministere BININGA",
+        "text1": "Le Ministere de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, sous la direction de BININGA, a place la jeunesse autochtone au coeur de son agenda. Des programmes specifiques ont ete deployes pour garantir a ces jeunes un acces a l'education, a la sante et a l'emploi.",
+        "quote": "La promotion de la jeunesse autochtone est un imperatif moral et un investissement pour l'avenir du Congo. Aucun enfant ne doit etre laisse pour compte.",
+        "text2": "Ces initiatives s'appuient sur un cadre juridique renforce et une collaboration etroite avec les organisations internationales et les communautes locales pour garantir que les droits fondamentaux des jeunes autochtones soient effectivement respectes sur l'ensemble du territoire congolais.",
+        "tags": [
+          "Jeunesse autochtone",
+          "Droits humains",
+          "Education",
+          "Emploi",
+          "Congo",
+          "Peuples autochtones"
+        ],
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/droits-humains-priorite-la-jeunesse-autochtone-150512"
       }
     ],
     "cards": [
@@ -224,6 +325,20 @@
         "desc": "Le Conseil supérieur de la magistrature a sanctionné 23 magistrats indélicats lors de sa session ordinaire du 27 mars 2023.",
         "source": "La Semaine Africaine",
         "sourceUrl": "https://lasemaineafricaine.info/magistrature-des-sanctions-et-nominations-qui-ne-font-pas-lunanimite/"
+      },
+      {
+        "catColor": "#1b5e20",
+        "borderColor": "#1b5e20",
+        "cat": "Droits Humains",
+        "icon": "🌿",
+        "day": "30",
+        "month": "Jan",
+        "year": "2024",
+        "title": "Le gouvernement rappelle les avancées dans l'amélioration de la vie des autochtones",
+        "desc": "Lors de la 45e session de l'EPU à Genève, le Ministre Bininga a présenté les progrès du Congo en matière de promotion et protection des peuples autochtones devant le Conseil des droits de l'homme de l'ONU.",
+        "source": "ACI — Agence Congolaise d'Information",
+        "sourceUrl": "https://www.aci.cg/congo-societe-le-gouvernement-rappelle-les-avancees-dans-lamelioration-de-la-vie-des-autochtones/",
+        "auteur": "ACI"
       },
       {
         "catColor": "#e65100",
@@ -312,6 +427,71 @@
         "year": "2026",
         "title": "Coordinateur de campagne, tournée sur l'axe Lebankaya",
         "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, fort soutien aux populations."
+      },
+      {
+        "catColor": "#1b5e20",
+        "borderColor": "rgba(27,94,32,.25)",
+        "cat": "Droits humains · Emploi autochtone",
+        "icon": "💼",
+        "day": "",
+        "month": "",
+        "year": "2022",
+        "title": "Droits humains : l'acces des peuples autochtones a l'emploi pris en compte",
+        "desc": "Le Congo integre l'acces des peuples autochtones a l'emploi dans ses politiques de droits humains, une avancee concrete portee par le Ministere de la Justice et des Droits Humains.",
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/droits-humains-lacces-des-peuples-autochtones-lemploi-pris-en-compte-135559"
+      },
+      {
+        "catColor": "#0d47a1",
+        "borderColor": "rgba(13,71,161,.25)",
+        "cat": "Justice · Droits de l'homme",
+        "icon": "⚖️",
+        "day": "",
+        "month": "",
+        "year": "2019",
+        "title": "Justice : le Congo reitere sa volonte d'assurer la protection des droits de l'homme",
+        "desc": "La Republique du Congo reaffirme son engagement pour la protection des droits de l'homme, avec un cadre institutionnel renforce sous l'impulsion du Ministere de la Justice.",
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/justice-le-congo-reitere-sa-volonte-dassurer-la-protection-des-droits-de-lhomme-73344"
+      },
+      {
+        "catColor": "#1a237e",
+        "borderColor": "rgba(26,35,126,.25)",
+        "cat": "Legislatives 2017 · Ewo",
+        "icon": "🗳️",
+        "day": "19",
+        "month": "Aout",
+        "year": "2017",
+        "title": "Legislatives 2017 : BININGA elu Depute de la 1re circonscription d'Ewo",
+        "desc": "La liste definitive des deputes elus confirme l'election d'Aime Ange Wilfrid BININGA a l'Assemblee nationale dans la 1re circonscription d'Ewo, consecration populaire d'un engagement profond.",
+        "source": "Les Echos du Congo-Brazzaville",
+        "sourceUrl": "https://lesechos-congobrazza.com/politique/3341-legislatives-2017-voici-la-liste-definitive-des-deputes-elus"
+      },
+      {
+        "catColor": "#bf360c",
+        "borderColor": "rgba(191,54,12,.25)",
+        "cat": "Justice · Conditions de detention",
+        "icon": "🏛️",
+        "day": "",
+        "month": "",
+        "year": "2022",
+        "title": "Justice : l'amelioration des conditions de vie dans les lieux de detention se poursuit",
+        "desc": "Le Ministere de la Justice, sous la direction de BININGA, poursuit son action pour ameliorer les conditions de vie dans les etablissements penitentiaires congolais, en conformite avec les normes internationales.",
+        "source": "Adiac Congo",
+        "sourceUrl": "https://www.adiac-congo.com/content/justice-lamelioration-des-conditions-de-vie-dans-les-lieux-de-detention-se-poursuit-143760"
+      },
+      {
+        "catColor": "#e65100",
+        "borderColor": "rgba(230,81,0,.25)",
+        "cat": "Justice · Reportage",
+        "icon": "📰",
+        "day": "",
+        "month": "",
+        "year": "2024",
+        "title": "L'Observateur : BININGA et l'action judiciaire au service du Congo",
+        "desc": "L'Observateur revient sur l'action du Ministre Bininga a la tete du Ministere de la Justice, ses reformes et son engagement pour une justice plus accessible et equitable pour tous les Congolais.",
+        "source": "L'Observateur",
+        "sourceUrl": "https://lobservateur.info/ampArticle/116074"
       }
     ]
   },
