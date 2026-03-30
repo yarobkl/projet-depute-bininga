@@ -368,22 +368,31 @@
     </div>
 
     <!-- Vidéo ONU — EPU Congo 2024 -->
-    <div class="video-un-wrap" style="margin-top:32px">
-      <div class="video-un-label" style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="background:#1565C0;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px">🌍 Nations Unies · EPU 2024</span>
-        <span style="color:rgba(255,255,255,.6);font-size:13px">BININGA devant le Conseil des droits de l'homme — Genève, 30 jan. 2024</span>
+    <a href="https://media.un.org/en/asset/k14/k14xa31o6d" target="_blank" rel="noopener"
+       style="display:block;margin-top:32px;text-decoration:none;border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(135deg,#0a1929,#1565C0);aspect-ratio:16/9;cursor:pointer;border:2px solid rgba(255,255,255,.12)"
+       id="un-video-card">
+      <!-- Fond décoratif -->
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(21,101,192,.6) 0%,transparent 70%)"></div>
+      <!-- Logo ONU -->
+      <div style="position:absolute;top:18px;left:18px;display:flex;align-items:center;gap:8px">
+        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)">🌍 Nations Unies · UN WebTV</span>
       </div>
-      <iframe
-        id="un-video-frame"
-        src="https://media.un.org/en/asset/k14/k14xa31o6d"
-        width="100%"
-        style="aspect-ratio:16/9;border:none;border-radius:12px;display:block;background:#000"
-        allow="autoplay; fullscreen; encrypted-media"
-        allowfullscreen
-        loading="lazy"
-        title="BININGA — Examen Periodique Universel Congo, Conseil des droits de l'homme ONU, 30 janvier 2024">
-      </iframe>
-    </div>
+      <!-- Bouton play central -->
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+        <div style="width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div style="text-align:center;padding:0 24px">
+          <div style="color:#fff;font-weight:700;font-size:16px;margin-bottom:6px">BININGA devant le Conseil des droits de l'homme — ONU</div>
+          <div style="color:rgba(255,255,255,.7);font-size:13px">Examen Périodique Universel · Genève, 30 janvier 2024</div>
+        </div>
+      </div>
+      <!-- Badge bas -->
+      <div style="position:absolute;bottom:14px;right:14px;color:rgba(255,255,255,.5);font-size:11px;display:flex;align-items:center;gap:5px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Ouvrir sur UN WebTV
+      </div>
+    </a>
   </div>
 </section>
 

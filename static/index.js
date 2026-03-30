@@ -810,23 +810,6 @@ async function subNewsletter(e, f) {
   window.addEventListener("click",      onInteract, { once: true });
 })();
 
-// ── AUTOPLAY VIDÉO ONU (iframe) ─────────────────────────────
-(function(){
-  const frame = document.getElementById("un-video-frame");
-  if(!frame || !("IntersectionObserver" in window)) return;
-  let loaded = false;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if(e.isIntersecting && !loaded){
-        loaded = true;
-        // Ajoute autoplay via le paramètre URL
-        const base = frame.src.split("?")[0];
-        frame.src = base + "?autoplay=1";
-      }
-    });
-  }, { threshold: 0.4 });
-  obs.observe(frame);
-})();
 
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
