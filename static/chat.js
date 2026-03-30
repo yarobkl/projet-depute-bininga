@@ -98,107 +98,142 @@
   }
 
   // ══════════════════════════════════════════════════════════
-  // ── EFFETS VISUELS ─────────────────────────────────────
+  // ── EFFETS TONNERRE ROUGE & FEU TÉKÉ ──────────────────
   // ══════════════════════════════════════════════════════════
 
-  // Injecter les styles des animations
   const fxStyle = document.createElement("style");
   fxStyle.textContent = `
-    @keyframes yaro-wave {
-      0%   { transform: scale(0.2); opacity: 0.9; }
-      100% { transform: scale(4);   opacity: 0;   }
+    @keyframes yaro-bolt {
+      0%   { transform: translate(0,0) scaleY(1);   opacity: 1; }
+      60%  { opacity: 1; }
+      100% { transform: translate(var(--bx),var(--by)) scaleY(.4); opacity: 0; }
     }
-    @keyframes yaro-star {
+    @keyframes yaro-ember {
       0%   { transform: translate(0,0) scale(1) rotate(0deg);   opacity: 1; }
-      100% { transform: translate(var(--sx),var(--sy)) scale(0) rotate(180deg); opacity: 0; }
+      100% { transform: translate(var(--ex),var(--ey)) scale(0) rotate(var(--er));  opacity: 0; }
     }
-    @keyframes yaro-orb {
-      0%   { transform: translate(0,0) scale(1);   opacity: 0.85; filter: blur(0px);   }
-      100% { transform: translate(var(--ox),var(--oy)) scale(0); opacity: 0;    filter: blur(6px); }
+    @keyframes yaro-flash {
+      0%,100% { box-shadow: 0 0 0px 0px rgba(220,30,30,0); }
+      30%     { box-shadow: 0 0 30px 12px rgba(220,30,30,.7); }
+      60%     { box-shadow: 0 0 15px 6px rgba(255,100,0,.5); }
     }
-    @keyframes yaro-pulse-border {
-      0%,100% { box-shadow: 0 0 0 0 rgba(100,200,255,0), 0 4px 20px rgba(0,0,0,.35); }
-      50%     { box-shadow: 0 0 0 10px rgba(100,200,255,.3), 0 4px 20px rgba(0,0,0,.35); }
+    @keyframes yaro-fire-trail {
+      0%   { transform: translate(0,0) scale(1);   opacity:.9; filter:blur(1px); }
+      100% { transform: translate(var(--fx),var(--fy)) scale(0); opacity:0; filter:blur(5px); }
+    }
+    @keyframes yaro-red-pulse {
+      0%,100% { box-shadow: 0 0 8px 2px rgba(200,20,20,.4), 0 4px 20px rgba(0,0,0,.35); }
+      50%     { box-shadow: 0 0 24px 10px rgba(220,50,0,.7), 0 4px 20px rgba(0,0,0,.35); }
     }
     .yaro-dragging {
-      animation: yaro-pulse-border 0.6s ease-in-out infinite !important;
-      transform: scale(1.12) !important;
+      animation: yaro-red-pulse 0.4s ease-in-out infinite !important;
+      transform: scale(1.1) !important;
     }
   `;
   document.head.appendChild(fxStyle);
 
-  // Vagues concentriques (effet eau) au toucher
-  function spawnWaves(x, y) {
-    const colors = ["rgba(100,200,255,0.6)", "rgba(180,130,255,0.5)", "rgba(255,200,100,0.4)"];
-    for (let i = 0; i < 3; i++) {
-      setTimeout(() => {
-        const w = document.createElement("div");
-        const size = 60;
-        w.style.cssText = `
-          position:fixed; z-index:99999; pointer-events:none;
-          width:${size}px; height:${size}px;
-          left:${x - size/2}px; top:${y - size/2}px;
-          border-radius:50%;
-          border: 3px solid ${colors[i]};
-          box-shadow: 0 0 12px ${colors[i]};
-          transform: scale(0.2); opacity: 0.9;
-          animation: yaro-wave ${0.6 + i * 0.15}s ease-out forwards;
-        `;
-        document.body.appendChild(w);
-        setTimeout(() => w.remove(), 900);
-      }, i * 80);
-    }
-  }
-
-  // Étoiles / étincelles au toucher
-  function spawnStars(x, y) {
-    const count = 8;
+  // Éclairs qui partent dans toutes les directions
+  function spawnLightning(x, y) {
+    const count = 10;
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2;
-      const dist  = 35 + Math.random() * 25;
-      const sx    = Math.cos(angle) * dist;
-      const sy    = Math.sin(angle) * dist;
-      const colors = ["#FFD700", "#FF6B9D", "#7EB8FF", "#A8FF78", "#FF9F43"];
+      const angle  = (i / count) * Math.PI * 2 + Math.random() * 0.4;
+      const dist   = 50 + Math.random() * 40;
+      const bx     = Math.cos(angle) * dist;
+      const by     = Math.sin(angle) * dist;
+      const colors = ["#FF1A1A", "#FF4400", "#FF2200", "#CC0000", "#FF6600"];
       const color  = colors[Math.floor(Math.random() * colors.length)];
-      const s = document.createElement("div");
-      s.style.cssText = `
+      const w      = 2 + Math.random() * 2;
+      const h      = 18 + Math.random() * 16;
+
+      const bolt = document.createElement("div");
+      bolt.style.cssText = `
         position:fixed; z-index:99999; pointer-events:none;
-        width:8px; height:8px;
-        left:${x - 4}px; top:${y - 4}px;
-        background: ${color};
-        border-radius: 50%;
-        box-shadow: 0 0 6px ${color};
-        --sx: ${sx}px; --sy: ${sy}px;
-        animation: yaro-star 0.55s ease-out forwards;
+        width:${w}px; height:${h}px;
+        left:${x - w/2}px; top:${y - h/2}px;
+        background: linear-gradient(180deg, #FFF 0%, ${color} 40%, #FF0000 100%);
+        border-radius: 2px;
+        box-shadow: 0 0 8px ${color}, 0 0 3px #FFF;
+        transform-origin: center center;
+        transform: rotate(${(angle * 180/Math.PI) + 90}deg);
+        --bx:${bx}px; --by:${by}px;
+        animation: yaro-bolt ${0.3 + Math.random()*.2}s ease-out forwards;
       `;
-      document.body.appendChild(s);
-      setTimeout(() => s.remove(), 600);
+      document.body.appendChild(bolt);
+      setTimeout(() => bolt.remove(), 600);
     }
   }
 
-  // Orbes colorés pendant le glissement
-  function spawnOrb(x, y) {
-    const colors = [
-      "radial-gradient(circle, #7EB8FF, #3D6FFF)",
-      "radial-gradient(circle, #FFB347, #FF6B35)",
-      "radial-gradient(circle, #C471ED, #7B68EE)",
-      "radial-gradient(circle, #43E97B, #38F9D7)",
-    ];
-    const size = 14 + Math.random() * 14;
-    const ox   = (Math.random() - 0.5) * 40;
-    const oy   = -(20 + Math.random() * 30);
-    const o = document.createElement("div");
-    o.style.cssText = `
+  // Flash rouge sur le bouton
+  function spawnFlash(fab) {
+    fab.style.animation = "yaro-flash 0.35s ease-out";
+    setTimeout(() => { fab.style.animation = ""; }, 400);
+  }
+
+  // Braises / flammèches
+  function spawnEmbers(x, y, count) {
+    const fireColors = ["#FF1A00", "#FF4400", "#FF7700", "#FF2200", "#FFAA00", "#CC0000", "#FF3300"];
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist  = 25 + Math.random() * 45;
+      const ex    = Math.cos(angle) * dist;
+      const ey    = Math.sin(angle) * dist - 20;
+      const er    = (Math.random() - .5) * 360;
+      const size  = 4 + Math.random() * 8;
+      const color = fireColors[Math.floor(Math.random() * fireColors.length)];
+
+      const ember = document.createElement("div");
+      ember.style.cssText = `
+        position:fixed; z-index:99998; pointer-events:none;
+        width:${size}px; height:${size + 4}px;
+        left:${x - size/2}px; top:${y - size/2}px;
+        background: radial-gradient(ellipse at 50% 30%, #FFF 0%, ${color} 50%, #AA0000 100%);
+        border-radius: 50% 50% 30% 30%;
+        box-shadow: 0 0 6px ${color};
+        --ex:${ex}px; --ey:${ey}px; --er:${er}deg;
+        animation: yaro-ember ${0.4 + Math.random()*.3}s ease-out forwards;
+      `;
+      document.body.appendChild(ember);
+      setTimeout(() => ember.remove(), 750);
+    }
+  }
+
+  // Traînée de feu pendant le glissement
+  function spawnFireTrail(x, y) {
+    const fx    = (Math.random() - .5) * 20;
+    const fy    = -(15 + Math.random() * 25);
+    const size  = 12 + Math.random() * 12;
+    const fireColors = ["#FF1A00","#FF4400","#FF6600","#CC2200","#FF3300"];
+    const color = fireColors[Math.floor(Math.random() * fireColors.length)];
+    const f = document.createElement("div");
+    f.style.cssText = `
       position:fixed; z-index:99998; pointer-events:none;
-      width:${size}px; height:${size}px;
+      width:${size}px; height:${size * 1.4}px;
       left:${x - size/2}px; top:${y - size/2}px;
-      border-radius:50%;
-      background: ${colors[Math.floor(Math.random() * colors.length)]};
-      --ox:${ox}px; --oy:${oy}px;
-      animation: yaro-orb 0.65s ease-out forwards;
+      background: radial-gradient(ellipse at 50% 30%, #FFEE00 0%, ${color} 45%, rgba(150,0,0,0) 100%);
+      border-radius: 50% 50% 30% 30%;
+      filter: blur(1px);
+      --fx:${fx}px; --fy:${fy}px;
+      animation: yaro-fire-trail 0.5s ease-out forwards;
     `;
-    document.body.appendChild(o);
-    setTimeout(() => o.remove(), 700);
+    document.body.appendChild(f);
+    setTimeout(() => f.remove(), 550);
+  }
+
+  // ── Protection photo ────────────────────────────────────
+  function protectImages() {
+    const imgs = document.querySelectorAll(".chat-fab-img, .chat-header-img");
+    imgs.forEach(img => {
+      img.draggable = false;
+      img.addEventListener("contextmenu",  e => e.preventDefault());
+      img.addEventListener("touchstart",   e => { /* ne pas stopper pour le drag */ }, { passive: true });
+      img.style.cssText += "; -webkit-touch-callout:none; user-select:none; pointer-events:none;";
+    });
+    // Le bouton lui-même garde les pointer-events pour le drag
+    const fab = document.getElementById("chatFab");
+    if (fab) {
+      fab.addEventListener("contextmenu", e => e.preventDefault());
+      fab.style.webkitTouchCallout = "none";
+    }
   }
 
   // ── Bouton déplaçable ───────────────────────────────────
@@ -206,10 +241,12 @@
     const fab = document.getElementById("chatFab");
     if (!fab) return;
 
+    protectImages();
+
     let dragging  = false;
     let hasMoved  = false;
     let startX, startY, origLeft, origBottom;
-    let orbTimer  = null;
+    let trailTimer = null;
 
     function getPos(e) {
       return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
@@ -228,10 +265,11 @@
       origBottom = window.innerHeight - rect.bottom;
       fab.style.transition = "none";
 
-      // Effet au toucher : vagues + étoiles + vibration
-      spawnWaves(pos.x, pos.y);
-      spawnStars(pos.x, pos.y);
-      if (navigator.vibrate) navigator.vibrate([10, 5, 10]);
+      // Tonnerre au toucher : éclairs + braises + flash + vibration forte
+      spawnLightning(pos.x, pos.y);
+      spawnEmbers(pos.x, pos.y, 12);
+      spawnFlash(fab);
+      if (navigator.vibrate) navigator.vibrate([30, 15, 60, 10, 30]);
     }
 
     function onMove(e) {
@@ -244,7 +282,7 @@
         if (!hasMoved) {
           hasMoved = true;
           fab.classList.add("yaro-dragging");
-          if (navigator.vibrate) navigator.vibrate([5, 3, 5]);
+          if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
         }
       }
       if (!hasMoved) return;
@@ -256,14 +294,15 @@
       fab.style.bottom = Math.max(margin, Math.min(window.innerHeight - size - margin, origBottom - dy)) + "px";
       fab.style.right  = "auto";
 
-      // Orbes toutes les 60ms
-      if (!orbTimer) {
+      // Traînée de feu toutes les 50ms
+      if (!trailTimer) {
         const rect = fab.getBoundingClientRect();
         const cx   = rect.left + rect.width  / 2;
         const cy   = rect.top  + rect.height / 2;
-        spawnOrb(cx, cy);
-        spawnOrb(cx, cy); // deux orbes à la fois
-        orbTimer = setTimeout(() => { orbTimer = null; }, 60);
+        spawnFireTrail(cx, cy);
+        spawnFireTrail(cx, cy);
+        spawnFireTrail(cx, cy);
+        trailTimer = setTimeout(() => { trailTimer = null; }, 50);
       }
     }
 
@@ -276,14 +315,14 @@
       if (hasMoved) {
         e.preventDefault();
         e.stopPropagation();
-        if (navigator.vibrate) navigator.vibrate(25);
-
-        // Explosion finale d'étoiles à l'atterrissage
+        // Explosion finale : éclairs + braises + vibration tonnerre
         const rect = fab.getBoundingClientRect();
         const cx   = rect.left + rect.width  / 2;
         const cy   = rect.top  + rect.height / 2;
-        spawnWaves(cx, cy);
-        spawnStars(cx, cy);
+        spawnLightning(cx, cy);
+        spawnEmbers(cx, cy, 18);
+        spawnFlash(fab);
+        if (navigator.vibrate) navigator.vibrate([80, 20, 40]);
 
         // Repositionner fenêtre chat
         const win = document.getElementById("chatWindow");
