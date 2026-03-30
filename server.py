@@ -1634,8 +1634,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 else:
                     reply = (
                         f"Je suis Yaro, l'assistant virtuel de {nom}. "
-                        f"Je peux vous renseigner sur : sa biographie, ses fonctions, "
-                        f"son programme, ses actualités ou comment le contacter. "
+                        f"Je peux vous renseigner sur :\n"
+                        f"• Sa biographie et son parcours\n"
+                        f"• Ses fonctions et mandats\n"
+                        f"• Son programme électoral\n"
+                        f"• Ses actualités récentes\n"
+                        f"• Sa circonscription d'Ewo\n"
+                        f"• Son action pour la Justice\n"
+                        f"• Comment le contacter\n"
                         f"Quelle information souhaitez-vous ?"
                     )
 
