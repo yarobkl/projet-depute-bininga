@@ -1470,30 +1470,77 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Charger les données du site pour le contexte
                 site_context = ""
+                nom_complet  = "Ange Aimé Wilfrid BININGA"
                 try:
+                    import re as _re
                     with open(DATA_FILE, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    hero  = data.get("hero", {})
-                    about = data.get("about", {})
-                    stats = data.get("stats", {})
-                    actus = data.get("actus", {})
-                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip()
-                    role  = hero.get("role", "")
-                    site_context = f"""
-INFORMATIONS SUR LE SITE :
-Nom : {nom_complet}
-Rôle : {role}
-Slogan : {hero.get('slogan','').replace('<em>','').replace('</em>','').replace('<br>','  ')}
-Subtitle : {hero.get('subtitle','')}
+                    hero      = data.get("hero", {})
+                    about     = data.get("about", {})
+                    stats     = data.get("stats", [])
+                    actus     = data.get("actus", {})
+                    programme = data.get("programme", {})
+                    parcours  = data.get("parcours", [])
+                    contact   = data.get("contact", {})
 
-À propos : {about.get('texte','')}
+                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or nom_complet
+                    role        = hero.get("role", "")
+                    slogan      = _re.sub(r"<[^>]+>", "", hero.get("slogan", "")).replace("\n", " ")
 
-Chiffres clés : {json.dumps(stats, ensure_ascii=False)[:500]}
+                    # Biographie
+                    bio_intro = about.get("intro", "")
+                    bio_paras = " ".join(about.get("paragraphs", []))[:1000]
 
-Actualités récentes : {json.dumps([a.get('titre','') for a in actus.get('liste',[])[:5] if isinstance(a,dict)], ensure_ascii=False)}
-"""
-                except Exception:
-                    site_context = "Informations sur Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
+                    # Stats
+                    stats_txt = " | ".join(
+                        f"{s.get('num','')} {s.get('label','')}"
+                        for s in stats if isinstance(s, dict)
+                    )
+
+                    # Actualités (slides + cards)
+                    actus_lines = []
+                    for item in (actus.get("slides", []) + actus.get("cards", []))[:6]:
+                        if not isinstance(item, dict): continue
+                        t = item.get("title", "").replace("\n", " ")
+                        s = item.get("subtitle", "")[:120]
+                        if t: actus_lines.append("- " + t + (" : " + s if s else ""))
+
+                    # Programme
+                    prog_lines = []
+                    for ax in programme.get("axes", [])[:6]:
+                        if not isinstance(ax, dict): continue
+                        title  = ax.get("title", "")
+                        text   = ax.get("text", "")[:120]
+                        points = ", ".join(ax.get("points", [])[:3])
+                        prog_lines.append("- " + title + " : " + text + (" (" + points + ")" if points else ""))
+
+                    # Parcours
+                    parc_lines = []
+                    items = parcours if isinstance(parcours, list) else parcours.get("items", [])
+                    for e in items[:6]:
+                        if not isinstance(e, dict): continue
+                        yr = e.get("year", "")
+                        t  = e.get("title", "")
+                        d  = e.get("desc", "")[:100]
+                        parc_lines.append("- " + yr + " : " + t + (" — " + d if d else ""))
+
+                    contact_email = contact.get("email", "")
+                    contact_info  = (contact_email + " — ") if contact_email else ""
+
+                    site_context = (
+                        f"NOM : {nom_complet}\n"
+                        f"RÔLE : {role}\n"
+                        f"SLOGAN : {slogan}\n\n"
+                        f"BIOGRAPHIE :\n{bio_intro}\n{bio_paras}\n\n"
+                        f"CHIFFRES CLÉS : {stats_txt}\n\n"
+                        f"ACTUALITÉS RÉCENTES :\n" + "\n".join(actus_lines) + "\n\n"
+                        f"PROGRAMME ÉLECTORAL :\n" + "\n".join(prog_lines) + "\n\n"
+                        f"PARCOURS :\n" + "\n".join(parc_lines) + "\n\n"
+                        f"CONTACT : {contact_info}via le formulaire de contact du site"
+                    )
+                except Exception as ctx_err:
+                    print(f"[CHAT] Erreur lecture data.json : {ctx_err}")
+                    site_context = f"Informations sur {nom_complet}, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
 
                 system_prompt = f"""Tu es l'assistant officiel présent sur ce site. Tu réponds directement aux utilisateurs comme si tu faisais partie de l'équipe de {nom_complet if nom_complet else "cette personnalité publique"}.
 
