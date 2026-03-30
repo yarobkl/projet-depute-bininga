@@ -5,28 +5,36 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: none;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid rgba(200,16,46,.4);
   cursor: pointer;
   z-index: 9999;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0,0,0,.35);
+  background: #0e0e1a;
+  box-shadow: 0 4px 24px rgba(0,0,0,.5);
   transition: transform .2s, box-shadow .2s;
-  background: #1a1a2e;
+  animation: da-pulse 3s ease-in-out infinite;
 }
-.chat-fab:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(0,0,0,.45); }
-.chat-fab-img {
+@keyframes da-pulse {
+  0%,100% { box-shadow: 0 4px 24px rgba(0,0,0,.5), 0 0 0 0 rgba(200,16,46,.3); }
+  50%      { box-shadow: 0 4px 24px rgba(0,0,0,.5), 0 0 0 7px rgba(200,16,46,.0); }
+}
+.chat-fab:hover { transform: scale(1.06); animation: none; box-shadow: 0 6px 32px rgba(200,16,46,.3); }
+.chat-fab-mono {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center 12%;
-  border-radius: 50%;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c8102e;
   transition: opacity .2s;
-  transform: scale(1.25);
 }
 .chat-fab-close {
   position: absolute;
@@ -34,12 +42,12 @@
   display: none;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
+  font-size: 20px;
   color: #fff;
-  background: rgba(20,20,40,.85);
-  border-radius: 50%;
+  background: rgba(14,14,26,.9);
+  border-radius: 14px;
 }
-.chat-fab.open .chat-fab-img { opacity: 0; }
+.chat-fab.open .chat-fab-mono { opacity: 0; }
 .chat-fab.open .chat-fab-close { display: flex; }
 
 .chat-fab-badge {
@@ -96,15 +104,21 @@
   border-bottom: 1px solid rgba(255,255,255,.06);
   flex-shrink: 0;
 }
-.chat-header-img {
+.chat-header-mono {
   width: 40px;
   height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center 12%;
-  border: 2px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  border: 1px solid rgba(200,16,46,.4);
+  background: #0e0e1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c8102e;
   flex-shrink: 0;
-  transform: scale(1.2);
 }
 .chat-header-info { flex: 1; min-width: 0; }
 .chat-header-name {

@@ -162,22 +162,6 @@
     <div class="hero-scroll-line"></div>
     <span>Découvrir</span>
   </a>
-  <div class="hero-stat-strip">
-    <div class="stat-ticker-track" id="stat-ticker-track">
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s0" data-c="2">0</div>
-        <div class="hstat-txt" id="dyn-s0-lbl">Ministères<br>dirigés</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s1" data-c="2">0</div>
-        <div class="hstat-txt" id="dyn-s1-lbl">Mandats<br>de Député</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s2" style="font-size:22px;line-height:1.2">1re</div>
-        <div class="hstat-txt" id="dyn-s2-lbl">Circonscription<br>d'Ewo</div>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- ABOUT -->
@@ -791,17 +775,17 @@
 <!-- ── CHATBOT WIDGET ────────────────────────────────────── -->
 <link rel="stylesheet" href="static/chat.css">
 
-<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant">
-  <img src="images/yaro.jpg.jpg" alt="Yaro" class="chat-fab-img" id="chatFabImg">
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant DA">
+  <span class="chat-fab-mono" id="chatFabMono">DA</span>
   <span class="chat-fab-close" id="chatFabClose">✕</span>
   <span class="chat-fab-badge" id="chatFabBadge" style="display:none">1</span>
 </button>
 
 <div class="chat-window" id="chatWindow" aria-hidden="true">
   <div class="chat-header">
-    <img src="images/yaro.jpg.jpg" alt="Yaro" class="chat-header-img">
+    <div class="chat-header-mono">DA</div>
     <div class="chat-header-info">
-      <div class="chat-header-name">Yaro IA</div>
+      <div class="chat-header-name">DA — Assistant officiel</div>
       <div class="chat-header-status"><span class="chat-dot"></span> En ligne</div>
     </div>
     <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
