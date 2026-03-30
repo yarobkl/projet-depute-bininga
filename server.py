@@ -673,69 +673,75 @@ def _pg():
         _PG_CONN = None
         return None
 
-# ── Helper IA — Gemini (gratuit) ───────────────────────────
-_GEMINI_MODEL_CACHE = None  # modèle fonctionnel mis en cache
+# ── Helper IA — Gemini + Groq fallback ─────────────────────
+_GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
+
+def _groq_call(prompt: str, max_tokens: int = 800) -> str:
+    """Appelle Groq (llama gratuit) et retourne le texte généré."""
+    import urllib.request as ur
+    key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not key:
+        raise ValueError("GROQ_API_KEY non configuré")
+    payload = json.dumps({
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "temperature": 0.4,
+    }).encode()
+    req = ur.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=payload,
+        headers={"content-type": "application/json", "authorization": f"Bearer {key}"},
+    )
+    with ur.urlopen(req, timeout=30) as r:
+        resp = json.loads(r.read())
+    return resp["choices"][0]["message"]["content"].strip()
 
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
-    """Appelle Gemini Flash et retourne le texte généré.
-    Essaie plusieurs modèles dans l'ordre jusqu'à trouver un qui fonctionne."""
+    """Appelle Gemini Flash, avec fallback automatique sur Groq si quota dépassé."""
     import urllib.request as ur
     global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        raise ValueError("GEMINI_API_KEY non configuré")
 
-    # Modèles à essayer dans l'ordre (gratuits en priorité)
-    candidates = [
-        ("v1beta", "gemini-2.0-flash-lite"),
-        ("v1beta", "gemini-2.0-flash-lite-001"),
-        ("v1beta", "gemini-2.0-flash"),
-        ("v1beta", "gemini-2.5-flash"),
-    ]
+    gemini_err = None
+    if key:
+        candidates = [
+            ("v1beta", "gemini-2.0-flash-lite"),
+            ("v1beta", "gemini-2.0-flash-lite-001"),
+            ("v1beta", "gemini-2.0-flash"),
+            ("v1beta", "gemini-2.5-flash"),
+        ]
+        if _GEMINI_MODEL_CACHE:
+            candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
 
-    # Si on a déjà un modèle qui a marché, l'essayer en premier
-    if _GEMINI_MODEL_CACHE:
-        candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
+        payload = json.dumps({
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
+        }).encode()
 
-    payload = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
-    }).encode()
+        for (version, model) in candidates:
+            url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
+            try:
+                req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+                with ur.urlopen(req, timeout=30) as r:
+                    resp = json.loads(r.read())
+                parts = resp.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                text  = parts[0].get("text", "").strip() if parts else ""
+                if not text:
+                    raise ValueError("Réponse vide")
+                _GEMINI_MODEL_CACHE = (version, model)
+                print(f"[AI] Gemini {version}/{model}")
+                return text
+            except Exception as e:
+                gemini_err = e
+                err_str = str(e)
+                if "429" in err_str or "404" in err_str:
+                    continue
+                raise
 
-    last_err = None
-    for (version, model) in candidates:
-        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
-        try:
-            req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
-            with ur.urlopen(req, timeout=30) as r:
-                resp = json.loads(r.read())
-            # Parsing robuste (structure peut varier selon le modèle)
-            candidates_r = resp.get("candidates", [])
-            if not candidates_r:
-                raise ValueError("Réponse vide (candidates manquants)")
-            content = candidates_r[0].get("content", {})
-            parts   = content.get("parts", [])
-            if not parts:
-                raise ValueError("Réponse vide (parts manquants)")
-            text = parts[0].get("text", "").strip()
-            if not text:
-                raise ValueError("Texte vide dans la réponse")
-            _GEMINI_MODEL_CACHE = (version, model)  # mémoriser ce qui marche
-            print(f"[GEMINI] Modèle utilisé : {version}/{model}")
-            return text
-        except Exception as e:
-            last_err = e
-            err_str = str(e)
-            # Arrêter si quota dépassé (billing requis), inutile d'essayer d'autres
-            if "429" in err_str and "quota" in err_str.lower():
-                continue
-            # Continuer si 404 (modèle inexistant)
-            if "404" in err_str:
-                continue
-            # Autre erreur = lever directement
-            raise
-
-    raise last_err or RuntimeError("Aucun modèle Gemini disponible")
+    # Fallback Groq
+    print(f"[AI] Gemini indisponible ({gemini_err}) — fallback Groq")
+    return _groq_call(prompt, max_tokens)
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
