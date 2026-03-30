@@ -498,60 +498,128 @@
   "gallery": {
     "slides": [
       {
-        "image": "images/bininga.jpg",
+        "image": "images/IMG_9963.webp",
         "emoji": "",
-        "title": "Portrait officiel, Ministre de la Justice",
-        "subtitle": "Ange Aimé Wilfrid BININGA, Ministre de la Justice, Député d'Ewo"
+        "title": "Conseil supérieur de la magistrature",
+        "subtitle": "Session ordinaire — Brazzaville, 27 mars 2023"
+      },
+      {
+        "image": "images/IMG_9964.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9965.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9966.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9967.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
       },
       {
         "image": "images/Darmanin.jpeg",
         "emoji": "",
-        "title": "Rencontre Place Vendôme, BININGA & Darmanin",
-        "subtitle": "Coopération judiciaire Congo–France, 18 Février 2026"
+        "title": "BININGA & Darmanin — Place Vendôme",
+        "subtitle": "Coopération judiciaire Congo–France, Février 2026"
       },
       {
         "image": "images/rwanda.JPG",
         "emoji": "",
         "title": "Visite de l'Ambassadeur du Rwanda",
-        "subtitle": "Coopération judiciaire Rwanda–Congo, 12 Décembre 2025"
+        "subtitle": "Coopération judiciaire Rwanda–Congo, Décembre 2025"
       },
       {
         "image": "images/ewo.jpg",
         "emoji": "",
         "title": "Boulevard énergétique — Ewo",
-        "subtitle": "Travaux de la ligne 110 KV Boundji-Ewo, Août 2024"
-      },
-      {
-        "image": "images/IMG_9963.webp",
-        "emoji": "",
-        "title": "Conseil supérieur de la magistrature",
-        "subtitle": "Session ordinaire du 27 mars 2023 — Brazzaville"
+        "subtitle": "Travaux ligne 110 KV Boundji-Ewo, Août 2024"
       }
     ],
     "grid": [
-      {
-        "image": "images/bininga.jpg",
-        "alt": "BININGA — Portrait officiel, Ministre de la Justice",
-        "emoji": ""
-      },
-      {
-        "image": "images/Darmanin.jpeg",
-        "alt": "BININGA et Darmanin — Place Vendôme, Paris, Février 2026",
-        "emoji": ""
-      },
       {
         "image": "images/IMG_9963.webp",
         "alt": "BININGA — Conseil supérieur de la magistrature, 27 mars 2023",
         "emoji": ""
       },
       {
+        "image": "images/IMG_9964.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9965.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9966.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9967.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9972.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9973.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9975.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9976.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9977.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9978.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/bininga.jpg",
+        "alt": "BININGA — Portrait officiel",
+        "emoji": ""
+      },
+      {
+        "image": "images/Darmanin.jpeg",
+        "alt": "BININGA et Darmanin — Place Vendôme, Paris",
+        "emoji": ""
+      },
+      {
         "image": "images/rwanda.JPG",
-        "alt": "BININGA — Visite de l'Ambassadeur du Rwanda, Décembre 2025",
+        "alt": "BININGA — Visite Ambassadeur Rwanda",
         "emoji": ""
       },
       {
         "image": "images/ewo.jpg",
-        "alt": "Boulevard énergétique — Ewo, Cuvette-Ouest, Août 2024",
+        "alt": "Boulevard énergétique — Ewo",
         "emoji": ""
       }
     ]
