@@ -8,6 +8,8 @@
     _open = !_open;
     const bubble = document.getElementById("chatBubble");
     if (bubble) bubble.classList.remove("visible");
+    const ring = document.getElementById("chatFabRing");
+    if (ring) ring.style.display = "none";
     const win   = document.getElementById("chatWindow");
     const fab   = document.getElementById("chatFab");
     const badge = document.getElementById("chatFabBadge");
@@ -160,14 +162,18 @@
     }
   })();
 
-  // ── Bulle d'accueil — apparaît après 2,5s ──────────────
+  // ── Bulle d'accueil — apparaît après 3s, reste visible ──
   (function() {
-    const bubble = document.getElementById("chatBubble");
-    if (!bubble) return;
-    // Affiche après 2,5s
-    setTimeout(() => bubble.classList.add("visible"), 2500);
-    // Se cache automatiquement après 8s
-    setTimeout(() => bubble.classList.remove("visible"), 10500);
+    function showBubble() {
+      const bubble = document.getElementById("chatBubble");
+      if (!bubble) return;
+      setTimeout(() => bubble.classList.add("visible"), 3000);
+    }
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", showBubble);
+    } else {
+      showBubble();
+    }
   })();
 
   window.toggleChat = toggleChat;
