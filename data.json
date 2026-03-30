@@ -58,6 +58,15 @@
         "sourceUrl": "https://lasemaineafricaine.info/magistrature-des-sanctions-et-nominations-qui-ne-font-pas-lunanimite/"
       },
       {
+        "image": "images/ewo.jpg",
+        "alt": "Boulevard énergétique, Ewo bientôt connecté au réseau électrique national",
+        "chipColor": "#e65100",
+        "chip": "⚡ Énergie · Août 2024",
+        "date": "20 Août 2024, Cuvette-Ouest, Congo",
+        "title": "Boulevard énergétique :\nEwo bientôt connecté au réseau électrique national",
+        "subtitle": "Le Premier ministre Anatole Collinet Makosso a visité les travaux de la ligne électrique 110 KV et la route bitumée Boundji-Ewo. Sur 180 pylônes, 116 sont déjà installés, Ewo sera électrifiée dans quelques mois."
+      },
+      {
         "image": "images/rwanda.JPG",
         "alt": "BININGA reçoit l'Ambassadeur du Rwanda, 12 décembre 2025",
         "chipColor": "#1565C0",
@@ -76,15 +85,6 @@
         "subtitle": "Coordinateur de la campagne du Président-Candidat Denis Sassou Nguesso dans le district et la commune d'Ewo, Aimé Bininga a sillonné l'axe Lebankaya pour porter le message présidentiel auprès des populations. Forte mobilisation à chaque étape."
       },
       {
-        "image": "images/bininga.jpg",
-        "alt": "Ange Aimé Wilfrid BININGA, Garde des Sceaux",
-        "chipColor": "",
-        "chip": "Portrait officiel",
-        "date": "République du Congo, Garde des Sceaux",
-        "title": "Ange Aimé Wilfrid BININGA,\nau service de la Justice et de son peuple",
-        "subtitle": "Juriste, réformateur, diplomate, Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales."
-      },
-      {
         "image": "images/Darmanin.jpeg",
         "alt": "BININGA et Gérald Darmanin, Place Vendôme, Paris, Février 2026",
         "chipColor": "",
@@ -94,13 +94,13 @@
         "subtitle": "Reçu Place Vendôme par son homologue français Gérald Darmanin, le Ministre BININGA engage la révision de la convention judiciaire bilatérale vieille de 50 ans. Trois nouvelles conventions, entraide, extraditions, transfèrements, attendues à l'été 2026."
       },
       {
-        "image": "images/ewo.jpg",
-        "alt": "Boulevard énergétique, Ewo bientôt connecté au réseau électrique national",
-        "chipColor": "#e65100",
-        "chip": "⚡ Énergie · Août 2024",
-        "date": "20 Août 2024, Cuvette-Ouest, Congo",
-        "title": "Boulevard énergétique :\nEwo bientôt connecté au réseau électrique national",
-        "subtitle": "Le Premier ministre Anatole Collinet Makosso a visité les travaux de la ligne électrique 110 KV et la route bitumée Boundji-Ewo. Sur 180 pylônes, 116 sont déjà installés, Ewo sera électrifiée dans quelques mois."
+        "image": "images/bininga.jpg",
+        "alt": "Ange Aimé Wilfrid BININGA, Garde des Sceaux",
+        "chipColor": "",
+        "chip": "Portrait officiel",
+        "date": "République du Congo, Garde des Sceaux",
+        "title": "Ange Aimé Wilfrid BININGA,\nau service de la Justice et de son peuple",
+        "subtitle": "Juriste, réformateur, diplomate, Député d'Ewo et Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Un homme de terrain dont l'action rayonne du Congo jusqu'aux instances internationales."
       }
     ],
     "vedettes": [
@@ -202,6 +202,17 @@
     ],
     "cards": [
       {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Réforme · Anticorruption",
+        "icon": "🏛️",
+        "day": "07",
+        "month": "Mar",
+        "year": "2018",
+        "title": "Adoption de la loi instituant la HALC, 107 voix pour",
+        "desc": "Votée à 107 voix pour, 6 contre, la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
+      },
+      {
         "catColor": "#1a237e",
         "borderColor": "#1a237e",
         "cat": "Justice",
@@ -215,70 +226,15 @@
         "sourceUrl": "https://lasemaineafricaine.info/magistrature-des-sanctions-et-nominations-qui-ne-font-pas-lunanimite/"
       },
       {
-        "catColor": "#1565C0",
-        "borderColor": "rgba(21,101,192,.25)",
-        "cat": "Diplomatie judiciaire · Rwanda",
-        "icon": "🌍",
-        "day": "12",
-        "month": "Déc",
-        "year": "2025",
-        "title": "L'Ambassadeur du Rwanda en visite chez le Ministre BININGA",
-        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville."
-      },
-      {
-        "catColor": "#4caf50",
-        "borderColor": "rgba(46,125,50,.25)",
-        "cat": "Campagne présidentielle · Ewo",
-        "icon": "🗳️",
-        "day": "09",
-        "month": "Mars",
-        "year": "2026",
-        "title": "Coordinateur de campagne, tournée sur l'axe Lebankaya",
-        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, fort soutien aux populations."
-      },
-      {
-        "catColor": "",
-        "borderColor": "",
-        "cat": "Justice · Ewo",
-        "icon": "⚖️",
-        "day": "15",
-        "month": "Déc",
-        "year": "2025",
-        "title": "Inauguration du tribunal de proximité d'Ewo",
-        "desc": "Résultat direct de son engagement au Ministère de la Justice, la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années."
-      },
-      {
-        "catColor": "",
-        "borderColor": "",
-        "cat": "Dialogue social",
-        "icon": "🤝",
-        "day": "08",
-        "month": "Nov",
-        "year": "2025",
-        "title": "Accord historique avec les syndicats congolais",
-        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur, une victoire pour les travailleurs congolais."
-      },
-      {
-        "catColor": "",
-        "borderColor": "",
-        "cat": "Éducation · Jeunesse",
-        "icon": "🎓",
-        "day": "22",
-        "month": "Oct",
-        "year": "2025",
-        "title": "50 bourses d'études remises à des jeunes d'Ewo",
-        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études."
-      },
-      {
-        "catColor": "",
-        "borderColor": "",
-        "cat": "Emploi · Cuvette-Ouest",
-        "icon": "💼",
-        "day": "05",
-        "month": "Sep",
-        "year": "2025",
-        "title": "Forum pour l'emploi des jeunes de la Cuvette-Ouest",
-        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain."
+        "catColor": "#e65100",
+        "borderColor": "rgba(230,81,0,.25)",
+        "cat": "Énergie · Cuvette-Ouest",
+        "icon": "⚡",
+        "day": "20",
+        "month": "Août",
+        "year": "2024",
+        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
+        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés, Ewo sera connectée au réseau national dans quelques mois."
       },
       {
         "catColor": "",
@@ -294,24 +250,68 @@
       {
         "catColor": "",
         "borderColor": "",
-        "cat": "Réforme · Anticorruption",
-        "icon": "🏛️",
-        "day": "07",
-        "month": "Mar",
-        "year": "2018",
-        "title": "Adoption de la loi instituant la HALC, 107 voix pour",
-        "desc": "Votée à 107 voix pour, 6 contre, la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
+        "cat": "Emploi · Cuvette-Ouest",
+        "icon": "💼",
+        "day": "05",
+        "month": "Sep",
+        "year": "2025",
+        "title": "Forum pour l'emploi des jeunes de la Cuvette-Ouest",
+        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain."
       },
       {
-        "catColor": "#e65100",
-        "borderColor": "rgba(230,81,0,.25)",
-        "cat": "Énergie · Cuvette-Ouest",
-        "icon": "⚡",
-        "day": "20",
-        "month": "Août",
-        "year": "2024",
-        "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
-        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés, Ewo sera connectée au réseau national dans quelques mois."
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Éducation · Jeunesse",
+        "icon": "🎓",
+        "day": "22",
+        "month": "Oct",
+        "year": "2025",
+        "title": "50 bourses d'études remises à des jeunes d'Ewo",
+        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Dialogue social",
+        "icon": "🤝",
+        "day": "08",
+        "month": "Nov",
+        "year": "2025",
+        "title": "Accord historique avec les syndicats congolais",
+        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur, une victoire pour les travailleurs congolais."
+      },
+      {
+        "catColor": "#1565C0",
+        "borderColor": "rgba(21,101,192,.25)",
+        "cat": "Diplomatie judiciaire · Rwanda",
+        "icon": "🌍",
+        "day": "12",
+        "month": "Déc",
+        "year": "2025",
+        "title": "L'Ambassadeur du Rwanda en visite chez le Ministre BININGA",
+        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville."
+      },
+      {
+        "catColor": "",
+        "borderColor": "",
+        "cat": "Justice · Ewo",
+        "icon": "⚖️",
+        "day": "15",
+        "month": "Déc",
+        "year": "2025",
+        "title": "Inauguration du tribunal de proximité d'Ewo",
+        "desc": "Résultat direct de son engagement au Ministère de la Justice, la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années."
+      },
+      {
+        "catColor": "#4caf50",
+        "borderColor": "rgba(46,125,50,.25)",
+        "cat": "Campagne présidentielle · Ewo",
+        "icon": "🗳️",
+        "day": "09",
+        "month": "Mars",
+        "year": "2026",
+        "title": "Coordinateur de campagne, tournée sur l'axe Lebankaya",
+        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, fort soutien aux populations."
       }
     ]
   },
