@@ -168,8 +168,8 @@
       const bubble = document.getElementById("chatBubble");
       if (!bubble) return;
       setTimeout(() => bubble.classList.add("visible"), 3000);
-    // Disparaît après 30 secondes
-    setTimeout(() => { const b = document.getElementById("chatBubble"); if(b) b.classList.remove("visible"); }, 33000);
+    // Disparaît après 45 secondes
+    setTimeout(() => { const b = document.getElementById("chatBubble"); if(b) b.classList.remove("visible"); }, 48000);
     }
     if (document.readyState === "loading") {
       document.addEventListener("DOMContentLoaded", showBubble);
