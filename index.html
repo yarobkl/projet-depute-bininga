@@ -876,6 +876,45 @@
 .btn-r              { animation: btn-fire 2s ease-in-out infinite; animation-delay:1.2s; }
 .hero-scroll        { animation: h-up   .6s ease-out both; animation-delay:1s; }
 
+/* Hero photo mobile */
+@media (max-width: 767px) {
+  .hero-img-side {
+    display: block !important;
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    opacity: .28;
+    z-index: 1;
+  }
+  .hero-img-side img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+  .hero-img-side::before {
+    background: linear-gradient(to bottom, rgba(6,6,6,.5) 0%, rgba(6,6,6,.1) 50%, rgba(6,6,6,.75) 100%) !important;
+  }
+}
+
+/* Programme — animations cartes */
+@keyframes prog-in {
+  from { opacity:0; transform: translateY(30px); }
+  to   { opacity:1; transform: none; }
+}
+.prog-card.visible { animation: prog-in .55s ease-out both; }
+.prog-card.visible:nth-child(1) { animation-delay: .0s; }
+.prog-card.visible:nth-child(2) { animation-delay: .1s; }
+.prog-card.visible:nth-child(3) { animation-delay: .2s; }
+.prog-card.visible:nth-child(4) { animation-delay: .3s; }
+.prog-card.visible:nth-child(5) { animation-delay: .4s; }
+.prog-card.visible:nth-child(6) { animation-delay: .5s; }
+.prog-card:active {
+  border-color: rgba(200,16,46,.4) !important;
+  box-shadow: 0 0 20px rgba(200,16,46,.2);
+  transform: translateY(-4px);
+}
+.prog-card:active::after { transform: scaleX(1) !important; }
+
 /* Braises flottantes dans le hero */
 .hero-ember {
   position:absolute; border-radius:50%; pointer-events:none;
@@ -909,6 +948,17 @@
       `;
       hero.appendChild(e);
     }
+  }
+
+  // ── Animations cartes Programme ──────────────────────
+  const progCards = document.querySelectorAll(".prog-card");
+  if (progCards.length && "IntersectionObserver" in window) {
+    const po = new IntersectionObserver(entries => {
+      entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add("visible"); po.unobserve(en.target); } });
+    }, { threshold: .15 });
+    progCards.forEach(c => po.observe(c));
+  } else {
+    progCards.forEach(c => c.classList.add("visible"));
   }
 
   // ── Compteurs stats qui montent ───────────────────────
