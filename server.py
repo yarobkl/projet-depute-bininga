@@ -952,13 +952,34 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/debug-ai (diagnostic clé IA) ──
         if path == "/api/debug-ai":
-            gemini = os.environ.get("GEMINI_API_KEY", "")
+            import urllib.request as _ur
+            gemini = os.environ.get("GEMINI_API_KEY", "").strip()
             groq   = os.environ.get("GROQ_API_KEY", "")
-            # Test appel Gemini en direct
-            gemini_test = ""
+            # Lister les modèles disponibles
+            models_list = []
             try:
-                reply = _gemini_call("Réponds juste: OK", max_tokens=10)
-                gemini_test = f"✅ Gemini répond : {reply}"
+                url_list = f"https://generativelanguage.googleapis.com/v1/models?key={gemini}"
+                with _ur.urlopen(url_list, timeout=10) as r:
+                    data_m = json.loads(r.read())
+                models_list = [m.get("name","") for m in data_m.get("models", [])]
+            except Exception as em:
+                models_list = [f"Erreur ListModels : {em}"]
+            # Test appel Gemini en direct avec le premier modèle flash disponible
+            gemini_test = ""
+            flash_model = next((m.split("/")[-1] for m in models_list if "flash" in m and "preview" not in m), None)
+            try:
+                if flash_model:
+                    import urllib.request as ur2
+                    key = gemini
+                    url_g = f"https://generativelanguage.googleapis.com/v1/models/{flash_model}:generateContent?key={key}"
+                    payload = json.dumps({"contents": [{"parts": [{"text": "Réponds juste: OK"}]}], "generationConfig": {"maxOutputTokens": 10}}).encode()
+                    req = ur2.Request(url_g, data=payload, headers={"content-type": "application/json"})
+                    with ur2.urlopen(req, timeout=15) as r:
+                        resp = json.loads(r.read())
+                    reply = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    gemini_test = f"✅ {flash_model} répond : {reply}"
+                else:
+                    gemini_test = "❌ Aucun modèle flash trouvé dans la liste"
             except Exception as e:
                 err_body = ""
                 try:
@@ -969,6 +990,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "GEMINI_API_KEY": f"{'✅ présente ('+str(len(gemini))+' chars)' if gemini else '❌ ABSENTE'}",
                 "GEMINI_prefix":  gemini[:8] + "..." if gemini else "",
                 "GROQ_API_KEY":   f"{'✅ présente' if groq else '❌ ABSENTE'}",
+                "models_disponibles": models_list,
+                "modele_selectionne": flash_model or "aucun",
                 "gemini_test":    gemini_test,
             })
             return
