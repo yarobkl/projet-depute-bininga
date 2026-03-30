@@ -1,8 +1,9 @@
 /* ── CHATBOT DA — Assistant officiel BININGA ──────────────── */
 (function () {
-  let _open    = false;
-  let _loading = false;
-  let _history = [];
+  let _open     = false;
+  let _loading  = false;
+  let _history  = [];
+  let _welcomed = false;
 
   function toggleChat() {
     _open = !_open;
@@ -17,6 +18,12 @@
     if (fab) fab.classList.toggle("open", _open);
     if (_open) {
       if (badge) badge.style.display = "none";
+      if (!_welcomed) {
+        _welcomed = true;
+        setTimeout(() => {
+          addMessage("bot", "👋 Bonjour ! Je suis DA, l'assistant virtuel du Ministre Ange Aimé Wilfrid BININGA.\n\nJe peux vous renseigner sur :\n• Sa biographie et son parcours\n• Ses fonctions et mandats\n• Son programme électoral\n• Ses actualités récentes\n• Sa circonscription d'Ewo\n• Comment le contacter\n\nComment puis-je vous aider ?");
+        }, 400);
+      }
       if (window.innerWidth > 600) setTimeout(() => { const i = document.getElementById("chatInput"); if(i) i.focus(); }, 300);
       scrollMessages();
     } else {
