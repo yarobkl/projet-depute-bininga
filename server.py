@@ -19,11 +19,29 @@ from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 from datetime import datetime
 
+# ── Version build (cache-busting) ──────────────────────────
+def _get_build_version():
+    try:
+        import subprocess
+        h = subprocess.check_output(["git","rev-parse","--short","HEAD"],
+                                    stderr=subprocess.DEVNULL).decode().strip()
+        return h if h else str(int(datetime.now().timestamp()))
+    except Exception:
+        return str(int(datetime.now().timestamp()))
+
+BUILD_VERSION = _get_build_version()
+
 # ── Configuration ──────────────────────────────────────────
-DATA_FILE       = "data.json"
-AUDIT_FILE      = "audit.log"
-USERS_FILE      = "users.json"
-SESSIONS_FILE   = "sessions.json"
+# DATA_DIR : répertoire persistant (ex: volume Railway /data).
+# Si non défini, utilise le répertoire courant (éphémère sur Railway free tier).
+DATA_DIR        = os.environ.get("DATA_DIR", ".")
+if DATA_DIR != ".":
+    os.makedirs(DATA_DIR, exist_ok=True)
+
+DATA_FILE       = "data.json"   # Contenu du site — NE PAS mettre dans DATA_DIR
+AUDIT_FILE      = os.path.join(DATA_DIR, "audit.log")
+USERS_FILE      = os.path.join(DATA_DIR, "users.json")
+SESSIONS_FILE   = os.path.join(DATA_DIR, "sessions.json")
 BININGA_TEST    = os.environ.get("BININGA_TEST", "") == "1"  # Mode test uniquement
 ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
@@ -42,13 +60,16 @@ ACTIVE_SESSIONS = {}
 SESSION_TTL     = 86400  # 24 heures
 
 # Fichier de contact
-CONTACT_FILE = "contacts.json"
+CONTACT_FILE = os.path.join(DATA_DIR, "contacts.json")
 
 # Fichier de veille IA
-NEWS_FILE = "news_monitor.json"
+NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
+
+# Fichier éditorial IA
+EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
 
 # Fichier CRM — rétention 10 ans
-CRM_FILE             = "crm.json"
+CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
 
 # Rate limiting : ip → {count, blocked_until}
@@ -170,9 +191,9 @@ def _reset_login_attempts(ip: str):
 # ██  MODULE ANTI-INTRUSION — BININGA SECURITY ENGINE     ██
 # ══════════════════════════════════════════════════════════
 
-BLOCKED_IPS_FILE    = "blocked_ips.json"
-ATTACK_LOG_FILE     = "attacks.log"
-ATTACK_SCORES_FILE  = "attack_scores.json"
+BLOCKED_IPS_FILE    = os.path.join(DATA_DIR, "blocked_ips.json")
+ATTACK_LOG_FILE     = os.path.join(DATA_DIR, "attacks.log")
+ATTACK_SCORES_FILE  = os.path.join(DATA_DIR, "attack_scores.json")
 USE_SSL             = False   # mis à jour dans __main__
 
 # ── IPs définitivement bannies ─────────────────────────────
@@ -436,6 +457,9 @@ def _parse_multipart(content_type: str, body: bytes) -> dict:
 
 # ── Utilisateurs ────────────────────────────────────────────
 def load_users():
+    db = _pg_load("users")
+    if db is not None:
+        return db
     if not os.path.exists(USERS_FILE):
         return []
     try:
@@ -445,25 +469,17 @@ def load_users():
         return []
 
 def save_users(users):
-    # Backup automatique avant écrasement (garder 3 derniers)
-    if os.path.exists(USERS_FILE):
-        try:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            backup = USERS_FILE.replace(".json", f"_backup_{ts}.json")
-            with open(USERS_FILE, "rb") as src, open(backup, "wb") as dst:
-                dst.write(src.read())
-            backups = sorted(f for f in os.listdir(".") if f.startswith("users_backup_"))
-            for old in backups[:-3]:
-                try: os.remove(old)
-                except Exception: pass
-        except Exception:
-            pass
-    with open(USERS_FILE, "w", encoding="utf-8") as f:
-        json.dump(users, f, indent=2, ensure_ascii=False)
+    _pg_save("users", users)
+    try:
+        with open(USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde users fichier : {e}")
 
 def init_users():
-    """Crée users.json par défaut si inexistant."""
-    if not os.path.exists(USERS_FILE):
+    """Crée le compte admin par défaut si inexistant (DB ou fichier)."""
+    existing = load_users()
+    if not existing:
         password = ADMIN_PASS
         if not password:
             password = secrets.token_urlsafe(16)
@@ -475,7 +491,7 @@ def init_users():
             "role": "admin",
             "nom": "Rodrin Bakala"
         }])
-        print(f"[BININGA] 📁 users.json créé (compte : {ADMIN_USER})")
+        print(f"[BININGA] 📁 Compte admin créé ({ADMIN_USER})")
     elif not ADMIN_PASS:
         # En production (Railway) : bloquer le démarrage sans mot de passe défini
         on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
@@ -497,7 +513,8 @@ def has_role(token, *roles):
 
 # ── Sessions persistantes ───────────────────────────────────
 def save_sessions():
-    """Persiste les sessions actives dans sessions.json."""
+    """Persiste les sessions dans PostgreSQL ET sessions.json."""
+    _pg_save("sessions", ACTIVE_SESSIONS)  # _pg_save résolu à l'appel
     try:
         with open(SESSIONS_FILE, "w", encoding="utf-8") as f:
             json.dump(ACTIVE_SESSIONS, f, ensure_ascii=False)
@@ -505,22 +522,28 @@ def save_sessions():
         pass
 
 def load_sessions():
-    """Recharge les sessions au démarrage et expurge les expirées."""
+    """Recharge les sessions : PostgreSQL en priorité, fichier en fallback."""
     global ACTIVE_SESSIONS
-    if not os.path.exists(SESSIONS_FILE):
-        return
-    try:
-        with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
-            stored = json.load(f)
-        now = time.time()
-        ACTIVE_SESSIONS = {
-            token: sess for token, sess in stored.items()
-            if now - sess.get("created_at", 0) < SESSION_TTL
-        }
-        if len(ACTIVE_SESSIONS) != len(stored):
-            save_sessions()  # Réécrire sans les sessions expirées
-    except Exception:
-        pass
+    now = time.time()
+
+    # Essayer PostgreSQL en priorité
+    stored = _pg_load("sessions")  # _pg_load résolu à l'appel
+    if stored is None:
+        # Fallback fichier
+        if not os.path.exists(SESSIONS_FILE):
+            return
+        try:
+            with open(SESSIONS_FILE, "r", encoding="utf-8") as f:
+                stored = json.load(f)
+        except Exception:
+            return
+
+    ACTIVE_SESSIONS = {
+        token: sess for token, sess in stored.items()
+        if now - sess.get("created_at", 0) < SESSION_TTL
+    }
+    if len(ACTIVE_SESSIONS) != len(stored):
+        save_sessions()  # Purger les sessions expirées
 
 # ── Audit ──────────────────────────────────────────────────
 def _rotate_audit_if_needed():
@@ -614,6 +637,122 @@ def save_news(data: dict):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
+# ══════════════════════════════════════════════════════════════════════════
+# ██  COUCHE BASE DE DONNÉES — PostgreSQL + fallback fichiers JSON          ██
+# ══════════════════════════════════════════════════════════════════════════
+# Utilise PostgreSQL si DATABASE_URL est défini (addon Railway PostgreSQL).
+# Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
+# Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
+
+_PG_CONN = None
+
+def _pg():
+    """Retourne une connexion PostgreSQL active, ou None si indisponible."""
+    global _PG_CONN
+    raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
+    if not raw_url:
+        return None
+    # Railway renvoie parfois postgres:// au lieu de postgresql://
+    url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
+    try:
+        import psycopg2
+        if _PG_CONN is None or _PG_CONN.closed:
+            _PG_CONN = psycopg2.connect(url, connect_timeout=5)
+            _PG_CONN.autocommit = True
+            with _PG_CONN.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS bininga_store (
+                        key         TEXT PRIMARY KEY,
+                        data        TEXT NOT NULL,
+                        updated_at  TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
+        return _PG_CONN
+    except Exception as e:
+        print(f"[DB] PostgreSQL indisponible : {e}")
+        _PG_CONN = None
+        return None
+
+# ── Helper IA — Gemini (gratuit) ───────────────────────────
+def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
+    """Appelle Gemini Flash et retourne le texte généré."""
+    import urllib.request as ur
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if not key:
+        raise ValueError("GEMINI_API_KEY non configuré")
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-1.5-flash:generateContent?key={key}"
+    )
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
+    }).encode()
+    req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+    with ur.urlopen(req, timeout=30) as r:
+        resp = json.loads(r.read())
+    return resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+def _pg_load(key: str):
+    """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
+    conn = _pg()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
+            row = cur.fetchone()
+            return json.loads(row[0]) if row else None
+    except Exception:
+        return None
+
+def _pg_save(key: str, value) -> bool:
+    """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
+    conn = _pg()
+    if not conn:
+        return False
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO bininga_store (key, data, updated_at)
+                VALUES (%s, %s, NOW())
+                ON CONFLICT (key) DO UPDATE
+                SET data = EXCLUDED.data, updated_at = NOW()
+            """, (key, json.dumps(value, ensure_ascii=False)))
+        return True
+    except Exception as e:
+        print(f"[DB] Erreur écriture '{key}' : {e}")
+        return False
+
+# ── Contacts (formulaires publics) ──────────────────────────
+def load_contacts() -> list:
+    """Charge les contacts : PostgreSQL en priorité, fichier en fallback."""
+    db = _pg_load("contacts")
+    if db is not None:
+        return db
+    if not os.path.exists(CONTACT_FILE):
+        return []
+    try:
+        with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_contacts(contacts: list):
+    """Persiste les contacts dans PostgreSQL ET dans le fichier."""
+    _pg_save("contacts", contacts)
+    try:
+        with open(CONTACT_FILE, "w", encoding="utf-8") as f:
+            json.dump(contacts, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde contacts : {e}")
+
+def append_contact(entry: dict):
+    """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
+    contacts = load_contacts()
+    contacts.append(entry)
+    save_contacts(contacts)
+
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
@@ -624,44 +763,88 @@ def _crm_expire_date() -> str:
         return now.replace(year=now.year + CRM_RETENTION_YEARS, day=28).strftime("%Y-%m-%d %H:%M:%S")
 
 def load_crm() -> dict:
-    """Charge le fichier CRM et purge les contacts expirés."""
-    if not os.path.exists(CRM_FILE):
-        return {"contacts": [], "newsletters": []}
-    try:
-        with open(CRM_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    """Charge le CRM : PostgreSQL en priorité, fichier en fallback. Purge les expirés."""
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    def _purge(data):
         data["contacts"] = [c for c in data.get("contacts", [])
                             if c.get("expires_at", "9999-99-99") >= now_str]
         if "newsletters" not in data:
             data["newsletters"] = []
         return data
+
+    # PostgreSQL en priorité
+    db = _pg_load("crm")
+    if db is not None:
+        return _purge(db)
+
+    # Fallback fichier
+    if not os.path.exists(CRM_FILE):
+        return {"contacts": [], "newsletters": []}
+    try:
+        with open(CRM_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return _purge(data)
     except Exception:
         return {"contacts": [], "newsletters": []}
 
 def save_crm(data: dict):
+    # PostgreSQL (source de vérité)
+    _pg_save("crm", data)
+    # Fichier JSON (backup local)
     try:
-        # Backup automatique avant écrasement (garder 3 derniers)
-        if os.path.exists(CRM_FILE):
-            try:
-                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-                backup = CRM_FILE.replace(".json", f"_backup_{ts}.json")
-                with open(CRM_FILE, "rb") as src, open(backup, "wb") as dst:
-                    dst.write(src.read())
-                backups = sorted(f for f in os.listdir(".") if f.startswith("crm_backup_"))
-                for old in backups[:-3]:
-                    try: os.remove(old)
-                    except Exception: pass
-            except Exception:
-                pass
         with open(CRM_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde CRM: {e}")
 
+# ── Migration fichiers → PostgreSQL au démarrage ───────────
+def _migrate_files_to_db():
+    """Importe les fichiers JSON dans PostgreSQL si la DB est vide (migration initiale)."""
+    if not _pg():
+        return
+    # Contacts
+    if _pg_load("contacts") is None and os.path.exists(CONTACT_FILE):
+        try:
+            with open(CONTACT_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("contacts", data)
+                print(f"[DB] Migration : {len(data)} contact(s) importé(s) depuis contacts.json")
+        except Exception:
+            pass
+    # CRM
+    if _pg_load("crm") is None and os.path.exists(CRM_FILE):
+        try:
+            with open(CRM_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data.get("contacts") or data.get("newsletters"):
+                _pg_save("crm", data)
+                print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
+        except Exception:
+            pass
+    # Users
+    if _pg_load("users") is None and os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("users", data)
+                print(f"[DB] Migration : {len(data)} utilisateur(s) importé(s) depuis users.json")
+        except Exception:
+            pass
+
 # ── Init au chargement du module ───────────────────────────
+# 1. Migrer les fichiers JSON → PostgreSQL (avant init_users pour récupérer le compte existant)
+_migrate_files_to_db()
+# 2. Créer le compte admin si inexistant (vérifie DB en priorité)
 init_users()
 load_sessions()
+# Log statut DB
+if os.environ.get("DATABASE_URL"):
+    print("[DB] ✅ PostgreSQL connecté — persistance activée")
+else:
+    print("[DB] ⚠️  Pas de DATABASE_URL — stockage fichiers uniquement (éphémère sur Railway)")
 
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
@@ -772,16 +955,32 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            all_contacts = []
-            if os.path.exists(CONTACT_FILE):
-                try:
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
-                except Exception:
-                    all_contacts = []
+            all_contacts = load_contacts()
             audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
             contacts  = [c for c in all_contacts if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
+            return
+
+        if path == "/api/stats":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            all_c = load_contacts()
+            audiences = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") != "Réclamation"]
+            recls     = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") == "Réclamation"]
+            contacts  = [c for c in all_c if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            self._json({
+                "ok":          True,
+                "aud_total":   len(audiences),
+                "aud_wait":    len([a for a in audiences if not a.get("_status") or a["_status"] == "en_attente"]),
+                "aud_progress":len([a for a in audiences if a.get("_status") == "en_cours"]),
+                "aud_done":    len([a for a in audiences if a.get("_status") == "traite"]),
+                "recl_total":  len(recls),
+                "recl_wait":   len([r for r in recls if not r.get("_status") or r["_status"] != "traite"]),
+                "ct_total":    len(contacts),
+                "ct_unread":   len([c for c in contacts if not c.get("_status") or c["_status"] == "non_lu"]),
+            })
             return
 
         if path == "/api/logs":
@@ -842,7 +1041,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not has_role(token, "admin", "editeur", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            from urllib.parse import parse_qs
             qs = parse_qs(urlparse(self.path).query)
             req_dir = qs.get("dir", ["images"])[0]
             # Sécurité : autoriser uniquement les sous-dossiers de images/
@@ -878,7 +1076,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
             qs      = parse_qs(urlparse(self.path).query)
             page    = max(1, int(qs.get("page",  ["1"])[0]))
-            limit   = min(200, max(10, int(qs.get("limit", ["50"])[0])))
+            limit   = min(5000, max(10, int(qs.get("limit", ["50"])[0])))
             q       = qs.get("q",      [""])[0].lower().strip()
             f_src   = qs.get("source", [""])[0]
             f_nl    = qs.get("nl",     [""])[0]    # "oui" / "non"
@@ -970,6 +1168,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             })
             return
 
+        # ── /api/editorial — liste des articles éditoriaux (GET) ──
+        if path == "/api/editorial":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            data = _pg_load("editorial")
+            if data is None:
+                data = []
+                if os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                    except Exception:
+                        data = []
+            self._json({"ok": True, "articles": data, "total": len(data)})
+            return
+
         # ── Fichiers statiques avec protection path traversal ──
         relative = "index.html" if path in ("/", "") else path.lstrip("/")
         safe = _safe_path(relative)
@@ -1010,6 +1226,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 with open(safe, "rb") as f:
                     content = f.read()
+
+                # Injection version build dans les HTML pour cache-busting automatique
+                if mime.startswith("text/html"):
+                    text = content.decode("utf-8", errors="replace")
+                    text = text.replace("static/admin.js", f"static/admin.js?v={BUILD_VERSION}")
+                    text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
+                    text = text.replace("static/index.js", f"static/index.js?v={BUILD_VERSION}")
+                    text = text.replace("static/index.css", f"static/index.css?v={BUILD_VERSION}")
+                    content = text.encode("utf-8")
 
                 # Gzip compression pour texte/HTML/CSS/JS/JSON (pas pour vidéo)
                 accept_enc = self.headers.get("Accept-Encoding", "")
@@ -1205,6 +1430,100 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "path": "images/sinistres/" + fname})
             return
 
+        # ── /api/chat (public — chatbot assistant du site) ──
+        if path == "/api/chat":
+            try:
+                payload  = json.loads(body.decode("utf-8"))
+                question = str(payload.get("message", "")).strip()[:1000]
+                history  = payload.get("history", [])[-6:]  # max 6 messages précédents
+                if not question:
+                    self._json({"ok": False, "message": "Message vide"}, 400)
+                    return
+
+                key = os.environ.get("GEMINI_API_KEY", "").strip()
+                if not key:
+                    self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer plus tard ou contacter directement l'équipe via le formulaire de contact."})
+                    return
+
+                # Charger les données du site pour le contexte
+                site_context = ""
+                try:
+                    with open(DATA_FILE, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    hero  = data.get("hero", {})
+                    about = data.get("about", {})
+                    stats = data.get("stats", {})
+                    actus = data.get("actus", {})
+                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip()
+                    role  = hero.get("role", "")
+                    site_context = f"""
+INFORMATIONS SUR LE SITE :
+Nom : {nom_complet}
+Rôle : {role}
+Slogan : {hero.get('slogan','').replace('<em>','').replace('</em>','').replace('<br>','  ')}
+Subtitle : {hero.get('subtitle','')}
+
+À propos : {about.get('texte','')}
+
+Chiffres clés : {json.dumps(stats, ensure_ascii=False)[:500]}
+
+Actualités récentes : {json.dumps([a.get('titre','') for a in actus.get('liste',[])[:5] if isinstance(a,dict)], ensure_ascii=False)}
+"""
+                except Exception:
+                    site_context = "Informations sur Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
+
+                system_prompt = f"""Tu es l'assistant officiel présent sur ce site. Tu réponds directement aux utilisateurs comme si tu faisais partie de l'équipe de {nom_complet if nom_complet else "cette personnalité publique"}.
+
+Tu dois répondre à toutes les questions en utilisant uniquement les informations disponibles sur le site. Tu exploites au maximum tout le contenu du site (biographie, actualités, pages, informations, détails, etc.).
+
+Tu peux répondre sur :
+- la biographie
+- les fonctions et mandats
+- les actions et projets
+- les campagnes
+- les actualités
+- toute information présente sur le site
+
+Règles :
+- Réponds de manière naturelle, claire et professionnelle
+- Réponses courtes (2 à 5 lignes maximum)
+- N'invente jamais d'informations
+- Si l'information n'existe pas sur le site, dis simplement que l'information n'est pas disponible
+- Priorise les informations les plus récentes
+- Pour contacter → indique la page contact du site
+- Pour une demande de rendez-vous ou d'audience → explique que la demande se fait via le formulaire du site
+- Tu es naturel, humain et accessible
+
+{site_context}"""
+
+                messages = [{"role": "system", "content": system_prompt}]
+                for h in history:
+                    if h.get("role") in ("user", "assistant") and h.get("content"):
+                        messages.append({"role": h["role"], "content": str(h["content"])[:500]})
+                messages.append({"role": "user", "content": question})
+
+                # Construire le prompt complet pour Gemini
+                conv = "\n".join([
+                    f"{'Utilisateur' if m['role']=='user' else 'Assistant'} : {m['content']}"
+                    for m in messages[1:]  # skip system
+                ])
+                full_prompt = messages[0]["content"] + "\n\n" + conv if conv else messages[0]["content"]
+                try:
+                    reply = _gemini_call(full_prompt, max_tokens=400)
+                    self._json({"ok": True, "reply": reply})
+                except Exception as e:
+                    err_body = ""
+                    try:
+                        if hasattr(e, 'read'): err_body = e.read().decode()
+                    except Exception: pass
+                    err_msg = f"{e} — {err_body}" if err_body else str(e)
+                    print(f"[CHAT] Erreur Gemini : {err_msg}")
+                    # Retourner l'erreur visible pour diagnostic
+                    self._json({"ok": True, "reply": f"⚠️ Erreur IA : {err_msg[:200]}"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         # ── /api/contact (public — formulaires du site) ──
         if path == "/api/contact":
             try:
@@ -1212,6 +1531,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 # Sauvegarder tous les champs du formulaire (chaines et nombres seulement)
                 PROTECTED = {"ts", "ip"}
                 entry = {
+                    "_id": secrets.token_hex(12),
                     "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "ip": ip,
                 }
@@ -1223,50 +1543,80 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
-                contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    try:
-                        with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                            contacts = json.load(f)
-                    except Exception:
-                        contacts = []
-                contacts.append(entry)
-                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(contacts, f, indent=2, ensure_ascii=False)
+                append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
-                etype  = entry.get("type", "contact")
+                etype  = entry.get("source") or entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
-                # ── Inscription newsletter → ajout automatique au CRM ──
-                if etype == "bininga_newsletter":
-                    email_nl = entry.get("email", "").strip()
-                    if email_nl:
+                # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
+                email_contact = entry.get("email", "").strip()
+                phone_contact = entry.get("telephone", "").strip()
+                # Créer une entrée CRM si email OU téléphone fourni
+                if email_contact or phone_contact:
+                    try:
                         crm = load_crm()
-                        existing = next((c for c in crm["contacts"] if c.get("email", "").lower() == email_nl.lower()), None)
+                        is_newsletter = etype == "bininga_newsletter"
+                        source_map = {
+                            "bininga_newsletter":      "newsletter",
+                            "bininga_audiences":       "audience",
+                            "bininga_contacts":        "contact",
+                            "bininga_commande_livre":  "livre",
+                        }
+                        source = source_map.get(etype, "contact")
+                        action_map = {
+                            "newsletter": "inscription_newsletter",
+                            "audience":   "demande_audience",
+                            "contact":    "message_contact",
+                            "livre":      "commande_livre",
+                        }
+                        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        # Déduplication : email en priorité, sinon téléphone
+                        existing = None
+                        if email_contact:
+                            existing = next((c for c in crm["contacts"]
+                                             if c.get("email", "").strip().lower() == email_contact.lower()), None)
+                        if existing is None and phone_contact:
+                            existing = next((c for c in crm["contacts"]
+                                             if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
                         if existing is None:
-                            new_contact = {
-                                "id":         entry.get("_id", f"nl-{int(datetime.now().timestamp()*1000)}"),
-                                "nom":        "",
-                                "prenom":     "",
-                                "email":      email_nl,
-                                "telephone":  "",
-                                "source":     "newsletter",
-                                "tags":       ["newsletter"],
-                                "newsletter": True,
+                            tags = [source]
+                            if is_newsletter and "newsletter" not in tags:
+                                tags.append("newsletter")
+                            crm["contacts"].append({
+                                "id":         entry["_id"],
+                                "nom":        nom,
+                                "prenom":     prenom,
+                                "email":      email_contact,
+                                "telephone":  phone_contact,
+                                "source":     source,
+                                "tags":       tags,
+                                "newsletter": is_newsletter,
                                 "statut":     "nouveau",
-                                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "created_at": now_str,
                                 "expires_at": _crm_expire_date(),
                                 "notes":      [],
-                                "historique": [{"ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "action": "inscription_newsletter", "detail": "Inscription via le site public"}],
+                                "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
                                 "newsletters": [],
-                            }
-                            crm["contacts"].append(new_contact)
+                            })
                         else:
-                            # Marquer newsletter=True si déjà présent
-                            existing["newsletter"] = True
-                            if "newsletter" not in existing.get("tags", []):
-                                existing.setdefault("tags", []).append("newsletter")
+                            # Mise à jour des infos si manquantes
+                            if not existing.get("nom")       and nom:           existing["nom"]       = nom
+                            if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
+                            if not existing.get("email")     and email_contact: existing["email"]     = email_contact
+                            if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
+                            if is_newsletter:
+                                existing["newsletter"] = True
+                                if "newsletter" not in existing.get("tags", []):
+                                    existing.setdefault("tags", []).append("newsletter")
+                            if source not in existing.get("tags", []):
+                                existing.setdefault("tags", []).append(source)
+                            existing.setdefault("historique", []).append({
+                                "ts": now_str, "action": action_map.get(source, "contact"),
+                                "detail": f"Nouveau message via le site ({etype})"
+                            })
                         save_crm(crm)
+                    except Exception:
+                        pass  # CRM non bloquant
                 self._json({"ok": True, "message": "Message reçu"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
@@ -1286,6 +1636,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             return
         # Validation CSRF sur routes d'écriture
         if path in ("/api/save", "/api/users/upsert", "/api/users/delete", "/api/contacts/clear",
+                    "/api/contacts/update", "/api/reset",
                     "/api/crm/upsert", "/api/crm/delete", "/api/crm/bulk-delete", "/api/crm/import",
                     "/api/crm/note", "/api/crm/newsletter/send",
                     "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
@@ -1307,16 +1658,63 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if not msg_type:
                     self._json({"ok": False, "message": "Type requis"}, 400)
                     return
-                all_contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
+                all_contacts = load_contacts()
                 kept = [c for c in all_contacts if c.get("type") != msg_type]
-                with open(CONTACT_FILE, "w", encoding="utf-8") as f:
-                    json.dump(kept, f, indent=2, ensure_ascii=False)
+                save_contacts(kept)
                 who = session["username"] if session else "?"
                 audit_log("CLEAR_CONTACTS", ip, f"Suppression type={msg_type} par {who}")
                 self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        if path == "/api/contacts/update":
+            if not has_role(token, "admin", "editeur", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                data = json.loads(body.decode("utf-8"))
+                cid  = data.get("id", "").strip()
+                if not cid:
+                    self._json({"ok": False, "message": "ID requis"}, 400)
+                    return
+                all_c   = load_contacts()
+                updated = False
+                for c in all_c:
+                    if c.get("_id") == cid:
+                        if "status"     in data: c["_status"]     = data["status"]
+                        if "notes"      in data: c["_notes"]      = data["notes"]
+                        if "pinged"     in data: c["_pinged"]     = data["pinged"]
+                        if "pinged_date" in data: c["_pinged_date"] = data["pinged_date"]
+                        updated = True
+                        break
+                if updated:
+                    save_contacts(all_c)
+                self._json({"ok": True, "updated": updated})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        if path == "/api/reset":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data    = json.loads(body.decode("utf-8"))
+                targets = data.get("targets", [])
+                who     = session["username"] if session else "admin"
+                results = {}
+                if "contacts" in targets:
+                    save_contacts([])
+                    results["contacts"] = True
+                    audit_log("RESET", ip, f"Contacts réinitialisés par {who}")
+                if "crm" in targets:
+                    crm = load_crm()
+                    crm["contacts"] = []
+                    save_crm(crm)
+                    results["crm"] = True
+                    audit_log("RESET", ip, f"CRM réinitialisé par {who}")
+                self._json({"ok": True, "results": results})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
@@ -1620,6 +2018,184 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": str(e)}, 500)
             return
 
+        # ══════════════════════════════════════════════════════════
+        # ── ÉDITORIAL IA ──────────────────────────────────────────
+        # ══════════════════════════════════════════════════════════
+
+        # ── /api/editorial/generate — génère un article éditorial depuis une actu ──
+        if path == "/api/editorial/generate":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload   = json.loads(body.decode("utf-8"))
+                news_id   = payload.get("news_id", "")
+                titre_src = payload.get("titre", "")
+                resume_src= payload.get("resume", "")
+                source_nm = payload.get("source", "")
+                url_src   = payload.get("url", "")
+                date_src  = payload.get("date", "")
+
+                key = os.environ.get("GEMINI_API_KEY", "").strip()
+                if not key:
+                    self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
+                    return
+
+                prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
+
+Transforme cet article de presse en contenu éditorial structuré pour le site du Député.
+
+⚠️ RÈGLES STRICTES :
+- Ne jamais inventer d'informations
+- Uniquement reformuler et structurer les faits fournis
+- Neutralité totale, ton journalistique professionnel
+- Mentionner les sources
+- Pas d'opinion, pas de biais politique
+- Si information insuffisante, reformuler uniquement ce qui est disponible
+
+ARTICLE SOURCE :
+Titre : {titre_src}
+Résumé : {resume_src}
+Source : {source_nm}
+Date : {date_src}
+URL : {url_src}
+
+Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
+{{
+  "titre": "titre clair et neutre",
+  "resume": "2 à 4 phrases résumant l'information principale",
+  "article": "texte structuré en paragraphes, reformulé professionnellement",
+  "points_cles": ["point 1", "point 2", "point 3"],
+  "sources": ["{source_nm} — {url_src}"]
+}}"""
+
+                try:
+                    raw = _gemini_call(prompt, max_tokens=1200)
+                except Exception as api_err:
+                    err_body = ""
+                    try:
+                        if hasattr(api_err, 'read'): err_body = api_err.read().decode()
+                    except Exception: pass
+                    print(f"[EDITORIAL] Erreur Gemini : {api_err} — {err_body}")
+                    self._json({"ok": False, "message": f"Erreur API Gemini : {api_err}"}, 500)
+                    return
+
+                # Nettoyer le JSON (enlever éventuels blocs markdown)
+                if raw.startswith("```"):
+                    raw = "\n".join(raw.split("\n")[1:])
+                if raw.endswith("```"):
+                    raw = "\n".join(raw.split("\n")[:-1])
+                editorial = json.loads(raw.strip())
+
+                # Sauvegarder le brouillon
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                article_id = secrets.token_hex(10)
+                draft = {
+                    "id":         article_id,
+                    "news_id":    news_id,
+                    "statut":     "brouillon",
+                    "created_at": now_str,
+                    "updated_at": now_str,
+                    "source_url": url_src,
+                    "source_nom": source_nm,
+                    "source_date": date_src,
+                    **editorial,
+                }
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                arts.insert(0, draft)
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                audit_log("EDITORIAL", ip, f"Article éditorial généré : {editorial.get('titre','')[:60]}")
+                self._json({"ok": True, "article": draft})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "message": f"Réponse IA invalide : {e}"}, 500)
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/editorial/save — sauvegarder les modifications d'un article ──
+        if path == "/api/editorial/save":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload    = json.loads(body.decode("utf-8"))
+                article_id = payload.get("id", "")
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                found = next((a for a in arts if a["id"] == article_id), None) if article_id else None
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                if not found:
+                    # Création d'un nouvel article
+                    found = {
+                        "id":         secrets.token_hex(12),
+                        "statut":     "brouillon",
+                        "created_at": now_str,
+                        "source":     "manuel",
+                        "titre":      "",
+                        "resume":     "",
+                        "contenu":    "",
+                        "tags":       [],
+                        "points_cles": [],
+                    }
+                    arts.append(found)
+                for field in ("titre", "resume", "contenu", "article", "points_cles", "tags", "statut", "source_url"):
+                    if field in payload:
+                        found[field] = payload[field]
+                found["updated_at"] = now_str
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True, "article": found})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/editorial/delete — supprimer un article éditorial ──
+        if path == "/api/editorial/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                payload    = json.loads(body.decode("utf-8"))
+                article_id = payload.get("id", "")
+                arts = _pg_load("editorial") or []
+                if not arts and os.path.exists(EDITORIAL_FILE):
+                    try:
+                        with open(EDITORIAL_FILE, "r", encoding="utf-8") as f:
+                            arts = json.load(f)
+                    except Exception:
+                        arts = []
+                arts = [a for a in arts if a["id"] != article_id]
+                _pg_save("editorial", arts)
+                try:
+                    with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
+                        json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         # ── /api/crm/upsert — Créer ou modifier un contact CRM ──
         if path == "/api/crm/upsert":
             if not has_role(token, "admin"):
@@ -1635,8 +2211,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 ALLOWED     = {"nom", "prenom", "email", "telephone", "sujet",
                                "message", "tags", "statut", "newsletter", "source"}
                 who         = session["username"] if session else "admin"
+                statut  = data.get("statut", "nouveau")
+                source  = data.get("source", "manuel")
                 if contact_id:
-                    # Modification
+                    # Modification ou restauration (vrai upsert)
                     found = False
                     for c in crm["contacts"]:
                         if c["id"] == contact_id:
@@ -1661,14 +2239,33 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             found = True
                             break
                     if not found:
-                        self._json({"ok": False, "message": "Contact introuvable"}, 404)
-                        return
-                    audit_log("CRM_UPDATE", ip, f"Contact CRM modifié : {data.get('nom','?')} ({contact_id})")
+                        # Contact absent (ex: après redéploiement) — recréer avec l'ID d'origine
+                        contact = {
+                            "id":          contact_id,
+                            "created_at":  str(data.get("created_at", now_str))[:30],
+                            "expires_at":  str(data.get("expires_at", _crm_expire_date()))[:30],
+                            "source":      source if source in SOURCES else "manuel",
+                            "nom":         str(data.get("nom",       ""))[:200],
+                            "prenom":      str(data.get("prenom",    ""))[:200],
+                            "email":       str(data.get("email",     ""))[:200],
+                            "telephone":   str(data.get("telephone", ""))[:50],
+                            "sujet":       str(data.get("sujet",     ""))[:500],
+                            "message":     str(data.get("message",   ""))[:2000],
+                            "tags":        [str(t)[:50] for t in data.get("tags", []) if isinstance(t, str)][:10],
+                            "statut":      statut if statut in STATUTS else "nouveau",
+                            "newsletter":  bool(data.get("newsletter", False)),
+                            "notes":       data.get("notes", []),
+                            "historique":  data.get("historique", [{"ts": now_str, "action": "restaure",
+                                                                     "detail": "Restauré depuis sauvegarde locale"}]),
+                        }
+                        crm["contacts"].append(contact)
+                        audit_log("CRM_RESTORE", ip,
+                                  f"Contact CRM restauré : {contact['nom']} {contact['prenom']} ({contact_id})")
+                    else:
+                        audit_log("CRM_UPDATE", ip, f"Contact CRM modifié : {data.get('nom','?')} ({contact_id})")
                 else:
-                    # Création
+                    # Création avec nouvel ID
                     new_id  = secrets.token_hex(8)
-                    statut  = data.get("statut", "nouveau")
-                    source  = data.get("source", "manuel")
                     contact = {
                         "id":          new_id,
                         "created_at":  now_str,
@@ -1812,10 +2409,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
                 return
             try:
-                all_contacts = []
-                if os.path.exists(CONTACT_FILE):
-                    with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-                        all_contacts = json.load(f)
+                all_contacts = load_contacts()
                 crm     = load_crm()
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 exp_str = _crm_expire_date()

@@ -19,6 +19,22 @@ function authHeaders(extra) {
   }, extra);
 }
 
+// Wrapper fetch avec détection session expirée
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (res.status === 401) {
+    showToast("⚠️ Session expirée — reconnexion…", true);
+    setTimeout(() => {
+      SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
+      document.getElementById("app").classList.remove("visible");
+      document.getElementById("login").classList.remove("hidden");
+      document.getElementById("u").value = "";
+      document.getElementById("p").value = "";
+    }, 1500);
+  }
+  return res;
+}
+
 async function doLogin() {
   const u    = document.getElementById("u").value.trim();
   const p    = document.getElementById("p").value;
@@ -156,7 +172,7 @@ async function loadUsers() {
   const el = document.getElementById("user-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
   try {
-    const res  = await fetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/users", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     setBadge("badge-users", data.ok ? data.users.length : 0);
     if (!data.ok || !data.users.length) {
@@ -212,7 +228,7 @@ async function submitUserForm() {
   };
   if (!payload.username) { showToast("L'identifiant est requis", true); return; }
   try {
-    const res  = await fetch("/api/users/upsert", {
+    const res  = await apiFetch("/api/users/upsert", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify(payload)
@@ -231,7 +247,7 @@ async function submitUserForm() {
 async function deleteUser(username) {
   if (!confirm(`Supprimer l'utilisateur « ${username} » ?`)) return;
   try {
-    const res  = await fetch("/api/users/delete", {
+    const res  = await apiFetch("/api/users/delete", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ username })
@@ -252,7 +268,7 @@ function init() {
   syncMessages().then(() => refreshDashboard());
   startNewsPoller();
   // Badge initial
-  fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+  apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
     .then(d => { if(d.ok) setBadge("badge-veille", (d.items||[]).filter(a=>!a.read).length); })
     .catch(()=>{});
@@ -270,7 +286,7 @@ function init() {
 // ── Synchronisation des messages depuis le serveur ──────────────────────
 async function syncMessages() {
   try {
-    const res = await fetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res = await apiFetch("/api/contacts", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) return;
 
@@ -296,8 +312,8 @@ async function syncMessages() {
         });
       });
 
-      // Conserver les entrées locales non encore synchronisées avec le serveur
-      localList.filter(m => m._id && !serverIds.has(m._id)).forEach(m => merged.push(m));
+      // Conserver les entrées locales absentes du serveur (redéploiement ou hors-ligne)
+      localList.filter(m => !serverIds.has(m._id || "__none__")).forEach(m => merged.push(m));
 
       localStorage.setItem(key, JSON.stringify(merged));
     }
@@ -656,7 +672,7 @@ function collectActus() {
 //  CONTENU DU SITE (data.json via server.py)
 // ══════════════════════════════════════════════════════════════════════════
 function loadSiteData() {
-  fetch("/api/load")
+  apiFetch("/api/load")
     .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
     .then(applyData)
     .catch(() => {
@@ -799,7 +815,7 @@ function saveData(silent = false) {
   collectProgramme();
   const ind = document.getElementById("autosave-indicator");
   if (ind) { ind.textContent = "Sauvegarde…"; ind.className = "autosave-saving"; }
-  fetch("/api/save", {
+  apiFetch("/api/save", {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(siteData)
@@ -825,29 +841,41 @@ function saveData(silent = false) {
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 function refreshDashboard() {
+  // Récupérer les stats réelles depuis le serveur, fallback localStorage
+  apiFetch("/api/stats", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    .then(r => r.json())
+    .then(s => {
+      if (!s.ok) throw new Error("stats ko");
+      setText("kpi-aud-total",    s.aud_total);
+      setText("kpi-aud-wait",     s.aud_wait);
+      setText("kpi-aud-progress", s.aud_progress);
+      setText("kpi-aud-done",     s.aud_done);
+      setText("kpi-recl",         s.recl_wait);
+      setText("kpi-ct",           s.ct_total);
+      setBadge("badge-aud",  s.aud_wait);
+      setBadge("badge-recl", s.recl_wait);
+      setBadge("badge-ct",   s.ct_unread);
+    })
+    .catch(() => _refreshDashboardLocal());
+  _refreshDashboardLocal();
+}
+
+function _refreshDashboardLocal() {
   const aud  = getAll("bininga_audiences");
   const ct   = getAll("bininga_contacts");
   const prog = parseInt(localStorage.getItem("bininga_prog_views") || "0");
   const vis  = parseInt(localStorage.getItem("bininga_visitors")   || "0");
 
-  // Séparer audiences normales et réclamations
   const audiences    = aud.filter(m => m.objet !== "Réclamation");
   const reclamations = aud.filter(m => m.objet === "Réclamation");
-
   const wait     = audiences.filter(m => !m._status || m._status === "en_attente").length;
   const inprog   = audiences.filter(m => m._status === "en_cours").length;
   const done     = audiences.filter(m => m._status === "traite").length;
   const reclWait = reclamations.filter(m => !m._status || m._status !== "traite").length;
   const ctUnread = ct.filter(m => !m._status || m._status === "non_lu").length;
 
-  setText("kpi-aud-total",    audiences.length);
-  setText("kpi-aud-wait",     wait);
-  setText("kpi-aud-progress", inprog);
-  setText("kpi-aud-done",     done);
-  setText("kpi-recl",         reclWait);
-  setText("kpi-ct",           ct.length);
-  setText("kpi-prog",         prog);
-  setText("kpi-visit",        vis);
+  setText("kpi-prog",  prog);
+  setText("kpi-visit", vis);
 
   setBadge("badge-aud",  wait);
   setBadge("badge-recl", reclWait);
@@ -1069,29 +1097,26 @@ function buildBadge(status, objet) {
 
 function setStatus(storageKey, idOrIdx, status) {
   const all = getAll(storageKey);
-  // idOrIdx peut être un _id encodé (string) ou un index numérique (legacy)
   let idx = -1;
   const decoded = decodeURIComponent(String(idOrIdx));
-  // Si ça ressemble à un _id (contient "-"), chercher par _id
-  if (decoded.includes("-")) {
-    idx = all.findIndex(x => x._id === decoded);
-  }
-  // Fallback : index numérique
-  if (idx === -1) {
-    const n = parseInt(idOrIdx, 10);
-    if (!isNaN(n) && all[n]) idx = n;
-  }
+  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
+  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
   if (idx !== -1) {
     all[idx]._status = status;
     saveAll(storageKey, all);
+    // Persister au serveur si l'entrée a un _id
+    const cid = all[idx]._id;
+    if (cid) {
+      apiFetch("/api/contacts/update", {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ id: cid, status })
+      }).catch(() => {});
+    }
   }
   refreshDashboard();
-  if (storageKey === "bininga_audiences") {
-    renderAudiences();
-    renderReclamations();
-  } else {
-    renderContacts();
-  }
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
   showToast("Statut mis à jour");
 }
 
@@ -1129,8 +1154,16 @@ function addNote(storageKey, idOrIdx) {
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
 
   if (!all[idx]._notes) all[idx]._notes = [];
-  all[idx]._notes.push({ auteur: "Admin", texte, date: new Date().toLocaleString("fr-FR") });
+  all[idx]._notes.push({ auteur: SESSION_NOM || SESSION_USERNAME || "Admin", texte, date: new Date().toLocaleString("fr-FR") });
   saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, notes: all[idx]._notes })
+    }).catch(() => {});
+  }
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
   showToast("Note ajoutée");
@@ -1154,6 +1187,14 @@ function pingDepute(storageKey, idOrIdx) {
   all[idx]._pinged      = true;
   all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
   saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, pinged: true, pinged_date: all[idx]._pinged_date })
+    }).catch(() => {});
+  }
   refreshDashboard();
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
@@ -1188,7 +1229,7 @@ async function loadSecurity() {
   });
   // Initialiser le statut 2FA pour l'utilisateur courant
   try {
-    const tfaRes  = await fetch("/api/2fa/status", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const tfaRes  = await apiFetch("/api/2fa/status", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const tfaData = await tfaRes.json();
     if (tfaData.ok) {
       window._sessionHas2fa = tfaData.has_2fa;
@@ -1197,7 +1238,7 @@ async function loadSecurity() {
   } catch { tfaRefreshStatus(window._sessionHas2fa || false); }
 
   try {
-    const res  = await fetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/security", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { listBlocked.innerHTML = '<div class="msg-empty">Erreur.</div>'; return; }
 
@@ -1272,7 +1313,7 @@ async function loadSecurity() {
 async function unblockIp(ip) {
   if (!confirm(`Débloquer l'IP ${ip} ?`)) return;
   try {
-    const res  = await fetch("/api/security/unblock", {
+    const res  = await apiFetch("/api/security/unblock", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip })
@@ -1286,7 +1327,7 @@ async function unblockIp(ip) {
 async function manualBlockIp(ip) {
   if (!confirm(`Bannir manuellement l'IP ${ip} ?`)) return;
   try {
-    const res  = await fetch("/api/security/block", {
+    const res  = await apiFetch("/api/security/block", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ip, reason: "Blocage manuel depuis admin" })
@@ -1320,7 +1361,7 @@ async function loadNews() {
   const list = document.getElementById("veille-list");
   if (!list) return;
   try {
-    const res  = await fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0">Erreur de chargement.</div>'; return; }
     _newsItems = data.items || [];
@@ -1394,7 +1435,7 @@ async function runVeille(preset) {
   const fb    = document.getElementById("veille-run-feedback");
   if (btn) { btn.disabled = true; btn.textContent = "⏳ En cours…"; }
   try {
-    const res  = await fetch("/api/news/run", {
+    const res  = await apiFetch("/api/news/run", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ query }),
@@ -1416,7 +1457,7 @@ async function runVeille(preset) {
 
 async function restartMonitor() {
   try {
-    const res  = await fetch("/api/monitor-restart", {
+    const res  = await apiFetch("/api/monitor-restart", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN },
     });
@@ -1439,7 +1480,7 @@ async function toggleMonitorLog() {
   box.style.display = "block";
   box.textContent = "Chargement…";
   try {
-    const res  = await fetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/monitor-log", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     box.textContent = data.ok ? (data.lines.join("\n") || "(log vide)") : "Erreur : " + data.message;
     box.scrollTop = box.scrollHeight;
@@ -1550,7 +1591,7 @@ function renderNewsItems() {
 
 async function markNewsRead(id) {
   try {
-    await fetch("/api/news/mark-read", {
+    await apiFetch("/api/news/mark-read", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -1565,7 +1606,7 @@ async function markNewsRead(id) {
 
 async function markAllNewsRead() {
   try {
-    await fetch("/api/news/mark-read", {
+    await apiFetch("/api/news/mark-read", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ all: true }),
@@ -1579,7 +1620,7 @@ async function markAllNewsRead() {
 
 async function deleteNewsItem(id) {
   try {
-    await fetch("/api/news/delete", {
+    await apiFetch("/api/news/delete", {
       method: "POST",
       headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -1595,7 +1636,7 @@ function startNewsPoller() {
   if (_newsPoller) return;
   _newsPoller = setInterval(() => {
     // Polling silencieux (badge seulement, pas de re-render si pas sur le panel)
-    fetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
+    apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
       .then(r => r.json())
       .then(data => {
         if (!data.ok) return;
@@ -1615,7 +1656,7 @@ async function loadAuditLogs() {
   const el = document.getElementById("log-list");
   el.innerHTML = '<div class="msg-empty">Chargement…</div>';
   try {
-    const res = await fetch("/api/logs", {
+    const res = await apiFetch("/api/logs", {
       headers: { "X-Admin-Token": SESSION_TOKEN }
     });
     const data = await res.json();
@@ -1651,7 +1692,8 @@ const PANEL_TITLES = {
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
-  veille:"🤖 YARO IA — Actualités Bininga"
+  veille:"🤖 YARO IA — Actualités Bininga",
+  editorial:"✍️ Éditorial IA — Contenus"
 };
 
 function showPanel(name, el) {
@@ -1673,7 +1715,12 @@ function showPanel(name, el) {
   if (name === "users")        loadUsers();
   if (name === "security")     loadSecurity();
   if (name === "veille")       loadNews();
+  if (name === "editorial")    loadEditorial();
   if (name === "crm")          loadCrm();
+  const formPanels = ["hero","about","seo","engagement","cta","contact-info","footer"];
+  if (formPanels.includes(name)) populateForm();
+  // Fermer la sidebar sur mobile après sélection
+  if (window.innerWidth <= 768) closeSidebar();
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1685,11 +1732,32 @@ function setText(id, val)  { const el=document.getElementById(id); if(el) el.tex
 function setBadge(id, n)   { const el=document.getElementById(id); if(!el)return; el.style.display=n>0?"inline":"none"; el.textContent=n; }
 function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
+async function resetSystem(targets) {
+  const labels = { contacts: "tous les messages/audiences", crm: "les contacts CRM" };
+  const desc   = targets.map(t => labels[t] || t).join(" et ");
+  if (!confirm(`⚠️ RÉINITIALISATION GLOBALE\n\nCette action supprimera définitivement :\n→ ${desc}\n\nConfirmez-vous ?`)) return;
+  if (!confirm("Dernière confirmation — cette action est irréversible. Continuer ?")) return;
+  try {
+    const res  = await apiFetch("/api/reset", { method: "POST", headers: authHeaders(), body: JSON.stringify({ targets }) });
+    const data = await res.json();
+    if (!data.ok) { showToast("Erreur : " + (data.message || "inconnue"), true); return; }
+    // Vider localStorage
+    if (targets.includes("contacts")) {
+      localStorage.removeItem("bininga_audiences");
+      localStorage.removeItem("bininga_contacts");
+    }
+    syncMessages().then(() => refreshDashboard());
+    showToast("✅ Réinitialisation effectuée");
+  } catch (e) {
+    showToast("Erreur réseau", true);
+  }
+}
+
 async function clearAll(storageKey, panel) {
   if (!confirm("Êtes-vous sûr de vouloir supprimer tous les messages ? Cette action est irréversible.")) return;
   // Suppression côté serveur
   try {
-    await fetch("/api/contacts/clear", {
+    await apiFetch("/api/contacts/clear", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ type: storageKey })
@@ -1925,45 +1993,28 @@ function showToast(msg, err=false) {
   setTimeout(() => t.className = "", 3500);
 }
 
-function toggleSidebar() {
-  const sb = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov = document.getElementById("sidebar-overlay");
-  const open = sb.classList.toggle("open");
-  btn.classList.toggle("open", open);
-  btn.setAttribute("aria-expanded", open);
-  ov.classList.toggle("open", open);
-  document.body.style.overflow = open ? "hidden" : "";
-}
-function closeSidebar() {
-  const sb = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov = document.getElementById("sidebar-overlay");
-  sb.classList.remove("open");
-  btn.classList.remove("open");
-  btn.setAttribute("aria-expanded", "false");
-  ov.classList.remove("open");
-  document.body.style.overflow = "";
-}
-
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
 function toggleSidebar() {
-  const sb  = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov  = document.getElementById("sidebar-overlay");
+  const sb   = document.getElementById("sidebar");
+  const btn  = document.getElementById("hamburger");
+  const ov   = document.getElementById("sidebar-overlay");
+  const pull = document.getElementById("sb-pull");
   if (!sb) return;
   const open = sb.classList.toggle("open");
-  if (btn) { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
-  if (ov)  ov.classList.toggle("open", open);
+  if (btn)  { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
+  if (ov)   ov.classList.toggle("open", open);
+  if (pull) pull.classList.toggle("visible", open);
   document.body.style.overflow = open ? "hidden" : "";
 }
 function closeSidebar() {
-  const sb  = document.getElementById("sidebar");
-  const btn = document.getElementById("hamburger");
-  const ov  = document.getElementById("sidebar-overlay");
-  if (sb)  sb.classList.remove("open");
-  if (btn) { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
-  if (ov)  ov.classList.remove("open");
+  const sb   = document.getElementById("sidebar");
+  const btn  = document.getElementById("hamburger");
+  const ov   = document.getElementById("sidebar-overlay");
+  const pull = document.getElementById("sb-pull");
+  if (sb)   sb.classList.remove("open");
+  if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
+  if (ov)   ov.classList.remove("open");
+  if (pull) pull.classList.remove("visible");
   document.body.style.overflow = "";
 }
 
@@ -2021,7 +2072,7 @@ async function fbLoad(dir, pushHistory = true) {
   fbSetPreview(null);
 
   try {
-    const res  = await fetch("/api/files?dir=" + encodeURIComponent(dir), {
+    const res  = await apiFetch("/api/files?dir=" + encodeURIComponent(dir), {
       headers: { "X-Admin-Token": SESSION_TOKEN }
     });
     const data = await res.json();
@@ -2130,6 +2181,44 @@ function pickOrUploadImage(callback) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  CRM — Sauvegarde locale (survie aux redéploiements Railway)
+// ══════════════════════════════════════════════════════════════════════════
+function _crmSaveBackup(contacts) {
+  try {
+    localStorage.setItem("bininga_crm_backup", JSON.stringify({
+      contacts, saved_at: new Date().toISOString()
+    }));
+  } catch (_) {}
+}
+
+async function _crmRestoreFromBackup() {
+  const raw = localStorage.getItem("bininga_crm_backup");
+  if (!raw) return 0;
+  let contacts;
+  try { contacts = JSON.parse(raw).contacts || []; } catch { return 0; }
+  if (!contacts.length) return 0;
+  let ok = 0;
+  for (const c of contacts) {
+    try {
+      const res = await apiFetch("/api/crm/upsert", {
+        method: "POST", headers: authHeaders(), body: JSON.stringify(c)
+      });
+      const d = await res.json();
+      if (d.ok) ok++;
+    } catch (_) {}
+  }
+  return ok;
+}
+
+async function _crmBackupAllInBackground() {
+  try {
+    const res = await apiFetch("/api/crm?limit=5000", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (data.ok && (data.contacts || []).length > 0) _crmSaveBackup(data.contacts);
+  } catch (_) {}
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  CRM — Gestion des contacts (admin uniquement)
 // ══════════════════════════════════════════════════════════════════════════
 let _crmContacts    = [];
@@ -2154,21 +2243,37 @@ async function loadCrm(page) {
   if (fSrc) params.set("source", fSrc);
   if (fNl)  params.set("nl",     fNl);
   try {
-    const res  = await fetch("/api/crm?" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const res  = await apiFetch("/api/crm?" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const data = await res.json();
     if (!data.ok) { if (el) el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
+
+    // ── Restauration automatique depuis localStorage si le serveur est vide ──
+    if ((data.total || 0) === 0 && !q && !fSrc && !fNl) {
+      const raw = localStorage.getItem("bininga_crm_backup");
+      if (raw) {
+        let cached = [];
+        try { cached = JSON.parse(raw).contacts || []; } catch { }
+        if (cached.length > 0) {
+          if (el) el.innerHTML = `<div class="msg-empty">🔄 Restauration de ${cached.length} contact(s) CRM depuis la sauvegarde locale…</div>`;
+          const ok = await _crmRestoreFromBackup();
+          if (ok > 0) { showToast(`✅ ${ok} contact(s) CRM restaurés automatiquement`); loadCrm(1); return; }
+        }
+      }
+    }
+
     _crmContacts    = data.contacts    || [];
     _crmNewsletters = data.newsletters || [];
     _crmTotal       = data.total       || 0;
     _crmTotalPages  = data.pages       || 1;
     _crmPage        = data.page        || 1;
-    // KPI (total général)
     setText("crm-kpi-total", data.total || 0);
     setText("crm-kpi-nl",    data.newsletter_count || 0);
     setBadge("badge-crm", data.total || 0);
     _crmSelected.clear();
     renderCrmList();
     renderNlHistory();
+    // Mettre à jour la sauvegarde locale en arrière-plan
+    if (data.total > 0) setTimeout(_crmBackupAllInBackground, 1500);
   } catch(e) {
     if (el) el.innerHTML = '<div class="msg-empty">Serveur non disponible.</div>';
   }
@@ -2225,7 +2330,7 @@ async function crmBulkDelete() {
   const n = _crmSelected.size;
   if (!confirm(`Supprimer ${n} contact(s) sélectionné(s) ? Cette action est irréversible.`)) return;
   try {
-    const res  = await fetch("/api/crm/bulk-delete", {
+    const res  = await apiFetch("/api/crm/bulk-delete", {
       method: "POST",
       headers: authHeaders(),
       body: JSON.stringify({ ids: [..._crmSelected] })
@@ -2234,7 +2339,8 @@ async function crmBulkDelete() {
     if (data.ok) {
       showToast(`✅ ${data.deleted} contact(s) supprimé(s)`);
       _crmSelected.clear();
-      loadCrm(_crmPage);
+      await loadCrm(_crmPage);
+      setTimeout(_crmBackupAllInBackground, 500);
     } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
 }
@@ -2307,7 +2413,7 @@ function renderCrmList() {
 async function crmImport() {
   if (!confirm("Importer toutes les demandes reçues (audiences, contacts, réclamations) dans le CRM ?\nLes doublons seront ignorés.")) return;
   try {
-    const res  = await fetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
+    const res  = await apiFetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
     const data = await res.json();
     if (data.ok) {
       showToast(`✅ ${data.imported} contact(s) importé(s) !`);
@@ -2322,10 +2428,13 @@ async function crmImport() {
 async function crmDelete(id) {
   if (!confirm("Supprimer ce contact du CRM ? Cette action est irréversible.")) return;
   try {
-    const res  = await fetch("/api/crm/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
+    const res  = await apiFetch("/api/crm/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
     const data = await res.json();
-    if (data.ok) { showToast("Contact supprimé"); loadCrm(); }
-    else showToast(data.message || "Erreur", true);
+    if (data.ok) {
+      showToast("Contact supprimé");
+      await loadCrm();
+      setTimeout(_crmBackupAllInBackground, 500);
+    } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
 }
 
@@ -2381,12 +2490,13 @@ async function crmSave() {
   };
   if (!payload.nom) { showToast("Le nom est requis", true); return; }
   try {
-    const res  = await fetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
+    const res  = await apiFetch("/api/crm/upsert", { method: "POST", headers: authHeaders(), body: JSON.stringify(payload) });
     const data = await res.json();
     if (data.ok) {
       showToast(id ? "Contact modifié !" : "Contact ajouté !");
       closeCrmModal();
-      loadCrm();
+      await loadCrm();
+      setTimeout(_crmBackupAllInBackground, 500);
     } else {
       showToast(data.message || "Erreur", true);
     }
@@ -2470,7 +2580,7 @@ async function crmAddNote(id) {
   const texte = ta ? ta.value.trim() : "";
   if (!texte) { showToast("Note vide", true); return; }
   try {
-    const res  = await fetch("/api/crm/note", {
+    const res  = await apiFetch("/api/crm/note", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({ id, texte })
     });
@@ -2502,7 +2612,7 @@ async function nlSend() {
   btn.disabled = true; btn.textContent = "⏳ Envoi en cours…";
   fb.style.display = "none";
   try {
-    const res  = await fetch("/api/crm/newsletter/send", {
+    const res  = await apiFetch("/api/crm/newsletter/send", {
       method: "POST", headers: authHeaders(),
       body: JSON.stringify({ sujet, corps, filtre })
     });
@@ -2570,7 +2680,7 @@ function tfaRefreshStatus(has2fa) {
 
 async function tfaStartSetup() {
   try {
-    const res  = await fetch("/api/2fa/setup", { method: "POST", headers: authHeaders(), body: "{}" });
+    const res  = await apiFetch("/api/2fa/setup", { method: "POST", headers: authHeaders(), body: "{}" });
     const data = await res.json();
     if (!data.ok) { showToast(data.message || "Erreur", true); return; }
     document.getElementById("tfa-secret").textContent   = data.secret;
@@ -2591,7 +2701,7 @@ async function tfaActivate() {
   const code = document.getElementById("tfa-confirm-code").value.trim();
   if (code.length !== 6) { showToast("Code invalide (6 chiffres)", true); return; }
   try {
-    const res  = await fetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const res  = await apiFetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.ok) {
       showToast("✅ 2FA activé avec succès !");
@@ -2617,7 +2727,7 @@ async function tfaDisable() {
   const code = document.getElementById("tfa-disable-code").value.trim();
   if (!code) { showToast("Code requis", true); return; }
   try {
-    const res  = await fetch("/api/2fa/disable", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
+    const res  = await apiFetch("/api/2fa/disable", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.ok) {
       showToast("2FA désactivé");
@@ -2625,4 +2735,208 @@ async function tfaDisable() {
       tfaRefreshStatus(false);
     } else showToast(data.message || "Erreur", true);
   } catch { showToast("Serveur non disponible", true); }
+}
+
+// ════════════════════════════════════════════════════════════
+// ── ÉDITORIAL IA ─────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+let _editorialData   = [];
+let _editorialFilter = "tous";
+
+function editorialTab(tab, btn) {
+  document.getElementById("editorial-tab-articles").style.display = tab === "articles" ? "" : "none";
+  document.getElementById("editorial-tab-generer").style.display  = tab === "generer"  ? "" : "none";
+  document.querySelectorAll("#panel-editorial .etab-btn, #etab-articles, #etab-generer").forEach(b => {
+    b.style.color         = "rgba(255,255,255,.4)";
+    b.style.borderBottom  = "2px solid transparent";
+  });
+  const active = document.getElementById("etab-" + tab);
+  if (active) { active.style.color = "#fff"; active.style.borderBottom = "2px solid var(--r)"; }
+  if (tab === "generer") loadEdNewsPicker();
+}
+
+function filterEditorial(statut, btn) {
+  _editorialFilter = statut;
+  document.querySelectorAll(".ef-btn").forEach(b => {
+    b.style.background = "rgba(255,255,255,.04)";
+    b.style.color      = "rgba(255,255,255,.4)";
+    b.style.border     = "1px solid rgba(255,255,255,.1)";
+  });
+  if (btn) {
+    const colors = { brouillon: ["rgba(243,156,18,.06)","#f39c12","rgba(243,156,18,.3)"], valide: ["rgba(46,204,113,.06)","#2ecc71","rgba(46,204,113,.3)"], publie: ["rgba(52,152,219,.06)","#3498db","rgba(52,152,219,.3)"], tous: ["rgba(255,255,255,.08)","#fff","rgba(255,255,255,.15)"] };
+    const c = colors[statut] || colors.tous;
+    btn.style.background = c[0]; btn.style.color = c[1]; btn.style.border = `1px solid ${c[2]}`;
+  }
+  renderEditorialList();
+}
+
+async function loadEditorial() {
+  const list = document.getElementById("editorial-list");
+  list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px 0;font-size:13px">Chargement…</div>';
+  try {
+    const res  = await apiFetch("/api/editorial", { headers: authHeaders() });
+    const data = await res.json();
+    if (!data.ok) { list.innerHTML = `<div style="color:#e74c3c;font-size:13px;padding:20px 0">${data.message}</div>`; return; }
+    _editorialData = data.articles || [];
+    const badge = document.getElementById("badge-editorial");
+    const cnt   = document.getElementById("badge-editorial-count");
+    if (_editorialData.length > 0) { if (badge) { badge.textContent = _editorialData.length; badge.style.display = ""; } }
+    if (cnt) cnt.textContent = _editorialData.length;
+    renderEditorialList();
+  } catch { list.innerHTML = '<div style="color:#e74c3c;font-size:13px;padding:20px 0">Serveur non disponible</div>'; }
+}
+
+function renderEditorialList() {
+  const list = document.getElementById("editorial-list");
+  const arts  = _editorialFilter === "tous" ? _editorialData : _editorialData.filter(a => a.statut === _editorialFilter);
+  if (!arts.length) {
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucun article' + (_editorialFilter !== "tous" ? " dans cette catégorie" : "") + '.<br><small style="font-size:11px;margin-top:6px;display:block">Utilisez l\'onglet ⚡ Générer pour créer un premier article.</small></div>';
+    return;
+  }
+  const statutBadge = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
+  list.innerHTML = arts.map(a => {
+    const sb  = statutBadge[a.statut] || ['#888','?'];
+    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">• ${p}</div>`).join("");
+    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openEdModal('${a.id}')">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${a.titre || "Sans titre"}</div>
+        <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sb[0]}22;color:${sb[0]};border:1px solid ${sb[0]}44">${sb[1]}</span>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px;line-height:1.5">${(a.resume || "").slice(0,120)}${(a.resume||"").length>120?"…":""}</div>
+      ${pts}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span style="font-size:10px;color:rgba(255,255,255,.25)">${a.source_nom||""} · ${a.created_at||""}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.35)">Voir →</span>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function openEdModal(id) {
+  const a = _editorialData.find(x => x.id === id);
+  if (!a) return;
+  const sb = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
+  const s  = sb[a.statut] || ['#888','?'];
+  document.getElementById("ed-modal-titre-h").textContent = a.titre || "Article éditorial";
+  const pts = (a.points_cles || []).map(p => `<li style="margin-bottom:4px">${p}</li>`).join("");
+  const srcs= (a.sources || []).map(s => `<div style="font-size:11px;color:#3498db;word-break:break-all">${s}</div>`).join("");
+  document.getElementById("ed-modal-body").innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${s[0]}22;color:${s[0]};border:1px solid ${s[0]}44">${s[1]}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.3)">${a.source_nom||""}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.25)">${a.created_at||""}</span>
+    </div>
+    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4">${a.titre||""}</div>
+    <div style="background:rgba(52,152,219,.06);border-left:3px solid #3498db;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#3498db;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Résumé</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6">${(a.resume||"").replace(/\n/g,"<br>")}</div>
+    </div>
+    <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${a.article||""}</div>
+    ${pts ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Points clés</div><ul style="padding-left:16px;margin:0;color:rgba(255,255,255,.65);font-size:12px;line-height:1.6">${pts}</ul></div>` : ""}
+    ${srcs ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sources</div>${srcs}</div>` : ""}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
+      <button onclick="changeEdStatut('${a.id}','valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">✅ Valider</button>
+      <button onclick="changeEdStatut('${a.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">🌐 Publier</button>
+      <button onclick="deleteEdArticle('${a.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">🗑</button>
+    </div>`;
+  document.getElementById("ed-modal").style.display = "";
+  document.body.style.overflow = "hidden";
+}
+
+function closeEdModal() {
+  document.getElementById("ed-modal").style.display = "none";
+  document.body.style.overflow = "";
+}
+
+async function changeEdStatut(id, statut) {
+  try {
+    const res  = await apiFetch("/api/editorial/save", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id, statut }) });
+    const data = await res.json();
+    if (data.ok) {
+      const a = _editorialData.find(x => x.id === id);
+      if (a) a.statut = statut;
+      closeEdModal();
+      renderEditorialList();
+      showToast("Statut mis à jour");
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+async function deleteEdArticle(id) {
+  if (!confirm("Supprimer cet article éditorial ?")) return;
+  try {
+    const res  = await apiFetch("/api/editorial/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
+    const data = await res.json();
+    if (data.ok) {
+      _editorialData = _editorialData.filter(a => a.id !== id);
+      closeEdModal();
+      renderEditorialList();
+      const cnt = document.getElementById("badge-editorial-count");
+      if (cnt) cnt.textContent = _editorialData.length;
+      showToast("Article supprimé");
+    } else showToast(data.message || "Erreur", true);
+  } catch { showToast("Serveur non disponible", true); }
+}
+
+async function generateEditorial(newsItem) {
+  const btn = document.getElementById("btn-generate-ed");
+  const titre  = newsItem ? newsItem.title   : (document.getElementById("ed-titre")?.value.trim()  || "");
+  const resume = newsItem ? newsItem.summary  : (document.getElementById("ed-resume")?.value.trim() || "");
+  const source = newsItem ? newsItem.source   : (document.getElementById("ed-source")?.value.trim() || "");
+  const url    = newsItem ? newsItem.url      : (document.getElementById("ed-url")?.value.trim()    || "");
+  const date   = newsItem ? newsItem.published: "";
+  const newsId = newsItem ? newsItem.id       : "";
+
+  if (!titre || !resume) { showToast("Titre et résumé requis", true); return; }
+  if (btn) { btn.textContent = "⏳ Génération en cours…"; btn.disabled = true; }
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 55000); // 55s timeout
+    const res  = await apiFetch("/api/editorial/generate", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ news_id: newsId, titre, resume, source, url, date }),
+      signal: controller.signal
+    });
+    clearTimeout(timer);
+    const data = await res.json();
+    if (data.ok) {
+      _editorialData.unshift(data.article);
+      const cnt = document.getElementById("badge-editorial-count");
+      if (cnt) cnt.textContent = _editorialData.length;
+      showToast("Article généré ✅");
+      // Passer sur l'onglet articles et ouvrir
+      editorialTab("articles", document.getElementById("etab-articles"));
+      renderEditorialList();
+      openEdModal(data.article.id);
+      // Reset formulaire
+      ["ed-titre","ed-resume","ed-source","ed-url"].forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
+    } else showToast(data.message || "Erreur génération", true);
+  } catch (e) {
+    if (e.name === "AbortError") showToast("⏱️ Délai dépassé — réessayez", true);
+    else showToast("Erreur : " + e.message, true);
+  }
+  finally { if (btn) { btn.textContent = "⚡ Générer l'article éditorial"; btn.disabled = false; } }
+}
+
+let _edNewsPicker = [];
+async function loadEdNewsPicker() {
+  const box = document.getElementById("ed-news-picker");
+  if (!box) return;
+  box.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:16px 0;font-size:12px">Chargement…</div>';
+  try {
+    const res  = await apiFetch("/api/news", { headers: authHeaders() });
+    const data = await res.json();
+    const items = (data.items || []).filter(a => a.category === "bininga" || (a.title + (a.summary||"")).toLowerCase().includes("bininga")).slice(0, 20);
+    _edNewsPicker = items;
+    if (!items.length) { box.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:16px 0;font-size:12px">Aucun article Bininga disponible dans la veille.<br><small>Lancez une recherche dans YARO IA.</small></div>'; return; }
+    box.innerHTML = items.map((a,i) => `
+      <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px 12px;cursor:pointer;active:background:rgba(255,255,255,.06)" onclick="generateEditorial(_edNewsPicker[${i}])">
+        <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.4">${a.title||"Sans titre"}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:10px;color:rgba(255,255,255,.3)">${a.source||""} · ${(a.published||"").slice(0,10)}</span>
+          <span style="font-size:11px;color:var(--r);font-weight:700">✍️ Générer →</span>
+        </div>
+      </div>`).join("");
+  } catch { box.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:16px 0">Impossible de charger les actualités.</div>'; }
 }
