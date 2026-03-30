@@ -1561,7 +1561,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Salutations
                 if any(w in q for w in ["bonjour", "bonsoir", "salut", "hello", "bonne journée", "bonne soirée"]):
-                    reply = f"Bonjour ! Je suis l'assistant du site de {nom}. Je peux vous renseigner sur sa biographie, ses fonctions, son programme ou ses actualités. Comment puis-je vous aider ?"
+                    reply = f"Bonjour ! Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour vous aider et répondre à toutes vos questions sur sa biographie, ses fonctions, son programme ou ses actualités. Comment puis-je vous aider ?"
 
                 # Qui est / présentation
                 elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui"]):
@@ -1622,14 +1622,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 elif any(w in q for w in ["justice", "loi", "droit", "corruption", "halc", "réforme", "tribunal"]):
                     reply = f"En tant que Garde des Sceaux et Ministre de la Justice, {nom} a notamment fait adopter en 2018 la loi instituant la Haute Autorité de Lutte contre la Corruption (HALC), votée à 107 voix pour."
 
+                # Qui est Yaro
+                elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "yaro", "c'est quoi yaro", "présente-toi"]):
+                    reply = f"Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour répondre à toutes vos questions sur son parcours, ses fonctions, son programme et ses actualités."
+
                 # Merci / au revoir
                 elif any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt"]):
-                    reply = f"Merci pour votre intérêt pour {nom} et son action. N'hésitez pas à revenir si vous avez d'autres questions !"
+                    reply = f"Merci pour votre intérêt pour Son Excellence {nom} et son action. N'hésitez pas à revenir si vous avez d'autres questions ! — Yaro"
 
                 # Réponse par défaut
                 else:
                     reply = (
-                        f"Je peux vous renseigner sur {nom} concernant : sa biographie, ses fonctions, "
+                        f"Je suis Yaro, l'assistant virtuel de {nom}. "
+                        f"Je peux vous renseigner sur : sa biographie, ses fonctions, "
                         f"son programme, ses actualités ou comment le contacter. "
                         f"Quelle information souhaitez-vous ?"
                     )
