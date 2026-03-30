@@ -674,24 +674,60 @@ def _pg():
         return None
 
 # ── Helper IA — Gemini (gratuit) ───────────────────────────
+_GEMINI_MODEL_CACHE = None  # modèle fonctionnel mis en cache
+
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
-    """Appelle Gemini Flash et retourne le texte généré."""
+    """Appelle Gemini Flash et retourne le texte généré.
+    Essaie plusieurs modèles dans l'ordre jusqu'à trouver un qui fonctionne."""
     import urllib.request as ur
+    global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
         raise ValueError("GEMINI_API_KEY non configuré")
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-1.5-flash:generateContent?key={key}"
-    )
+
+    # Modèles à essayer dans l'ordre (du plus récent au plus ancien)
+    candidates = [
+        ("v1beta", "gemini-2.0-flash-lite"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1",     "gemini-1.5-flash"),
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1beta", "gemini-pro"),
+        ("v1",     "gemini-pro"),
+    ]
+
+    # Si on a déjà un modèle qui a marché, l'essayer en premier
+    if _GEMINI_MODEL_CACHE:
+        candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
+
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
     }).encode()
-    req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
-    with ur.urlopen(req, timeout=30) as r:
-        resp = json.loads(r.read())
-    return resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+    last_err = None
+    for (version, model) in candidates:
+        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
+        try:
+            req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+            with ur.urlopen(req, timeout=30) as r:
+                resp = json.loads(r.read())
+            text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+            _GEMINI_MODEL_CACHE = (version, model)  # mémoriser ce qui marche
+            print(f"[GEMINI] Modèle utilisé : {version}/{model}")
+            return text
+        except Exception as e:
+            last_err = e
+            err_str = str(e)
+            # Arrêter si quota dépassé (billing requis), inutile d'essayer d'autres
+            if "429" in err_str and "quota" in err_str.lower():
+                continue
+            # Continuer si 404 (modèle inexistant)
+            if "404" in err_str:
+                continue
+            # Autre erreur = lever directement
+            raise
+
+    raise last_err or RuntimeError("Aucun modèle Gemini disponible")
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
@@ -948,6 +984,52 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path in ("/api/load", "/data.json"):
             self._json(load_data())
+            return
+
+        # ── /api/debug-ai (diagnostic clé IA) ──
+        if path == "/api/debug-ai":
+            import urllib.request as _ur
+            gemini = os.environ.get("GEMINI_API_KEY", "").strip()
+            groq   = os.environ.get("GROQ_API_KEY", "")
+            # Lister les modèles disponibles
+            models_list = []
+            try:
+                url_list = f"https://generativelanguage.googleapis.com/v1/models?key={gemini}"
+                with _ur.urlopen(url_list, timeout=10) as r:
+                    data_m = json.loads(r.read())
+                models_list = [m.get("name","") for m in data_m.get("models", [])]
+            except Exception as em:
+                models_list = [f"Erreur ListModels : {em}"]
+            # Test appel Gemini en direct avec le premier modèle flash disponible
+            gemini_test = ""
+            flash_model = next((m.split("/")[-1] for m in models_list if "flash" in m and "preview" not in m), None)
+            try:
+                if flash_model:
+                    import urllib.request as ur2
+                    key = gemini
+                    url_g = f"https://generativelanguage.googleapis.com/v1/models/{flash_model}:generateContent?key={key}"
+                    payload = json.dumps({"contents": [{"parts": [{"text": "Réponds juste: OK"}]}], "generationConfig": {"maxOutputTokens": 10}}).encode()
+                    req = ur2.Request(url_g, data=payload, headers={"content-type": "application/json"})
+                    with ur2.urlopen(req, timeout=15) as r:
+                        resp = json.loads(r.read())
+                    reply = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    gemini_test = f"✅ {flash_model} répond : {reply}"
+                else:
+                    gemini_test = "❌ Aucun modèle flash trouvé dans la liste"
+            except Exception as e:
+                err_body = ""
+                try:
+                    if hasattr(e, 'read'): err_body = e.read().decode()
+                except Exception: pass
+                gemini_test = f"❌ Erreur : {e} — {err_body}"
+            self._json({
+                "GEMINI_API_KEY": f"{'✅ présente ('+str(len(gemini))+' chars)' if gemini else '❌ ABSENTE'}",
+                "GEMINI_prefix":  gemini[:8] + "..." if gemini else "",
+                "GROQ_API_KEY":   f"{'✅ présente' if groq else '❌ ABSENTE'}",
+                "models_disponibles": models_list,
+                "modele_selectionne": flash_model or "aucun",
+                "gemini_test":    gemini_test,
+            })
             return
 
         if path == "/api/contacts":
@@ -1447,30 +1529,77 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # Charger les données du site pour le contexte
                 site_context = ""
+                nom_complet  = "Ange Aimé Wilfrid BININGA"
                 try:
+                    import re as _re
                     with open(DATA_FILE, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    hero  = data.get("hero", {})
-                    about = data.get("about", {})
-                    stats = data.get("stats", {})
-                    actus = data.get("actus", {})
-                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip()
-                    role  = hero.get("role", "")
-                    site_context = f"""
-INFORMATIONS SUR LE SITE :
-Nom : {nom_complet}
-Rôle : {role}
-Slogan : {hero.get('slogan','').replace('<em>','').replace('</em>','').replace('<br>','  ')}
-Subtitle : {hero.get('subtitle','')}
+                    hero      = data.get("hero", {})
+                    about     = data.get("about", {})
+                    stats     = data.get("stats", [])
+                    actus     = data.get("actus", {})
+                    programme = data.get("programme", {})
+                    parcours  = data.get("parcours", [])
+                    contact   = data.get("contact", {})
 
-À propos : {about.get('texte','')}
+                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or nom_complet
+                    role        = hero.get("role", "")
+                    slogan      = _re.sub(r"<[^>]+>", "", hero.get("slogan", "")).replace("\n", " ")
 
-Chiffres clés : {json.dumps(stats, ensure_ascii=False)[:500]}
+                    # Biographie
+                    bio_intro = about.get("intro", "")
+                    bio_paras = " ".join(about.get("paragraphs", []))[:1000]
 
-Actualités récentes : {json.dumps([a.get('titre','') for a in actus.get('liste',[])[:5] if isinstance(a,dict)], ensure_ascii=False)}
-"""
-                except Exception:
-                    site_context = "Informations sur Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
+                    # Stats
+                    stats_txt = " | ".join(
+                        f"{s.get('num','')} {s.get('label','')}"
+                        for s in stats if isinstance(s, dict)
+                    )
+
+                    # Actualités (slides + cards)
+                    actus_lines = []
+                    for item in (actus.get("slides", []) + actus.get("cards", []))[:6]:
+                        if not isinstance(item, dict): continue
+                        t = item.get("title", "").replace("\n", " ")
+                        s = item.get("subtitle", "")[:120]
+                        if t: actus_lines.append("- " + t + (" : " + s if s else ""))
+
+                    # Programme
+                    prog_lines = []
+                    for ax in programme.get("axes", [])[:6]:
+                        if not isinstance(ax, dict): continue
+                        title  = ax.get("title", "")
+                        text   = ax.get("text", "")[:120]
+                        points = ", ".join(ax.get("points", [])[:3])
+                        prog_lines.append("- " + title + " : " + text + (" (" + points + ")" if points else ""))
+
+                    # Parcours
+                    parc_lines = []
+                    items = parcours if isinstance(parcours, list) else parcours.get("items", [])
+                    for e in items[:6]:
+                        if not isinstance(e, dict): continue
+                        yr = e.get("year", "")
+                        t  = e.get("title", "")
+                        d  = e.get("desc", "")[:100]
+                        parc_lines.append("- " + yr + " : " + t + (" — " + d if d else ""))
+
+                    contact_email = contact.get("email", "")
+                    contact_info  = (contact_email + " — ") if contact_email else ""
+
+                    site_context = (
+                        f"NOM : {nom_complet}\n"
+                        f"RÔLE : {role}\n"
+                        f"SLOGAN : {slogan}\n\n"
+                        f"BIOGRAPHIE :\n{bio_intro}\n{bio_paras}\n\n"
+                        f"CHIFFRES CLÉS : {stats_txt}\n\n"
+                        f"ACTUALITÉS RÉCENTES :\n" + "\n".join(actus_lines) + "\n\n"
+                        f"PROGRAMME ÉLECTORAL :\n" + "\n".join(prog_lines) + "\n\n"
+                        f"PARCOURS :\n" + "\n".join(parc_lines) + "\n\n"
+                        f"CONTACT : {contact_info}via le formulaire de contact du site"
+                    )
+                except Exception as ctx_err:
+                    print(f"[CHAT] Erreur lecture data.json : {ctx_err}")
+                    site_context = f"Informations sur {nom_complet}, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
 
                 system_prompt = f"""Tu es l'assistant officiel présent sur ce site. Tu réponds directement aux utilisateurs comme si tu faisais partie de l'équipe de {nom_complet if nom_complet else "cette personnalité publique"}.
 
