@@ -685,14 +685,12 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
     if not key:
         raise ValueError("GEMINI_API_KEY non configuré")
 
-    # Modèles à essayer dans l'ordre (du plus récent au plus ancien)
+    # Modèles à essayer dans l'ordre (gratuits en priorité)
     candidates = [
         ("v1beta", "gemini-2.0-flash-lite"),
+        ("v1beta", "gemini-2.0-flash-lite-001"),
         ("v1beta", "gemini-2.0-flash"),
-        ("v1",     "gemini-1.5-flash"),
-        ("v1beta", "gemini-1.5-flash"),
-        ("v1beta", "gemini-pro"),
-        ("v1",     "gemini-pro"),
+        ("v1beta", "gemini-2.5-flash"),
     ]
 
     # Si on a déjà un modèle qui a marché, l'essayer en premier
@@ -711,7 +709,17 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
             req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
             with ur.urlopen(req, timeout=30) as r:
                 resp = json.loads(r.read())
-            text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+            # Parsing robuste (structure peut varier selon le modèle)
+            candidates_r = resp.get("candidates", [])
+            if not candidates_r:
+                raise ValueError("Réponse vide (candidates manquants)")
+            content = candidates_r[0].get("content", {})
+            parts   = content.get("parts", [])
+            if not parts:
+                raise ValueError("Réponse vide (parts manquants)")
+            text = parts[0].get("text", "").strip()
+            if not text:
+                raise ValueError("Texte vide dans la réponse")
             _GEMINI_MODEL_CACHE = (version, model)  # mémoriser ce qui marche
             print(f"[GEMINI] Modèle utilisé : {version}/{model}")
             return text
