@@ -22,10 +22,11 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 15%;
+  object-position: center 12%;
   border-radius: 50%;
   display: block;
   transition: opacity .2s;
+  transform: scale(1.25);
 }
 .chat-fab-close {
   position: absolute;
@@ -100,9 +101,10 @@
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  object-position: center 15%;
+  object-position: center 12%;
   border: 2px solid rgba(255,255,255,.15);
   flex-shrink: 0;
+  transform: scale(1.2);
 }
 .chat-header-info { flex: 1; min-width: 0; }
 .chat-header-name {
