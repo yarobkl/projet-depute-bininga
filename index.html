@@ -791,5 +791,118 @@
 
 <script src="static/chat.js" defer></script>
 
+<style>
+/* ── HERO ANIMATIONS WAOUH ─────────────────────────── */
+
+/* Entrées échelonnées */
+@keyframes h-up   { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:none; } }
+@keyframes h-left { from { opacity:0; transform:translateX(-28px); } to { opacity:1; transform:none; } }
+@keyframes h-rule { from { width:0; opacity:0; } to { opacity:1; } }
+
+/* Glow BININGA rouge */
+@keyframes bininga-glow {
+  0%,100% { text-shadow: 0 0 0px rgba(200,20,20,0); }
+  50%     { text-shadow: 0 0 18px rgba(220,30,0,.7), 0 0 40px rgba(180,0,0,.35); }
+}
+
+/* Shimmer or sur les em du slogan */
+@keyframes slogan-shimmer {
+  0%,100% { color: #C9A84C; }
+  50%     { color: #FFD700; text-shadow: 0 0 12px rgba(255,200,0,.6); }
+}
+
+/* Pulse bouton rouge */
+@keyframes btn-fire {
+  0%,100% { box-shadow: 0 0 0 0 rgba(200,30,0,0); }
+  50%     { box-shadow: 0 0 20px 6px rgba(200,30,0,.45); }
+}
+
+/* Particules braises fond hero */
+@keyframes ember-rise {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity:.6; }
+  100% { transform: translateY(-120px) translateX(var(--ex)) scale(0); opacity:0; }
+}
+
+.hero-name          { animation: h-up   .7s ease-out both; animation-delay:.1s; }
+.hero-name span     { animation: bininga-glow 2.8s ease-in-out infinite; animation-delay: .8s; }
+.hero-eyebrow       { animation: h-left .6s ease-out both; animation-delay:.05s; }
+.hero-rule          { animation: h-rule .6s ease-out both; animation-delay:.35s; }
+.hero-role          { animation: h-up   .6s ease-out both; animation-delay:.4s; }
+.hero-slogan        { animation: h-up   .7s ease-out both; animation-delay:.55s; }
+.hero-slogan em     { animation: slogan-shimmer 2.5s ease-in-out infinite; font-style:normal; }
+.hero-sub           { animation: h-up   .6s ease-out both; animation-delay:.7s; }
+.hero-btns          { animation: h-up   .7s ease-out both; animation-delay:.85s; }
+.btn-r              { animation: btn-fire 2s ease-in-out infinite; animation-delay:1.2s; }
+.hero-scroll        { animation: h-up   .6s ease-out both; animation-delay:1s; }
+
+/* Braises flottantes dans le hero */
+.hero-ember {
+  position:absolute; border-radius:50%; pointer-events:none;
+  background:radial-gradient(circle, #FF6600, #CC0000);
+  animation: ember-rise var(--dur) ease-out infinite;
+  animation-delay: var(--delay);
+}
+</style>
+
+<script>
+(function(){
+  // ── Braises flottantes dans le fond hero ──────────────
+  const hero = document.getElementById("hero");
+  if (hero) {
+    hero.style.position = "relative";
+    hero.style.overflow = "hidden";
+    for (let i = 0; i < 18; i++) {
+      const e = document.createElement("div");
+      const size = 3 + Math.random() * 5;
+      e.className = "hero-ember";
+      e.style.cssText = `
+        width:${size}px; height:${size}px;
+        left:${5 + Math.random() * 90}%;
+        bottom:${Math.random() * 30}%;
+        opacity:${.3 + Math.random() * .4};
+        --dur:${2.5 + Math.random() * 3}s;
+        --delay:${Math.random() * 3}s;
+        --ex:${(Math.random()-.5) * 40}px;
+        filter:blur(${Math.random()}px);
+        z-index:1;
+      `;
+      hero.appendChild(e);
+    }
+  }
+
+  // ── Compteurs stats qui montent ───────────────────────
+  function animateCounter(el) {
+    const target = parseInt(el.getAttribute("data-c") || el.textContent);
+    if (!target || isNaN(target)) return;
+    let start = null;
+    const duration = 1400;
+    function step(ts) {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      const ease = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(ease * target);
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  // Observer pour déclencher les compteurs quand visible
+  const statEls = document.querySelectorAll(".hstat-num[data-c]");
+  if (statEls.length && "IntersectionObserver" in window) {
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) {
+          animateCounter(en.target);
+          obs.unobserve(en.target);
+        }
+      });
+    }, { threshold: .5 });
+    statEls.forEach(el => obs.observe(el));
+  } else {
+    statEls.forEach(animateCounter);
+  }
+})();
+</script>
+
 </body>
 </html>

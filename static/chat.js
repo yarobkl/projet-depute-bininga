@@ -13,10 +13,7 @@
     if (fab) fab.classList.toggle("open", _open);
     if (_open) {
       if (badge) badge.style.display = "none";
-      const isMobile = window.innerWidth <= 600;
-      if (!isMobile) {
-        setTimeout(() => { const inp = document.getElementById("chatInput"); if (inp) inp.focus(); }, 300);
-      }
+      if (window.innerWidth > 600) setTimeout(() => { const i = document.getElementById("chatInput"); if(i) i.focus(); }, 300);
       scrollMessages();
     } else {
       if (document.activeElement) document.activeElement.blur();
@@ -24,8 +21,8 @@
   }
 
   function scrollMessages() {
-    const box = document.getElementById("chatMessages");
-    if (box) box.scrollTop = box.scrollHeight;
+    const b = document.getElementById("chatMessages");
+    if (b) b.scrollTop = b.scrollHeight;
   }
 
   function addMessage(role, text) {
@@ -39,7 +36,6 @@
     div.appendChild(bub);
     box.appendChild(div);
     scrollMessages();
-    return div;
   }
 
   function showTyping() {
@@ -55,8 +51,8 @@
 
   async function sendChat() {
     if (_loading) return;
-    const inp  = document.getElementById("chatInput");
-    const btn  = document.getElementById("chatSend");
+    const inp = document.getElementById("chatInput");
+    const btn = document.getElementById("chatSend");
     const text = inp ? inp.value.trim() : "";
     if (!text) return;
     inp.value = "";
@@ -66,13 +62,11 @@
     if (btn) btn.disabled = true;
     const typing = showTyping();
     try {
-      const ctrl  = new AbortController();
+      const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 25000);
-      const res   = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: _history.slice(-6) }),
-        signal: ctrl.signal,
+      const res = await fetch("/api/chat", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, history: _history.slice(-6) }), signal: ctrl.signal,
       });
       clearTimeout(timer);
       const data = await res.json();
@@ -81,15 +75,10 @@
       addMessage("bot", reply);
       _history.push({ role: "assistant", content: reply });
       if (_history.length > 20) _history = _history.slice(-20);
-      if (!_open) {
-        const badge = document.getElementById("chatFabBadge");
-        if (badge) badge.style.display = "flex";
-      }
-    } catch (e) {
+      if (!_open) { const b = document.getElementById("chatFabBadge"); if(b) b.style.display="flex"; }
+    } catch(e) {
       if (typing) typing.remove();
-      addMessage("bot", e.name === "AbortError"
-        ? "La réponse prend trop de temps. Veuillez réessayer."
-        : "Une erreur s'est produite. Veuillez réessayer.");
+      addMessage("bot", e.name === "AbortError" ? "La réponse prend trop de temps." : "Une erreur s'est produite.");
     } finally {
       _loading = false;
       if (btn) btn.disabled = false;
@@ -98,142 +87,109 @@
   }
 
   // ══════════════════════════════════════════════════════════
-  // ── EFFETS TONNERRE ROUGE & FEU TÉKÉ ──────────────────
+  // ── FEU PUR — EFFETS TÉKÉ ─────────────────────────────
   // ══════════════════════════════════════════════════════════
 
-  const fxStyle = document.createElement("style");
-  fxStyle.textContent = `
-    @keyframes yaro-bolt {
-      0%   { transform: translate(0,0) scaleY(1);   opacity: 1; }
-      60%  { opacity: 1; }
-      100% { transform: translate(var(--bx),var(--by)) scaleY(.4); opacity: 0; }
+  // Keyframes feu
+  const s = document.createElement("style");
+  s.textContent = `
+    @keyframes yaro-flame {
+      0%   { transform:translate(0,0) scale(1) rotate(0deg);   opacity:.95; }
+      50%  { opacity:.7; }
+      100% { transform:translate(var(--fx),var(--fy)) scale(0) rotate(var(--fr)); opacity:0; }
     }
-    @keyframes yaro-ember {
-      0%   { transform: translate(0,0) scale(1) rotate(0deg);   opacity: 1; }
-      100% { transform: translate(var(--ex),var(--ey)) scale(0) rotate(var(--er));  opacity: 0; }
+    @keyframes yaro-spark {
+      0%   { transform:translate(0,0) scale(1);   opacity:1; }
+      100% { transform:translate(var(--sx),var(--sy)) scale(0); opacity:0; }
     }
-    @keyframes yaro-flash {
-      0%,100% { box-shadow: 0 0 0px 0px rgba(220,30,30,0); }
-      30%     { box-shadow: 0 0 30px 12px rgba(220,30,30,.7); }
-      60%     { box-shadow: 0 0 15px 6px rgba(255,100,0,.5); }
+    @keyframes yaro-fire-pulse {
+      0%,100% { box-shadow:0 0 10px 3px rgba(200,30,0,.5), 0 4px 20px rgba(0,0,0,.35); }
+      50%     { box-shadow:0 0 28px 10px rgba(255,80,0,.75), 0 4px 20px rgba(0,0,0,.35); }
     }
-    @keyframes yaro-fire-trail {
-      0%   { transform: translate(0,0) scale(1);   opacity:.9; filter:blur(1px); }
-      100% { transform: translate(var(--fx),var(--fy)) scale(0); opacity:0; filter:blur(5px); }
-    }
-    @keyframes yaro-red-pulse {
-      0%,100% { box-shadow: 0 0 8px 2px rgba(200,20,20,.4), 0 4px 20px rgba(0,0,0,.35); }
-      50%     { box-shadow: 0 0 24px 10px rgba(220,50,0,.7), 0 4px 20px rgba(0,0,0,.35); }
-    }
-    .yaro-dragging {
-      animation: yaro-red-pulse 0.4s ease-in-out infinite !important;
-      transform: scale(1.1) !important;
+    .yaro-on-fire {
+      animation: yaro-fire-pulse .35s ease-in-out infinite !important;
+      transform: scale(1.08) !important;
     }
   `;
-  document.head.appendChild(fxStyle);
+  document.head.appendChild(s);
 
-  // Éclairs qui partent dans toutes les directions
-  function spawnLightning(x, y) {
-    const count = 10;
-    for (let i = 0; i < count; i++) {
-      const angle  = (i / count) * Math.PI * 2 + Math.random() * 0.4;
-      const dist   = 50 + Math.random() * 40;
-      const bx     = Math.cos(angle) * dist;
-      const by     = Math.sin(angle) * dist;
-      const colors = ["#FF1A1A", "#FF4400", "#FF2200", "#CC0000", "#FF6600"];
-      const color  = colors[Math.floor(Math.random() * colors.length)];
-      const w      = 2 + Math.random() * 2;
-      const h      = 18 + Math.random() * 16;
+  function spawnFlame(x, y) {
+    // Palette feu : rouge profond → orange → jaune au centre
+    const palettes = [
+      ["#FF0000","#CC0000"],
+      ["#FF3300","#AA0000"],
+      ["#FF5500","#DD2200"],
+      ["#FF7700","#FF3300"],
+      ["#FFAA00","#FF5500"],
+    ];
+    const pal  = palettes[Math.floor(Math.random() * palettes.length)];
+    const w    = 10 + Math.random() * 14;
+    const h    = w * (1.5 + Math.random());
+    const fx   = (Math.random() - .5) * 22;
+    const fy   = -(28 + Math.random() * 35); // monte vers le haut
+    const fr   = (Math.random() - .5) * 30;
+    const dur  = 0.45 + Math.random() * .3;
 
-      const bolt = document.createElement("div");
-      bolt.style.cssText = `
-        position:fixed; z-index:99999; pointer-events:none;
-        width:${w}px; height:${h}px;
-        left:${x - w/2}px; top:${y - h/2}px;
-        background: linear-gradient(180deg, #FFF 0%, ${color} 40%, #FF0000 100%);
-        border-radius: 2px;
-        box-shadow: 0 0 8px ${color}, 0 0 3px #FFF;
-        transform-origin: center center;
-        transform: rotate(${(angle * 180/Math.PI) + 90}deg);
-        --bx:${bx}px; --by:${by}px;
-        animation: yaro-bolt ${0.3 + Math.random()*.2}s ease-out forwards;
-      `;
-      document.body.appendChild(bolt);
-      setTimeout(() => bolt.remove(), 600);
-    }
-  }
-
-  // Flash rouge sur le bouton
-  function spawnFlash(fab) {
-    fab.style.animation = "yaro-flash 0.35s ease-out";
-    setTimeout(() => { fab.style.animation = ""; }, 400);
-  }
-
-  // Braises / flammèches
-  function spawnEmbers(x, y, count) {
-    const fireColors = ["#FF1A00", "#FF4400", "#FF7700", "#FF2200", "#FFAA00", "#CC0000", "#FF3300"];
-    for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist  = 25 + Math.random() * 45;
-      const ex    = Math.cos(angle) * dist;
-      const ey    = Math.sin(angle) * dist - 20;
-      const er    = (Math.random() - .5) * 360;
-      const size  = 4 + Math.random() * 8;
-      const color = fireColors[Math.floor(Math.random() * fireColors.length)];
-
-      const ember = document.createElement("div");
-      ember.style.cssText = `
-        position:fixed; z-index:99998; pointer-events:none;
-        width:${size}px; height:${size + 4}px;
-        left:${x - size/2}px; top:${y - size/2}px;
-        background: radial-gradient(ellipse at 50% 30%, #FFF 0%, ${color} 50%, #AA0000 100%);
-        border-radius: 50% 50% 30% 30%;
-        box-shadow: 0 0 6px ${color};
-        --ex:${ex}px; --ey:${ey}px; --er:${er}deg;
-        animation: yaro-ember ${0.4 + Math.random()*.3}s ease-out forwards;
-      `;
-      document.body.appendChild(ember);
-      setTimeout(() => ember.remove(), 750);
-    }
-  }
-
-  // Traînée de feu pendant le glissement
-  function spawnFireTrail(x, y) {
-    const fx    = (Math.random() - .5) * 20;
-    const fy    = -(15 + Math.random() * 25);
-    const size  = 12 + Math.random() * 12;
-    const fireColors = ["#FF1A00","#FF4400","#FF6600","#CC2200","#FF3300"];
-    const color = fireColors[Math.floor(Math.random() * fireColors.length)];
     const f = document.createElement("div");
     f.style.cssText = `
-      position:fixed; z-index:99998; pointer-events:none;
-      width:${size}px; height:${size * 1.4}px;
-      left:${x - size/2}px; top:${y - size/2}px;
-      background: radial-gradient(ellipse at 50% 30%, #FFEE00 0%, ${color} 45%, rgba(150,0,0,0) 100%);
-      border-radius: 50% 50% 30% 30%;
-      filter: blur(1px);
-      --fx:${fx}px; --fy:${fy}px;
-      animation: yaro-fire-trail 0.5s ease-out forwards;
+      position:fixed;z-index:99999;pointer-events:none;
+      width:${w}px;height:${h}px;
+      left:${x - w/2}px;top:${y - h*.6}px;
+      background:radial-gradient(ellipse at 50% 80%, #FFEE44 0%, ${pal[0]} 45%, ${pal[1]} 80%, rgba(80,0,0,0) 100%);
+      border-radius:50% 50% 35% 35%;
+      filter:blur(.5px);
+      --fx:${fx}px;--fy:${fy}px;--fr:${fr}deg;
+      animation:yaro-flame ${dur}s ease-out forwards;
     `;
     document.body.appendChild(f);
-    setTimeout(() => f.remove(), 550);
+    setTimeout(() => f.remove(), (dur + .05) * 1000);
+  }
+
+  function spawnSpark(x, y) {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2;
+      const dist  = 30 + Math.random() * 40;
+      const sparkColors = ["#FF0000","#FF4400","#FF7700","#FFAA00","#FFD700","#CC0000"];
+      const color = sparkColors[Math.floor(Math.random() * sparkColors.length)];
+      const size  = 3 + Math.random() * 5;
+      const e = document.createElement("div");
+      e.style.cssText = `
+        position:fixed;z-index:99999;pointer-events:none;
+        width:${size}px;height:${size}px;
+        left:${x - size/2}px;top:${y - size/2}px;
+        background:${color};border-radius:50%;
+        box-shadow:0 0 5px ${color};
+        --sx:${Math.cos(angle)*dist}px;--sy:${Math.sin(angle)*dist - 15}px;
+        animation:yaro-spark .5s ease-out forwards;
+      `;
+      document.body.appendChild(e);
+      setTimeout(() => e.remove(), 550);
+    }
   }
 
   // ── Protection photo ────────────────────────────────────
-  function protectImages() {
-    const imgs = document.querySelectorAll(".chat-fab-img, .chat-header-img");
-    imgs.forEach(img => {
-      img.draggable = false;
-      img.addEventListener("contextmenu",  e => e.preventDefault());
-      img.addEventListener("touchstart",   e => { /* ne pas stopper pour le drag */ }, { passive: true });
-      img.style.cssText += "; -webkit-touch-callout:none; user-select:none; pointer-events:none;";
+  function protectPhoto() {
+    // CSS global anti-longpress
+    const ps = document.createElement("style");
+    ps.textContent = `
+      .chat-fab-img, .chat-header-img {
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        user-select: none !important;
+        pointer-events: none !important;
+      }
+      #chatFab {
+        -webkit-touch-callout: none !important;
+      }
+    `;
+    document.head.appendChild(ps);
+
+    // Bloquer contextmenu sur tout le widget
+    ["chatFab","chatWindow"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("contextmenu", e => e.preventDefault());
     });
-    // Le bouton lui-même garde les pointer-events pour le drag
-    const fab = document.getElementById("chatFab");
-    if (fab) {
-      fab.addEventListener("contextmenu", e => e.preventDefault());
-      fab.style.webkitTouchCallout = "none";
-    }
   }
 
   // ── Bouton déplaçable ───────────────────────────────────
@@ -241,68 +197,59 @@
     const fab = document.getElementById("chatFab");
     if (!fab) return;
 
-    protectImages();
+    protectPhoto();
 
-    let dragging  = false;
-    let hasMoved  = false;
+    let dragging = false, hasMoved = false;
     let startX, startY, origLeft, origBottom;
-    let trailTimer = null;
+    let flameTimer = null;
 
     function getPos(e) {
-      return e.touches ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
-                       : { x: e.clientX, y: e.clientY };
+      return e.touches ? {x:e.touches[0].clientX, y:e.touches[0].clientY} : {x:e.clientX, y:e.clientY};
     }
 
     function onStart(e) {
-      const pos  = getPos(e);
-      startX     = pos.x;
-      startY     = pos.y;
-      hasMoved   = false;
-      dragging   = true;
-
+      const pos = getPos(e);
+      startX = pos.x; startY = pos.y;
+      hasMoved = false; dragging = true;
       const rect = fab.getBoundingClientRect();
       origLeft   = rect.left;
       origBottom = window.innerHeight - rect.bottom;
       fab.style.transition = "none";
 
-      // Tonnerre au toucher : éclairs + braises + flash + vibration forte
-      spawnLightning(pos.x, pos.y);
-      spawnEmbers(pos.x, pos.y, 12);
-      spawnFlash(fab);
-      if (navigator.vibrate) navigator.vibrate([30, 15, 60, 10, 30]);
+      // Explosion de feu au toucher
+      for (let i = 0; i < 8; i++) spawnFlame(pos.x, pos.y);
+      spawnSpark(pos.x, pos.y);
+      if (navigator.vibrate) navigator.vibrate([25, 10, 50]);
     }
 
     function onMove(e) {
       if (!dragging) return;
       const pos = getPos(e);
-      const dx  = pos.x - startX;
-      const dy  = pos.y - startY;
+      const dx = pos.x - startX, dy = pos.y - startY;
 
       if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
         if (!hasMoved) {
           hasMoved = true;
-          fab.classList.add("yaro-dragging");
-          if (navigator.vibrate) navigator.vibrate([20, 10, 20]);
+          fab.classList.add("yaro-on-fire");
+          if (navigator.vibrate) navigator.vibrate([15, 5, 15]);
         }
       }
       if (!hasMoved) return;
       e.preventDefault();
 
-      const size   = fab.offsetWidth;
-      const margin = 8;
-      fab.style.left   = Math.max(margin, Math.min(window.innerWidth  - size - margin, origLeft   + dx)) + "px";
-      fab.style.bottom = Math.max(margin, Math.min(window.innerHeight - size - margin, origBottom - dy)) + "px";
+      const sz = fab.offsetWidth, mg = 8;
+      fab.style.left   = Math.max(mg, Math.min(window.innerWidth  - sz - mg, origLeft   + dx)) + "px";
+      fab.style.bottom = Math.max(mg, Math.min(window.innerHeight - sz - mg, origBottom - dy)) + "px";
       fab.style.right  = "auto";
 
-      // Traînée de feu toutes les 50ms
-      if (!trailTimer) {
-        const rect = fab.getBoundingClientRect();
-        const cx   = rect.left + rect.width  / 2;
-        const cy   = rect.top  + rect.height / 2;
-        spawnFireTrail(cx, cy);
-        spawnFireTrail(cx, cy);
-        spawnFireTrail(cx, cy);
-        trailTimer = setTimeout(() => { trailTimer = null; }, 50);
+      // Flammes en continu (50ms)
+      if (!flameTimer) {
+        const r = fab.getBoundingClientRect();
+        const cx = r.left + r.width/2, cy = r.top + r.height/2;
+        spawnFlame(cx, cy - 10);
+        spawnFlame(cx + (Math.random()-.5)*20, cy);
+        spawnFlame(cx + (Math.random()-.5)*20, cy - 5);
+        flameTimer = setTimeout(() => { flameTimer = null; }, 50);
       }
     }
 
@@ -310,25 +257,20 @@
       if (!dragging) return;
       dragging = false;
       fab.style.transition = "";
-      fab.classList.remove("yaro-dragging");
+      fab.classList.remove("yaro-on-fire");
 
       if (hasMoved) {
-        e.preventDefault();
-        e.stopPropagation();
-        // Explosion finale : éclairs + braises + vibration tonnerre
-        const rect = fab.getBoundingClientRect();
-        const cx   = rect.left + rect.width  / 2;
-        const cy   = rect.top  + rect.height / 2;
-        spawnLightning(cx, cy);
-        spawnEmbers(cx, cy, 18);
-        spawnFlash(fab);
-        if (navigator.vibrate) navigator.vibrate([80, 20, 40]);
+        e.preventDefault(); e.stopPropagation();
+        const r = fab.getBoundingClientRect();
+        const cx = r.left + r.width/2, cy = r.top + r.height/2;
+        for (let i = 0; i < 12; i++) spawnFlame(cx + (Math.random()-.5)*30, cy - Math.random()*20);
+        spawnSpark(cx, cy);
+        if (navigator.vibrate) navigator.vibrate([60, 15, 30]);
 
-        // Repositionner fenêtre chat
         const win = document.getElementById("chatWindow");
         if (win) {
-          const wLeft = Math.max(8, Math.min(window.innerWidth - win.offsetWidth - 8, rect.left - win.offsetWidth + fab.offsetWidth));
-          win.style.bottom = (window.innerHeight - rect.top + 8) + "px";
+          const wLeft = Math.max(8, Math.min(window.innerWidth - win.offsetWidth - 8, r.left - win.offsetWidth + fab.offsetWidth));
+          win.style.bottom = (window.innerHeight - r.top + 8) + "px";
           win.style.left   = wLeft + "px";
           win.style.right  = "auto";
         }
