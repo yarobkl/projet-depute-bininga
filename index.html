@@ -798,15 +798,34 @@
 <style>
 /* ── HERO ANIMATIONS WAOUH ─────────────────────────── */
 
-/* Eyebrow ticker */
-.hero-eyebrow { overflow: hidden; display: flex; align-items: center; gap: 10px; }
+/* Eyebrow ticker — bandeau rouge doux */
+.hero-eyebrow {
+  display: flex !important;
+  align-items: center;
+  overflow: hidden;
+  background: rgba(160, 18, 18, 0.82);
+  border-radius: 10px;
+  padding: 10px 0;
+  margin-bottom: 28px;
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(200, 40, 40, 0.35);
+  box-shadow: 0 2px 18px rgba(160,10,10,.35);
+  gap: 0 !important;
+}
+.hero-eyebrow-line { display: none; }
 .hero-eyebrow-ticker {
   display: flex; flex-wrap: nowrap; width: max-content;
   animation: eyebrow-scroll 20s linear infinite;
 }
 .hero-eyebrow-ticker span {
   white-space: nowrap;
-  font-size: inherit; letter-spacing: inherit; color: inherit;
+  font-size: 11px;
+  letter-spacing: 3.5px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #C9A84C;
+  text-shadow: 0 0 10px rgba(220,180,60,.4);
+  padding: 0 8px;
 }
 .hero-eyebrow:hover .hero-eyebrow-ticker { animation-play-state: paused; }
 @keyframes eyebrow-scroll {
