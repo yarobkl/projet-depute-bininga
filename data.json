@@ -510,58 +510,49 @@
         "subtitle": "Coopération judiciaire Congo–France, 18 Février 2026"
       },
       {
-        "image": "",
-        "emoji": "🏛️",
-        "title": "Au Ministère de la Fonction publique et de la Réforme de l'État",
-        "subtitle": "Modernisation de l'administration et dialogue social"
+        "image": "images/rwanda.JPG",
+        "emoji": "",
+        "title": "Visite de l'Ambassadeur du Rwanda",
+        "subtitle": "Coopération judiciaire Rwanda–Congo, 12 Décembre 2025"
       },
       {
-        "image": "",
-        "emoji": "🗳️",
-        "title": "Grand meeting populaire à Ewo",
-        "subtitle": "Lancement officiel de la campagne législative 2027"
+        "image": "images/ewo.jpg",
+        "emoji": "",
+        "title": "Boulevard énergétique — Ewo",
+        "subtitle": "Travaux de la ligne 110 KV Boundji-Ewo, Août 2024"
+      },
+      {
+        "image": "images/IMG_9963.webp",
+        "emoji": "",
+        "title": "Conseil supérieur de la magistrature",
+        "subtitle": "Session ordinaire du 27 mars 2023 — Brazzaville"
       }
     ],
     "grid": [
       {
-        "image": "images/IMG_9963.webp",
-        "alt": "BININGA — Conseil supérieur de la magistrature, 27 mars 2023",
-        "emoji": "⚖️"
-      },
-      {
         "image": "images/bininga.jpg",
-        "alt": "BININGA portrait",
+        "alt": "BININGA — Portrait officiel, Ministre de la Justice",
         "emoji": ""
       },
       {
         "image": "images/Darmanin.jpeg",
-        "alt": "BININGA et Darmanin",
+        "alt": "BININGA et Darmanin — Place Vendôme, Paris, Février 2026",
         "emoji": ""
       },
       {
-        "image": "",
-        "alt": "Justice",
-        "emoji": "⚖️"
+        "image": "images/IMG_9963.webp",
+        "alt": "BININGA — Conseil supérieur de la magistrature, 27 mars 2023",
+        "emoji": ""
       },
       {
-        "image": "",
-        "alt": "Construction",
-        "emoji": "🏗️"
+        "image": "images/rwanda.JPG",
+        "alt": "BININGA — Visite de l'Ambassadeur du Rwanda, Décembre 2025",
+        "emoji": ""
       },
       {
-        "image": "",
-        "alt": "Éducation",
-        "emoji": "📚"
-      },
-      {
-        "image": "",
-        "alt": "Santé",
-        "emoji": "🏥"
-      },
-      {
-        "image": "",
-        "alt": "Travaux",
-        "emoji": "👷"
+        "image": "images/ewo.jpg",
+        "alt": "Boulevard énergétique — Ewo, Cuvette-Ouest, Août 2024",
+        "emoji": ""
       }
     ]
   },
