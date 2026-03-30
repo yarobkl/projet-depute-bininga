@@ -21,7 +21,7 @@
       if (!_welcomed) {
         _welcomed = true;
         setTimeout(() => {
-          addMessage("bot", "👋 Bonjour ! Je suis DA, l'assistant virtuel du Ministre Ange Aimé Wilfrid BININGA.\n\nJe peux vous renseigner sur :\n• Sa biographie et son parcours\n• Ses fonctions et mandats\n• Son programme électoral\n• Ses actualités récentes\n• Sa circonscription d'Ewo\n• Comment le contacter\n\nComment puis-je vous aider ?");
+          addMessage("bot", "👋 Bonjour ! Je suis DA, l'assistant virtuel du Ministre Ange Aimé Wilfrid BININGA. En quoi puis-je vous aider ?");
         }, 400);
       }
       if (window.innerWidth > 600) setTimeout(() => { const i = document.getElementById("chatInput"); if(i) i.focus(); }, 300);
