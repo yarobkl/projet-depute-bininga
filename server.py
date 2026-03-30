@@ -673,61 +673,75 @@ def _pg():
         _PG_CONN = None
         return None
 
-# ── Helper IA — Gemini (gratuit) ───────────────────────────
-_GEMINI_MODEL_CACHE = None  # modèle fonctionnel mis en cache
+# ── Helper IA — Gemini + Groq fallback ─────────────────────
+_GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
+
+def _groq_call(prompt: str, max_tokens: int = 800) -> str:
+    """Appelle Groq (llama gratuit) et retourne le texte généré."""
+    import urllib.request as ur
+    key = os.environ.get("GROQ_API_KEY", "").strip()
+    if not key:
+        raise ValueError("GROQ_API_KEY non configuré")
+    payload = json.dumps({
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": max_tokens,
+        "temperature": 0.4,
+    }).encode()
+    req = ur.Request(
+        "https://api.groq.com/openai/v1/chat/completions",
+        data=payload,
+        headers={"content-type": "application/json", "authorization": f"Bearer {key}"},
+    )
+    with ur.urlopen(req, timeout=30) as r:
+        resp = json.loads(r.read())
+    return resp["choices"][0]["message"]["content"].strip()
 
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
-    """Appelle Gemini Flash et retourne le texte généré.
-    Essaie plusieurs modèles dans l'ordre jusqu'à trouver un qui fonctionne."""
+    """Appelle Gemini Flash, avec fallback automatique sur Groq si quota dépassé."""
     import urllib.request as ur
     global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if not key:
-        raise ValueError("GEMINI_API_KEY non configuré")
 
-    # Modèles à essayer dans l'ordre (du plus récent au plus ancien)
-    candidates = [
-        ("v1beta", "gemini-2.0-flash-lite"),
-        ("v1beta", "gemini-2.0-flash"),
-        ("v1",     "gemini-1.5-flash"),
-        ("v1beta", "gemini-1.5-flash"),
-        ("v1beta", "gemini-pro"),
-        ("v1",     "gemini-pro"),
-    ]
+    gemini_err = None
+    if key:
+        candidates = [
+            ("v1beta", "gemini-2.0-flash-lite"),
+            ("v1beta", "gemini-2.0-flash-lite-001"),
+            ("v1beta", "gemini-2.0-flash"),
+            ("v1beta", "gemini-2.5-flash"),
+        ]
+        if _GEMINI_MODEL_CACHE:
+            candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
 
-    # Si on a déjà un modèle qui a marché, l'essayer en premier
-    if _GEMINI_MODEL_CACHE:
-        candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
+        payload = json.dumps({
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
+        }).encode()
 
-    payload = json.dumps({
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
-    }).encode()
+        for (version, model) in candidates:
+            url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
+            try:
+                req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+                with ur.urlopen(req, timeout=30) as r:
+                    resp = json.loads(r.read())
+                parts = resp.get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                text  = parts[0].get("text", "").strip() if parts else ""
+                if not text:
+                    raise ValueError("Réponse vide")
+                _GEMINI_MODEL_CACHE = (version, model)
+                print(f"[AI] Gemini {version}/{model}")
+                return text
+            except Exception as e:
+                gemini_err = e
+                err_str = str(e)
+                if "429" in err_str or "404" in err_str:
+                    continue
+                raise
 
-    last_err = None
-    for (version, model) in candidates:
-        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
-        try:
-            req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
-            with ur.urlopen(req, timeout=30) as r:
-                resp = json.loads(r.read())
-            text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
-            _GEMINI_MODEL_CACHE = (version, model)  # mémoriser ce qui marche
-            print(f"[GEMINI] Modèle utilisé : {version}/{model}")
-            return text
-        except Exception as e:
-            last_err = e
-            err_str = str(e)
-            # Arrêter si quota dépassé (billing requis), inutile d'essayer d'autres
-            if "429" in err_str and "quota" in err_str.lower():
-                continue
-            # Continuer si 404 (modèle inexistant)
-            if "404" in err_str:
-                continue
-            # Autre erreur = lever directement
-            raise
-
-    raise last_err or RuntimeError("Aucun modèle Gemini disponible")
+    # Fallback Groq
+    print(f"[AI] Gemini indisponible ({gemini_err}) — fallback Groq")
+    return _groq_call(prompt, max_tokens)
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
@@ -1517,138 +1531,121 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             try:
                 payload  = json.loads(body.decode("utf-8"))
                 question = str(payload.get("message", "")).strip()[:1000]
-                history  = payload.get("history", [])[-6:]  # max 6 messages précédents
                 if not question:
                     self._json({"ok": False, "message": "Message vide"}, 400)
                     return
 
-                key = os.environ.get("GEMINI_API_KEY", "").strip()
-                if not key:
-                    self._json({"ok": True, "reply": "Je suis momentanément indisponible. Veuillez réessayer plus tard ou contacter directement l'équipe via le formulaire de contact."})
-                    return
+                # ── Chatbot classique par mots-clés ──────────────────
+                q = question.lower()
 
-                # Charger les données du site pour le contexte
-                site_context = ""
-                nom_complet  = "Ange Aimé Wilfrid BININGA"
+                # Charger data.json
                 try:
-                    import re as _re
                     with open(DATA_FILE, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                    hero      = data.get("hero", {})
-                    about     = data.get("about", {})
-                    stats     = data.get("stats", [])
-                    actus     = data.get("actus", {})
-                    programme = data.get("programme", {})
-                    parcours  = data.get("parcours", [])
-                    contact   = data.get("contact", {})
+                except Exception:
+                    data = {}
 
-                    nom_complet = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or nom_complet
-                    role        = hero.get("role", "")
-                    slogan      = _re.sub(r"<[^>]+>", "", hero.get("slogan", "")).replace("\n", " ")
+                hero      = data.get("hero", {})
+                about     = data.get("about", {})
+                stats     = data.get("stats", [])
+                actus     = data.get("actus", {})
+                programme = data.get("programme", {})
+                parcours  = data.get("parcours", [])
+                contact   = data.get("contact", {})
 
-                    # Biographie
-                    bio_intro = about.get("intro", "")
-                    bio_paras = " ".join(about.get("paragraphs", []))[:1000]
+                nom = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or "Ange Aimé Wilfrid BININGA"
+                role = hero.get("role", "Garde des Sceaux, Ministre de la Justice, Député d'Ewo")
 
-                    # Stats
-                    stats_txt = " | ".join(
-                        f"{s.get('num','')} {s.get('label','')}"
-                        for s in stats if isinstance(s, dict)
+                # Détection du sujet et réponse
+                reply = None
+
+                # Salutations
+                if any(w in q for w in ["bonjour", "bonsoir", "salut", "hello", "bonne journée", "bonne soirée"]):
+                    reply = f"Bonjour ! Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour vous aider et répondre à toutes vos questions sur sa biographie, ses fonctions, son programme ou ses actualités. Comment puis-je vous aider ?"
+
+                # Qui est / présentation
+                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui"]):
+                    intro = about.get("intro", "")
+                    reply = intro if intro else f"{nom} est {role}."
+
+                # Biographie / parcours
+                elif any(w in q for w in ["biographie", "bio", "parcours", "carrière", "formation", "études", "doctorat", "trésor", "fonctions"]):
+                    paras = about.get("paragraphs", [])
+                    if paras:
+                        reply = paras[0][:400] + ("..." if len(paras[0]) > 400 else "")
+                    else:
+                        reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor."
+
+                # Fonctions / rôle / titre / ministre
+                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "député", "mandat", "poste"]):
+                    reply = f"{nom} occupe les fonctions de : {role}."
+
+                # Programme
+                elif any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif"]):
+                    axes = programme.get("axes", [])
+                    if axes:
+                        titres = [ax.get("title", "") for ax in axes[:5] if isinstance(ax, dict) and ax.get("title")]
+                        reply = "Le programme de " + nom + " s'articule autour de : " + ", ".join(titres) + "."
+                    else:
+                        reply = "Le programme électoral de " + nom + " est disponible sur ce site dans la section Programme."
+
+                # Actualités
+                elif any(w in q for w in ["actuali", "nouvelle", "récent", "dernière", "info", "événement", "agenda"]):
+                    slides = actus.get("slides", []) + actus.get("cards", [])
+                    items  = [s.get("title","").replace("\n"," ") for s in slides[:3] if isinstance(s,dict) and s.get("title")]
+                    if items:
+                        reply = "Dernières actualités :\n• " + "\n• ".join(items)
+                    else:
+                        reply = "Retrouvez toutes les actualités dans la section Actualités du site."
+
+                # Contact
+                elif any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "rendez-vous", "audience", "formulaire"]):
+                    email = contact.get("email", "")
+                    if email:
+                        reply = f"Pour contacter l'équipe de {nom}, vous pouvez utiliser le formulaire de contact du site ou écrire à : {email}."
+                    else:
+                        reply = f"Pour contacter l'équipe de {nom} ou demander une audience, utilisez le formulaire de contact disponible sur ce site."
+
+                # Chiffres / stats
+                elif any(w in q for w in ["chiffre", "bilan", "résultat", "combien", "statistique"]):
+                    if stats:
+                        txt = " | ".join(f"{s.get('num','')} {s.get('label','')}" for s in stats if isinstance(s, dict))
+                        reply = f"En chiffres : {txt}."
+                    else:
+                        reply = f"{nom} a dirigé 2 ministères et effectue 2 mandats de Député."
+
+                # Ewo / circonscription
+                elif any(w in q for w in ["ewo", "cuvette", "circonscription", "territoire", "région"]):
+                    reply = f"{nom} est Député de la 1re circonscription d'Ewo, dans la Cuvette-Ouest (République du Congo). Il représente et défend les intérêts de cette région à l'Assemblée Nationale."
+
+                # Justice / loi / corruption
+                elif any(w in q for w in ["justice", "loi", "droit", "corruption", "halc", "réforme", "tribunal"]):
+                    reply = f"En tant que Garde des Sceaux et Ministre de la Justice, {nom} a notamment fait adopter en 2018 la loi instituant la Haute Autorité de Lutte contre la Corruption (HALC), votée à 107 voix pour."
+
+                # Qui est Yaro
+                elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "yaro", "c'est quoi yaro", "présente-toi"]):
+                    reply = f"Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour répondre à toutes vos questions sur son parcours, ses fonctions, son programme et ses actualités."
+
+                # Merci / au revoir
+                elif any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt"]):
+                    reply = f"Merci pour votre intérêt pour Son Excellence {nom} et son action. N'hésitez pas à revenir si vous avez d'autres questions ! — Yaro"
+
+                # Réponse par défaut
+                else:
+                    reply = (
+                        f"Je suis Yaro, l'assistant virtuel de {nom}. "
+                        f"Je peux vous renseigner sur :\n"
+                        f"• Sa biographie et son parcours\n"
+                        f"• Ses fonctions et mandats\n"
+                        f"• Son programme électoral\n"
+                        f"• Ses actualités récentes\n"
+                        f"• Sa circonscription d'Ewo\n"
+                        f"• Son action pour la Justice\n"
+                        f"• Comment le contacter\n"
+                        f"Quelle information souhaitez-vous ?"
                     )
 
-                    # Actualités (slides + cards)
-                    actus_lines = []
-                    for item in (actus.get("slides", []) + actus.get("cards", []))[:6]:
-                        if not isinstance(item, dict): continue
-                        t = item.get("title", "").replace("\n", " ")
-                        s = item.get("subtitle", "")[:120]
-                        if t: actus_lines.append("- " + t + (" : " + s if s else ""))
-
-                    # Programme
-                    prog_lines = []
-                    for ax in programme.get("axes", [])[:6]:
-                        if not isinstance(ax, dict): continue
-                        title  = ax.get("title", "")
-                        text   = ax.get("text", "")[:120]
-                        points = ", ".join(ax.get("points", [])[:3])
-                        prog_lines.append("- " + title + " : " + text + (" (" + points + ")" if points else ""))
-
-                    # Parcours
-                    parc_lines = []
-                    items = parcours if isinstance(parcours, list) else parcours.get("items", [])
-                    for e in items[:6]:
-                        if not isinstance(e, dict): continue
-                        yr = e.get("year", "")
-                        t  = e.get("title", "")
-                        d  = e.get("desc", "")[:100]
-                        parc_lines.append("- " + yr + " : " + t + (" — " + d if d else ""))
-
-                    contact_email = contact.get("email", "")
-                    contact_info  = (contact_email + " — ") if contact_email else ""
-
-                    site_context = (
-                        f"NOM : {nom_complet}\n"
-                        f"RÔLE : {role}\n"
-                        f"SLOGAN : {slogan}\n\n"
-                        f"BIOGRAPHIE :\n{bio_intro}\n{bio_paras}\n\n"
-                        f"CHIFFRES CLÉS : {stats_txt}\n\n"
-                        f"ACTUALITÉS RÉCENTES :\n" + "\n".join(actus_lines) + "\n\n"
-                        f"PROGRAMME ÉLECTORAL :\n" + "\n".join(prog_lines) + "\n\n"
-                        f"PARCOURS :\n" + "\n".join(parc_lines) + "\n\n"
-                        f"CONTACT : {contact_info}via le formulaire de contact du site"
-                    )
-                except Exception as ctx_err:
-                    print(f"[CHAT] Erreur lecture data.json : {ctx_err}")
-                    site_context = f"Informations sur {nom_complet}, Garde des Sceaux, Ministre de la Justice, Député d'Ewo, Congo-Brazzaville."
-
-                system_prompt = f"""Tu es l'assistant officiel présent sur ce site. Tu réponds directement aux utilisateurs comme si tu faisais partie de l'équipe de {nom_complet if nom_complet else "cette personnalité publique"}.
-
-Tu dois répondre à toutes les questions en utilisant uniquement les informations disponibles sur le site. Tu exploites au maximum tout le contenu du site (biographie, actualités, pages, informations, détails, etc.).
-
-Tu peux répondre sur :
-- la biographie
-- les fonctions et mandats
-- les actions et projets
-- les campagnes
-- les actualités
-- toute information présente sur le site
-
-Règles :
-- Réponds de manière naturelle, claire et professionnelle
-- Réponses courtes (2 à 5 lignes maximum)
-- N'invente jamais d'informations
-- Si l'information n'existe pas sur le site, dis simplement que l'information n'est pas disponible
-- Priorise les informations les plus récentes
-- Pour contacter → indique la page contact du site
-- Pour une demande de rendez-vous ou d'audience → explique que la demande se fait via le formulaire du site
-- Tu es naturel, humain et accessible
-
-{site_context}"""
-
-                messages = [{"role": "system", "content": system_prompt}]
-                for h in history:
-                    if h.get("role") in ("user", "assistant") and h.get("content"):
-                        messages.append({"role": h["role"], "content": str(h["content"])[:500]})
-                messages.append({"role": "user", "content": question})
-
-                # Construire le prompt complet pour Gemini
-                conv = "\n".join([
-                    f"{'Utilisateur' if m['role']=='user' else 'Assistant'} : {m['content']}"
-                    for m in messages[1:]  # skip system
-                ])
-                full_prompt = messages[0]["content"] + "\n\n" + conv if conv else messages[0]["content"]
-                try:
-                    reply = _gemini_call(full_prompt, max_tokens=400)
-                    self._json({"ok": True, "reply": reply})
-                except Exception as e:
-                    err_body = ""
-                    try:
-                        if hasattr(e, 'read'): err_body = e.read().decode()
-                    except Exception: pass
-                    err_msg = f"{e} — {err_body}" if err_body else str(e)
-                    print(f"[CHAT] Erreur Gemini : {err_msg}")
-                    # Retourner l'erreur visible pour diagnostic
-                    self._json({"ok": True, "reply": f"⚠️ Erreur IA : {err_msg[:200]}"})
+                self._json({"ok": True, "reply": reply})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
             return
