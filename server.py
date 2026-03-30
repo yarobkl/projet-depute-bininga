@@ -950,6 +950,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json(load_data())
             return
 
+        # ── /api/debug-ai (diagnostic clé IA) ──
+        if path == "/api/debug-ai":
+            gemini = os.environ.get("GEMINI_API_KEY", "")
+            groq   = os.environ.get("GROQ_API_KEY", "")
+            self._json({
+                "GEMINI_API_KEY": f"{'✅ présente ('+str(len(gemini))+' chars)' if gemini else '❌ ABSENTE'}",
+                "GEMINI_prefix":  gemini[:8] + "..." if gemini else "",
+                "GROQ_API_KEY":   f"{'✅ présente' if groq else '❌ ABSENTE'}",
+            })
+            return
+
         if path == "/api/contacts":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "editeur", "ministre"):
