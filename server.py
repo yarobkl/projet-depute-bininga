@@ -954,10 +954,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/debug-ai":
             gemini = os.environ.get("GEMINI_API_KEY", "")
             groq   = os.environ.get("GROQ_API_KEY", "")
+            # Test appel Gemini en direct
+            gemini_test = ""
+            try:
+                reply = _gemini_call("Réponds juste: OK", max_tokens=10)
+                gemini_test = f"✅ Gemini répond : {reply}"
+            except Exception as e:
+                err_body = ""
+                try:
+                    if hasattr(e, 'read'): err_body = e.read().decode()
+                except Exception: pass
+                gemini_test = f"❌ Erreur : {e} — {err_body}"
             self._json({
                 "GEMINI_API_KEY": f"{'✅ présente ('+str(len(gemini))+' chars)' if gemini else '❌ ABSENTE'}",
                 "GEMINI_prefix":  gemini[:8] + "..." if gemini else "",
                 "GROQ_API_KEY":   f"{'✅ présente' if groq else '❌ ABSENTE'}",
+                "gemini_test":    gemini_test,
             })
             return
 
