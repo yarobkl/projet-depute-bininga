@@ -136,7 +136,11 @@
   <div class="hero-content">
     <div class="hero-eyebrow">
       <div class="hero-eyebrow-line"></div>
-      <span class="hero-eyebrow-txt" id="dyn-hero-eyebrow">Campagne législative · République du Congo</span>
+      <div class="hero-eyebrow-ticker">
+        <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
+        <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
+        <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
+      </div>
     </div>
     <h1 class="hero-name" id="dyn-name">
       Ange Aimé Wilfrid
@@ -793,6 +797,22 @@
 
 <style>
 /* ── HERO ANIMATIONS WAOUH ─────────────────────────── */
+
+/* Eyebrow ticker */
+.hero-eyebrow { overflow: hidden; display: flex; align-items: center; gap: 10px; }
+.hero-eyebrow-ticker {
+  display: flex; flex-wrap: nowrap; width: max-content;
+  animation: eyebrow-scroll 20s linear infinite;
+}
+.hero-eyebrow-ticker span {
+  white-space: nowrap;
+  font-size: inherit; letter-spacing: inherit; color: inherit;
+}
+.hero-eyebrow:hover .hero-eyebrow-ticker { animation-play-state: paused; }
+@keyframes eyebrow-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-33.333%); }
+}
 
 /* Entrées échelonnées */
 @keyframes h-up   { from { opacity:0; transform:translateY(32px); } to { opacity:1; transform:none; } }
