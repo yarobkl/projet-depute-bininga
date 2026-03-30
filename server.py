@@ -674,24 +674,60 @@ def _pg():
         return None
 
 # ── Helper IA — Gemini (gratuit) ───────────────────────────
+_GEMINI_MODEL_CACHE = None  # modèle fonctionnel mis en cache
+
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
-    """Appelle Gemini Flash et retourne le texte généré."""
+    """Appelle Gemini Flash et retourne le texte généré.
+    Essaie plusieurs modèles dans l'ordre jusqu'à trouver un qui fonctionne."""
     import urllib.request as ur
+    global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
     if not key:
         raise ValueError("GEMINI_API_KEY non configuré")
-    url = (
-        "https://generativelanguage.googleapis.com/v1/models/"
-        f"gemini-1.5-flash:generateContent?key={key}"
-    )
+
+    # Modèles à essayer dans l'ordre (du plus récent au plus ancien)
+    candidates = [
+        ("v1beta", "gemini-2.0-flash-lite"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1",     "gemini-1.5-flash"),
+        ("v1beta", "gemini-1.5-flash"),
+        ("v1beta", "gemini-pro"),
+        ("v1",     "gemini-pro"),
+    ]
+
+    # Si on a déjà un modèle qui a marché, l'essayer en premier
+    if _GEMINI_MODEL_CACHE:
+        candidates = [_GEMINI_MODEL_CACHE] + [c for c in candidates if c != _GEMINI_MODEL_CACHE]
+
     payload = json.dumps({
         "contents": [{"parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": max_tokens, "temperature": 0.4},
     }).encode()
-    req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
-    with ur.urlopen(req, timeout=30) as r:
-        resp = json.loads(r.read())
-    return resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+    last_err = None
+    for (version, model) in candidates:
+        url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
+        try:
+            req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
+            with ur.urlopen(req, timeout=30) as r:
+                resp = json.loads(r.read())
+            text = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
+            _GEMINI_MODEL_CACHE = (version, model)  # mémoriser ce qui marche
+            print(f"[GEMINI] Modèle utilisé : {version}/{model}")
+            return text
+        except Exception as e:
+            last_err = e
+            err_str = str(e)
+            # Arrêter si quota dépassé (billing requis), inutile d'essayer d'autres
+            if "429" in err_str and "quota" in err_str.lower():
+                continue
+            # Continuer si 404 (modèle inexistant)
+            if "404" in err_str:
+                continue
+            # Autre erreur = lever directement
+            raise
+
+    raise last_err or RuntimeError("Aucun modèle Gemini disponible")
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
