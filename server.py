@@ -681,7 +681,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
     if not key:
         raise ValueError("GEMINI_API_KEY non configuré")
     url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
+        "https://generativelanguage.googleapis.com/v1/models/"
         f"gemini-1.5-flash:generateContent?key={key}"
     )
     payload = json.dumps({
