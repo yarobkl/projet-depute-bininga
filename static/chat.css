@@ -5,40 +5,40 @@
   position: fixed;
   bottom: 24px;
   right: 24px;
-  width: 56px;
-  height: 56px;
-  border-radius: 14px;
-  border: 1px solid rgba(200,16,46,.4);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: none;
   cursor: pointer;
   z-index: 9999;
   padding: 0;
-  overflow: hidden;
-  background: #0e0e1a;
-  box-shadow: 0 4px 24px rgba(0,0,0,.5);
+  overflow: visible;
+  background: linear-gradient(145deg, #e8102e 0%, #a00020 100%);
+  box-shadow: 0 6px 24px rgba(200,16,46,.65), 0 2px 8px rgba(0,0,0,.4);
   transition: transform .2s, box-shadow .2s;
-  animation: da-pulse 3s ease-in-out infinite;
+  animation: da-pulse 2.5s ease-in-out infinite;
 }
 @keyframes da-pulse {
-  0%,100% { box-shadow: 0 4px 24px rgba(0,0,0,.5), 0 0 0 0 rgba(200,16,46,.3); }
-  50%      { box-shadow: 0 4px 24px rgba(0,0,0,.5), 0 0 0 7px rgba(200,16,46,.0); }
+  0%,100% { box-shadow: 0 6px 24px rgba(200,16,46,.65), 0 0 0 0 rgba(200,16,46,.45); }
+  50%      { box-shadow: 0 6px 24px rgba(200,16,46,.65), 0 0 0 12px rgba(200,16,46,.0); }
 }
-.chat-fab:hover { transform: scale(1.06); animation: none; box-shadow: 0 6px 32px rgba(200,16,46,.3); }
+.chat-fab:hover { transform: scale(1.1); animation: none; box-shadow: 0 10px 32px rgba(200,16,46,.8); }
 .chat-fab-ring {
   position: fixed;
-  bottom: 16px;
-  right: 8px;
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  border: 2px solid rgba(200,16,46,.5);
+  bottom: 17px;
+  right: 17px;
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid rgba(200,16,46,.6);
   pointer-events: none;
   z-index: 9997;
   animation: ring-pulse 2s ease-out infinite;
 }
 @keyframes ring-pulse {
-  0%   { transform: scale(1);   opacity: .7; }
-  70%  { transform: scale(1.35); opacity: 0; }
-  100% { transform: scale(1.35); opacity: 0; }
+  0%   { transform: scale(1);    opacity: .8; }
+  70%  { transform: scale(1.55); opacity: 0; }
+  100% { transform: scale(1.55); opacity: 0; }
 }
 .chat-fab-mono {
   width: 100%;
@@ -301,7 +301,8 @@
     min-height: 0;
   }
   .chat-input { font-size: 16px; /* Évite le zoom auto iOS */ }
-  .chat-fab { bottom: 20px; right: 16px; width: 52px; height: 52px; }
+  .chat-fab { bottom: 20px; right: 16px; width: 58px; height: 58px; }
+  .chat-fab-ring { bottom: 13px; right: 9px; width: 72px; height: 72px; }
 }
 
 /* ── Bulle d'accueil DA ──────────────────────────────────── */
@@ -319,14 +320,14 @@
   position: fixed;
   bottom: 92px;
   right: 14px;
-  background: linear-gradient(135deg, #c8102e 0%, #a00d24 100%);
-  color: #fff;
+  background: #fff;
+  color: #111;
   font-size: 13.5px;
   font-weight: 500;
   line-height: 1.55;
   padding: 14px 38px 14px 16px;
   border-radius: 16px 16px 4px 16px;
-  box-shadow: 0 8px 32px rgba(200,16,46,.5), 0 2px 8px rgba(0,0,0,.3);
+  box-shadow: 0 8px 32px rgba(0,0,0,.25), 0 0 0 1px rgba(200,16,46,.1);
   max-width: 240px;
   z-index: 9998;
   cursor: pointer;
@@ -334,7 +335,6 @@
   transform: translateY(12px) scale(.9);
   transition: opacity .4s ease, transform .4s cubic-bezier(.175,.885,.32,1.275);
   pointer-events: none;
-  border: 1px solid rgba(255,255,255,.15);
 }
 .chat-bubble.visible {
   opacity: 1;
@@ -351,13 +351,13 @@
 .chat-bubble .bubble-dots span {
   width: 5px; height: 5px;
   border-radius: 50%;
-  background: rgba(255,255,255,.7);
+  background: #c8102e;
   display: inline-block;
   animation: bubble-dot 1.2s ease-in-out infinite;
 }
 .chat-bubble .bubble-dots span:nth-child(2) { animation-delay: .2s; }
 .chat-bubble .bubble-dots span:nth-child(3) { animation-delay: .4s; }
-.chat-bubble strong { color: #fff; font-weight: 800; letter-spacing: .5px; }
+.chat-bubble strong { color: #c8102e; font-weight: 800; }
 .chat-bubble-arrow {
   position: absolute;
   bottom: -9px;
@@ -365,19 +365,19 @@
   width: 0; height: 0;
   border-left: 9px solid transparent;
   border-right: 0px solid transparent;
-  border-top: 9px solid #a00d24;
+  border-top: 9px solid #fff;
 }
 .chat-bubble-close {
   position: absolute;
   top: 7px; right: 9px;
-  background: rgba(255,255,255,.2);
+  background: rgba(0,0,0,.08);
   border: none;
   border-radius: 50%;
   width: 20px; height: 20px;
-  font-size: 11px; color: #fff;
+  font-size: 11px; color: #666;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   line-height: 1;
   transition: background .2s;
 }
-.chat-bubble-close:hover { background: rgba(255,255,255,.35); }
+.chat-bubble-close:hover { background: rgba(0,0,0,.15); }
