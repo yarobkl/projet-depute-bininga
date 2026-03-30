@@ -208,6 +208,7 @@
     }
 
     function onStart(e) {
+      e.preventDefault(); // bloque le scroll dès le toucher du bouton
       const pos = getPos(e);
       startX = pos.x; startY = pos.y;
       hasMoved = false; dragging = true;
@@ -215,7 +216,6 @@
       origLeft   = rect.left;
       origBottom = window.innerHeight - rect.bottom;
       fab.style.transition = "none";
-      // Pas d'effet au simple toucher — feu seulement si on glisse
     }
 
     function onMove(e) {
@@ -280,7 +280,7 @@
     // Anti double-fire : on utilise touchstart/touchend sur mobile, mousedown/mouseup sur desktop
     const isTouchDevice = ("ontouchstart" in window);
     if (isTouchDevice) {
-      fab.addEventListener("touchstart", onStart, { passive: true });
+      fab.addEventListener("touchstart", onStart, { passive: false });
       window.addEventListener("touchmove",  onMove, { passive: false });
       window.addEventListener("touchend",   onEnd);
     } else {

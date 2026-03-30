@@ -796,6 +796,9 @@
 <script src="static/chat.js" defer></script>
 
 <style>
+/* ── ANTI-SCROLL HORIZONTAL ────────────────────────── */
+html, body { overflow-x: hidden !important; max-width: 100%; }
+
 /* ── HERO ANIMATIONS WAOUH ─────────────────────────── */
 
 /* Eyebrow ticker — bandeau rouge doux */
@@ -807,8 +810,8 @@
   border-radius: 0;
   padding: 10px 0;
   margin-bottom: 28px;
-  margin-left: calc(-50vw + 50%);
-  width: 100vw;
+  margin-left: -6vw;
+  width: calc(100% + 12vw);
   backdrop-filter: blur(6px);
   border: 1px solid rgba(200, 40, 40, 0.35);
   box-shadow: 0 2px 18px rgba(160,10,10,.35);
