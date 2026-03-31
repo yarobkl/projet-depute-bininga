@@ -1728,7 +1728,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = "Ce site officiel a été développé par Rodrin Bakala."
 
                 # ── Présentation / biographie ─────────────────────────────────
-                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "parle-moi de", "biographie", "bio"]):
+                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "biographie", "bio"]):
                     intro = about.get("intro", "")
                     paras = about.get("paragraphs", [])
                     if intro:
@@ -1811,7 +1811,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"Pour contacter l'équipe de {nom}, utilisez le formulaire de contact disponible en bas de ce site. L'équipe vous répondra dans les meilleurs délais."
 
                 # ── Réclamation / sinistre ────────────────────────────────────
-                elif any(w in q for w in ["réclamation", "reclamation", "plainte", "sinistre", "problème", "signaler", "signalement"]):
+                elif any(w in q for w in ["réclamation", "reclamation", "plainte", "sinistre", "problème", "signaler", "signalement", "soumettre", "déposer"]):
                     reply = f"Vous pouvez soumettre une réclamation ou signaler un sinistre directement via le formulaire prévu à cet effet sur ce site. Votre dossier sera transmis à l'équipe de {nom} pour traitement."
 
                 # ── Newsletter / inscription ──────────────────────────────────
