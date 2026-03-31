@@ -129,6 +129,10 @@
       </div>
 
       <div class="sb-section role-admin" style="display:none">Système</div>
+      <div class="sb-item role-admin" style="display:none" onclick="showPanel('monitoring',this)">
+        <span class="icon">📡</span> Monitoring
+        <span class="sb-badge warn" id="badge-mon" style="display:none"></span>
+      </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
         <span class="icon">📜</span> Journaux d'audit
       </div>
@@ -937,6 +941,104 @@
               <!-- rempli par JS -->
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- ════════════════ MONITORING ════════════════ -->
+      <div class="panel" id="panel-monitoring">
+        <div class="panel-header">
+          <div class="panel-title">📡 Monitoring — Surveillance temps réel</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span id="mon-autorefresh-label" style="font-size:11px;color:rgba(255,255,255,.4)">Auto-refresh 30s</span>
+            <button class="sbtn sbtn-progress" onclick="loadMonitoring()">🔄 Actualiser</button>
+          </div>
+        </div>
+
+        <!-- Statut global -->
+        <div id="mon-status-bar" class="mon-status-bar mon-ok">
+          <span id="mon-status-icon">✅</span>
+          <span id="mon-status-text">Système opérationnel</span>
+          <span id="mon-status-ts" style="margin-left:auto;font-size:11px;opacity:.6"></span>
+        </div>
+
+        <!-- KPI cards -->
+        <div class="mon-kpi-grid">
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">Requêtes 24h</div>
+            <div class="mon-kpi-val" id="mon-req-24h">—</div>
+          </div>
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">Erreurs 24h</div>
+            <div class="mon-kpi-val" id="mon-err-24h" style="color:#e74c3c">—</div>
+          </div>
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">Latence moy (1h)</div>
+            <div class="mon-kpi-val" id="mon-latency">—</div>
+          </div>
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">Taux erreurs (5min)</div>
+            <div class="mon-kpi-val" id="mon-errrate">—</div>
+          </div>
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">Sessions actives</div>
+            <div class="mon-kpi-val" id="mon-sessions">—</div>
+          </div>
+          <div class="mon-kpi-card">
+            <div class="mon-kpi-label">IPs bloquées</div>
+            <div class="mon-kpi-val" id="mon-blocked">—</div>
+          </div>
+        </div>
+
+        <!-- Système -->
+        <div class="mon-section-title">Métriques système</div>
+        <div class="mon-sys-grid">
+          <div class="mon-sys-item">
+            <div class="mon-sys-label">CPU</div>
+            <div class="mon-bar-wrap"><div class="mon-bar" id="mon-bar-cpu"></div></div>
+            <div class="mon-sys-val" id="mon-val-cpu">—</div>
+          </div>
+          <div class="mon-sys-item">
+            <div class="mon-sys-label">RAM</div>
+            <div class="mon-bar-wrap"><div class="mon-bar" id="mon-bar-mem"></div></div>
+            <div class="mon-sys-val" id="mon-val-mem">—</div>
+          </div>
+          <div class="mon-sys-item">
+            <div class="mon-sys-label">Disque</div>
+            <div class="mon-bar-wrap"><div class="mon-bar" id="mon-bar-disk"></div></div>
+            <div class="mon-sys-val" id="mon-val-disk">—</div>
+          </div>
+        </div>
+
+        <!-- Alertes actives -->
+        <div class="mon-section-title">
+          Alertes actives
+          <label style="font-size:11px;font-weight:400;cursor:pointer;margin-left:12px">
+            <input type="checkbox" id="mon-show-resolved" onchange="loadMonAlerts()"> Inclure résolues
+          </label>
+        </div>
+        <div id="mon-alerts-list" class="msg-empty">Chargement…</div>
+
+        <!-- Top endpoints -->
+        <div class="mon-section-title">Top endpoints (24h)</div>
+        <div id="mon-endpoints-list" class="msg-empty">Chargement…</div>
+
+        <!-- Requêtes récentes -->
+        <div class="mon-section-title">
+          Requêtes récentes
+          <input type="text" id="mon-req-filter" placeholder="Filtrer par path…"
+            style="margin-left:12px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:#fff;padding:3px 8px;font-size:11px;width:160px"
+            oninput="loadMonRequests()">
+        </div>
+        <div id="mon-requests-list" class="msg-empty">Chargement…</div>
+
+        <!-- Exceptions -->
+        <div class="mon-section-title">Dernières exceptions</div>
+        <div id="mon-errors-list" class="msg-empty">Chargement…</div>
+
+        <!-- Rapport -->
+        <div class="mon-section-title">Rapport automatique (24h)</div>
+        <div id="mon-report-box" class="mon-report-box">
+          <button class="sbtn sbtn-progress" onclick="loadMonReport()">📋 Générer le rapport</button>
         </div>
       </div>
 

@@ -1691,6 +1691,7 @@ const PANEL_TITLES = {
   crm:"👥 CRM — Base de contacts",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
+  monitoring:"📡 Monitoring — Surveillance temps réel",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
   veille:"🤖 YARO IA — Actualités Bininga",
   editorial:"✍️ Éditorial IA — Contenus"
@@ -1711,6 +1712,7 @@ function showPanel(name, el) {
   if (name === "actus")        renderActus();
   if (name === "parcours")     renderParcours();
   if (name === "programme")    renderProgramme();
+  if (name === "monitoring")   loadMonitoring();
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
   if (name === "security")     loadSecurity();
@@ -2940,3 +2942,201 @@ async function loadEdNewsPicker() {
       </div>`).join("");
   } catch { box.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:16px 0">Impossible de charger les actualités.</div>'; }
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MONITORING DASHBOARD
+// ══════════════════════════════════════════════════════════════════════════
+let _monRefreshTimer = null;
+
+async function loadMonitoring() {
+  await Promise.all([loadMonSummary(), loadMonAlerts(), loadMonEndpoints(), loadMonRequests(), loadMonExceptions()]);
+  // Auto-refresh toutes les 30s
+  clearInterval(_monRefreshTimer);
+  _monRefreshTimer = setInterval(loadMonitoring, 30000);
+}
+
+async function loadMonSummary() {
+  try {
+    const r = await fetch("/api/monitoring/summary", { headers: { "X-Admin-Token": TOKEN } });
+    if (!r.ok) return;
+    const d = await r.json();
+    if (!d.ok) return;
+
+    // Statut global
+    const bar  = document.getElementById("mon-status-bar");
+    const icon = document.getElementById("mon-status-icon");
+    const txt  = document.getElementById("mon-status-text");
+    const ts   = document.getElementById("mon-status-ts");
+    bar.className = "mon-status-bar mon-" + (d.global_status || "unknown").toLowerCase();
+    const statusLabel = { OK: "Système opérationnel", WARNING: "Attention — anomalies détectées", CRITICAL: "CRITIQUE — intervention requise", UNKNOWN: "Statut inconnu" };
+    icon.textContent = { OK: "✅", WARNING: "⚠️", CRITICAL: "🔴", UNKNOWN: "❓" }[d.global_status] || "❓";
+    txt.textContent  = statusLabel[d.global_status] || d.global_status;
+    if (ts) ts.textContent = d.ts || "";
+
+    // Mise à jour badge sidebar
+    const badge = document.getElementById("badge-mon");
+    const crit  = (d.alerts || {}).CRITICAL || 0;
+    const warn  = (d.alerts || {}).WARNING  || 0;
+    if (badge) { badge.style.display = (crit + warn > 0) ? "" : "none"; badge.textContent = crit + warn; }
+
+    // KPIs
+    _setMon("mon-req-24h",  d.requests_24h  ?? "—");
+    _setMon("mon-err-24h",  d.errors_24h    ?? "—");
+    _setMon("mon-latency",  d.avg_latency_ms != null ? d.avg_latency_ms + "ms" : "—");
+    _setMon("mon-errrate",  d.error_rate_5m  != null ? d.error_rate_5m + "%" : "—");
+    _setMon("mon-sessions", d.active_sessions ?? "—");
+    _setMon("mon-blocked",  d.blocked_ips    ?? "—");
+
+    // Barres système
+    const sys = d.system || {};
+    _setBar("cpu",  sys.cpu_percent);
+    _setBar("mem",  sys.memory_percent);
+    _setBar("disk", sys.disk_percent);
+
+  } catch {}
+}
+
+function _setMon(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function _setBar(name, pct) {
+  const bar = document.getElementById("mon-bar-" + name);
+  const val = document.getElementById("mon-val-" + name);
+  if (!bar) return;
+  const p = parseFloat(pct) || 0;
+  bar.style.width = Math.min(p, 100) + "%";
+  bar.className = "mon-bar " + (p >= 90 ? "mon-bar-crit" : p >= 75 ? "mon-bar-warn" : "mon-bar-ok");
+  if (val) val.textContent = p + "%";
+}
+
+async function loadMonAlerts() {
+  const box = document.getElementById("mon-alerts-list");
+  if (!box) return;
+  try {
+    const resolved = document.getElementById("mon-show-resolved")?.checked ? "1" : "0";
+    const r = await fetch(`/api/monitoring/alerts?resolved=${resolved}`, { headers: { "X-Admin-Token": TOKEN } });
+    const d = await r.json();
+    if (!d.ok || !d.alerts.length) { box.innerHTML = '<p class="msg-empty">Aucune alerte active.</p>'; return; }
+    box.innerHTML = d.alerts.map(a => {
+      const cls = a.level === "CRITICAL" ? "mon-alert-crit" : a.level === "WARNING" ? "mon-alert-warn" : "mon-alert-info";
+      const emoji = a.level === "CRITICAL" ? "🔴" : a.level === "WARNING" ? "⚠️" : "ℹ️";
+      return `<div class="mon-alert-item ${cls}">
+        <div>${emoji}</div>
+        <div class="mon-alert-msg">
+          <div class="mon-alert-rule">${esc(a.level)} — ${esc(a.rule)}</div>
+          <div>${esc(a.message)}</div>
+          <div class="mon-alert-ts">${esc(a.ts)}${a.resolved ? " · Résolu à " + esc(a.resolved_at || "") : ""}</div>
+        </div>
+        ${!a.resolved ? `<button class="mon-alert-resolve" onclick="resolveAlert(${a.id})">Résoudre</button>` : ""}
+      </div>`;
+    }).join("");
+  } catch { box.innerHTML = '<p style="color:#e74c3c;font-size:12px">Erreur chargement alertes.</p>'; }
+}
+
+async function resolveAlert(id) {
+  try {
+    await fetch("/api/monitoring/resolve-alert", {
+      method: "POST",
+      headers: { "X-Admin-Token": TOKEN, "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    await loadMonAlerts();
+    await loadMonSummary();
+  } catch {}
+}
+
+async function loadMonEndpoints() {
+  const box = document.getElementById("mon-endpoints-list");
+  if (!box) return;
+  try {
+    const r = await fetch("/api/monitoring/endpoints?hours=24", { headers: { "X-Admin-Token": TOKEN } });
+    const d = await r.json();
+    if (!d.ok || !d.endpoints.length) { box.innerHTML = '<p class="msg-empty">Pas encore de données.</p>'; return; }
+    box.innerHTML = `<table class="mon-ep-table">
+      <thead><tr><th>Endpoint</th><th>Requêtes</th><th>Latence moy</th><th>Erreurs</th></tr></thead>
+      <tbody>${d.endpoints.map(ep => `
+        <tr>
+          <td class="mon-ep-path">${esc(ep.path)}</td>
+          <td>${ep.count}</td>
+          <td style="color:${ep.avg_ms > 2000 ? "#e74c3c" : ep.avg_ms > 1000 ? "#f39c12" : "#2ecc71"}">${ep.avg_ms}ms</td>
+          <td style="color:${ep.errors > 0 ? "#e74c3c" : "rgba(255,255,255,.5)"}">${ep.errors}</td>
+        </tr>`).join("")}
+      </tbody></table>`;
+  } catch {}
+}
+
+async function loadMonRequests() {
+  const box    = document.getElementById("mon-requests-list");
+  const filter = document.getElementById("mon-req-filter")?.value || "";
+  if (!box) return;
+  try {
+    const url = `/api/monitoring/requests?limit=50${filter ? "&path=" + encodeURIComponent(filter) : ""}`;
+    const r = await fetch(url, { headers: { "X-Admin-Token": TOKEN } });
+    const d = await r.json();
+    if (!d.ok || !d.requests.length) { box.innerHTML = '<p class="msg-empty">Aucune requête enregistrée.</p>'; return; }
+    box.innerHTML = d.requests.map(req => {
+      const mBadge = req.method === "POST" ? "mon-badge-post" : "mon-badge-get";
+      const sBadge = req.status_code >= 500 ? "mon-badge-5xx" : "mon-badge-ok";
+      const dur    = req.duration_ms != null ? Math.round(req.duration_ms) + "ms" : "—";
+      return `<div class="mon-req-item">
+        <span class="${mBadge}">${esc(req.method || "GET")}</span>
+        <span class="${sBadge}">${req.status_code || "—"}</span>
+        <span class="mon-req-path">${esc(req.path)}</span>
+        <span class="mon-req-dur">${dur}</span>
+        <span style="font-size:10px;color:rgba(255,255,255,.25);min-width:130px;text-align:right">${esc(req.ts || "")}</span>
+      </div>`;
+    }).join("");
+  } catch {}
+}
+
+async function loadMonExceptions() {
+  const box = document.getElementById("mon-errors-list");
+  if (!box) return;
+  try {
+    const r = await fetch("/api/monitoring/errors", { headers: { "X-Admin-Token": TOKEN } });
+    const d = await r.json();
+    if (!d.ok || !d.errors.length) { box.innerHTML = '<p class="msg-empty">Aucune exception enregistrée.</p>'; return; }
+    box.innerHTML = d.errors.map(e => `
+      <div class="mon-err-item">
+        <div class="mon-err-type">${esc(e.error_type || "Exception")}</div>
+        <div class="mon-err-msg">${esc(e.message || "")}</div>
+        <div class="mon-err-meta">${esc(e.path || "")} · ${esc(e.ts || "")} · IP ${esc(e.ip || "")}</div>
+      </div>`).join("");
+  } catch {}
+}
+
+async function loadMonReport() {
+  const box = document.getElementById("mon-report-box");
+  if (!box) return;
+  box.innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:12px">Génération en cours…</span>';
+  try {
+    const r = await fetch("/api/monitoring/report", { headers: { "X-Admin-Token": TOKEN } });
+    const d = await r.json();
+    if (!d.ok) { box.innerHTML = '<p style="color:#e74c3c">Erreur génération rapport.</p>'; return; }
+    const rp = d.report;
+    const statusColor = rp.status === "CRITICAL" ? "#e74c3c" : rp.status === "WARNING" ? "#f39c12" : "#2ecc71";
+    const problems = rp.problems?.length
+      ? `<div style="margin-bottom:10px"><b style="font-size:12px;color:rgba(255,255,255,.5)">PROBLÈMES DÉTECTÉS</b>
+           <ul class="mon-problem-list">${rp.problems.map(p => `<li>${esc(p)}</li>`).join("")}</ul></div>` : "";
+    const recs = rp.recommendations?.length
+      ? `<div><b style="font-size:12px;color:rgba(255,255,255,.5)">RECOMMANDATIONS</b>
+           <ul class="mon-rec-list">${rp.recommendations.map(r => `<li>${esc(r)}</li>`).join("")}</ul></div>` : "";
+    box.innerHTML = `
+      <div class="mon-report-status" style="color:${statusColor}">
+        ${rp.status === "CRITICAL" ? "🔴" : rp.status === "WARNING" ? "⚠️" : "✅"} ${esc(rp.status || "OK")} — ${esc(rp.period || "")}
+      </div>
+      <div class="mon-report-row">
+        ${[["Requêtes",rp.requests_total],["Erreurs HTTP",rp.errors_total],["Exceptions",rp.exceptions],["Alertes",rp.active_alerts],["Latence moy",rp.avg_latency_ms+"ms"],["Taux err.",rp.error_rate+"%"]].map(([l,v])=>`
+          <div class="mon-report-stat"><div class="mon-report-stat-n">${v??'—'}</div><div class="mon-report-stat-l">${l}</div></div>`).join("")}
+      </div>
+      ${problems}${recs}
+      ${rp.slow_endpoints?.length ? `<div style="margin-top:10px"><b style="font-size:12px;color:rgba(255,255,255,.5)">ENDPOINTS LENTS</b>
+        ${rp.slow_endpoints.map(e=>`<div style="font-size:12px;padding:4px 0;font-family:monospace;color:rgba(255,255,255,.7)">${esc(e.path)} — <span style="color:#f39c12">${e.avg_ms}ms</span></div>`).join("")}</div>` : ""}
+      <div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:14px">Généré le ${esc(rp.generated_at||"")}</div>
+      <button class="sbtn sbtn-progress" style="margin-top:12px" onclick="loadMonReport()">🔄 Régénérer</button>`;
+  } catch { box.innerHTML = '<p style="color:#e74c3c">Erreur réseau.</p>'; }
+}
+
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }

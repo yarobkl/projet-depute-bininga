@@ -19,6 +19,14 @@ from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 from datetime import datetime
 
+# ── Module de monitoring (facultatif, stdlib uniquement) ───────────────────────
+try:
+    import monitoring as _mon
+    _MON = True
+except Exception:
+    _mon = None  # type: ignore
+    _MON = False
+
 # ── Version build (cache-busting) ──────────────────────────
 def _get_build_version():
     try:
@@ -962,6 +970,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # Normaliser le chemin : décoder l'URL, éliminer ../
         path = posixpath.normpath(unquote(urlparse(self.path).path))
         ip   = self.client_address[0]
+        self._mon_t0   = time.time()   # monitoring : chronomètre
+        self._mon_path = path          # monitoring : chemin
 
         if self._guard():
             return
@@ -1103,6 +1113,54 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "suspects": suspects,
                 "attacks": load_attacks(100),
             })
+            return
+
+        # ── /api/monitoring/* — dashboard de surveillance ──────────────────────
+        if path.startswith("/api/monitoring/"):
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            if not _MON:
+                self._json({"ok": False, "message": "Module monitoring non disponible"}, 503)
+                return
+            qs_mon = parse_qs(urlparse(self.path).query)
+
+            if path == "/api/monitoring/summary":
+                data = _mon.get_summary(len(ACTIVE_SESSIONS), len(BLOCKED_IPS))
+                self._json({"ok": True, **data})
+                return
+
+            if path == "/api/monitoring/requests":
+                limit_r = min(int(qs_mon.get("limit", [200])[0]), 500)
+                pf      = qs_mon.get("path", [""])[0]
+                self._json({"ok": True, "requests": _mon.get_requests(limit_r, pf)})
+                return
+
+            if path == "/api/monitoring/errors":
+                self._json({"ok": True, "errors": _mon.get_errors(100)})
+                return
+
+            if path == "/api/monitoring/alerts":
+                resolved = qs_mon.get("resolved", ["0"])[0] == "1"
+                self._json({"ok": True, "alerts": _mon.get_alerts(resolved)})
+                return
+
+            if path == "/api/monitoring/endpoints":
+                hours_e = int(qs_mon.get("hours", [24])[0])
+                self._json({"ok": True, "endpoints": _mon.get_top_endpoints(hours_e)})
+                return
+
+            if path == "/api/monitoring/latency":
+                hours_l = int(qs_mon.get("hours", [6])[0])
+                self._json({"ok": True, "chart": _mon.get_latency_chart(hours_l)})
+                return
+
+            if path == "/api/monitoring/report":
+                self._json({"ok": True, "report": _mon.generate_report()})
+                return
+
+            self._json({"ok": False, "message": "Endpoint monitoring inconnu"}, 404)
             return
 
         if path == "/api/2fa/status":
@@ -1368,6 +1426,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         path   = posixpath.normpath(unquote(urlparse(self.path).path))
         ip     = self.client_address[0]
+        self._mon_t0   = time.time()   # monitoring : chronomètre
+        self._mon_path = path          # monitoring : chemin
 
         # ── /api/test/reset doit bypasser le guard (mode test uniquement) ──
         if BININGA_TEST and path == "/api/test/reset":
@@ -1656,6 +1716,23 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, "reply": reply})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/monitoring/resolve-alert ─────────────────────────────────────
+        if path == "/api/monitoring/resolve-alert":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            if _MON:
+                try:
+                    payload = json.loads(body.decode("utf-8"))
+                    _mon.resolve_alert(int(payload.get("id", 0)))
+                    audit_log("MONITORING", ip, f"Alerte résolue id={payload.get('id')}")
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 400)
+                    return
+            self._json({"ok": True})
             return
 
         # ── /api/contact (public — formulaires du site) ──
@@ -2790,6 +2867,14 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
         self._security_headers()
         self.end_headers()
         self.wfile.write(response)
+        if _MON and hasattr(self, "_mon_t0"):
+            _mon.record_request(
+                getattr(self, "command", "GET"),
+                getattr(self, "_mon_path", "-"),
+                status,
+                (time.time() - self._mon_t0) * 1000,
+                self.client_address[0],
+            )
 
     def _error(self, code, message):
         safe_msg = _html.escape(str(message))
@@ -2800,6 +2885,14 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
         self._security_headers()
         self.end_headers()
         self.wfile.write(response)
+        if _MON and hasattr(self, "_mon_t0"):
+            _mon.record_request(
+                getattr(self, "command", "GET"),
+                getattr(self, "_mon_path", "-"),
+                code,
+                (time.time() - self._mon_t0) * 1000,
+                self.client_address[0],
+            )
 
     def version_string(self):
         return "BININGA/1.0"  # Masquer la version Python
@@ -2923,6 +3016,13 @@ if __name__ == "__main__":
     load_attack_scores()
     start_monitor()
     _monitor_watchdog()
+    if _MON:
+        _mon.init_db()
+        _mon.start_scheduler(
+            get_sessions_fn=lambda: len(ACTIVE_SESSIONS),
+            get_blocked_fn=lambda: len(BLOCKED_IPS),
+        )
+        print("[BININGA] 📊 Monitoring démarré (monitoring.db)")
 
     # Génère un certificat auto-signé si aucun n'existe du tout
     if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")
