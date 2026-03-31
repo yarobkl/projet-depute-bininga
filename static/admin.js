@@ -841,7 +841,7 @@ function saveData(silent = false) {
 //  DASHBOARD
 // ══════════════════════════════════════════════════════════════════════════
 function refreshDashboard() {
-  // Récupérer les stats réelles depuis le serveur, fallback localStorage
+  // Stats contacts depuis le serveur
   apiFetch("/api/stats", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
     .then(s => {
@@ -855,16 +855,29 @@ function refreshDashboard() {
       setBadge("badge-aud",  s.aud_wait);
       setBadge("badge-recl", s.recl_wait);
       setBadge("badge-ct",   s.ct_unread);
+      // Compteurs de visites (depuis le serveur, pas localStorage)
+      if (s.visitors) {
+        setText("kpi-visit", s.visitors.total ?? "—");
+        setText("kpi-prog",  s.visitors.prog_views ?? "—");
+      }
     })
-    .catch(() => _refreshDashboardLocal());
+    .catch(() => {});
+  // Stats visites publiques (endpoint sans token)
+  fetch("/api/visit-stats")
+    .then(r => r.json())
+    .then(v => {
+      if (v.ok) {
+        setText("kpi-visit", v.total    ?? "—");
+        setText("kpi-prog",  v.prog_views ?? "—");
+      }
+    })
+    .catch(() => {});
   _refreshDashboardLocal();
 }
 
 function _refreshDashboardLocal() {
   const aud  = getAll("bininga_audiences");
   const ct   = getAll("bininga_contacts");
-  const prog = parseInt(localStorage.getItem("bininga_prog_views") || "0");
-  const vis  = parseInt(localStorage.getItem("bininga_visitors")   || "0");
 
   const audiences    = aud.filter(m => m.objet !== "Réclamation");
   const reclamations = aud.filter(m => m.objet === "Réclamation");
@@ -873,9 +886,6 @@ function _refreshDashboardLocal() {
   const done     = audiences.filter(m => m._status === "traite").length;
   const reclWait = reclamations.filter(m => !m._status || m._status !== "traite").length;
   const ctUnread = ct.filter(m => !m._status || m._status === "non_lu").length;
-
-  setText("kpi-prog",  prog);
-  setText("kpi-visit", vis);
 
   setBadge("badge-aud",  wait);
   setBadge("badge-recl", reclWait);

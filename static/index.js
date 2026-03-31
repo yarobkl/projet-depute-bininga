@@ -682,10 +682,13 @@ window.addEventListener("load", () => {
   setTimeout(() => { document.getElementById("loader").classList.add("done"); }, 1400);
 });
 
-// ── TRACKING VISITEURS ────────────────────────────────────
+// ── TRACKING VISITEURS (côté serveur) ────────────────────
 (function(){
-  const count = parseInt(localStorage.getItem("bininga_visitors")||"0") + 1;
-  localStorage.setItem("bininga_visitors", count);
+  fetch("/api/track-visit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ page: "/", kind: "visit" })
+  }).catch(()=>{});
 })();
 
 // ── TRACKING LECTURES DU PROGRAMME ───────────────────────
@@ -697,8 +700,11 @@ window.addEventListener("load", () => {
     entries.forEach(e => {
       if(e.isIntersecting && !tracked){
         tracked = true;
-        const n = parseInt(localStorage.getItem("bininga_prog_views")||"0") + 1;
-        localStorage.setItem("bininga_prog_views", n);
+        fetch("/api/track-visit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "prog" })
+        }).catch(()=>{});
         obs.disconnect();
       }
     });
