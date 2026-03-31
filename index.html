@@ -162,22 +162,6 @@
     <div class="hero-scroll-line"></div>
     <span>Découvrir</span>
   </a>
-  <div class="hero-stat-strip">
-    <div class="stat-ticker-track" id="stat-ticker-track">
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s0" data-c="2">0</div>
-        <div class="hstat-txt" id="dyn-s0-lbl">Ministères<br>dirigés</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s1" data-c="2">0</div>
-        <div class="hstat-txt" id="dyn-s1-lbl">Mandats<br>de Député</div>
-      </div>
-      <div class="hstat">
-        <div class="hstat-num" id="dyn-s2" style="font-size:22px;line-height:1.2">1re</div>
-        <div class="hstat-txt" id="dyn-s2-lbl">Circonscription<br>d'Ewo</div>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- ABOUT -->
@@ -368,22 +352,31 @@
     </div>
 
     <!-- Vidéo ONU — EPU Congo 2024 -->
-    <div class="video-un-wrap" style="margin-top:32px">
-      <div class="video-un-label" style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <span style="background:#1565C0;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px">🌍 Nations Unies · EPU 2024</span>
-        <span style="color:rgba(255,255,255,.6);font-size:13px">BININGA devant le Conseil des droits de l'homme — Genève, 30 jan. 2024</span>
+    <a href="https://media.un.org/en/asset/k14/k14xa31o6d" target="_blank" rel="noopener"
+       style="display:block;margin-top:32px;text-decoration:none;border-radius:14px;overflow:hidden;position:relative;background:linear-gradient(135deg,#0a1929,#1565C0);aspect-ratio:16/9;cursor:pointer;border:2px solid rgba(255,255,255,.12)"
+       id="un-video-card">
+      <!-- Fond décoratif -->
+      <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(21,101,192,.6) 0%,transparent 70%)"></div>
+      <!-- Logo ONU -->
+      <div style="position:absolute;top:18px;left:18px;display:flex;align-items:center;gap:8px">
+        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)">🌍 Nations Unies · UN WebTV</span>
       </div>
-      <iframe
-        id="un-video-frame"
-        src="https://media.un.org/en/asset/k14/k14xa31o6d"
-        width="100%"
-        style="aspect-ratio:16/9;border:none;border-radius:12px;display:block;background:#000"
-        allow="autoplay; fullscreen; encrypted-media"
-        allowfullscreen
-        loading="lazy"
-        title="BININGA — Examen Periodique Universel Congo, Conseil des droits de l'homme ONU, 30 janvier 2024">
-      </iframe>
-    </div>
+      <!-- Bouton play central -->
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+        <div style="width:70px;height:70px;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(10px);border:2px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <div style="text-align:center;padding:0 24px">
+          <div style="color:#fff;font-weight:700;font-size:16px;margin-bottom:6px">BININGA devant le Conseil des droits de l'homme — ONU</div>
+          <div style="color:rgba(255,255,255,.7);font-size:13px">Examen Périodique Universel · Genève, 30 janvier 2024</div>
+        </div>
+      </div>
+      <!-- Badge bas -->
+      <div style="position:absolute;bottom:14px;right:14px;color:rgba(255,255,255,.5);font-size:11px;display:flex;align-items:center;gap:5px">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+        Ouvrir sur UN WebTV
+      </div>
+    </a>
   </div>
 </section>
 
@@ -782,26 +775,31 @@
 <!-- ── CHATBOT WIDGET ────────────────────────────────────── -->
 <link rel="stylesheet" href="static/chat.css">
 
-<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant">
-  <img src="images/yaro.jpg.jpg" alt="Yaro" class="chat-fab-img" id="chatFabImg">
+<div class="chat-bubble" id="chatBubble" onclick="document.getElementById('chatBubble').classList.remove('visible');toggleChat()">
+  👋 Salut ! Je suis <strong>DA</strong>, l'assistant virtuel du Ministre BININGA. Posez-moi vos questions !<span class="bubble-dots"><span></span><span></span><span></span></span>
+  <button class="chat-bubble-close" onclick="event.stopPropagation();document.getElementById('chatBubble').classList.remove('visible')" aria-label="Fermer">✕</button>
+  <div class="chat-bubble-arrow"></div>
+</div>
+<div class="chat-fab-ring" id="chatFabRing"></div>
+<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant DA">
+  <span class="chat-fab-mono" id="chatFabMono">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span style="font-size:9px;letter-spacing:1.5px;color:#fff;font-weight:800;margin-top:1px">DA</span>
+  </span>
   <span class="chat-fab-close" id="chatFabClose">✕</span>
   <span class="chat-fab-badge" id="chatFabBadge" style="display:none">1</span>
 </button>
 
 <div class="chat-window" id="chatWindow" aria-hidden="true">
   <div class="chat-header">
-    <img src="images/yaro.jpg.jpg" alt="Yaro" class="chat-header-img">
+    <div class="chat-header-mono">DA</div>
     <div class="chat-header-info">
-      <div class="chat-header-name">Yaro IA</div>
+      <div class="chat-header-name">DA — Assistant virtuel</div>
       <div class="chat-header-status"><span class="chat-dot"></span> En ligne</div>
     </div>
     <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
   </div>
-  <div class="chat-messages" id="chatMessages">
-    <div class="chat-msg chat-msg-bot">
-      <div class="chat-bubble">Bonjour ! Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour vous aider et répondre à toutes vos questions. Comment puis-je vous aider ?</div>
-    </div>
-  </div>
+  <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input-area">
     <input type="text" class="chat-input" id="chatInput" placeholder="Votre question…" maxlength="500"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">

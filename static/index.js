@@ -367,7 +367,8 @@ function loadContent() {
       const cardsGrid = document.getElementById("actu-cards-grid");
       if (cardsGrid && Array.isArray(ac.cards) && ac.cards.length) {
         cardsGrid.innerHTML = ac.cards.map(c => `
-          <div class="actu-card rev"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
+          <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
+            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
             <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
             <div class="actu-card-ic">${escHtml(c.icon||'')}</div>
             <div class="actu-card-dt">
@@ -810,23 +811,6 @@ async function subNewsletter(e, f) {
   window.addEventListener("click",      onInteract, { once: true });
 })();
 
-// ── AUTOPLAY VIDÉO ONU (iframe) ─────────────────────────────
-(function(){
-  const frame = document.getElementById("un-video-frame");
-  if(!frame || !("IntersectionObserver" in window)) return;
-  let loaded = false;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if(e.isIntersecting && !loaded){
-        loaded = true;
-        // Ajoute autoplay via le paramètre URL
-        const base = frame.src.split("?")[0];
-        frame.src = base + "?autoplay=1";
-      }
-    });
-  }, { threshold: 0.4 });
-  obs.observe(frame);
-})();
 
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {

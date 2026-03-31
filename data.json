@@ -151,7 +151,7 @@
         ]
       },
       {
-        "image": "",
+        "image": "images/IMG_9975.jpeg",
         "imageBg": "linear-gradient(135deg,#0a1f0a,#1a3a1a)",
         "placeholderEmoji": "🏘️",
         "placeholderTitle": "13 villages\nsur l'axe Lebankaya",
@@ -222,7 +222,7 @@
         ]
       },
       {
-        "image": "images/bininga.jpg",
+        "image": "images/IMG_9973.jpeg",
         "imageBg": "",
         "placeholderEmoji": "⚖️",
         "placeholderTitle": "EPU 2024\nGeneve — ONU",
@@ -250,7 +250,7 @@
         "videoUrl": "https://media.un.org/en/asset/k14/k14xa31o6d"
       },
       {
-        "image": "images/bininga.jpg",
+        "image": "images/IMG_9978.jpeg",
         "imageBg": "",
         "placeholderEmoji": "⚖️",
         "placeholderTitle": "Justice restaurative\nCongo",
@@ -275,7 +275,7 @@
         "sourceUrl": "https://www.adiac-congo.com/content/droits-de-lhomme-validation-de-lavant-projet-de-loi-instituant-la-justice-restaurative"
       },
       {
-        "image": "images/bininga.jpg",
+        "image": "images/IMG_9976.jpeg",
         "imageBg": "linear-gradient(135deg,#1b5e20,#2e7d32)",
         "placeholderEmoji": "🌱",
         "placeholderTitle": "Jeunesse autochtone\nPriorite nationale",
@@ -311,7 +311,8 @@
         "month": "Mar",
         "year": "2018",
         "title": "Adoption de la loi instituant la HALC, 107 voix pour",
-        "desc": "Votée à 107 voix pour, 6 contre, la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie."
+        "desc": "Votée à 107 voix pour, 6 contre, la Haute Autorité de Lutte contre la Corruption, portée par BININGA, reste l'une des réformes institutionnelles les plus décisives de la décennie.",
+        "image": "images/IMG_9972.jpeg"
       },
       {
         "catColor": "#1a237e",
@@ -324,7 +325,8 @@
         "title": "Magistrature : 23 sanctions prononcées sous l'autorité du Ministre BININGA",
         "desc": "Le Conseil supérieur de la magistrature a sanctionné 23 magistrats indélicats lors de sa session ordinaire du 27 mars 2023.",
         "source": "La Semaine Africaine",
-        "sourceUrl": "https://lasemaineafricaine.info/magistrature-des-sanctions-et-nominations-qui-ne-font-pas-lunanimite/"
+        "sourceUrl": "https://lasemaineafricaine.info/magistrature-des-sanctions-et-nominations-qui-ne-font-pas-lunanimite/",
+        "image": "images/IMG_9963.webp"
       },
       {
         "catColor": "#1b5e20",
@@ -338,7 +340,8 @@
         "desc": "Lors de la 45e session de l'EPU à Genève, le Ministre Bininga a présenté les progrès du Congo en matière de promotion et protection des peuples autochtones devant le Conseil des droits de l'homme de l'ONU.",
         "source": "ACI — Agence Congolaise d'Information",
         "sourceUrl": "https://www.aci.cg/congo-societe-le-gouvernement-rappelle-les-avancees-dans-lamelioration-de-la-vie-des-autochtones/",
-        "auteur": "ACI"
+        "auteur": "ACI",
+        "image": "images/IMG_9975.jpeg"
       },
       {
         "catColor": "#e65100",
@@ -349,7 +352,8 @@
         "month": "Août",
         "year": "2024",
         "title": "Boulevard énergétique : Ewo bientôt connecté au réseau électrique national",
-        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés, Ewo sera connectée au réseau national dans quelques mois."
+        "desc": "Le Premier ministre Collinet Makosso visite les travaux de la ligne 110 KV Boundji-Ewo. 116 pylônes sur 180 déjà installés, Ewo sera connectée au réseau national dans quelques mois.",
+        "image": "images/ewo.jpg"
       },
       {
         "catColor": "",
@@ -360,7 +364,8 @@
         "month": "Jul",
         "year": "2025",
         "title": "Mission diplomatique à l'AIEA, Congo représenté",
-        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise."
+        "desc": "Aimé BININGA représente la République du Congo dans des instances internationales, portant la voix du pays sur la scène mondiale avec autorité et expertise.",
+        "image": "images/IMG_9973.jpeg"
       },
       {
         "catColor": "",
@@ -371,7 +376,8 @@
         "month": "Sep",
         "year": "2025",
         "title": "Forum pour l'emploi des jeunes de la Cuvette-Ouest",
-        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain."
+        "desc": "300 jeunes mobilisés pour construire ensemble les solutions à l'emploi dans la région. Une initiative portée directement par BININGA depuis son retour sur le terrain.",
+        "image": "images/IMG_9965.jpeg"
       },
       {
         "catColor": "",
@@ -382,7 +388,8 @@
         "month": "Oct",
         "year": "2025",
         "title": "50 bourses d'études remises à des jeunes d'Ewo",
-        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études."
+        "desc": "Un engagement concret envers la jeunesse de la Cuvette-Ouest. Cinquante étudiants méritants d'Ewo reçoivent le soutien direct du Député pour poursuivre leurs études.",
+        "image": "images/IMG_9966.jpeg"
       },
       {
         "catColor": "",
@@ -393,7 +400,8 @@
         "month": "Nov",
         "year": "2025",
         "title": "Accord historique avec les syndicats congolais",
-        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur, une victoire pour les travailleurs congolais."
+        "desc": "Fort de son expérience au Ministère de la Fonction publique, il facilite un accord de dialogue social majeur, une victoire pour les travailleurs congolais.",
+        "image": "images/IMG_9977.jpeg"
       },
       {
         "catColor": "#1565C0",
@@ -404,7 +412,8 @@
         "month": "Déc",
         "year": "2025",
         "title": "L'Ambassadeur du Rwanda en visite chez le Ministre BININGA",
-        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville."
+        "desc": "Visite de courtoisie de l'Ambassadeur @parfaitbus au Ministre de la Justice. Discussions sur un partenariat judiciaire et le renforcement de la coopération Rwanda–Congo-Brazzaville.",
+        "image": "images/rwanda.JPG"
       },
       {
         "catColor": "",
@@ -415,7 +424,8 @@
         "month": "Déc",
         "year": "2025",
         "title": "Inauguration du tribunal de proximité d'Ewo",
-        "desc": "Résultat direct de son engagement au Ministère de la Justice, la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années."
+        "desc": "Résultat direct de son engagement au Ministère de la Justice, la justice est enfin rapprochée des citoyens de la Cuvette-Ouest. Un équipement attendu depuis des années.",
+        "image": "images/IMG_9967.jpeg"
       },
       {
         "catColor": "#4caf50",
@@ -426,7 +436,8 @@
         "month": "Mars",
         "year": "2026",
         "title": "Coordinateur de campagne, tournée sur l'axe Lebankaya",
-        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, fort soutien aux populations."
+        "desc": "13 villages visités : Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, fort soutien aux populations.",
+        "image": "images/IMG_9964.jpeg"
       },
       {
         "catColor": "#1b5e20",
@@ -439,7 +450,8 @@
         "title": "Droits humains : l'acces des peuples autochtones a l'emploi pris en compte",
         "desc": "Le Congo integre l'acces des peuples autochtones a l'emploi dans ses politiques de droits humains, une avancee concrete portee par le Ministere de la Justice et des Droits Humains.",
         "source": "Adiac Congo",
-        "sourceUrl": "https://www.adiac-congo.com/content/droits-humains-lacces-des-peuples-autochtones-lemploi-pris-en-compte-135559"
+        "sourceUrl": "https://www.adiac-congo.com/content/droits-humains-lacces-des-peuples-autochtones-lemploi-pris-en-compte-135559",
+        "image": "images/IMG_9976.jpeg"
       },
       {
         "catColor": "#0d47a1",
@@ -452,7 +464,8 @@
         "title": "Justice : le Congo reitere sa volonte d'assurer la protection des droits de l'homme",
         "desc": "La Republique du Congo reaffirme son engagement pour la protection des droits de l'homme, avec un cadre institutionnel renforce sous l'impulsion du Ministere de la Justice.",
         "source": "Adiac Congo",
-        "sourceUrl": "https://www.adiac-congo.com/content/justice-le-congo-reitere-sa-volonte-dassurer-la-protection-des-droits-de-lhomme-73344"
+        "sourceUrl": "https://www.adiac-congo.com/content/justice-le-congo-reitere-sa-volonte-dassurer-la-protection-des-droits-de-lhomme-73344",
+        "image": "images/IMG_9978.jpeg"
       },
       {
         "catColor": "#1a237e",
@@ -465,7 +478,8 @@
         "title": "Legislatives 2017 : BININGA elu Depute de la 1re circonscription d'Ewo",
         "desc": "La liste definitive des deputes elus confirme l'election d'Aime Ange Wilfrid BININGA a l'Assemblee nationale dans la 1re circonscription d'Ewo, consecration populaire d'un engagement profond.",
         "source": "Les Echos du Congo-Brazzaville",
-        "sourceUrl": "https://lesechos-congobrazza.com/politique/3341-legislatives-2017-voici-la-liste-definitive-des-deputes-elus"
+        "sourceUrl": "https://lesechos-congobrazza.com/politique/3341-legislatives-2017-voici-la-liste-definitive-des-deputes-elus",
+        "image": "images/bininga.jpg"
       },
       {
         "catColor": "#bf360c",
@@ -478,7 +492,8 @@
         "title": "Justice : l'amelioration des conditions de vie dans les lieux de detention se poursuit",
         "desc": "Le Ministere de la Justice, sous la direction de BININGA, poursuit son action pour ameliorer les conditions de vie dans les etablissements penitentiaires congolais, en conformite avec les normes internationales.",
         "source": "Adiac Congo",
-        "sourceUrl": "https://www.adiac-congo.com/content/justice-lamelioration-des-conditions-de-vie-dans-les-lieux-de-detention-se-poursuit-143760"
+        "sourceUrl": "https://www.adiac-congo.com/content/justice-lamelioration-des-conditions-de-vie-dans-les-lieux-de-detention-se-poursuit-143760",
+        "image": "images/IMG_9964.jpeg"
       },
       {
         "catColor": "#e65100",
@@ -491,77 +506,137 @@
         "title": "L'Observateur : BININGA et l'action judiciaire au service du Congo",
         "desc": "L'Observateur revient sur l'action du Ministre Bininga a la tete du Ministere de la Justice, ses reformes et son engagement pour une justice plus accessible et equitable pour tous les Congolais.",
         "source": "L'Observateur",
-        "sourceUrl": "https://lobservateur.info/ampArticle/116074"
+        "sourceUrl": "https://lobservateur.info/ampArticle/116074",
+        "image": "images/IMG_9964.jpeg"
       }
     ]
   },
   "gallery": {
     "slides": [
       {
-        "image": "images/bininga.jpg",
+        "image": "images/IMG_9963.webp",
         "emoji": "",
-        "title": "Portrait officiel, Ministre de la Justice",
-        "subtitle": "Ange Aimé Wilfrid BININGA, Ministre de la Justice, Député d'Ewo"
+        "title": "Conseil supérieur de la magistrature",
+        "subtitle": "Session ordinaire — Brazzaville, 27 mars 2023"
+      },
+      {
+        "image": "images/IMG_9964.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9965.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9966.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
+      },
+      {
+        "image": "images/IMG_9967.jpeg",
+        "emoji": "",
+        "title": "BININGA en action",
+        "subtitle": "Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député d'Ewo"
       },
       {
         "image": "images/Darmanin.jpeg",
         "emoji": "",
-        "title": "Rencontre Place Vendôme, BININGA & Darmanin",
-        "subtitle": "Coopération judiciaire Congo–France, 18 Février 2026"
+        "title": "BININGA & Darmanin — Place Vendôme",
+        "subtitle": "Coopération judiciaire Congo–France, Février 2026"
       },
       {
-        "image": "",
-        "emoji": "🏛️",
-        "title": "Au Ministère de la Fonction publique et de la Réforme de l'État",
-        "subtitle": "Modernisation de l'administration et dialogue social"
+        "image": "images/rwanda.JPG",
+        "emoji": "",
+        "title": "Visite de l'Ambassadeur du Rwanda",
+        "subtitle": "Coopération judiciaire Rwanda–Congo, Décembre 2025"
       },
       {
-        "image": "",
-        "emoji": "🗳️",
-        "title": "Grand meeting populaire à Ewo",
-        "subtitle": "Lancement officiel de la campagne législative 2027"
+        "image": "images/ewo.jpg",
+        "emoji": "",
+        "title": "Boulevard énergétique — Ewo",
+        "subtitle": "Travaux ligne 110 KV Boundji-Ewo, Août 2024"
       }
     ],
     "grid": [
       {
         "image": "images/IMG_9963.webp",
         "alt": "BININGA — Conseil supérieur de la magistrature, 27 mars 2023",
-        "emoji": "⚖️"
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9964.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9965.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9966.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9967.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9972.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9973.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9975.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9976.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9977.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
+      },
+      {
+        "image": "images/IMG_9978.jpeg",
+        "alt": "BININGA — Photo officielle",
+        "emoji": ""
       },
       {
         "image": "images/bininga.jpg",
-        "alt": "BININGA portrait",
+        "alt": "BININGA — Portrait officiel",
         "emoji": ""
       },
       {
         "image": "images/Darmanin.jpeg",
-        "alt": "BININGA et Darmanin",
+        "alt": "BININGA et Darmanin — Place Vendôme, Paris",
         "emoji": ""
       },
       {
-        "image": "",
-        "alt": "Justice",
-        "emoji": "⚖️"
+        "image": "images/rwanda.JPG",
+        "alt": "BININGA — Visite Ambassadeur Rwanda",
+        "emoji": ""
       },
       {
-        "image": "",
-        "alt": "Construction",
-        "emoji": "🏗️"
-      },
-      {
-        "image": "",
-        "alt": "Éducation",
-        "emoji": "📚"
-      },
-      {
-        "image": "",
-        "alt": "Santé",
-        "emoji": "🏥"
-      },
-      {
-        "image": "",
-        "alt": "Travaux",
-        "emoji": "👷"
+        "image": "images/ewo.jpg",
+        "alt": "Boulevard énergétique — Ewo",
+        "emoji": ""
       }
     ]
   },
