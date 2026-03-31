@@ -622,8 +622,12 @@ def load_audit(limit=100):
     except Exception:
         return []
 
-# ── Données ────────────────────────────────────────────────
+# ── Données du site (Hero, À propos, Galerie, etc.) ────────
 def load_data():
+    """Charge le contenu du site : PostgreSQL en priorité, fichier en fallback."""
+    db = _pg_load("site_data")
+    if db is not None:
+        return db
     if not os.path.exists(DATA_FILE):
         return {}
     try:
@@ -633,20 +637,24 @@ def load_data():
         return {}
 
 def save_data(data):
-    # Backup automatique avant écrasement
-    if os.path.exists(DATA_FILE):
-        backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-        with open(DATA_FILE, "rb") as src, open(backup, "wb") as dst:
-            dst.write(src.read())
-        # Garder uniquement les 5 derniers backups
-        backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
-        for old in backups[:-5]:
-            try:
-                os.remove(old)
-            except Exception:
-                pass
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
+    with _DATA_LOCK:
+        # 1. PostgreSQL — source de vérité persistante
+        _pg_save("site_data", data)
+        # 2. Fichier local — fallback + backup
+        try:
+            if os.path.exists(DATA_FILE):
+                backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+                with open(DATA_FILE, "rb") as src, open(backup, "wb") as dst:
+                    dst.write(src.read())
+                backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
+                for old in backups[:-5]:
+                    try: os.remove(old)
+                    except Exception: pass
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[BININGA] Erreur sauvegarde data.json (non bloquant) : {e}")
 
 # ── Veille IA : lecture/écriture ──────────────────────────
 def load_news() -> dict:
@@ -834,6 +842,7 @@ def save_contacts(contacts: list):
 
 _CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
 _CRM_LOCK     = threading.Lock()   # même protection pour le CRM
+_DATA_LOCK    = threading.Lock()   # même protection pour le contenu du site
 
 def append_contact(entry: dict):
     """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
@@ -910,6 +919,16 @@ def _migrate_files_to_db():
             if data.get("contacts") or data.get("newsletters"):
                 _pg_save("crm", data)
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
+        except Exception:
+            pass
+    # Contenu du site (data.json)
+    if _pg_load("site_data") is None and os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("site_data", data)
+                print(f"[DB] Migration : contenu du site importé depuis data.json")
         except Exception:
             pass
     # Users
