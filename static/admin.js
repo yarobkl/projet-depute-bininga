@@ -2957,7 +2957,7 @@ async function loadMonitoring() {
 
 async function loadMonSummary() {
   try {
-    const r = await fetch("/api/monitoring/summary", { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch("/api/monitoring/summary", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     if (!r.ok) return;
     const d = await r.json();
     if (!d.ok) return;
@@ -3016,7 +3016,7 @@ async function loadMonAlerts() {
   if (!box) return;
   try {
     const resolved = document.getElementById("mon-show-resolved")?.checked ? "1" : "0";
-    const r = await fetch(`/api/monitoring/alerts?resolved=${resolved}`, { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch(`/api/monitoring/alerts?resolved=${resolved}`, { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const d = await r.json();
     if (!d.ok || !d.alerts.length) { box.innerHTML = '<p class="msg-empty">Aucune alerte active.</p>'; return; }
     box.innerHTML = d.alerts.map(a => {
@@ -3039,7 +3039,7 @@ async function resolveAlert(id) {
   try {
     await fetch("/api/monitoring/resolve-alert", {
       method: "POST",
-      headers: { "X-Admin-Token": TOKEN, "Content-Type": "application/json" },
+      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
     await loadMonAlerts();
@@ -3051,7 +3051,7 @@ async function loadMonEndpoints() {
   const box = document.getElementById("mon-endpoints-list");
   if (!box) return;
   try {
-    const r = await fetch("/api/monitoring/endpoints?hours=24", { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch("/api/monitoring/endpoints?hours=24", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const d = await r.json();
     if (!d.ok || !d.endpoints.length) { box.innerHTML = '<p class="msg-empty">Pas encore de données.</p>'; return; }
     box.innerHTML = `<table class="mon-ep-table">
@@ -3073,7 +3073,7 @@ async function loadMonRequests() {
   if (!box) return;
   try {
     const url = `/api/monitoring/requests?limit=50${filter ? "&path=" + encodeURIComponent(filter) : ""}`;
-    const r = await fetch(url, { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch(url, { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const d = await r.json();
     if (!d.ok || !d.requests.length) { box.innerHTML = '<p class="msg-empty">Aucune requête enregistrée.</p>'; return; }
     box.innerHTML = d.requests.map(req => {
@@ -3095,7 +3095,7 @@ async function loadMonExceptions() {
   const box = document.getElementById("mon-errors-list");
   if (!box) return;
   try {
-    const r = await fetch("/api/monitoring/errors", { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch("/api/monitoring/errors", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const d = await r.json();
     if (!d.ok || !d.errors.length) { box.innerHTML = '<p class="msg-empty">Aucune exception enregistrée.</p>'; return; }
     box.innerHTML = d.errors.map(e => `
@@ -3112,7 +3112,7 @@ async function loadMonReport() {
   if (!box) return;
   box.innerHTML = '<span style="color:rgba(255,255,255,.4);font-size:12px">Génération en cours…</span>';
   try {
-    const r = await fetch("/api/monitoring/report", { headers: { "X-Admin-Token": TOKEN } });
+    const r = await fetch("/api/monitoring/report", { headers: { "X-Admin-Token": SESSION_TOKEN } });
     const d = await r.json();
     if (!d.ok) { box.innerHTML = '<p style="color:#e74c3c">Erreur génération rapport.</p>'; return; }
     const rp = d.report;
