@@ -672,7 +672,8 @@ def save_news(data: dict):
 # Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
 # Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
 
-_PG_CONN = None
+_PG_CONN  = None
+_PG_LOCK  = threading.Lock()   # protège la connexion en mode multi-thread
 
 def _pg():
     """Retourne une connexion PostgreSQL active, ou None si indisponible."""
@@ -680,26 +681,26 @@ def _pg():
     raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
-    # Railway renvoie parfois postgres:// au lieu de postgresql://
     url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
-    try:
-        import psycopg2
-        if _PG_CONN is None or _PG_CONN.closed:
-            _PG_CONN = psycopg2.connect(url, connect_timeout=5)
-            _PG_CONN.autocommit = True
-            with _PG_CONN.cursor() as cur:
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS bininga_store (
-                        key         TEXT PRIMARY KEY,
-                        data        TEXT NOT NULL,
-                        updated_at  TIMESTAMPTZ DEFAULT NOW()
-                    )
-                """)
-        return _PG_CONN
-    except Exception as e:
-        print(f"[DB] PostgreSQL indisponible : {e}")
-        _PG_CONN = None
-        return None
+    with _PG_LOCK:
+        try:
+            import psycopg2
+            if _PG_CONN is None or _PG_CONN.closed:
+                _PG_CONN = psycopg2.connect(url, connect_timeout=5)
+                _PG_CONN.autocommit = True
+                with _PG_CONN.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_store (
+                            key         TEXT PRIMARY KEY,
+                            data        TEXT NOT NULL,
+                            updated_at  TIMESTAMPTZ DEFAULT NOW()
+                        )
+                    """)
+            return _PG_CONN
+        except Exception as e:
+            print(f"[DB] PostgreSQL indisponible : {e}")
+            _PG_CONN = None
+            return None
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
@@ -773,6 +774,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
+    global _PG_CONN
     conn = _pg()
     if not conn:
         return None
@@ -782,10 +784,13 @@ def _pg_load(key: str):
             row = cur.fetchone()
             return json.loads(row[0]) if row else None
     except Exception:
+        with _PG_LOCK:
+            _PG_CONN = None   # force reconnexion au prochain appel
         return None
 
 def _pg_save(key: str, value) -> bool:
     """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
+    global _PG_CONN
     conn = _pg()
     if not conn:
         return False
@@ -800,6 +805,8 @@ def _pg_save(key: str, value) -> bool:
         return True
     except Exception as e:
         print(f"[DB] Erreur écriture '{key}' : {e}")
+        with _PG_LOCK:
+            _PG_CONN = None   # force reconnexion au prochain appel
         return False
 
 # ── Contacts (formulaires publics) ──────────────────────────
@@ -825,11 +832,14 @@ def save_contacts(contacts: list):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde contacts : {e}")
 
+_CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
+
 def append_contact(entry: dict):
     """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
-    contacts = load_contacts()
-    contacts.append(entry)
-    save_contacts(contacts)
+    with _CONTACT_LOCK:
+        contacts = load_contacts()
+        contacts.append(entry)
+        save_contacts(contacts)
 
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
