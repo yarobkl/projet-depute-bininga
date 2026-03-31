@@ -69,6 +69,7 @@ async function doLogin() {
       document.getElementById("topbar-user").textContent = data.nom + " · " + data.role;
       applyRoleUI(data.role);
       init();
+      initNotifications();
     } else if (data.require_2fa) {
       // Afficher le champ 2FA
       const totpRow = document.getElementById("totp-row");
@@ -3150,3 +3151,164 @@ async function loadMonReport() {
 }
 
 function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  NOTIFICATIONS TEMPS RÉEL (SSE)
+// ══════════════════════════════════════════════════════════════════════════
+let _notifs      = [];
+let _notifCount  = 0;
+let _sseSource   = null;
+let _audioCtx    = null;
+let _notifOpen   = false;
+
+const _NOTIF_META = {
+  visit:      { icon: "👁️",  title: "Nouveau visiteur",   panel: "monitoring",   color: "#3498db" },
+  prog_view:  { icon: "📋",  title: "Programme consulté", panel: "monitoring",   color: "#9b59b6" },
+  contact:    { icon: "✉️",  title: "Nouveau message",    panel: "contacts",     color: "#2ecc71" },
+  audience:   { icon: "📋",  title: "Demande d'audience", panel: "audiences",    color: "#f39c12" },
+  reclamation:{ icon: "⚠️",  title: "Nouvelle réclamation",panel: "reclamations",color: "#e74c3c" },
+};
+
+function initNotifications() {
+  if (Notification.permission === "default") Notification.requestPermission();
+  _connectSSE();
+  // Fermer le panel si clic en dehors
+  document.addEventListener("click", e => {
+    if (_notifOpen && !document.getElementById("notif-bell-wrap")?.contains(e.target)) {
+      _closeNotifPanel();
+    }
+  });
+}
+
+function _connectSSE() {
+  if (_sseSource) { try { _sseSource.close(); } catch {} }
+  _sseSource = new EventSource(`/api/events?t=${encodeURIComponent(SESSION_TOKEN)}`);
+
+  ["visit","prog_view","contact","audience","reclamation"].forEach(type => {
+    _sseSource.addEventListener(type, e => {
+      try { _addNotif(type, JSON.parse(e.data)); } catch {}
+    });
+  });
+
+  _sseSource.onerror = () => {
+    try { _sseSource.close(); } catch {}
+    setTimeout(_connectSSE, 6000);
+  };
+}
+
+function _addNotif(type, data) {
+  const meta = _NOTIF_META[type] || { icon: "🔔", title: "Notification", panel: "dashboard" };
+  let desc = "";
+  if (data.nom)   desc = (data.nom + " " + (data.prenom || "")).trim();
+  if (data.objet) desc += (desc ? " — " : "") + data.objet;
+  if (type === "visit" || type === "prog_view") desc = "IP " + (data.ip || "inconnue");
+
+  const notif = {
+    id: Date.now() + Math.random(),
+    type, title: meta.title, desc,
+    panel: meta.panel, icon: meta.icon,
+    ts: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+  };
+  _notifs.unshift(notif);
+  if (_notifs.length > 60) _notifs.pop();
+  _notifCount++;
+
+  _renderNotifBadge();
+  _renderNotifList();
+  _playNotifSound();
+  _shakebell();
+
+  // Notification navigateur
+  if (Notification.permission === "granted" && document.visibilityState !== "visible") {
+    try {
+      const n = new Notification("BININGA Admin — " + meta.title, {
+        body: desc || "",
+        icon: "/images/bininga.jpg",
+        tag: type,
+      });
+      n.onclick = () => { window.focus(); showPanel(meta.panel); n.close(); };
+      setTimeout(() => n.close(), 6000);
+    } catch {}
+  }
+}
+
+function _renderNotifBadge() {
+  const badge = document.getElementById("notif-badge");
+  if (!badge) return;
+  if (_notifCount > 0) {
+    badge.textContent = _notifCount > 99 ? "99+" : _notifCount;
+    badge.style.display = "flex";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function _renderNotifList() {
+  const list = document.getElementById("notif-list");
+  if (!list) return;
+  if (!_notifs.length) {
+    list.innerHTML = '<div class="notif-empty">Aucune notification</div>';
+    return;
+  }
+  list.innerHTML = _notifs.map(n => `
+    <div class="notif-item notif-${n.type}" onclick="notifClick('${n.panel}')">
+      <div class="notif-icon">${n.icon}</div>
+      <div class="notif-body">
+        <div class="notif-title">${esc(n.title)}</div>
+        <div class="notif-desc">${esc(n.desc || "—")}</div>
+        <div class="notif-time">${esc(n.ts)}</div>
+      </div>
+    </div>`).join("");
+}
+
+function _shakebell() {
+  const btn = document.getElementById("notif-bell");
+  if (!btn) return;
+  btn.classList.add("has-notif");
+  setTimeout(() => btn.classList.remove("has-notif"), 600);
+}
+
+function _playNotifSound() {
+  try {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = _audioCtx.currentTime;
+    // Deux notes : chime doux
+    [[880, 0, 0.15], [660, 0.15, 0.15]].forEach(([freq, delay, dur]) => {
+      const osc  = _audioCtx.createOscillator();
+      const gain = _audioCtx.createGain();
+      osc.connect(gain); gain.connect(_audioCtx.destination);
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freq, now + delay);
+      gain.gain.setValueAtTime(0.25, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + delay + dur);
+      osc.start(now + delay);
+      osc.stop(now + delay + dur);
+    });
+  } catch {}
+}
+
+function toggleNotifPanel() {
+  const panel = document.getElementById("notif-panel");
+  if (!panel) return;
+  _notifOpen = !_notifOpen;
+  panel.style.display = _notifOpen ? "block" : "none";
+  if (_notifOpen) { _notifCount = 0; _renderNotifBadge(); }
+}
+
+function _closeNotifPanel() {
+  _notifOpen = false;
+  const panel = document.getElementById("notif-panel");
+  if (panel) panel.style.display = "none";
+}
+
+function notifClick(panelName) {
+  _closeNotifPanel();
+  showPanel(panelName, document.querySelector(`.sb-item[onclick*="'${panelName}'"]`));
+}
+
+function clearNotifs() {
+  _notifs = [];
+  _notifCount = 0;
+  _renderNotifBadge();
+  _renderNotifList();
+}
