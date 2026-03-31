@@ -2041,6 +2041,108 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True})
             return
 
+        # ── /api/yaro/* — YARO IA Dashboard ───────────────────────────────────
+        if path.startswith("/api/yaro/"):
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+
+            _YARO_DB = "news.db"
+
+            def _yaro_conn():
+                import sqlite3 as _sq
+                c = _sq.connect(_YARO_DB)
+                c.row_factory = _sq.Row
+                return c
+
+            # GET /api/yaro/stats
+            if path == "/api/yaro/stats":
+                try:
+                    c = _yaro_conn()
+                    today = datetime.datetime.utcnow().date().isoformat()
+                    total      = c.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+                    today_cnt  = c.execute("SELECT COUNT(*) FROM articles WHERE ts >= ?", (today,)).fetchone()[0]
+                    sources    = [dict(r) for r in c.execute("SELECT source, COUNT(*) as cnt FROM articles GROUP BY source ORDER BY cnt DESC").fetchall()]
+                    keywords   = []
+                    for kw in ["pétrole", "forêt", "justice", "contrat"]:
+                        cnt = c.execute("SELECT COUNT(*) FROM articles WHERE keywords LIKE ?", (f"%{kw}%",)).fetchone()[0]
+                        keywords.append({"keyword": kw, "cnt": cnt})
+                    last_run   = c.execute("SELECT ts FROM articles ORDER BY ts DESC LIMIT 1").fetchone()
+                    c.close()
+                    self._json({"ok": True, "total": total, "today": today_cnt,
+                                "sources": sources, "keywords": keywords,
+                                "last_run": last_run[0] if last_run else None})
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            # GET /api/yaro/articles?page=1&limit=20&source=&keyword=&q=
+            if path == "/api/yaro/articles":
+                try:
+                    qs_y   = parse_qs(urlparse(self.path).query)
+                    page   = max(1, int(qs_y.get("page",   ["1"])[0]))
+                    limit  = min(50, int(qs_y.get("limit",  ["20"])[0]))
+                    source = qs_y.get("source",  [""])[0].strip()
+                    kw     = qs_y.get("keyword", [""])[0].strip()
+                    q_txt  = qs_y.get("q",       [""])[0].strip()
+                    offset = (page - 1) * limit
+
+                    where, params = [], []
+                    if source:
+                        where.append("source = ?"); params.append(source)
+                    if kw:
+                        where.append("keywords LIKE ?"); params.append(f"%{kw}%")
+                    if q_txt:
+                        where.append("(titre_fr LIKE ? OR titre LIKE ? OR url LIKE ?)")
+                        params += [f"%{q_txt}%", f"%{q_txt}%", f"%{q_txt}%"]
+
+                    where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+                    c = _yaro_conn()
+                    total_f = c.execute(f"SELECT COUNT(*) FROM articles {where_sql}", params).fetchone()[0]
+                    rows    = c.execute(
+                        f"SELECT id,source,titre_fr,titre,url,keywords,lang_orig,ts FROM articles {where_sql} ORDER BY ts DESC LIMIT ? OFFSET ?",
+                        params + [limit, offset]
+                    ).fetchall()
+                    c.close()
+                    self._json({"ok": True, "total": total_f, "page": page,
+                                "pages": max(1, -(-total_f // limit)),
+                                "articles": [dict(r) for r in rows]})
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            # DELETE /api/yaro/article  body: {id}
+            if path == "/api/yaro/article":
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                    payload = json.loads(self.rfile.read(length)) if length else {}
+                    art_id  = int(payload.get("id", 0))
+                    c = _yaro_conn()
+                    c.execute("DELETE FROM articles WHERE id = ?", (art_id,))
+                    c.commit(); c.close()
+                    self._json({"ok": True})
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            # POST /api/yaro/run — scraping manuel
+            if path == "/api/yaro/run":
+                try:
+                    import subprocess, sys
+                    subprocess.Popen(
+                        [sys.executable, "legal_intelligence.py", "--now"],
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+                    audit_log("YARO_IA", ip, "Scraping manuel lancé")
+                    self._json({"ok": True, "message": "Scraping lancé en arrière-plan."})
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            self._json({"ok": False, "message": "Route inconnue"}, 404)
+            return
+
         # ── /api/track-visit (public — compteur de visites côté serveur) ──
         if path == "/api/track-visit":
             body = {}

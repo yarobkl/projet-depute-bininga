@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>YARO IA — Veille Juridique</title>
+<style>
+/* ── Reset & base ────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0b0f1a;
+  --bg2:#111827;
+  --bg3:#1a2236;
+  --card:#151d2e;
+  --border:#1e2d45;
+  --accent:#4f8ef7;
+  --accent2:#7c5cfc;
+  --green:#22c55e;
+  --orange:#f59e0b;
+  --red:#ef4444;
+  --text:#e2e8f0;
+  --text2:#8899b4;
+  --radius:14px;
+  --shadow:0 4px 24px rgba(0,0,0,.45);
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh}
+
+/* ── Login overlay ───────────────────────────────────────────── */
+#login-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:linear-gradient(135deg,#0b0f1a 0%,#111827 100%);
+  display:flex;align-items:center;justify-content:center;
+}
+.login-card{
+  background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:48px 40px;width:380px;text-align:center;box-shadow:var(--shadow);
+}
+.login-logo{font-size:2.8rem;margin-bottom:8px}
+.login-title{font-size:1.5rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.login-sub{color:var(--text2);font-size:.85rem;margin-bottom:32px}
+.login-card input{
+  width:100%;padding:12px 16px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:10px;color:var(--text);font-size:.95rem;margin-bottom:12px;
+  transition:border .2s;outline:none;
+}
+.login-card input:focus{border-color:var(--accent)}
+.login-btn{
+  width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:10px;color:#fff;font-size:1rem;font-weight:600;
+  cursor:pointer;transition:opacity .2s;
+}
+.login-btn:hover{opacity:.88}
+.login-err{color:var(--red);font-size:.85rem;margin-top:10px;display:none}
+
+/* ── App layout ──────────────────────────────────────────────── */
+#app{display:none;flex-direction:column;min-height:100vh}
+
+/* ── Topbar ──────────────────────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:62px;background:var(--card);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;
+}
+.topbar-left{display:flex;align-items:center;gap:14px}
+.topbar-logo{font-size:1.6rem}
+.topbar-title{font-size:1.1rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-sub{font-size:.75rem;color:var(--text2)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.status-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.topbar-user{font-size:.82rem;color:var(--text2)}
+.btn-run{
+  padding:7px 16px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;border-radius:8px;color:#fff;font-size:.82rem;font-weight:600;
+  cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .2s;
+}
+.btn-run:hover{opacity:.85}
+.btn-run:disabled{opacity:.45;cursor:default}
+.btn-logout{padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:.82rem;cursor:pointer;transition:all .2s}
+.btn-logout:hover{border-color:var(--red);color:var(--red)}
+
+/* ── Main ────────────────────────────────────────────────────── */
+.main{padding:28px;flex:1}
+
+/* ── Stats cards ─────────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:22px 20px;display:flex;align-items:center;gap:16px;
+  transition:transform .2s,box-shadow .2s;
+}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+.stat-icon.blue{background:rgba(79,142,247,.15)}
+.stat-icon.purple{background:rgba(124,92,252,.15)}
+.stat-icon.green{background:rgba(34,197,94,.15)}
+.stat-icon.orange{background:rgba(245,158,11,.15)}
+.stat-val{font-size:1.8rem;font-weight:700;line-height:1}
+.stat-lbl{font-size:.78rem;color:var(--text2);margin-top:4px}
+
+/* ── Grid 2 cols ─────────────────────────────────────────────── */
+.grid2{display:grid;grid-template-columns:1fr 340px;gap:20px;margin-bottom:24px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+
+/* ── Panel ───────────────────────────────────────────────────── */
+.panel{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-head{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-head h3{font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-head h3 span{font-size:1.1rem}
+.badge-cnt{background:var(--accent);color:#fff;border-radius:20px;padding:2px 10px;font-size:.75rem;font-weight:700}
+
+/* ── Keyword bars ────────────────────────────────────────────── */
+.kw-list{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.kw-row{}
+.kw-top{display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px}
+.kw-label{color:var(--text2)}
+.kw-cnt{font-weight:600}
+.kw-bar-bg{background:var(--bg3);border-radius:99px;height:6px;overflow:hidden}
+.kw-bar{height:6px;border-radius:99px;transition:width .6s ease}
+.kw-bar.k0{background:linear-gradient(90deg,#4f8ef7,#7c5cfc)}
+.kw-bar.k1{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.kw-bar.k2{background:linear-gradient(90deg,#f59e0b,#d97706)}
+.kw-bar.k3{background:linear-gradient(90deg,#ef4444,#dc2626)}
+
+/* ── Sources ─────────────────────────────────────────────────── */
+.src-list{padding:16px 20px;display:flex;flex-direction:column;gap:10px}
+.src-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border-radius:10px;border:1px solid var(--border)}
+.src-name{font-size:.85rem;font-weight:500}
+.src-cnt{font-size:.82rem;color:var(--accent);font-weight:700}
+
+/* ── Filters ─────────────────────────────────────────────────── */
+.filters{
+  background:var(--card);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px;margin-bottom:20px;
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+}
+.filters input,.filters select{
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  color:var(--text);padding:8px 14px;font-size:.85rem;outline:none;
+  transition:border .2s;
+}
+.filters input:focus,.filters select:focus{border-color:var(--accent)}
+.filters input{flex:1;min-width:200px}
+.filters select{min-width:150px}
+.btn-filter{
+  padding:8px 18px;background:var(--accent);border:none;border-radius:8px;
+  color:#fff;font-size:.85rem;font-weight:600;cursor:pointer;transition:opacity .2s;
+}
+.btn-filter:hover{opacity:.85}
+.btn-reset{
+  padding:8px 14px;background:transparent;border:1px solid var(--border);border-radius:8px;
+  color:var(--text2);font-size:.85rem;cursor:pointer;transition:all .2s;
+}
+.btn-reset:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── Table ───────────────────────────────────────────────────── */
+.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-head{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.table-head h3{font-size:.95rem;font-weight:600;display:flex;align-items:center;gap:8px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:11px 16px;text-align:left;font-size:.78rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);background:var(--bg3)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .15s}
+tbody tr:hover{background:rgba(79,142,247,.06)}
+tbody tr:last-child{border-bottom:none}
+td{padding:13px 16px;font-size:.85rem;vertical-align:middle}
+.td-source{white-space:nowrap}
+.source-badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;
+  background:rgba(79,142,247,.15);color:var(--accent);
+}
+.source-badge.src1{background:rgba(34,197,94,.12);color:var(--green)}
+.source-badge.src2{background:rgba(245,158,11,.12);color:var(--orange)}
+.source-badge.src3{background:rgba(124,92,252,.12);color:var(--accent2)}
+.td-title{max-width:380px}
+.title-main{font-weight:500;margin-bottom:3px;line-height:1.35}
+.title-orig{font-size:.75rem;color:var(--text2);font-style:italic}
+.td-kw{}
+.kw-chip{
+  display:inline-block;padding:2px 8px;border-radius:20px;font-size:.72rem;font-weight:600;margin:2px;
+  background:rgba(79,142,247,.12);color:var(--accent);
+}
+.kw-chip.justice{background:rgba(245,158,11,.12);color:var(--orange)}
+.kw-chip.petrole,.kw-chip.pétrole{background:rgba(34,197,94,.12);color:var(--green)}
+.kw-chip.forêt,.kw-chip.foret{background:rgba(34,197,94,.12);color:var(--green)}
+.kw-chip.contrat{background:rgba(124,92,252,.12);color:var(--accent2)}
+.td-date{white-space:nowrap;color:var(--text2);font-size:.78rem}
+.td-actions{white-space:nowrap;text-align:right}
+.btn-open{
+  padding:5px 12px;background:transparent;border:1px solid var(--border);border-radius:7px;
+  color:var(--accent);font-size:.78rem;cursor:pointer;text-decoration:none;
+  transition:all .2s;display:inline-block;
+}
+.btn-open:hover{background:rgba(79,142,247,.1);border-color:var(--accent)}
+.btn-del{
+  padding:5px 10px;background:transparent;border:1px solid transparent;border-radius:7px;
+  color:var(--text2);font-size:.78rem;cursor:pointer;transition:all .2s;margin-left:4px;
+}
+.btn-del:hover{border-color:var(--red);color:var(--red)}
+.empty-row td{text-align:center;padding:40px;color:var(--text2)}
+
+/* ── Pagination ──────────────────────────────────────────────── */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-top:1px solid var(--border);font-size:.82rem;color:var(--text2)}
+.pag-btns{display:flex;gap:6px}
+.pag-btn{
+  padding:5px 12px;background:var(--bg3);border:1px solid var(--border);
+  border-radius:7px;color:var(--text);font-size:.82rem;cursor:pointer;transition:all .2s;
+}
+.pag-btn:hover:not(:disabled){background:rgba(79,142,247,.15);border-color:var(--accent);color:var(--accent)}
+.pag-btn:disabled{opacity:.35;cursor:default}
+.pag-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:24px;right:24px;z-index:999;
+  background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+  padding:14px 20px;font-size:.88rem;color:var(--text);
+  box-shadow:var(--shadow);transform:translateY(80px);opacity:0;
+  transition:all .3s;pointer-events:none;display:flex;align-items:center;gap:10px;
+}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.ok{border-left:3px solid var(--green)}
+#toast.err{border-left:3px solid var(--red)}
+#toast.info{border-left:3px solid var(--accent)}
+
+/* ── Loading spinner ─────────────────────────────────────────── */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Last-run bar ────────────────────────────────────────────── */
+.last-run-bar{
+  background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);
+  border-radius:10px;padding:10px 18px;margin-bottom:20px;
+  font-size:.82rem;color:var(--text2);display:flex;align-items:center;gap:8px;
+}
+.last-run-bar strong{color:var(--text)}
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN ─────────────────────────────────────────────────── -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">🤖</div>
+    <div class="login-title">YARO IA</div>
+    <div class="login-sub">Veille juridique intelligente — Accès sécurisé</div>
+    <input type="text" id="li-user" placeholder="Identifiant" autocomplete="username"/>
+    <input type="password" id="li-pass" placeholder="Mot de passe" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" onclick="doLogin()">Se connecter</button>
+    <div class="login-err" id="li-err">Identifiants incorrects.</div>
+  </div>
+</div>
+
+<!-- ── APP ───────────────────────────────────────────────────── -->
+<div id="app">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="topbar-logo">🤖</span>
+      <div>
+        <div class="topbar-title">YARO IA — Veille Juridique</div>
+        <div class="topbar-sub">Légifrance · JO Sénégal · JO Côte d'Ivoire · CCJA OHADA</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="status-dot" title="Connecté"></span>
+      <span class="topbar-user" id="topbar-user"></span>
+      <button class="btn-run" id="btn-run" onclick="runScraper()">
+        <span>⚡</span> Lancer la veille
+      </button>
+      <button class="btn-logout" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- Last run -->
+    <div class="last-run-bar" id="last-run-bar" style="display:none">
+      🕐 Dernière exécution : <strong id="last-run-ts">—</strong>
+      &nbsp;·&nbsp; Prochaine exécution automatique à <strong>02h00</strong>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon blue">📰</div>
+        <div><div class="stat-val" id="s-total">—</div><div class="stat-lbl">Articles collectés</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon green">📅</div>
+        <div><div class="stat-val" id="s-today">—</div><div class="stat-lbl">Aujourd'hui</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">🌍</div>
+        <div><div class="stat-val" id="s-sources">—</div><div class="stat-lbl">Sources actives</div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">🔍</div>
+        <div><div class="stat-val" id="s-kw">—</div><div class="stat-lbl">Mots-clés surveillés</div></div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="grid2">
+
+      <!-- Keywords -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span>🔑</span> Mots-clés détectés</h3>
+        </div>
+        <div class="kw-list" id="kw-list">
+          <div style="color:var(--text2);font-size:.85rem;padding:8px 0">Chargement…</div>
+        </div>
+      </div>
+
+      <!-- Sources -->
+      <div class="panel">
+        <div class="panel-head">
+          <h3><span>🌐</span> Sources</h3>
+        </div>
+        <div class="src-list" id="src-list">
+          <div style="color:var(--text2);font-size:.85rem;padding:8px 0">Chargement…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <input type="text" id="f-q" placeholder="🔍  Rechercher un titre, une URL…" oninput="_debounceFilter()"/>
+      <select id="f-source" onchange="loadArticles(1)">
+        <option value="">Toutes les sources</option>
+        <option>Légifrance</option>
+        <option>JO Sénégal</option>
+        <option>JO Côte d'Ivoire</option>
+        <option>CCJA OHADA</option>
+      </select>
+      <select id="f-kw" onchange="loadArticles(1)">
+        <option value="">Tous les mots-clés</option>
+        <option value="pétrole">Pétrole</option>
+        <option value="forêt">Forêt</option>
+        <option value="justice">Justice</option>
+        <option value="contrat">Contrat</option>
+      </select>
+      <button class="btn-filter" onclick="loadArticles(1)">Filtrer</button>
+      <button class="btn-reset" onclick="resetFilters()">Réinitialiser</button>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-head">
+        <h3><span>📋</span> Articles <span class="badge-cnt" id="tbl-cnt">0</span></h3>
+        <span style="font-size:.78rem;color:var(--text2)" id="tbl-info"></span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Source</th>
+            <th>Titre</th>
+            <th>Mots-clés</th>
+            <th>Date</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tbl-body">
+          <tr class="empty-row"><td colspan="5">Chargement des articles…</td></tr>
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span id="pag-info">—</span>
+        <div class="pag-btns" id="pag-btns"></div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ── Auth ─────────────────────────────────────────────────────────────────
+let TOKEN = localStorage.getItem("yaro_token") || "";
+let USERNAME = localStorage.getItem("yaro_user") || "";
+
+async function doLogin() {
+  const user = document.getElementById("li-user").value.trim();
+  const pass = document.getElementById("li-pass").value;
+  const err  = document.getElementById("li-err");
+  err.style.display = "none";
+  try {
+    const r = await fetch("/api/login", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({username:user, password:pass})
+    });
+    const d = await r.json();
+    if (!d.ok || !d.token) { err.style.display="block"; return; }
+    TOKEN    = d.token;
+    USERNAME = user;
+    localStorage.setItem("yaro_token", TOKEN);
+    localStorage.setItem("yaro_user",  USERNAME);
+    startApp();
+  } catch(e) { err.style.display="block"; }
+}
+
+function logout() {
+  TOKEN = ""; USERNAME = "";
+  localStorage.removeItem("yaro_token");
+  localStorage.removeItem("yaro_user");
+  document.getElementById("app").style.display = "none";
+  document.getElementById("login-overlay").style.display = "flex";
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  if (TOKEN) startApp();
+});
+
+function startApp() {
+  document.getElementById("login-overlay").style.display = "none";
+  document.getElementById("app").style.display  = "flex";
+  document.getElementById("topbar-user").textContent = USERNAME;
+  loadStats();
+  loadArticles(1);
+}
+
+// ── API helpers ───────────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const headers = {"X-Admin-Token": TOKEN, "Content-Type":"application/json", ...(opts.headers||{})};
+  const r = await fetch(path, {...opts, headers});
+  if (r.status === 401) { logout(); return null; }
+  return r.json();
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const d = await api("/api/yaro/stats");
+  if (!d || !d.ok) return;
+
+  document.getElementById("s-total").textContent   = d.total ?? 0;
+  document.getElementById("s-today").textContent   = d.today ?? 0;
+  document.getElementById("s-sources").textContent = (d.sources||[]).length;
+  document.getElementById("s-kw").textContent      = 4;
+
+  // Last run
+  if (d.last_run) {
+    document.getElementById("last-run-ts").textContent = fmtDate(d.last_run);
+    document.getElementById("last-run-bar").style.display = "flex";
+  }
+
+  // Keywords bars
+  const kw = d.keywords || [];
+  const maxKw = Math.max(...kw.map(k=>k.cnt), 1);
+  const colors = ["k0","k1","k2","k3"];
+  document.getElementById("kw-list").innerHTML = kw.map((k,i)=>`
+    <div class="kw-row">
+      <div class="kw-top"><span class="kw-label">${cap(k.keyword)}</span><span class="kw-cnt">${k.cnt}</span></div>
+      <div class="kw-bar-bg"><div class="kw-bar ${colors[i]}" style="width:${maxKw?Math.max(4,k.cnt/maxKw*100):4}%"></div></div>
+    </div>
+  `).join("") || "<div style='color:var(--text2);font-size:.85rem'>Aucune donnée</div>";
+
+  // Sources
+  const srcColors = ["","src1","src2","src3"];
+  document.getElementById("src-list").innerHTML = (d.sources||[]).map((s,i)=>`
+    <div class="src-row">
+      <span class="src-name">${s.source}</span>
+      <span class="src-cnt">${s.cnt} article${s.cnt>1?"s":""}</span>
+    </div>
+  `).join("") || "<div style='color:var(--text2);font-size:.85rem'>Aucune source</div>";
+}
+
+// ── Articles ──────────────────────────────────────────────────────────────
+let _curPage = 1;
+let _debTimer = null;
+
+function _debounceFilter() {
+  clearTimeout(_debTimer);
+  _debTimer = setTimeout(()=>loadArticles(1), 400);
+}
+
+function resetFilters() {
+  document.getElementById("f-q").value = "";
+  document.getElementById("f-source").value = "";
+  document.getElementById("f-kw").value = "";
+  loadArticles(1);
+}
+
+async function loadArticles(page=1) {
+  _curPage = page;
+  const q  = encodeURIComponent(document.getElementById("f-q").value.trim());
+  const src= encodeURIComponent(document.getElementById("f-source").value);
+  const kw = encodeURIComponent(document.getElementById("f-kw").value);
+  const url= `/api/yaro/articles?page=${page}&limit=15&q=${q}&source=${src}&keyword=${kw}`;
+
+  document.getElementById("tbl-body").innerHTML =
+    `<tr class="empty-row"><td colspan="5"><div class="spinner"></div></td></tr>`;
+
+  const d = await api(url);
+  if (!d || !d.ok) {
+    document.getElementById("tbl-body").innerHTML =
+      `<tr class="empty-row"><td colspan="5">Erreur de chargement</td></tr>`;
+    return;
+  }
+
+  document.getElementById("tbl-cnt").textContent  = d.total;
+  document.getElementById("tbl-info").textContent =
+    `Page ${d.page} / ${d.pages} · ${d.total} résultat${d.total>1?"s":""}`;
+
+  if (!d.articles.length) {
+    document.getElementById("tbl-body").innerHTML =
+      `<tr class="empty-row"><td colspan="5">Aucun article trouvé.</td></tr>`;
+  } else {
+    document.getElementById("tbl-body").innerHTML = d.articles.map(a => {
+      const kws = (a.keywords||"").split(",").filter(Boolean);
+      const chips = kws.map(k=>`<span class="kw-chip ${k.trim()}">${cap(k.trim())}</span>`).join("");
+      const srcClass = srcBadgeClass(a.source);
+      const origLine = (a.lang_orig && a.lang_orig!=="fr" && a.titre && a.titre!==a.titre_fr)
+        ? `<div class="title-orig">🔤 ${escHtml(a.titre)} (${a.lang_orig.toUpperCase()})</div>` : "";
+      return `
+        <tr>
+          <td class="td-source"><span class="source-badge ${srcClass}">${escHtml(a.source)}</span></td>
+          <td class="td-title">
+            <div class="title-main">${escHtml(a.titre_fr || a.titre)}</div>
+            ${origLine}
+          </td>
+          <td class="td-kw">${chips||"—"}</td>
+          <td class="td-date">${fmtDate(a.ts)}</td>
+          <td class="td-actions">
+            <a class="btn-open" href="${escHtml(a.url)}" target="_blank" rel="noopener">↗ Ouvrir</a>
+            <button class="btn-del" title="Supprimer" onclick="delArticle(${a.id})">🗑</button>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  // Pagination
+  renderPagination(d.page, d.pages);
+}
+
+function renderPagination(cur, total) {
+  document.getElementById("pag-info").textContent =
+    `Page ${cur} sur ${total}`;
+  let html = "";
+  html += `<button class="pag-btn" onclick="loadArticles(${cur-1})" ${cur<=1?"disabled":""}>‹ Préc.</button>`;
+  const start = Math.max(1, cur-2), end = Math.min(total, cur+2);
+  for (let p=start; p<=end; p++)
+    html += `<button class="pag-btn${p===cur?" active":""}" onclick="loadArticles(${p})">${p}</button>`;
+  html += `<button class="pag-btn" onclick="loadArticles(${cur+1})" ${cur>=total?"disabled":""}>Suiv. ›</button>`;
+  document.getElementById("pag-btns").innerHTML = html;
+}
+
+// ── Delete article ────────────────────────────────────────────────────────
+async function delArticle(id) {
+  if (!confirm("Supprimer cet article ?")) return;
+  const d = await api("/api/yaro/article", {
+    method:"DELETE", body: JSON.stringify({id})
+  });
+  if (d && d.ok) { toast("Article supprimé","ok"); loadArticles(_curPage); loadStats(); }
+  else toast("Erreur lors de la suppression","err");
+}
+
+// ── Manual scrape ─────────────────────────────────────────────────────────
+async function runScraper() {
+  const btn = document.getElementById("btn-run");
+  btn.disabled = true;
+  btn.innerHTML = `<div class="spinner"></div> En cours…`;
+  const d = await api("/api/yaro/run", {method:"POST", body:"{}"});
+  if (d && d.ok) {
+    toast("Veille lancée en arrière-plan. Résultats dans quelques instants.", "info");
+    setTimeout(()=>{ loadStats(); loadArticles(_curPage); }, 8000);
+  } else {
+    toast("Erreur lors du lancement", "err");
+  }
+  setTimeout(()=>{ btn.disabled=false; btn.innerHTML=`<span>⚡</span> Lancer la veille`; }, 3000);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────
+function fmtDate(ts) {
+  if (!ts) return "—";
+  try {
+    const d = new Date(ts.replace(" ","T")+"Z");
+    return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"})
+      +" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+  } catch { return ts; }
+}
+
+function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : ""; }
+
+function escHtml(s){
+  return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function srcBadgeClass(src){
+  if (!src) return "";
+  const s = src.toLowerCase();
+  if (s.includes("sénégal")||s.includes("senegal")) return "src1";
+  if (s.includes("ivoire")||s.includes("côte")) return "src2";
+  if (s.includes("ohada")||s.includes("ccja")) return "src3";
+  return "";
+}
+
+let _toastTimer = null;
+function toast(msg, type="info") {
+  const el = document.getElementById("toast");
+  const icons = {ok:"✅",err:"❌",info:"ℹ️"};
+  el.className = `show ${type}`;
+  el.innerHTML = `${icons[type]||""} ${msg}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(()=>{ el.className=""; }, 3800);
+}
+</script>
+</body>
+</html>
