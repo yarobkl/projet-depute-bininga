@@ -1690,16 +1690,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     self._json({"ok": False, "message": "Message vide"}, 400)
                     return
 
-                # ── Chatbot classique par mots-clés ──────────────────
                 q = question.lower()
+                import random
 
-                # Charger data.json
-                try:
-                    with open(DATA_FILE, "r", encoding="utf-8") as f:
-                        data = json.load(f)
-                except Exception:
-                    data = {}
-
+                # Charger le contenu depuis PostgreSQL (ou fichier en fallback)
+                data      = load_data()
                 hero      = data.get("hero", {})
                 about     = data.get("about", {})
                 stats     = data.get("stats", [])
@@ -1708,105 +1703,160 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 parcours  = data.get("parcours", [])
                 contact   = data.get("contact", {})
 
-                nom = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or "Ange Aimé Wilfrid BININGA"
+                nom  = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or "Ange Aimé Wilfrid BININGA"
                 role = hero.get("role", "Garde des Sceaux, Ministre de la Justice, Député d'Ewo")
-
-                # Détection du sujet et réponse
-                import random
                 reply = None
 
-                # Salutations
-                if any(w in q for w in ["bonjour", "bonsoir", "salut", "hello", "bonne journée", "bonne soirée", "hi"]):
-                    greetings = [
-                        f"Bonjour ! Bienvenue sur le site officiel de {nom}. Je suis DA, son assistant virtuel. Je suis à votre disposition pour répondre à vos questions sur son parcours, ses fonctions, son programme ou ses actualités. Comment puis-je vous aider ?",
-                        f"Bonjour et bienvenue ! Je suis DA, l'assistant virtuel du Ministre {nom.split()[-1]}. N'hésitez pas à me poser vos questions sur sa biographie, son programme ou ses actualités. Que souhaitez-vous savoir ?",
-                        f"Bonsoir ! Heureux de vous accueillir sur ce site. Je suis DA, l'assistant virtuel dédié à {nom}. Posez-moi vos questions, je ferai de mon mieux pour vous répondre.",
-                    ]
-                    reply = random.choice(greetings)
+                # ── Salutations ───────────────────────────────────────────────
+                if any(w in q for w in ["bonjour", "bonsoir", "salut", "hello", "bonne journée", "bonne soirée", "hi", "hey"]):
+                    reply = random.choice([
+                        f"Bonjour ! Bienvenue sur le site officiel de {nom}. Je suis DA, son assistant virtuel. Je peux vous renseigner sur son parcours, ses fonctions, son programme, ses actualités ou la façon de le contacter. Que souhaitez-vous savoir ?",
+                        f"Bonjour et bienvenue ! Je suis DA, l'assistant virtuel du Ministre {nom.split()[-1]}. Posez-moi vos questions sur sa biographie, son action ou son programme. Comment puis-je vous aider ?",
+                        f"Bonsoir ! Heureux de vous accueillir sur ce site. Je suis DA, l'assistant virtuel dédié à {nom}. Comment puis-je vous aider aujourd'hui ?",
+                    ])
 
-                # Qui suis-je (DA)
-                elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "c'est quoi da", "présente-toi", "tu t'appelles"]):
-                    reply = f"Je suis DA, l'assistant virtuel officieux de Son Excellence {nom}. Mon rôle est de vous informer sur son parcours, ses fonctions ministérielles, son programme électoral et les actualités qui figurent sur ce site."
+                # ── Qui est DA ────────────────────────────────────────────────
+                elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "c'est quoi da", "présente-toi", "tu t'appelles", "tu es quoi"]):
+                    reply = f"Je suis DA, l'assistant virtuel du site officiel de {nom}. Je suis là pour répondre à vos questions sur son parcours, ses fonctions, son programme, ses actualités et ses engagements. Je ne suis pas une intelligence artificielle — je me base uniquement sur les informations publiées sur ce site."
 
-                # Âge / date de naissance
-                elif any(w in q for w in ["âge", "age", "né", "naissance", "date de naissance", "né quand", "quel age", "quel âge"]):
-                    reply = f"{nom} est né à Brazzaville, en République du Congo. Pour plus de précisions sur sa date de naissance, je vous invite à consulter la section biographie du site ou à contacter directement l'équipe."
+                # ── Âge / naissance ───────────────────────────────────────────
+                elif any(w in q for w in ["âge", "age", "né", "naissance", "date de naissance", "quel age", "quel âge", "né quand", "né où", "né a", "né à"]):
+                    reply = f"{nom} est né à Brazzaville, en République du Congo. Pour toute précision complémentaire, je vous invite à consulter la section biographie du site ou à contacter directement l'équipe."
 
-                # Qui a développé / créé le site
-                elif any(w in q for w in ["développé", "developpé", "créé", "crée", "site web", "développeur", "developpeur", "qui a fait", "conception", "webmaster"]):
-                    reply = "Ce site a été développé par Rodrin Bakala."
+                # ── Développeur / site ────────────────────────────────────────
+                elif any(w in q for w in ["développé", "developpé", "créé", "crée", "site web", "développeur", "developpeur", "qui a fait", "conception", "webmaster", "fait le site", "créé le site"]):
+                    reply = "Ce site officiel a été développé par Rodrin Bakala."
 
-                # Qui est / présentation du Ministre
-                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "parle-moi de"]):
+                # ── Présentation / biographie ─────────────────────────────────
+                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "parle-moi de", "biographie", "bio"]):
                     intro = about.get("intro", "")
-                    reply = intro if intro else f"{nom} est {role}."
-
-                # Biographie / parcours / formation
-                elif any(w in q for w in ["biographie", "bio", "parcours", "carrière", "formation", "études", "doctorat", "trésor", "inspecteur"]):
                     paras = about.get("paragraphs", [])
-                    if paras:
-                        reply = paras[0][:450] + ("..." if len(paras[0]) > 450 else "")
+                    if intro:
+                        reply = intro[:500] + ("..." if len(intro) > 500 else "")
+                    elif paras:
+                        reply = paras[0][:500] + ("..." if len(paras[0]) > 500 else "")
                     else:
-                        reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor public."
+                        reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor public, il représente la 1re circonscription d'Ewo à l'Assemblée Nationale depuis 2017."
 
-                # Fonctions / rôle / titre / ministre / mandat
-                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "député", "mandat", "poste", "assemblée"]):
-                    reply = f"{nom} exerce actuellement les fonctions de {role}. Il est également Député de la 1re circonscription d'Ewo depuis 2017."
+                # ── Parcours / formation / carrière ───────────────────────────
+                elif any(w in q for w in ["parcours", "carrière", "formation", "études", "doctorat", "trésor", "inspecteur", "diplôme", "université", "étudié"]):
+                    paras = about.get("paragraphs", [])
+                    if len(paras) > 1:
+                        reply = paras[1][:500] + ("..." if len(paras[1]) > 500 else "")
+                    elif paras:
+                        reply = paras[0][:500] + ("..." if len(paras[0]) > 500 else "")
+                    else:
+                        reply = f"{nom} est Docteur en droit et Inspecteur principal du Trésor public. Il a exercé plusieurs fonctions ministérielles importantes au Congo avant d'être élu Député d'Ewo."
 
-                # Programme électoral
-                elif any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif", "vision"]):
+                # ── Fonctions / titre / ministre ──────────────────────────────
+                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]):
+                    reply = f"{nom} est actuellement {role}. Il est Député de la 1re circonscription d'Ewo depuis 2017, et a exercé les fonctions de Ministre des Finances avant de prendre en charge la Justice."
+
+                # ── Justice / réformes ────────────────────────────────────────
+                elif any(w in q for w in ["justice", "loi", "droit", "réforme", "tribunal", "judiciaire", "juridique", "législation", "code", "pénal", "civil"]):
+                    reply = f"En tant que Garde des Sceaux et Ministre de la Justice, {nom} pilote les grandes réformes judiciaires du Congo. Il a notamment porté la modernisation du système judiciaire congolais et renforcé l'accès à la justice pour les citoyens."
+
+                # ── Corruption / HALC ─────────────────────────────────────────
+                elif any(w in q for w in ["corruption", "halc", "anti-corruption", "anticorruption", "intégrité", "transparence", "haute autorité"]):
+                    reply = f"Sous l'impulsion de {nom}, la loi instituant la Haute Autorité de Lutte contre la Corruption (HALC) a été adoptée en 2018 à 107 voix pour à l'Assemblée Nationale. C'est l'une des réformes majeures de son action ministérielle pour la transparence et l'intégrité publique."
+
+                # ── Droits humains / peuples autochtones ──────────────────────
+                elif any(w in q for w in ["droits humains", "droits de l'homme", "autochtone", "peuples autochtones", "pygmée", "droits fondamentaux", "libertés"]):
+                    reply = f"{nom} s'engage activement pour la promotion des droits humains et la protection des peuples autochtones au Congo. Cette mission fait partie intégrante de ses attributions au Ministère de la Justice."
+
+                # ── Coopération internationale ────────────────────────────────
+                elif any(w in q for w in ["coopération", "international", "france", "darmanin", "étranger", "diplomatique", "partenaire", "accord", "traité"]):
+                    reply = f"{nom} est actif sur le plan de la coopération judiciaire internationale. Il a notamment reçu son homologue français Gérald Darmanin à Paris dans le cadre du renforcement de la coopération judiciaire entre la France et la République du Congo."
+
+                # ── Finances / économie (ancienne fonction) ────────────────────
+                elif any(w in q for w in ["finance", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
+                    reply = f"Avant de prendre en charge le Ministère de la Justice, {nom} a exercé les fonctions de Ministre chargé des Finances. Son expertise en droit et en finances publiques est l'un de ses atouts majeurs."
+
+                # ── Programme ─────────────────────────────────────────────────
+                elif any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif", "vision", "axe", "priorité"]):
                     axes = programme.get("axes", [])
                     if axes:
-                        titres = [ax.get("title", "") for ax in axes[:4] if isinstance(ax, dict) and ax.get("title")]
-                        reply = "Le programme de " + nom + " s'articule notamment autour de : " + ", ".join(titres) + ". Vous pouvez consulter le détail complet dans la section Programme du site."
+                        titres = [ax.get("title","") for ax in axes[:5] if isinstance(ax,dict) and ax.get("title")]
+                        reply = f"Le programme de {nom} s'articule autour des axes suivants : {', '.join(titres)}. Consultez la section Programme du site pour le détail complet de ses engagements."
                     else:
-                        reply = "Le programme électoral de " + nom + " est consultable dans la section Programme de ce site. Il couvre des axes forts pour la justice, le développement local et la représentation des citoyens d'Ewo."
+                        reply = f"Le programme électoral de {nom} couvre des axes forts pour la justice, le développement local d'Ewo, la lutte contre la corruption et la représentation des citoyens. Consultez la section Programme pour le détail complet."
 
-                # Actualités
-                elif any(w in q for w in ["actuali", "nouvelle", "récent", "dernière", "info", "événement", "agenda", "quoi de neuf"]):
+                # ── Actualités ────────────────────────────────────────────────
+                elif any(w in q for w in ["actuali", "nouvelle", "récent", "dernière", "info", "événement", "agenda", "quoi de neuf", "news"]):
                     slides = actus.get("slides", [])
                     items  = [s.get("title","").replace("\n"," ") for s in slides[:3] if isinstance(s,dict) and s.get("title")]
                     if items:
-                        reply = "Voici les dernières actualités disponibles sur le site :\n• " + "\n• ".join(items) + "\n\nRetrouvez toutes les actualités dans la section dédiée."
+                        reply = "Dernières actualités disponibles sur ce site :\n• " + "\n• ".join(items) + "\n\nRetrouvez toutes les actualités dans la section dédiée du site."
                     else:
-                        reply = "Retrouvez toutes les actualités de " + nom + " dans la section Actualités du site, régulièrement mise à jour."
+                        reply = f"Retrouvez toutes les actualités de {nom} dans la section Actualités du site, régulièrement mise à jour avec ses interventions, déplacements et actions."
 
-                # Contact / rendez-vous
-                elif any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "rendez-vous", "audience", "formulaire", "message"]):
+                # ── Ewo / circonscription / Cuvette ──────────────────────────
+                elif any(w in q for w in ["ewo", "cuvette", "circonscription", "territoire", "région", "villageois", "population", "congo", "brazzaville", "lokomo"]):
+                    reply = f"{nom} est le Député de la 1re circonscription d'Ewo, dans la Cuvette-Ouest (République du Congo). Il s'engage personnellement auprès des populations locales, défend leurs intérêts à l'Assemblée Nationale et œuvre pour le développement de cette région."
+
+                # ── Audience / demande d'audience ────────────────────────────
+                elif any(w in q for w in ["audience", "rendez-vous", "rencontrer", "rencontrez", "voir le ministre", "solliciter", "demande d'audience", "rdv"]):
+                    reply = f"Pour solliciter une audience auprès de {nom} ou de son équipe, utilisez le formulaire de demande d'audience disponible sur ce site. Remplissez vos coordonnées et l'objet de votre demande — l'équipe vous contactera dans les meilleurs délais."
+
+                # ── Contact / email ───────────────────────────────────────────
+                elif any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "écrire", "formulaire", "message", "téléphone", "adresse"]):
                     email = contact.get("email", "")
-                    if email:
-                        reply = f"Pour contacter l'équipe de {nom}, vous pouvez utiliser le formulaire de contact disponible sur ce site ou écrire à : {email}."
+                    tel   = contact.get("phone", "")
+                    if email or tel:
+                        details = []
+                        if email: details.append(f"email : {email}")
+                        if tel:   details.append(f"téléphone : {tel}")
+                        reply = f"Pour contacter l'équipe de {nom} : {', '.join(details)}. Vous pouvez aussi utiliser le formulaire de contact directement sur ce site."
                     else:
-                        reply = f"Pour contacter l'équipe de {nom} ou solliciter une audience, utilisez le formulaire de contact disponible en bas de ce site. L'équipe vous répondra dans les meilleurs délais."
+                        reply = f"Pour contacter l'équipe de {nom}, utilisez le formulaire de contact disponible en bas de ce site. L'équipe vous répondra dans les meilleurs délais."
 
-                # Chiffres / bilan / statistiques
-                elif any(w in q for w in ["chiffre", "bilan", "résultat", "combien", "statistique", "réalisations"]):
+                # ── Réclamation / sinistre ────────────────────────────────────
+                elif any(w in q for w in ["réclamation", "reclamation", "plainte", "sinistre", "problème", "signaler", "signalement"]):
+                    reply = f"Vous pouvez soumettre une réclamation ou signaler un sinistre directement via le formulaire prévu à cet effet sur ce site. Votre dossier sera transmis à l'équipe de {nom} pour traitement."
+
+                # ── Newsletter / inscription ──────────────────────────────────
+                elif any(w in q for w in ["newsletter", "inscription", "s'abonner", "abonnement", "suivre", "email actualité", "recevoir"]):
+                    reply = f"Pour rester informé des actualités et actions de {nom}, vous pouvez vous inscrire à la newsletter via le formulaire disponible sur ce site. Vous recevrez régulièrement les dernières informations."
+
+                # ── Galerie / photos / vidéos ─────────────────────────────────
+                elif any(w in q for w in ["galerie", "photo", "image", "vidéo", "album", "photos", "voir"]):
+                    reply = f"La galerie du site regroupe des photos et vidéos des activités, déplacements et événements de {nom}. Consultez la section Galerie pour découvrir l'ensemble des contenus visuels disponibles."
+
+                # ── Livre / publication ───────────────────────────────────────
+                elif any(w in q for w in ["livre", "publication", "ouvrage", "écrit", "commande", "commander", "bouquin"]):
+                    reply = f"{nom} a publié des ouvrages dans le domaine du droit. Vous pouvez commander ses livres via le formulaire disponible sur ce site."
+
+                # ── Réseaux sociaux ───────────────────────────────────────────
+                elif any(w in q for w in ["facebook", "twitter", "instagram", "linkedin", "réseau", "réseaux sociaux", "social media", "tiktok", "youtube"]):
+                    reply = f"Pour suivre l'actualité de {nom} sur les réseaux sociaux, consultez la section contact ou le pied de page de ce site où figurent les liens vers ses profils officiels."
+
+                # ── Chiffres / bilan / statistiques ──────────────────────────
+                elif any(w in q for w in ["chiffre", "bilan", "résultat", "combien", "statistique", "réalisation", "bilan", "nombre"]):
                     if stats:
-                        txt = " | ".join(f"{s.get('num','')} {s.get('label','')}" for s in stats if isinstance(s, dict))
+                        txt = " | ".join(f"{s.get('num','')} {s.get('label','')}" for s in stats if isinstance(s,dict))
                         reply = f"Quelques chiffres clés sur l'action de {nom} : {txt}."
                     else:
-                        reply = f"{nom} a dirigé 2 ministères et accompli 2 mandats de Député à l'Assemblée Nationale."
+                        reply = f"{nom} cumule plusieurs mandats parlementaires et fonctions ministérielles au service de la République du Congo. Consultez la section Statistiques du site pour les chiffres détaillés."
 
-                # Ewo / circonscription
-                elif any(w in q for w in ["ewo", "cuvette", "circonscription", "territoire", "région", "villageois", "population"]):
-                    reply = f"{nom} est le Député de la 1re circonscription d'Ewo, dans la Cuvette-Ouest (République du Congo). Il s'engage personnellement auprès des populations locales et représente leurs intérêts à l'Assemblée Nationale."
+                # ── Assemblée nationale / parlement ───────────────────────────
+                elif any(w in q for w in ["assemblée", "parlement", "parlementaire", "vote", "loi votée", "séance"]):
+                    reply = f"{nom} siège à l'Assemblée Nationale en tant que Député de la 1re circonscription d'Ewo depuis 2017. Il y défend activement les intérêts de sa circonscription et porte des textes de loi importants, notamment dans le domaine judiciaire."
 
-                # Justice / loi / HALC / réforme / corruption
-                elif any(w in q for w in ["justice", "loi", "droit", "corruption", "halc", "réforme", "tribunal", "peuples autochtones", "droits humains"]):
-                    reply = f"En tant que Garde des Sceaux et Ministre de la Justice, {nom} a porté des réformes majeures, dont la loi instituant la Haute Autorité de Lutte contre la Corruption (HALC) adoptée en 2018 à 107 voix pour. Il est également en charge de la promotion des droits humains et des peuples autochtones."
+                # ── Valeurs / engagement personnel ────────────────────────────
+                elif any(w in q for w in ["valeur", "engagement", "conviction", "humain", "citoyen", "peuple", "sert", "servir", "dévouement"]):
+                    reply = f"{nom} fonde son action sur des valeurs d'intégrité, de service public et de proximité avec les citoyens. Son engagement au service de la République du Congo et des populations d'Ewo guide l'ensemble de ses décisions."
 
-                # Merci / au revoir
-                elif any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt", "bonne journée"]):
-                    farewells = [
-                        f"Merci pour votre intérêt pour {nom} et son action. N'hésitez pas à revenir si vous avez d'autres questions. — DA",
-                        f"Avec plaisir ! Si vous avez d'autres questions sur {nom}, je suis là. Bonne journée ! — DA",
-                        f"Je vous en prie. Au revoir et à bientôt sur ce site ! — DA",
-                    ]
-                    reply = random.choice(farewells)
+                # ── Merci / au revoir ─────────────────────────────────────────
+                elif any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt", "bonne journée", "bonne soirée", "ciao"]):
+                    reply = random.choice([
+                        f"Merci pour votre intérêt ! N'hésitez pas à revenir si vous avez d'autres questions sur {nom}. — DA",
+                        f"Avec plaisir ! Je reste disponible pour toute autre question. Bonne journée ! — DA",
+                        f"Au revoir et à bientôt ! N'hésitez pas à parcourir le site pour en savoir plus sur {nom}. — DA",
+                    ])
 
-                # Réponse par défaut (aucun mot-clé reconnu)
+                # ── Réponse par défaut ────────────────────────────────────────
                 else:
-                    reply = "Désolé, je n'ai pas assez d'informations à ce sujet. Je vous conseille de contacter l'équipe afin d'avoir plus de renseignements."
+                    reply = f"Je n'ai pas d'information sur ce sujet spécifique. Pour toute question qui ne figure pas sur ce site, je vous invite à contacter directement l'équipe de {nom} via le formulaire de contact."
 
                 self._json({"ok": True, "reply": reply})
             except Exception as e:
