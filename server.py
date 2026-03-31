@@ -1885,13 +1885,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Localisation / bureau / adresse ──────────────────────────
-                elif any(w in q for w in ["localisation", "adresse", "bureau", "où se trouve", "où est", "office", "siège", "ministère", "bâtiment", "lieu", "venir"]):
-                    addr = contact.get("address", "")
-                    city = contact.get("city", "Brazzaville, République du Congo")
-                    if addr:
-                        reply = f"Le bureau de {nom} est situé au : {addr}, {city}. Pour toute visite, il est recommandé de prendre rendez-vous au préalable via le formulaire d'audience du site."
-                    else:
-                        reply = f"Le Ministère de la Justice est situé à Brazzaville, en République du Congo. Pour toute visite ou rendez-vous, utilisez le formulaire de demande d'audience sur ce site afin de planifier votre passage dans les meilleures conditions."
+                elif any(w in q for w in ["localisation", "adresse", "bureau", "où se trouve", "où est", "office", "siège", "ministère", "bâtiment", "lieu", "venir", "bp", "fax"]):
+                    addr    = contact.get("address", "Av. Charles de Gaulle, Brazzaville")
+                    bp      = contact.get("bp", "BP : 1375")
+                    fax     = contact.get("fax", "04 002 90 90")
+                    cabinet = contact.get("cabinet", "Cabinet du Ministre de la Justice")
+                    reply = (
+                        f"📍 {cabinet} de {nom} :\n"
+                        f"• Adresse : {addr}\n"
+                        f"• {bp}\n"
+                        f"• Fax : {fax}\n\n"
+                        f"Pour toute visite, il est recommandé de prendre rendez-vous au préalable via le formulaire d'audience disponible sur ce site."
+                    )
 
                 # ── Horaires ──────────────────────────────────────────────────
                 elif any(w in q for w in ["horaire", "heure", "ouvert", "ouverture", "fermé", "fermeture", "disponible", "quand", "à quelle heure"]):
