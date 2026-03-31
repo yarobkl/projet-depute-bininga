@@ -1854,6 +1854,64 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         f"Au revoir et à bientôt ! N'hésitez pas à parcourir le site pour en savoir plus sur {nom}. — DA",
                     ])
 
+                # ── Langues étrangères / lingala / kituba / anglais ──────────
+                elif any(w in q for w in ["hello", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]):
+                    reply = "I'm DA, the virtual assistant of Minister BININGA's official website. I mainly respond in French. Please write your question in French and I'll be happy to help you. — DA"
+
+                elif any(w in q for w in ["mbote", "bonjour na lingala", "ndeko", "biso", "moto", "malamu", "nakosala"]):
+                    reply = f"Mbote ! DA azali assistant virtuel ya site ya {nom}. Tika koloba na français pona nasalisa yo malamu. Merci !"
+
+                elif any(w in q for w in ["ki ndimu", "bonjour kituba", "beto", "yandi", "mono", "ngeye"]):
+                    reply = f"DA i assistant virtuel ya site ya {nom}. Souka koloba na français, DA i salisa nge. Merci !"
+
+                # ── Urgence / SOS ─────────────────────────────────────────────
+                elif any(w in q for w in ["urgent", "urgence", "sos", "emergency", "immédiatement", "tout de suite", "critique", "grave"]):
+                    reply = f"⚠️ Pour toute situation urgente, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site en précisant le caractère urgent de votre demande. Vous pouvez aussi appeler les services compétents selon la nature de votre urgence."
+
+                # ── Messages irrespectueux ────────────────────────────────────
+                elif any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con"]):
+                    reply = "Je vous invite à formuler votre question de façon respectueuse. Je suis ici pour vous informer et vous aider. Si vous avez une préoccupation sérieuse, le formulaire de contact est à votre disposition."
+
+                # ── Questions fréquentes — Comment faire ─────────────────────
+                elif any(w in q for w in ["comment faire", "comment puis-je", "comment je peux", "est-ce que je peux", "c'est possible", "comment ça marche", "procédure", "démarche"]):
+                    reply = (
+                        f"Voici les principales démarches disponibles sur ce site :\n"
+                        f"• 📋 Demander une audience → section Audience du site\n"
+                        f"• ✉️ Envoyer un message → formulaire de contact\n"
+                        f"• ⚠️ Soumettre une réclamation ou signaler un sinistre → section Réclamations\n"
+                        f"• 📰 S'abonner à la newsletter → formulaire d'inscription\n"
+                        f"• 📚 Commander un livre → formulaire dédié\n\n"
+                        f"Dites-moi ce que vous souhaitez faire, je vous orienterai précisément."
+                    )
+
+                # ── Localisation / bureau / adresse ──────────────────────────
+                elif any(w in q for w in ["localisation", "adresse", "bureau", "où se trouve", "où est", "office", "siège", "ministère", "bâtiment", "lieu", "venir"]):
+                    addr = contact.get("address", "")
+                    city = contact.get("city", "Brazzaville, République du Congo")
+                    if addr:
+                        reply = f"Le bureau de {nom} est situé au : {addr}, {city}. Pour toute visite, il est recommandé de prendre rendez-vous au préalable via le formulaire d'audience du site."
+                    else:
+                        reply = f"Le Ministère de la Justice est situé à Brazzaville, en République du Congo. Pour toute visite ou rendez-vous, utilisez le formulaire de demande d'audience sur ce site afin de planifier votre passage dans les meilleures conditions."
+
+                # ── Horaires ──────────────────────────────────────────────────
+                elif any(w in q for w in ["horaire", "heure", "ouvert", "ouverture", "fermé", "fermeture", "disponible", "quand", "à quelle heure"]):
+                    reply = (
+                        f"Les services de {nom} sont généralement accessibles du lundi au vendredi, "
+                        f"aux heures ouvrables (8h–16h, heure de Brazzaville). "
+                        f"Pour tout contact en dehors de ces horaires, utilisez le formulaire du site — "
+                        f"votre message sera traité dès la reprise."
+                    )
+
+                # ── Délais de réponse / suivi ─────────────────────────────────
+                elif any(w in q for w in ["délai", "combien de temps", "quand", "réponse", "répondre", "attente", "suivi", "dossier", "traitement", "accepté", "refusé", "statut", "état"]):
+                    reply = (
+                        f"Les délais de traitement varient selon la nature de votre demande :\n"
+                        f"• ✉️ Message de contact → réponse sous 48h à 72h ouvrées\n"
+                        f"• 📋 Demande d'audience → traitement sous 5 à 10 jours ouvrés\n"
+                        f"• ⚠️ Réclamation / sinistre → prise en charge sous 72h\n\n"
+                        f"Si vous n'avez pas de retour après ce délai, n'hésitez pas à renvoyer votre demande via le formulaire de contact en précisant qu'il s'agit d'un suivi."
+                    )
+
                 # ── Réponse par défaut ────────────────────────────────────────
                 else:
                     reply = f"Je n'ai pas d'information sur ce sujet spécifique. Pour toute question qui ne figure pas sur ce site, je vous invite à contacter directement l'équipe de {nom} via le formulaire de contact."
