@@ -1867,6 +1867,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 elif any(w in q for w in ["nki", "nki ko", "wana", "yala teke", "téké", "teke", "bonjour teke", "bonjour téké"]):
                     reply = f"Nki ko ! DA kɛ assistant virtuel ya site ya {nom}. Loba na français pona DA salisa nge. Merci !"
 
+                elif any(w in q for w in ["mbochi", "mbosi", "nde ko", "nde mbochi", "bonjour mbochi", "awe", "ebe mbochi", "okele", "mbochi ya"]):
+                    reply = f"Nde ko ! DA ɔ assistant virtuel ya site ya {nom}. Lɔbɔ na français pona DA salisa yo. Merci !"
+
                 # ── Urgence / SOS ─────────────────────────────────────────────
                 elif any(w in q for w in ["urgent", "urgence", "sos", "emergency", "immédiatement", "tout de suite", "critique", "grave"]):
                     reply = f"⚠️ Pour toute situation urgente, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site en précisant le caractère urgent de votre demande. Vous pouvez aussi appeler les services compétents selon la nature de votre urgence."
