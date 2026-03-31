@@ -833,6 +833,7 @@ def save_contacts(contacts: list):
         print(f"[BININGA] Erreur sauvegarde contacts : {e}")
 
 _CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
+_CRM_LOCK     = threading.Lock()   # même protection pour le CRM
 
 def append_contact(entry: dict):
     """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
@@ -1861,70 +1862,68 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
                 phone_contact = entry.get("telephone", "").strip()
-                # Créer une entrée CRM si email OU téléphone fourni
                 if email_contact or phone_contact:
                     try:
-                        crm = load_crm()
-                        is_newsletter = etype == "bininga_newsletter"
                         source_map = {
                             "bininga_newsletter":      "newsletter",
                             "bininga_audiences":       "audience",
                             "bininga_contacts":        "contact",
                             "bininga_commande_livre":  "livre",
                         }
-                        source = source_map.get(etype, "contact")
                         action_map = {
                             "newsletter": "inscription_newsletter",
                             "audience":   "demande_audience",
                             "contact":    "message_contact",
                             "livre":      "commande_livre",
                         }
-                        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        # Déduplication : email en priorité, sinon téléphone
-                        existing = None
-                        if email_contact:
-                            existing = next((c for c in crm["contacts"]
-                                             if c.get("email", "").strip().lower() == email_contact.lower()), None)
-                        if existing is None and phone_contact:
-                            existing = next((c for c in crm["contacts"]
-                                             if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
-                        if existing is None:
-                            tags = [source]
-                            if is_newsletter and "newsletter" not in tags:
-                                tags.append("newsletter")
-                            crm["contacts"].append({
-                                "id":         entry["_id"],
-                                "nom":        nom,
-                                "prenom":     prenom,
-                                "email":      email_contact,
-                                "telephone":  phone_contact,
-                                "source":     source,
-                                "tags":       tags,
-                                "newsletter": is_newsletter,
-                                "statut":     "nouveau",
-                                "created_at": now_str,
-                                "expires_at": _crm_expire_date(),
-                                "notes":      [],
-                                "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
-                                "newsletters": [],
-                            })
-                        else:
-                            # Mise à jour des infos si manquantes
-                            if not existing.get("nom")       and nom:           existing["nom"]       = nom
-                            if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
-                            if not existing.get("email")     and email_contact: existing["email"]     = email_contact
-                            if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
-                            if is_newsletter:
-                                existing["newsletter"] = True
-                                if "newsletter" not in existing.get("tags", []):
-                                    existing.setdefault("tags", []).append("newsletter")
-                            if source not in existing.get("tags", []):
-                                existing.setdefault("tags", []).append(source)
-                            existing.setdefault("historique", []).append({
-                                "ts": now_str, "action": action_map.get(source, "contact"),
-                                "detail": f"Nouveau message via le site ({etype})"
-                            })
-                        save_crm(crm)
+                        source       = source_map.get(etype, "contact")
+                        is_newsletter = etype == "bininga_newsletter"
+                        now_str      = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        with _CRM_LOCK:
+                            crm = load_crm()
+                            existing = None
+                            if email_contact:
+                                existing = next((c for c in crm["contacts"]
+                                                 if c.get("email", "").strip().lower() == email_contact.lower()), None)
+                            if existing is None and phone_contact:
+                                existing = next((c for c in crm["contacts"]
+                                                 if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
+                            if existing is None:
+                                tags = [source]
+                                if is_newsletter and "newsletter" not in tags:
+                                    tags.append("newsletter")
+                                crm["contacts"].append({
+                                    "id":         entry["_id"],
+                                    "nom":        nom,
+                                    "prenom":     prenom,
+                                    "email":      email_contact,
+                                    "telephone":  phone_contact,
+                                    "source":     source,
+                                    "tags":       tags,
+                                    "newsletter": is_newsletter,
+                                    "statut":     "nouveau",
+                                    "created_at": now_str,
+                                    "expires_at": _crm_expire_date(),
+                                    "notes":      [],
+                                    "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
+                                    "newsletters": [],
+                                })
+                            else:
+                                if not existing.get("nom")       and nom:           existing["nom"]       = nom
+                                if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
+                                if not existing.get("email")     and email_contact: existing["email"]     = email_contact
+                                if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
+                                if is_newsletter:
+                                    existing["newsletter"] = True
+                                    if "newsletter" not in existing.get("tags", []):
+                                        existing.setdefault("tags", []).append("newsletter")
+                                if source not in existing.get("tags", []):
+                                    existing.setdefault("tags", []).append(source)
+                                existing.setdefault("historique", []).append({
+                                    "ts": now_str, "action": action_map.get(source, "contact"),
+                                    "detail": f"Nouveau message via le site ({etype})"
+                                })
+                            save_crm(crm)
                     except Exception:
                         pass  # CRM non bloquant
                 self._json({"ok": True, "message": "Message reçu"})
