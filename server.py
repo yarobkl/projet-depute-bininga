@@ -1708,7 +1708,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 reply = None
 
                 # ── Salutations ───────────────────────────────────────────────
-                if any(w in q for w in ["bonjour", "bonsoir", "salut", "hello", "bonne journée", "bonne soirée", "hi", "hey"]):
+                if any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
                     reply = random.choice([
                         f"Bonjour ! Bienvenue sur le site officiel de {nom}. Je suis DA, son assistant virtuel. Je peux vous renseigner sur son parcours, ses fonctions, son programme, ses actualités ou la façon de le contacter. Que souhaitez-vous savoir ?",
                         f"Bonjour et bienvenue ! Je suis DA, l'assistant virtuel du Ministre {nom.split()[-1]}. Posez-moi vos questions sur sa biographie, son action ou son programme. Comment puis-je vous aider ?",
@@ -1855,7 +1855,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     ])
 
                 # ── Langues étrangères / lingala / kituba / anglais ──────────
-                elif any(w in q for w in ["hello", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]):
+                elif any(w in q for w in ["hello", "hi", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]):
                     reply = "I'm DA, the virtual assistant of Minister BININGA's official website. I mainly respond in French. Please write your question in French and I'll be happy to help you. — DA"
 
                 elif any(w in q for w in ["mbote", "bonjour na lingala", "ndeko", "biso", "moto", "malamu", "nakosala"]):
