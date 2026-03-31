@@ -799,11 +799,7 @@
     </div>
     <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
   </div>
-  <div class="chat-messages" id="chatMessages">
-    <div class="chat-msg chat-msg-bot">
-      <div class="chat-bubble">Bonjour ! Je suis Yaro, l'assistant virtuel officiel de Son Excellence Monsieur le Ministre et Député Ange Aimé Wilfrid BININGA. Je suis là pour vous aider et répondre à toutes vos questions. Comment puis-je vous aider ?</div>
-    </div>
-  </div>
+  <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input-area">
     <input type="text" class="chat-input" id="chatInput" placeholder="Votre question…" maxlength="500"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">

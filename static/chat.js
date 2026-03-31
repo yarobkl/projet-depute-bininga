@@ -42,7 +42,7 @@
     const div = document.createElement("div");
     div.className = "chat-msg " + (role === "user" ? "chat-msg-user" : "chat-msg-bot");
     const bub = document.createElement("div");
-    bub.className = "chat-bubble";
+    bub.className = "msg-bubble";
     bub.textContent = text;
     div.appendChild(bub);
     box.appendChild(div);
@@ -54,7 +54,7 @@
     if (!box) return null;
     const div = document.createElement("div");
     div.className = "chat-msg chat-msg-bot chat-typing";
-    div.innerHTML = '<div class="chat-bubble"><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span></div>';
+    div.innerHTML = '<div class="msg-bubble"><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span></div>';
     box.appendChild(div);
     scrollMessages();
     return div;

@@ -194,7 +194,7 @@
 .chat-msg-user { justify-content: flex-end; }
 .chat-msg-bot  { justify-content: flex-start; }
 
-.chat-bubble {
+.msg-bubble {
   max-width: 82%;
   padding: 9px 13px;
   border-radius: 14px;
@@ -202,19 +202,19 @@
   line-height: 1.5;
   word-break: break-word;
 }
-.chat-msg-user .chat-bubble {
+.chat-msg-user .msg-bubble {
   background: #2d2d6b;
   color: #fff;
   border-bottom-right-radius: 4px;
 }
-.chat-msg-bot .chat-bubble {
+.chat-msg-bot .msg-bubble {
   background: rgba(255,255,255,.07);
   color: rgba(255,255,255,.88);
   border-bottom-left-radius: 4px;
 }
 
 /* Typing indicator */
-.chat-typing .chat-bubble {
+.chat-typing .msg-bubble {
   display: flex;
   align-items: center;
   gap: 4px;
