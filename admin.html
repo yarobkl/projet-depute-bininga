@@ -177,7 +177,10 @@
         <div class="notif-panel" id="notif-panel" style="display:none">
           <div class="notif-panel-header">
             <span>Notifications</span>
-            <button class="notif-clear" onclick="clearNotifs()">Tout effacer</button>
+            <div style="display:flex;gap:6px">
+              <button class="notif-clear" onclick="_addNotif('visit',{ip:'test***',page:'/'})">🔔 Test</button>
+              <button class="notif-clear" onclick="clearNotifs()">Tout effacer</button>
+            </div>
           </div>
           <div class="notif-list" id="notif-list">
             <div class="notif-empty">Aucune notification</div>
