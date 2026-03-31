@@ -1796,7 +1796,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # ── Audience / demande d'audience ────────────────────────────
                 elif any(w in q for w in ["audience", "rendez-vous", "rencontrer", "rencontrez", "voir le ministre", "solliciter", "demande d'audience", "rdv"]):
-                    reply = f"Pour solliciter une audience auprès de {nom} ou de son équipe, utilisez le formulaire de demande d'audience disponible sur ce site. Remplissez vos coordonnées et l'objet de votre demande — l'équipe vous contactera dans les meilleurs délais."
+                    reply = f"Pour solliciter une audience auprès de {nom}, soumettez votre demande via le formulaire disponible sur ce site. Il n'y a pas de rendez-vous direct — chaque demande est examinée et traitée selon les disponibilités du cabinet. Remplissez bien vos coordonnées et l'objet de votre demande."
 
                 # ── Contact / email ───────────────────────────────────────────
                 elif any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "écrire", "formulaire", "message", "téléphone", "adresse"]):
@@ -1895,7 +1895,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         f"• Adresse : {addr}\n"
                         f"• {bp}\n"
                         f"• Fax : {fax}\n\n"
-                        f"Pour toute visite, il est recommandé de prendre rendez-vous au préalable via le formulaire d'audience disponible sur ce site."
+                        f"Pour toute visite, vous devez soumettre une demande d'audience via le formulaire disponible sur ce site. Les demandes sont examinées et traitées selon les disponibilités du cabinet."
                     )
 
                 # ── Horaires ──────────────────────────────────────────────────
