@@ -1929,6 +1929,92 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         f"Si vous n'avez pas de retour après ce délai, n'hésitez pas à renvoyer votre demande via le formulaire de contact en précisant qu'il s'agit d'un suivi."
                     )
 
+                # ── Robot / humain ? ──────────────────────────────────────────
+                elif any(w in q for w in ["robot", "humain", "intelligence artificielle", "ia ", "chatbot", "bot", "machine", "programme", "automatique", "réel"]):
+                    reply = f"Je suis DA, un assistant virtuel — ni humain, ni intelligence artificielle. Je fonctionne à partir des informations publiées sur ce site officiel de {nom}. Je ne peux donc répondre qu'aux questions liées à son parcours, ses fonctions et ses engagements."
+
+                # ── Compliments / félicitations ───────────────────────────────
+                elif any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "bien fait", "top da", "merci da", "tu es bien", "bonne réponse"]):
+                    reply = random.choice([
+                        "Merci pour votre retour ! Je fais de mon mieux pour vous informer. N'hésitez pas si vous avez d'autres questions. — DA",
+                        "C'est très gentil ! Je suis là pour vous aider. Posez-moi toutes vos questions sur Ange Aimé Wilfrid BININGA. — DA",
+                        "Merci ! C'est un plaisir de vous être utile. — DA",
+                    ])
+
+                # ── Vote / élections / inscription électorale ─────────────────
+                elif any(w in q for w in ["voter", "vote", "élection", "liste électorale", "inscription électorale", "bureau de vote", "bulletin", "scrutin", "candidat", "campagne électorale"]):
+                    reply = (
+                        f"{nom} est candidat à la députation pour la 1re circonscription d'Ewo.\n\n"
+                        f"Pour voter, vous devez :\n"
+                        f"• ✅ Être inscrit sur les listes électorales de votre circonscription\n"
+                        f"• ✅ Vous munir de votre carte d'électeur ou pièce d'identité le jour du scrutin\n"
+                        f"• ✅ Vous rendre dans votre bureau de vote aux heures indiquées\n\n"
+                        f"Pour toute question sur l'inscription électorale, rapprochez-vous de la Direction Générale des Élections ou de la mairie de votre commune."
+                    )
+
+                # ── Bénévolat / rejoindre la campagne ────────────────────────
+                elif any(w in q for w in ["bénévole", "bénévolat", "rejoindre", "volontaire", "équipe campagne", "s'engager", "engager", "militant", "soutien", "supporter", "aide campagne"]):
+                    reply = (
+                        f"Vous souhaitez rejoindre l'équipe de campagne de {nom} ? C'est avec plaisir !\n\n"
+                        f"📩 Envoyez votre candidature via le formulaire de contact sur ce site en précisant :\n"
+                        f"• Votre nom et prénom\n"
+                        f"• Votre localisation (Ewo, Brazzaville, autre)\n"
+                        f"• La façon dont vous souhaitez contribuer\n\n"
+                        f"L'équipe prendra contact avec vous rapidement."
+                    )
+
+                # ── Réalisations concrètes ────────────────────────────────────
+                elif any(w in q for w in ["réalisation", "accompli", "construit", "route", "école", "hôpital", "infrastructure", "actions concrètes", "résultat concret", "ce qu'il a fait", "bilan concret"]):
+                    reply = (
+                        f"Parmi les réalisations concrètes de {nom} :\n"
+                        f"• ⚖️ Adoption de la loi HALC (Haute Autorité de Lutte contre la Corruption) — 107 voix pour\n"
+                        f"• 🏛️ Modernisation du système judiciaire congolais\n"
+                        f"• 🤝 Coopération judiciaire internationale renforcée (notamment avec la France)\n"
+                        f"• 📋 Réforme de l'administration publique lors de son mandat au Ministère de la Fonction Publique\n"
+                        f"• 🌍 Défense des intérêts de la Cuvette-Ouest à l'Assemblée Nationale depuis 2017\n\n"
+                        f"Consultez la section Parcours du site pour le détail complet de son action."
+                    )
+
+                # ── Distinctions / prix / décorations ────────────────────────
+                elif any(w in q for w in ["distinction", "prix", "médaille", "décoration", "récompense", "honorifique", "ordre", "insigne", "titre honorifique"]):
+                    reply = f"Pour les distinctions et décorations officielles de {nom}, je vous invite à consulter la section Biographie du site ou à contacter directement l'équipe pour obtenir ces informations précises."
+
+                # ── Citations / devise / slogan ───────────────────────────────
+                elif any(w in q for w in ["citation", "phrase", "devise", "slogan", "maxime", "il dit", "il a dit", "parole", "discours", "quote"]):
+                    slogan = hero.get("slogan", "").replace("<em>","").replace("</em>","").replace("<br>", " ")
+                    reply = (
+                        f"La devise de {nom} :\n"
+                        f"« {slogan} »\n\n"
+                        f"Une vision ancrée dans l'engagement au service du peuple congolais et de la Cuvette-Ouest."
+                    )
+
+                # ── Document officiel / attestation ──────────────────────────
+                elif any(w in q for w in ["attestation", "certificat", "document officiel", "acte", "légalisation", "apostille", "casier judiciaire", "extrait"]):
+                    reply = (
+                        f"Pour les demandes de documents officiels (attestations, casier judiciaire, actes légalisés…), "
+                        f"ces démarches relèvent des services du Ministère de la Justice ou des greffes des tribunaux compétents.\n\n"
+                        f"📍 Ministère de la Justice — Av. Charles de Gaulle, Brazzaville\n"
+                        f"Vous pouvez aussi contacter l'équipe de {nom} via le formulaire du site pour être orienté vers le bon service."
+                    )
+
+                # ── Problème local / infrastructure ───────────────────────────
+                elif any(w in q for w in ["route abîmée", "eau courante", "électricité coupée", "problème local", "infrastructure locale", "panne eau", "panne électricité", "route dégradée", "pont", "forage"]):
+                    reply = (
+                        f"Pour signaler un problème d'infrastructure dans votre localité (route, eau, électricité, pont…), "
+                        f"vous pouvez :\n"
+                        f"• 📋 Soumettre un signalement via le formulaire de réclamation sur ce site\n"
+                        f"• ✉️ Contacter directement le cabinet de {nom} pour porter le problème à son attention\n\n"
+                        f"{nom} s'engage pour le développement de la Cuvette-Ouest et prend en compte les remontées du terrain."
+                    )
+
+                # ── Quiz ──────────────────────────────────────────────────────
+                elif any(w in q for w in ["quiz", "jeu", "devinette", "question sur bininga", "tester", "test sur", "je sais tout"]):
+                    reply = random.choice([
+                        f"🎯 Question 1 : Dans quelle circonscription {nom} est-il élu Député ? Répondez et je vous donne la suite !",
+                        f"🎯 Question 1 : Quel ministère {nom} dirige-t-il actuellement ? Répondez et je valide !",
+                        f"🎯 Question 1 : En quelle année {nom} a-t-il fait adopter la loi HALC à l'Assemblée Nationale ? À vous de jouer !",
+                    ])
+
                 # ── Réponse par défaut ────────────────────────────────────────
                 else:
                     reply = f"Je n'ai pas d'information sur ce sujet spécifique. Pour toute question qui ne figure pas sur ce site, je vous invite à contacter directement l'équipe de {nom} via le formulaire de contact."
