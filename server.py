@@ -1047,12 +1047,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /health — Healthcheck Railway / monitoring ──
         if path == "/health":
+            db_ok = _pg() is not None
             self._json({
-                "ok":      True,
-                "status":  "healthy",
-                "ts":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "sessions": len(ACTIVE_SESSIONS),
-                "blocked":  len(BLOCKED_IPS),
+                "ok":        True,
+                "status":    "healthy",
+                "ts":        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "sessions":  len(ACTIVE_SESSIONS),
+                "blocked":   len(BLOCKED_IPS),
+                "database":  "postgresql_ok" if db_ok else "no_database",
             })
             return
 
