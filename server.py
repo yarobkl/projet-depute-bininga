@@ -622,8 +622,12 @@ def load_audit(limit=100):
     except Exception:
         return []
 
-# ── Données ────────────────────────────────────────────────
+# ── Données du site (Hero, À propos, Galerie, etc.) ────────
 def load_data():
+    """Charge le contenu du site : PostgreSQL en priorité, fichier en fallback."""
+    db = _pg_load("site_data")
+    if db is not None:
+        return db
     if not os.path.exists(DATA_FILE):
         return {}
     try:
@@ -633,20 +637,24 @@ def load_data():
         return {}
 
 def save_data(data):
-    # Backup automatique avant écrasement
-    if os.path.exists(DATA_FILE):
-        backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-        with open(DATA_FILE, "rb") as src, open(backup, "wb") as dst:
-            dst.write(src.read())
-        # Garder uniquement les 5 derniers backups
-        backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
-        for old in backups[:-5]:
-            try:
-                os.remove(old)
-            except Exception:
-                pass
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
+    with _DATA_LOCK:
+        # 1. PostgreSQL — source de vérité persistante
+        _pg_save("site_data", data)
+        # 2. Fichier local — fallback + backup
+        try:
+            if os.path.exists(DATA_FILE):
+                backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
+                with open(DATA_FILE, "rb") as src, open(backup, "wb") as dst:
+                    dst.write(src.read())
+                backups = sorted(f for f in os.listdir(".") if f.startswith("data_backup_"))
+                for old in backups[:-5]:
+                    try: os.remove(old)
+                    except Exception: pass
+            with open(DATA_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            print(f"[BININGA] Erreur sauvegarde data.json (non bloquant) : {e}")
 
 # ── Veille IA : lecture/écriture ──────────────────────────
 def load_news() -> dict:
@@ -672,7 +680,8 @@ def save_news(data: dict):
 # Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
 # Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
 
-_PG_CONN = None
+_PG_CONN  = None
+_PG_LOCK  = threading.Lock()   # protège la connexion en mode multi-thread
 
 def _pg():
     """Retourne une connexion PostgreSQL active, ou None si indisponible."""
@@ -680,26 +689,26 @@ def _pg():
     raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
-    # Railway renvoie parfois postgres:// au lieu de postgresql://
     url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
-    try:
-        import psycopg2
-        if _PG_CONN is None or _PG_CONN.closed:
-            _PG_CONN = psycopg2.connect(url, connect_timeout=5)
-            _PG_CONN.autocommit = True
-            with _PG_CONN.cursor() as cur:
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS bininga_store (
-                        key         TEXT PRIMARY KEY,
-                        data        TEXT NOT NULL,
-                        updated_at  TIMESTAMPTZ DEFAULT NOW()
-                    )
-                """)
-        return _PG_CONN
-    except Exception as e:
-        print(f"[DB] PostgreSQL indisponible : {e}")
-        _PG_CONN = None
-        return None
+    with _PG_LOCK:
+        try:
+            import psycopg2
+            if _PG_CONN is None or _PG_CONN.closed:
+                _PG_CONN = psycopg2.connect(url, connect_timeout=5)
+                _PG_CONN.autocommit = True
+                with _PG_CONN.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_store (
+                            key         TEXT PRIMARY KEY,
+                            data        TEXT NOT NULL,
+                            updated_at  TIMESTAMPTZ DEFAULT NOW()
+                        )
+                    """)
+            return _PG_CONN
+        except Exception as e:
+            print(f"[DB] PostgreSQL indisponible : {e}")
+            _PG_CONN = None
+            return None
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
@@ -773,6 +782,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
+    global _PG_CONN
     conn = _pg()
     if not conn:
         return None
@@ -782,10 +792,13 @@ def _pg_load(key: str):
             row = cur.fetchone()
             return json.loads(row[0]) if row else None
     except Exception:
+        with _PG_LOCK:
+            _PG_CONN = None   # force reconnexion au prochain appel
         return None
 
 def _pg_save(key: str, value) -> bool:
     """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
+    global _PG_CONN
     conn = _pg()
     if not conn:
         return False
@@ -800,6 +813,8 @@ def _pg_save(key: str, value) -> bool:
         return True
     except Exception as e:
         print(f"[DB] Erreur écriture '{key}' : {e}")
+        with _PG_LOCK:
+            _PG_CONN = None   # force reconnexion au prochain appel
         return False
 
 # ── Contacts (formulaires publics) ──────────────────────────
@@ -825,11 +840,16 @@ def save_contacts(contacts: list):
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde contacts : {e}")
 
+_CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
+_CRM_LOCK     = threading.Lock()   # même protection pour le CRM
+_DATA_LOCK    = threading.Lock()   # même protection pour le contenu du site
+
 def append_contact(entry: dict):
     """Ajoute un contact et sauvegarde (lecture-modification-écriture atomique)."""
-    contacts = load_contacts()
-    contacts.append(entry)
-    save_contacts(contacts)
+    with _CONTACT_LOCK:
+        contacts = load_contacts()
+        contacts.append(entry)
+        save_contacts(contacts)
 
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
@@ -899,6 +919,16 @@ def _migrate_files_to_db():
             if data.get("contacts") or data.get("newsletters"):
                 _pg_save("crm", data)
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
+        except Exception:
+            pass
+    # Contenu du site (data.json)
+    if _pg_load("site_data") is None and os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if data:
+                _pg_save("site_data", data)
+                print(f"[DB] Migration : contenu du site importé depuis data.json")
         except Exception:
             pass
     # Users
@@ -1017,12 +1047,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /health — Healthcheck Railway / monitoring ──
         if path == "/health":
+            db_ok = _pg() is not None
             self._json({
-                "ok":      True,
-                "status":  "healthy",
-                "ts":      datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "sessions": len(ACTIVE_SESSIONS),
-                "blocked":  len(BLOCKED_IPS),
+                "ok":        True,
+                "status":    "healthy",
+                "ts":        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "sessions":  len(ACTIVE_SESSIONS),
+                "blocked":   len(BLOCKED_IPS),
+                "database":  "postgresql_ok" if db_ok else "no_database",
             })
             return
 
@@ -1851,70 +1883,68 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
                 phone_contact = entry.get("telephone", "").strip()
-                # Créer une entrée CRM si email OU téléphone fourni
                 if email_contact or phone_contact:
                     try:
-                        crm = load_crm()
-                        is_newsletter = etype == "bininga_newsletter"
                         source_map = {
                             "bininga_newsletter":      "newsletter",
                             "bininga_audiences":       "audience",
                             "bininga_contacts":        "contact",
                             "bininga_commande_livre":  "livre",
                         }
-                        source = source_map.get(etype, "contact")
                         action_map = {
                             "newsletter": "inscription_newsletter",
                             "audience":   "demande_audience",
                             "contact":    "message_contact",
                             "livre":      "commande_livre",
                         }
-                        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        # Déduplication : email en priorité, sinon téléphone
-                        existing = None
-                        if email_contact:
-                            existing = next((c for c in crm["contacts"]
-                                             if c.get("email", "").strip().lower() == email_contact.lower()), None)
-                        if existing is None and phone_contact:
-                            existing = next((c for c in crm["contacts"]
-                                             if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
-                        if existing is None:
-                            tags = [source]
-                            if is_newsletter and "newsletter" not in tags:
-                                tags.append("newsletter")
-                            crm["contacts"].append({
-                                "id":         entry["_id"],
-                                "nom":        nom,
-                                "prenom":     prenom,
-                                "email":      email_contact,
-                                "telephone":  phone_contact,
-                                "source":     source,
-                                "tags":       tags,
-                                "newsletter": is_newsletter,
-                                "statut":     "nouveau",
-                                "created_at": now_str,
-                                "expires_at": _crm_expire_date(),
-                                "notes":      [],
-                                "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
-                                "newsletters": [],
-                            })
-                        else:
-                            # Mise à jour des infos si manquantes
-                            if not existing.get("nom")       and nom:           existing["nom"]       = nom
-                            if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
-                            if not existing.get("email")     and email_contact: existing["email"]     = email_contact
-                            if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
-                            if is_newsletter:
-                                existing["newsletter"] = True
-                                if "newsletter" not in existing.get("tags", []):
-                                    existing.setdefault("tags", []).append("newsletter")
-                            if source not in existing.get("tags", []):
-                                existing.setdefault("tags", []).append(source)
-                            existing.setdefault("historique", []).append({
-                                "ts": now_str, "action": action_map.get(source, "contact"),
-                                "detail": f"Nouveau message via le site ({etype})"
-                            })
-                        save_crm(crm)
+                        source       = source_map.get(etype, "contact")
+                        is_newsletter = etype == "bininga_newsletter"
+                        now_str      = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        with _CRM_LOCK:
+                            crm = load_crm()
+                            existing = None
+                            if email_contact:
+                                existing = next((c for c in crm["contacts"]
+                                                 if c.get("email", "").strip().lower() == email_contact.lower()), None)
+                            if existing is None and phone_contact:
+                                existing = next((c for c in crm["contacts"]
+                                                 if c.get("telephone", "").strip() == phone_contact and not c.get("email")), None)
+                            if existing is None:
+                                tags = [source]
+                                if is_newsletter and "newsletter" not in tags:
+                                    tags.append("newsletter")
+                                crm["contacts"].append({
+                                    "id":         entry["_id"],
+                                    "nom":        nom,
+                                    "prenom":     prenom,
+                                    "email":      email_contact,
+                                    "telephone":  phone_contact,
+                                    "source":     source,
+                                    "tags":       tags,
+                                    "newsletter": is_newsletter,
+                                    "statut":     "nouveau",
+                                    "created_at": now_str,
+                                    "expires_at": _crm_expire_date(),
+                                    "notes":      [],
+                                    "historique": [{"ts": now_str, "action": action_map.get(source, "contact"), "detail": f"Via le site public ({etype})"}],
+                                    "newsletters": [],
+                                })
+                            else:
+                                if not existing.get("nom")       and nom:           existing["nom"]       = nom
+                                if not existing.get("prenom")    and prenom:        existing["prenom"]    = prenom
+                                if not existing.get("email")     and email_contact: existing["email"]     = email_contact
+                                if not existing.get("telephone") and phone_contact: existing["telephone"] = phone_contact
+                                if is_newsletter:
+                                    existing["newsletter"] = True
+                                    if "newsletter" not in existing.get("tags", []):
+                                        existing.setdefault("tags", []).append("newsletter")
+                                if source not in existing.get("tags", []):
+                                    existing.setdefault("tags", []).append(source)
+                                existing.setdefault("historique", []).append({
+                                    "ts": now_str, "action": action_map.get(source, "contact"),
+                                    "detail": f"Nouveau message via le site ({etype})"
+                                })
+                            save_crm(crm)
                     except Exception:
                         pass  # CRM non bloquant
                 self._json({"ok": True, "message": "Message reçu"})
