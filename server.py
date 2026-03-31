@@ -1086,7 +1086,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "recl_wait":   len([r for r in recls if not r.get("_status") or r["_status"] != "traite"]),
                 "ct_total":    len(contacts),
                 "ct_unread":   len([c for c in contacts if not c.get("_status") or c["_status"] == "non_lu"]),
+                **({"visitors": _mon.get_visit_stats()} if _MON else {}),
             })
+            return
+
+        if path == "/api/visit-stats":
+            # Public — pas de token requis (juste les compteurs)
+            if _MON:
+                self._json({"ok": True, **_mon.get_visit_stats()})
+            else:
+                self._json({"ok": True, "total": 0, "today": 0, "prog_views": 0})
             return
 
         if path == "/api/logs":
@@ -1732,6 +1741,25 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 except Exception as e:
                     self._json({"ok": False, "message": str(e)}, 400)
                     return
+            self._json({"ok": True})
+            return
+
+        # ── /api/track-visit (public — compteur de visites côté serveur) ──
+        if path == "/api/track-visit":
+            if _MON:
+                body = {}
+                try:
+                    length = int(self.headers.get("Content-Length", 0))
+                    if length:
+                        body = json.loads(self.rfile.read(length))
+                except Exception:
+                    pass
+                page = body.get("page", "/")
+                kind = body.get("kind", "visit")
+                if kind == "prog":
+                    _mon.record_prog_view(ip)
+                else:
+                    _mon.record_visit(ip, page)
             self._json({"ok": True})
             return
 

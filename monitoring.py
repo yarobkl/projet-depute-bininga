@@ -91,12 +91,25 @@ def init_db():
             active_sessions INTEGER,
             blocked_ips     INTEGER
         );
+        CREATE TABLE IF NOT EXISTS visits (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts          TEXT    NOT NULL,
+            ip          TEXT,
+            page        TEXT DEFAULT '/'
+        );
+        CREATE TABLE IF NOT EXISTS prog_views (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            ts          TEXT    NOT NULL,
+            ip          TEXT
+        );
         CREATE INDEX IF NOT EXISTS idx_req_ts   ON requests(ts);
         CREATE INDEX IF NOT EXISTS idx_req_path ON requests(path);
         CREATE INDEX IF NOT EXISTS idx_err_ts   ON errors(ts);
         CREATE INDEX IF NOT EXISTS idx_alt_act  ON alerts(resolved, ts);
         CREATE INDEX IF NOT EXISTS idx_met_ts   ON metrics(metric_name, ts);
         CREATE INDEX IF NOT EXISTS idx_sys_ts   ON system_status(ts);
+        CREATE INDEX IF NOT EXISTS idx_vis_ts   ON visits(ts);
+        CREATE INDEX IF NOT EXISTS idx_prog_ts  ON prog_views(ts);
         """)
         conn.commit()
         conn.close()
@@ -154,6 +167,18 @@ def _execute_write(conn, item):
             "INSERT INTO errors (ts,path,error_type,message,ip) VALUES (?,?,?,?,?)",
             (ts, path, str(etype)[:100], str(msg)[:500], ip)
         )
+    elif kind == "visit":
+        _, ip, page, ts = item
+        conn.execute(
+            "INSERT INTO visits (ts,ip,page) VALUES (?,?,?)",
+            (ts, ip, page[:200])
+        )
+    elif kind == "prog_view":
+        _, ip, ts = item
+        conn.execute(
+            "INSERT INTO prog_views (ts,ip) VALUES (?,?)",
+            (ts, ip)
+        )
 
 
 def _ensure_writer():
@@ -187,6 +212,43 @@ def record_error(path: str, error_type: str, message: str, ip: str = ""):
         pass
     except Exception:
         pass
+
+
+def record_visit(ip: str = "", page: str = "/"):
+    """Enregistre une visite du site public. Non-bloquant."""
+    try:
+        _ensure_writer()
+        _write_queue.put_nowait(("visit", ip, page, _ts()))
+    except queue.Full:
+        pass
+    except Exception:
+        pass
+
+
+def record_prog_view(ip: str = ""):
+    """Enregistre une lecture du programme. Non-bloquant."""
+    try:
+        _ensure_writer()
+        _write_queue.put_nowait(("prog_view", ip, _ts()))
+    except queue.Full:
+        pass
+    except Exception:
+        pass
+
+
+def get_visit_stats() -> dict:
+    """Retourne les compteurs de visites depuis la DB."""
+    try:
+        conn = sqlite3.connect(DB_FILE, timeout=5)
+        conn.row_factory = sqlite3.Row
+        cutoff_24h = datetime.utcnow().strftime("%Y-%m-%d") + " 00:00:00"
+        total    = conn.execute("SELECT COUNT(*) FROM visits").fetchone()[0]
+        today    = conn.execute("SELECT COUNT(*) FROM visits WHERE ts >= ?", (cutoff_24h,)).fetchone()[0]
+        prog     = conn.execute("SELECT COUNT(*) FROM prog_views").fetchone()[0]
+        conn.close()
+        return {"total": total, "today": today, "prog_views": prog}
+    except Exception:
+        return {"total": 0, "today": 0, "prog_views": 0}
 
 
 # ── Métriques système (stdlib Linux / Railway) ────────────────────────────────
