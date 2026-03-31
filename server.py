@@ -1855,7 +1855,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     ])
 
                 # ── Langues étrangères / lingala / kituba / anglais ──────────
-                elif any(w in q for w in ["hello", "hi", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]):
+                elif any(w in q for w in ["hello", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]) or q.strip() in ["hi"] or q.startswith("hi ") or " hi " in q:
                     reply = "I'm DA, the virtual assistant of Minister BININGA's official website. I mainly respond in French. Please write your question in French and I'll be happy to help you. — DA"
 
                 elif any(w in q for w in ["mbote", "bonjour na lingala", "ndeko", "biso", "moto", "malamu", "nakosala"]):
@@ -1934,7 +1934,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = f"Je suis DA, un assistant virtuel — ni humain, ni intelligence artificielle. Je fonctionne à partir des informations publiées sur ce site officiel de {nom}. Je ne peux donc répondre qu'aux questions liées à son parcours, ses fonctions et ses engagements."
 
                 # ── Compliments / félicitations ───────────────────────────────
-                elif any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "bien fait", "top da", "merci da", "tu es bien", "bonne réponse"]):
+                elif any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "top da", "tu es bien", "bonne réponse"]):
                     reply = random.choice([
                         "Merci pour votre retour ! Je fais de mon mieux pour vous informer. N'hésitez pas si vous avez d'autres questions. — DA",
                         "C'est très gentil ! Je suis là pour vous aider. Posez-moi toutes vos questions sur Ange Aimé Wilfrid BININGA. — DA",
@@ -1964,7 +1964,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Réalisations concrètes ────────────────────────────────────
-                elif any(w in q for w in ["réalisation", "accompli", "construit", "route", "école", "hôpital", "infrastructure", "actions concrètes", "résultat concret", "ce qu'il a fait", "bilan concret"]):
+                elif any(w in q for w in ["réalisation", "accompli", "construit", "école", "hôpital", "actions concrètes", "résultat concret", "ce qu'il a fait", "bilan concret"]):
                     reply = (
                         f"Parmi les réalisations concrètes de {nom} :\n"
                         f"• ⚖️ Adoption de la loi HALC (Haute Autorité de Lutte contre la Corruption) — 107 voix pour\n"
