@@ -1,4 +1,5 @@
 import http.server
+import socketserver
 import json
 import os
 import io
@@ -3077,7 +3078,10 @@ if __name__ == "__main__":
   ╚══════════════════════════════════════════════╝
     """)
 
-    server = http.server.HTTPServer(("0.0.0.0", PORT), BiningaHandler)
+    class _ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        daemon_threads = True  # threads meurent quand le serveur s'arrête
+
+    server = _ThreadedHTTPServer(("0.0.0.0", PORT), BiningaHandler)
 
     if USE_SSL:
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -3101,7 +3105,7 @@ if __name__ == "__main__":
             def log_message(self, *args):
                 pass
 
-        redirect_srv = http.server.HTTPServer(("0.0.0.0", REDIRECT_PORT), _RedirectHandler)
+        redirect_srv = _ThreadedHTTPServer(("0.0.0.0", REDIRECT_PORT), _RedirectHandler)
         threading.Thread(target=redirect_srv.serve_forever, daemon=True).start()
         print(f"🔄 Redirection HTTP:{REDIRECT_PORT} → HTTPS:{HTTPS_PORT}")
         print(f"🔒 HTTPS activé ({CERT_SOURCE})")
