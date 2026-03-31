@@ -10,6 +10,7 @@ import hmac
 import struct
 import time
 import threading
+import queue as _queue_mod
 import posixpath
 import re
 import gzip
@@ -18,6 +19,24 @@ import html as _html
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
+
+# ── SSE — Notifications temps réel admin ──────────────────────────────────────
+_SSE_CLIENTS: list = []
+_SSE_LOCK = threading.Lock()
+
+def _sse_broadcast(event_type: str, data: dict):
+    """Envoie un événement SSE à tous les admins connectés."""
+    msg = f"event: {event_type}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n".encode()
+    with _SSE_LOCK:
+        dead = []
+        for q in _SSE_CLIENTS:
+            try:
+                q.put_nowait(msg)
+            except Exception:
+                dead.append(q)
+        for q in dead:
+            try: _SSE_CLIENTS.remove(q)
+            except ValueError: pass
 from datetime import datetime
 
 # ── Module de monitoring (facultatif, stdlib uniquement) ───────────────────────
@@ -1099,6 +1118,40 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, "total": 0, "today": 0, "prog_views": 0})
             return
 
+        # ── /api/events — SSE notifications temps réel ────────────────────────
+        if path == "/api/events":
+            qs_ev = parse_qs(urlparse(self.path).query)
+            token_ev = qs_ev.get("t", [""])[0]
+            if not has_role(token_ev, "admin", "ministre"):
+                self._error(401, "Non autorisé")
+                return
+            client_q = _queue_mod.Queue(maxsize=200)
+            with _SSE_LOCK:
+                _SSE_CLIENTS.append(client_q)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.send_header("X-Accel-Buffering", "no")
+            self.end_headers()
+            try:
+                self.wfile.write(b": connected\n\n")
+                self.wfile.flush()
+                while True:
+                    try:
+                        msg = client_q.get(timeout=25)
+                        self.wfile.write(msg)
+                        self.wfile.flush()
+                    except _queue_mod.Empty:
+                        self.wfile.write(b": ping\n\n")
+                        self.wfile.flush()
+            except Exception:
+                pass
+            finally:
+                with _SSE_LOCK:
+                    try: _SSE_CLIENTS.remove(client_q)
+                    except ValueError: pass
+            return
+
         if path == "/api/logs":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin", "ministre"):
@@ -1747,20 +1800,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/track-visit (public — compteur de visites côté serveur) ──
         if path == "/api/track-visit":
+            body = {}
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                if length:
+                    body = json.loads(self.rfile.read(length))
+            except Exception:
+                pass
+            page = body.get("page", "/")
+            kind = body.get("kind", "visit")
             if _MON:
-                body = {}
-                try:
-                    length = int(self.headers.get("Content-Length", 0))
-                    if length:
-                        body = json.loads(self.rfile.read(length))
-                except Exception:
-                    pass
-                page = body.get("page", "/")
-                kind = body.get("kind", "visit")
                 if kind == "prog":
                     _mon.record_prog_view(ip)
+                    _sse_broadcast("prog_view", {"ip": ip[:6] + "***"})
                 else:
                     _mon.record_visit(ip, page)
+                    _sse_broadcast("visit", {"ip": ip[:6] + "***", "page": page})
             self._json({"ok": True})
             return
 
@@ -1788,6 +1843,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 prenom = entry.get("prenom", "")
                 etype  = entry.get("source") or entry.get("type", "contact")
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
+                # ── Notification SSE temps réel ───────────────────────────────
+                _notif_type = {"bininga_audiences": "audience", "bininga_contacts": "contact"}.get(etype, "contact")
+                if etype == "bininga_audiences" and entry.get("objet") == "Réclamation":
+                    _notif_type = "reclamation"
+                _sse_broadcast(_notif_type, {"nom": nom, "prenom": prenom, "objet": entry.get("objet", "")})
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
                 phone_contact = entry.get("telephone", "").strip()
