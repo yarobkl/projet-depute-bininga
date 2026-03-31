@@ -839,9 +839,13 @@
     "sidebarDesc": "Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.",
     "phone": "+242 06 XXX XXXX",
     "email": "contact@bininga.cg",
-    "address": "Ewo, Cuvette-Ouest, République du Congo",
+    "address": "Av. Charles de Gaulle, Brazzaville, République du Congo",
     "social": "@AimeBingingaOfficiel",
-    "formTitle2": "Envoyez un message"
+    "formTitle2": "Envoyez un message",
+    "bp": "BP : 1375",
+    "fax": "04 002 90 90",
+    "cabinet": "Cabinet du Ministre de la Justice",
+    "city": "Brazzaville, République du Congo"
   },
   "footer": {
     "logoName": "Aimé BININGA",
