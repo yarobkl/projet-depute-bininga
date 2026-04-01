@@ -66,7 +66,8 @@ async function doLogin() {
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
-      document.getElementById("topbar-user").textContent = data.nom + " · " + data.role;
+      const durLabel = data.trusted_ip ? "🔒 Session active 7 jours (IP de confiance)" : "";
+      document.getElementById("topbar-user").textContent = data.nom + " · " + data.role + (durLabel ? "  |  " + durLabel : "");
       applyRoleUI(data.role);
       init();
       initNotifications();
