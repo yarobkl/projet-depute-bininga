@@ -83,9 +83,15 @@ ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
 ).split(",") if o.strip()]
 BASE_DIR        = os.path.realpath(os.getcwd())
 
-# Sessions actives : token → {username, role, nom, created_at, csrf_token}
-ACTIVE_SESSIONS = {}
-SESSION_TTL     = 86400  # 24 heures
+# Sessions actives : token → {username, role, nom, created_at, csrf_token, ttl}
+ACTIVE_SESSIONS    = {}
+SESSION_TTL        = 86400           # 24 heures  (session normale)
+SESSION_TTL_LONG   = 7 * 86400       # 7 jours    (IP de confiance)
+
+# IPs de confiance : session longue durée (7 jours) pour l'admin
+# Format Railway env : ADMIN_TRUSTED_IPS=1.2.3.4,5.6.7.8
+_RAW_TRUSTED = os.environ.get("ADMIN_TRUSTED_IPS", "")
+TRUSTED_IPS: set = {ip.strip() for ip in _RAW_TRUSTED.split(",") if ip.strip()}
 
 # Fichier de contact
 CONTACT_FILE = os.path.join(DATA_DIR, "contacts.json")
@@ -533,7 +539,14 @@ def find_user(username):
     return next((u for u in load_users() if u["username"] == username), None)
 
 def get_session(token):
-    return ACTIVE_SESSIONS.get(token)
+    s = ACTIVE_SESSIONS.get(token)
+    if s is None:
+        return None
+    ttl = s.get("ttl", SESSION_TTL)
+    if time.time() - s.get("created_at", 0) > ttl:
+        ACTIVE_SESSIONS.pop(token, None)
+        return None
+    return s
 
 def has_role(token, *roles):
     s = get_session(token)
@@ -568,7 +581,7 @@ def load_sessions():
 
     ACTIVE_SESSIONS = {
         token: sess for token, sess in stored.items()
-        if now - sess.get("created_at", 0) < SESSION_TTL
+        if now - sess.get("created_at", 0) < sess.get("ttl", SESSION_TTL)
     }
     if len(ACTIVE_SESSIONS) != len(stored):
         save_sessions()  # Purger les sessions expirées
@@ -1613,21 +1626,28 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     _reset_login_attempts(ip)
                     token      = secrets.token_hex(32)
                     csrf_token = secrets.token_hex(24)
+                    is_trusted = ip in TRUSTED_IPS
+                    sess_ttl   = SESSION_TTL_LONG if is_trusted else SESSION_TTL
                     ACTIVE_SESSIONS[token] = {
                         "username":   user["username"],
                         "role":       user["role"],
                         "nom":        user.get("nom", user["username"]),
                         "created_at": time.time(),
                         "csrf_token": csrf_token,
+                        "ttl":        sess_ttl,
+                        "trusted_ip": is_trusted,
                     }
                     save_sessions()
-                    print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')}")
-                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']}){' [2FA]' if totp_secret else ''}")
+                    duration_label = "7 jours" if is_trusted else "24 heures"
+                    print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')} {'[IP de confiance — session 7j]' if is_trusted else ''}")
+                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']}){' [2FA]' if totp_secret else ''}{' [IP fiable — 7j]' if is_trusted else ''}")
                     self._json({"ok": True, "token": token, "csrf_token": csrf_token,
                                 "role": user["role"], "nom": user.get("nom", username),
                                 "username": user["username"],
                                 "is_main_admin": username == ADMIN_USER,
-                                "has_2fa": bool(totp_secret)})
+                                "has_2fa": bool(totp_secret),
+                                "session_duration": duration_label,
+                                "trusted_ip": is_trusted})
                 else:
                     _record_failed_login(ip)
                     record_attack(ip, "LOGIN_FAIL", 2, f"Échec login user: {username}")
