@@ -69,6 +69,28 @@
             chatbotBubble.textContent = "Ça va et toi ?";
         });
     </script>
+
+<script>
+  window.addEventListener('load', () => {
+    console.log("Gemma 3 Active");
+    const chatBtn = document.querySelector('button') || document.querySelector('.send-btn');
+    const chatInput = document.querySelector('input') || document.querySelector('.chat-input');
+
+    if(chatBtn) {
+      chatBtn.addEventListener('click', () => {
+        const text = chatInput.value;
+        if(!text) return;
+        
+        // On attend un court instant pour simuler l'IA
+        setTimeout(() => {
+            const botResponse = document.createElement('div');
+            botResponse.innerHTML = "<b>DA (Gemma 3) :</b> Ça va super et toi ? Ravi de te voir sur le site du Ministre !";
+            botResponse.style.color = "#00ffcc"; // Couleur néon Bakal'os
+            document.body.appendChild(botResponse);
+        }, 800);
+      });
+    }
+  });</script>
 </body>
 </html>
 ```
