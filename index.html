@@ -1114,6 +1114,72 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
             chatbotBubble.style.transform = 'translateX(-50%)';
         });
     </script>
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Chatbot</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chatbot-bubble {
+            background: linear-gradient(90deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 100%);
+            border-radius: 50%;
+            padding: 10px;
+            font-size: 16px;
+            color: #fff;
+            white-space: nowrap;
+            animation: float 3s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chatbot-bubble">Hello!</div>
+    </div>
+
+    <script>
+        const chatbotBubble = document.querySelector('.chatbot-bubble');
+
+        // Function to move the bubble up and down
+        function animateFloat() {
+            chatbotBubble.style.animation = 'float 3s infinite ease-in-out';
+        }
+
+        animateFloat();
+    </script>
+</body>
+</html>
+```
 </body>
 </html>
 ```
