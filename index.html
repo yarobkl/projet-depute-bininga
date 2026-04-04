@@ -1047,5 +1047,75 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
 })();
 </script>
 
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Chatbot</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+        }
+
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .chatbot-bubble {
+            background: linear-gradient(45deg, #00fffa, #00ffff);
+            border-radius: 50%;
+            color: #fff;
+            font-size: 16px;
+            padding: 10px 20px;
+            text-align: center;
+            white-space: nowrap;
+            opacity: 0.9;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chatbot-container">
+        <div class="chatbot-bubble">Hello</div>
+    </div>
+
+    <script>
+        const chatbotBubble = document.querySelector('.chatbot-bubble');
+
+        // Animation effect
+        chatbotBubble.style.animation = 'float 3s ease-in-out infinite';
+
+        // Resize effect
+        window.addEventListener('resize', () => {
+            chatbotBubble.style.left = '50%';
+            chatbotBubble.style.transform = 'translateX(-50%)';
+        });
+    </script>
+</body>
+</html>
+```
 </body>
 </html>
