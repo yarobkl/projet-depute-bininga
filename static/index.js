@@ -2,6 +2,41 @@
 const IMG = "images/bininga.jpg";
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
+/**
+ * sanitizeHtml — Autorise UNIQUEMENT les balises sûres de mise en forme.
+ * Tout le reste est échappé. Protège contre les injections XSS dans innerHTML.
+ * Tags autorisés : <em> <strong> <br> <span class="..."> (pas d'attribut href/on*)
+ */
+function sanitizeHtml(s) {
+  if (!s) return "";
+  // Échapper tout d'abord
+  let safe = String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  // Ré-autoriser uniquement les balises whitelistées (inoffensives)
+  safe = safe
+    .replace(/&lt;em&gt;/g, "<em>").replace(/&lt;\/em&gt;/g, "</em>")
+    .replace(/&lt;strong&gt;/g, "<strong>").replace(/&lt;\/strong&gt;/g, "</strong>")
+    .replace(/&lt;br\s*\/?&gt;/g, "<br>")
+    .replace(/&lt;span class=&quot;([a-zA-Z0-9_ -]{1,30})&quot;&gt;/g,
+             (_, cls) => `<span class="${cls}">`)
+    .replace(/&lt;\/span&gt;/g, "</span>");
+  return safe;
+}
+
+/**
+ * safeCta — Valide un href : n'accepte que les URL relatives ou https://.
+ * Bloque javascript:, data:, vbscript: etc.
+ */
+function safeCta(href) {
+  if (!href) return null;
+  const h = String(href).trim();
+  if (/^(https?:\/\/|\/|#|mailto:)/i.test(h)) return h;
+  return null; // bloque javascript:, data:, etc.
+}
+
 // ── CHARGEMENT DU CONTENU DEPUIS data.json (synchronisé avec l'admin) ─────
 function loadContent() {
   fetch("data.json?t=" + Date.now())
@@ -21,7 +56,7 @@ function loadContent() {
 
       // Hero — Slogan (innerHTML pour supporter les balises em)
       const sloganEl = document.getElementById("dyn-slogan");
-      if (sloganEl && h.slogan) sloganEl.innerHTML = h.slogan;
+      if (sloganEl && h.slogan) sloganEl.innerHTML = sanitizeHtml(h.slogan);
 
       // Hero — Sous-titre
       const subEl = document.getElementById("dyn-sub");
@@ -29,7 +64,7 @@ function loadContent() {
 
       // À propos — Titre
       const aboutTitleEl = document.getElementById("dyn-about-title");
-      if (aboutTitleEl && a.title) aboutTitleEl.innerHTML = a.title;
+      if (aboutTitleEl && a.title) aboutTitleEl.innerHTML = sanitizeHtml(a.title);
 
       // À propos — Introduction
       const aboutIntroEl = document.getElementById("dyn-about-intro");
@@ -267,7 +302,7 @@ function loadContent() {
       if (eng.titleAccent) { const el=document.getElementById("dyn-eng-title-accent"); if(el) el.textContent=eng.titleAccent; }
       if (eng.title)       {
         const el=document.getElementById("dyn-eng-title");
-        if(el) el.childNodes[0].innerHTML=eng.title.replace(/\n/g,"<br>")+" ";
+        if(el) el.childNodes[0].innerHTML=sanitizeHtml(eng.title).replace(/&lt;br&gt;/g,"<br>")+" ";
       }
       if (eng.desc)      { const el=document.getElementById("dyn-eng-desc");      if(el) el.textContent=eng.desc; }
       if (eng.formTitle) { const el=document.getElementById("form-title-aud");    if(el) el.textContent=eng.formTitle; }
@@ -279,11 +314,11 @@ function loadContent() {
 
       // ── CTA ──────────────────────────────────────────────────────────
       const cta = d.cta || {};
-      if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=escHtml(cta.title).replace(/\n/g,"<br>"); }
+      if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
       if (cta.subtitle) { const el=document.getElementById("dyn-cta-sub");   if(el) el.textContent=cta.subtitle; }
-      if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cta.btn1.text||cta.btn1; if(cta.btn1.href) el.href=cta.btn1.href; } }
-      if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cta.btn2.text||cta.btn2; if(cta.btn2.href) el.href=cta.btn2.href; } }
-      if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cta.btn3.text||cta.btn3; if(cta.btn3.href) el.href=cta.btn3.href; } }
+      if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cta.btn1.text||cta.btn1; const h1=safeCta(cta.btn1.href); if(h1) el.href=h1; } }
+      if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cta.btn2.text||cta.btn2; const h2=safeCta(cta.btn2.href); if(h2) el.href=h2; } }
+      if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cta.btn3.text||cta.btn3; const h3=safeCta(cta.btn3.href); if(h3) el.href=h3; } }
 
       // ── Contact — en-tête + coordonnées ──────────────────────────────
       if (ct.sectionTag)    { const el=document.getElementById("dyn-ct-tag");          if(el) el.textContent=ct.sectionTag; }
@@ -398,7 +433,7 @@ function applyDynLang(lang) {
 
   // Hero
   const setTxt = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.textContent=v; };
-  const setHtml = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.innerHTML=v; };
+  const setHtml = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.innerHTML=sanitizeHtml(v); };
 
   if (h.eyebrow) setTxt("dyn-hero-eyebrow", h.eyebrow);
   if (h.role)    setTxt("dyn-role", h.role);
@@ -540,7 +575,7 @@ function applyDynLang(lang) {
 
   // CTA
   const cta = d.cta || {};
-  if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=escHtml(cta.title).replace(/\n/g,"<br>"); }
+  if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
   if (cta.subtitle) setTxt("dyn-cta-sub", cta.subtitle);
   if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el) el.textContent=cta.btn1.text||cta.btn1; }
   if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el) el.textContent=cta.btn2.text||cta.btn2; }

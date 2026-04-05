@@ -116,6 +116,11 @@ TOKEN_RATE_COUNTS: dict = {}
 TOKEN_RATE_LIMIT  = 300     # requêtes / 60 s / token
 TOKEN_RATE_WINDOW = 60      # secondes
 
+# Rate limiting chatbot public : ip → {count, window_start}
+CHAT_RATE_COUNTS: dict = {}
+CHAT_RATE_LIMIT  = 10       # messages / 60 s / IP (anti-spam/DDoS AI quota)
+CHAT_RATE_WINDOW = 60       # secondes
+
 # Rotation des logs
 MAX_LOG_SIZE     = 500 * 1024   # 500 Ko
 MAX_LOG_ARCHIVES = 5
@@ -410,6 +415,20 @@ def check_global_rate(ip: str) -> bool:
     rec["n"] += 1
     if rec["n"] > GLOBAL_RATE_LIMIT:
         record_attack(ip, "RATE_ABUSE", 3, f"{rec['n']} req/min")
+        return True
+    return False
+
+# ── Rate limiting chatbot public ───────────────────────────
+def check_chat_rate(ip: str) -> bool:
+    """Retourne True si l'IP dépasse la limite chatbot (10 msg/min)."""
+    now = time.time()
+    rec = CHAT_RATE_COUNTS.get(ip)
+    if not rec or now - rec["t"] > CHAT_RATE_WINDOW:
+        CHAT_RATE_COUNTS[ip] = {"n": 1, "t": now}
+        return False
+    rec["n"] += 1
+    if rec["n"] > CHAT_RATE_LIMIT:
+        record_attack(ip, "CHAT_RATE_ABUSE", 2, f"Chat: {rec['n']} msg/min")
         return True
     return False
 
@@ -998,6 +1017,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
         self.send_header("Permissions-Policy",
                          "camera=(), microphone=(), geolocation=(self), payment=()")
+        # Headers manquants — isolation cross-origin + clickjacking renforcé
+        self.send_header("Cross-Origin-Opener-Policy", "same-origin")
+        self.send_header("Cross-Origin-Resource-Policy", "same-origin")
+        self.send_header("X-Permitted-Cross-Domain-Policies", "none")
         csp = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline'; "
@@ -1075,8 +1098,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json(load_data())
             return
 
-        # ── /api/debug-ai (diagnostic clé IA) ──
+        # ── /api/debug-ai (diagnostic clé IA — admin uniquement) ──
         if path == "/api/debug-ai":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
             import urllib.request as _ur
             gemini = os.environ.get("GEMINI_API_KEY", "").strip()
             groq   = os.environ.get("GROQ_API_KEY", "")
@@ -1089,14 +1116,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 models_list = [m.get("name","") for m in data_m.get("models", [])]
             except Exception as em:
                 models_list = [f"Erreur ListModels : {em}"]
-            # Test appel Gemini en direct avec le premier modèle flash disponible
+            # Test appel Gemini
             gemini_test = ""
             flash_model = next((m.split("/")[-1] for m in models_list if "flash" in m and "preview" not in m), None)
             try:
                 if flash_model:
                     import urllib.request as ur2
-                    key = gemini
-                    url_g = f"https://generativelanguage.googleapis.com/v1/models/{flash_model}:generateContent?key={key}"
+                    url_g = f"https://generativelanguage.googleapis.com/v1/models/{flash_model}:generateContent?key={gemini}"
                     payload = json.dumps({"contents": [{"parts": [{"text": "Réponds juste: OK"}]}], "generationConfig": {"maxOutputTokens": 10}}).encode()
                     req = ur2.Request(url_g, data=payload, headers={"content-type": "application/json"})
                     with ur2.urlopen(req, timeout=15) as r:
@@ -1104,16 +1130,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = resp["candidates"][0]["content"]["parts"][0]["text"].strip()
                     gemini_test = f"✅ {flash_model} répond : {reply}"
                 else:
-                    gemini_test = "❌ Aucun modèle flash trouvé dans la liste"
+                    gemini_test = "❌ Aucun modèle flash trouvé"
             except Exception as e:
-                err_body = ""
-                try:
-                    if hasattr(e, 'read'): err_body = e.read().decode()
-                except Exception: pass
-                gemini_test = f"❌ Erreur : {e} — {err_body}"
+                gemini_test = f"❌ Erreur : {e}"
             self._json({
+                # Ne jamais renvoyer de préfixe de clé côté client
                 "GEMINI_API_KEY": f"{'✅ présente ('+str(len(gemini))+' chars)' if gemini else '❌ ABSENTE'}",
-                "GEMINI_prefix":  gemini[:8] + "..." if gemini else "",
                 "GROQ_API_KEY":   f"{'✅ présente' if groq else '❌ ABSENTE'}",
                 "models_disponibles": models_list,
                 "modele_selectionne": flash_model or "aucun",
@@ -1537,12 +1559,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self._mon_t0   = time.time()   # monitoring : chronomètre
         self._mon_path = path          # monitoring : chemin
 
-        # ── /api/test/reset doit bypasser le guard (mode test uniquement) ──
+        # ── /api/test/reset — mode test UNIQUEMENT, localhost UNIQUEMENT ──
         if BININGA_TEST and path == "/api/test/reset":
+            # Double protection : localhost uniquement même en mode test
+            if ip not in ("127.0.0.1", "::1", "localhost"):
+                record_attack(ip, "TEST_RESET_ATTEMPT", 25, "Tentative reset depuis IP non-locale en mode test")
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
             LOGIN_ATTEMPTS.clear()
             ATTACK_SCORES.clear()
             BLOCKED_IPS.clear()
             REQUEST_COUNTS.clear()
+            CHAT_RATE_COUNTS.clear()
+            print(f"[SECURITY] /api/test/reset appelé par {ip} — BININGA_TEST=1")
             self._json({"ok": True, "message": "All security state reset (test mode)"})
             return
 
@@ -1703,6 +1732,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/chat (public — chatbot assistant du site) ──
         if path == "/api/chat":
+            ip = self.client_address[0]
+            if check_chat_rate(ip):
+                self._json({"ok": False, "message": "Trop de messages, patientez 1 minute."}, 429)
+                return
             try:
                 payload  = json.loads(body.decode("utf-8"))
                 question = str(payload.get("message", "")).strip()[:1000]
