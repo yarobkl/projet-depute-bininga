@@ -1,7 +1,7 @@
 /**
  * i18n-data.es.js — Traducciones al español del contenido dinámico
  */
-const I18N_DATA_ES = {
+var I18N_DATA_ES = {
   hero: {
     eyebrow: "Campaña Legislativa · República del Congo",
     role: "Guardián de los Sellos · Ministro de Justicia, Derechos Humanos y Promoción de los Pueblos Indígenas · Diputado por Ewo · PCT",

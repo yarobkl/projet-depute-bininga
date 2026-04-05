@@ -1,7 +1,7 @@
 /**
  * i18n-data.zh.js — 动态内容的中文翻译
  */
-const I18N_DATA_ZH = {
+var I18N_DATA_ZH = {
   hero: {
     eyebrow: "立法竞选 · 刚果共和国",
     role: "国玺大臣 · 司法、人权及土著人民促进部长 · 埃沃选区议员 · 刚果劳动党",

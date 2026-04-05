@@ -1,7 +1,7 @@
 /**
  * i18n-data.en.js — English translations for dynamic content
  */
-const I18N_DATA_EN = {
+var I18N_DATA_EN = {
   hero: {
     eyebrow: "Legislative Campaign · Republic of Congo",
     role: "Keeper of the Seals · Minister of Justice, Human Rights and Promotion of Indigenous Peoples · Member of Parliament for Ewo · PCT",
