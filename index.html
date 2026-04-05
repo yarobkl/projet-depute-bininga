@@ -834,6 +834,9 @@
       <div class="chat-header-name">DA — Assistant virtuel</div>
       <div class="chat-header-status"><span class="chat-dot"></span> En ligne</div>
     </div>
+    <button class="chat-tts-toggle" id="chatTtsBtn" onclick="toggleTTS()" aria-label="Activer/désactiver la voix" title="Voix DA">
+      <svg id="chatTtsIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+    </button>
     <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
   </div>
   <div class="chat-messages" id="chatMessages"></div>
