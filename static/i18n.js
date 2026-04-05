@@ -642,6 +642,9 @@ function applyI18n(lang) {
   if (chatSendBtn) chatSendBtn.textContent = t("chat.send");
   const chatTitle = document.getElementById("chat-title");
   if (chatTitle) chatTitle.textContent = t("chat.title");
+
+  // Traduction du contenu dynamique (injecté par index.js depuis data.json)
+  if (typeof applyDynLang === "function") applyDynLang(lang);
 }
 
 // ── Init au chargement ────────────────────────────────────────────────────────

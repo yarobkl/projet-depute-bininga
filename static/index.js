@@ -385,6 +385,188 @@ function loadContent() {
 }
 loadContent();
 
+// ── TRADUCTION DU CONTENU DYNAMIQUE (changement de langue) ───────────────────
+const _DYN_LANG_MAP = { en: "I18N_DATA_EN", es: "I18N_DATA_ES", zh: "I18N_DATA_ZH", ru: "I18N_DATA_RU" };
+
+function applyDynLang(lang) {
+  if (lang === "fr") { loadContent(); return; }
+  const obj = window[_DYN_LANG_MAP[lang]];
+  if (!obj) return; // fichier non chargé
+  const d = obj;
+  const h = d.hero || {};
+  const a = d.about || {};
+
+  // Hero
+  const setTxt = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.textContent=v; };
+  const setHtml = (id, v) => { const el=document.getElementById(id); if(el && v!==undefined) el.innerHTML=v; };
+
+  if (h.eyebrow) setTxt("dyn-hero-eyebrow", h.eyebrow);
+  if (h.role)    setTxt("dyn-role", h.role);
+  if (h.slogan)  setHtml("dyn-slogan", h.slogan);
+  if (h.subtitle) setTxt("dyn-sub", h.subtitle);
+  if (h.btn1)    setTxt("dyn-hero-btn1", h.btn1);
+  if (h.btn2)    setTxt("dyn-hero-btn2", h.btn2);
+
+  // À propos
+  if (a.sectionTag) setTxt("dyn-about-tag", a.sectionTag);
+  if (a.badgeLbl)   setTxt("dyn-about-badge-lbl", a.badgeLbl);
+  if (a.title)      setHtml("dyn-about-title", a.title);
+  if (a.intro)      setTxt("dyn-about-intro", a.intro);
+  if (Array.isArray(a.paragraphs) && a.paragraphs.length) {
+    const el = document.getElementById("dyn-about-body");
+    if (el) el.innerHTML = a.paragraphs.map(p => `<p class="about-body">${escHtml(p)}</p>`).join("");
+  }
+  if (Array.isArray(a.badges) && a.badges.length) {
+    const el = document.getElementById("dyn-about-pills");
+    if (el) el.innerHTML = a.badges.map(b => `<span class="pill">${escHtml(b)}</span>`).join("");
+  }
+
+  // Stats — labels uniquement (les chiffres restent de data.json)
+  if (Array.isArray(d.stats)) {
+    d.stats.forEach((s, i) => {
+      if (s && s.label) setTxt("dyn-s" + i + "-lbl", s.label);
+    });
+  }
+
+  // Parcours — en-tête
+  const pSec = d.parcoursSection || {};
+  if (pSec.tag)         setTxt("dyn-parcours-tag", pSec.tag);
+  if (pSec.titleAccent) setTxt("dyn-parcours-accent", pSec.titleAccent);
+  if (pSec.title) {
+    const el = document.getElementById("dyn-parcours-title");
+    if (el && el.childNodes[0]) el.childNodes[0].textContent = pSec.title + " ";
+  }
+
+  // Parcours — timeline
+  if (Array.isArray(d.parcours) && d.parcours.length) {
+    const parcoursWrap = document.getElementById("dyn-parcours");
+    if (parcoursWrap) {
+      const delays = ["d1","d2","d3","d4","d5","d6"];
+      const sides  = ["left","right","left","right","left","right","left"];
+      parcoursWrap.innerHTML = d.parcours.map((p, i) => {
+        const isLeft = sides[i] === "left";
+        const card = `<div class="tl-card">
+          <div class="tl-year">${escHtml(p.year||"")}</div>
+          <div class="tl-title">${escHtml(p.title||"")}</div>
+          <div class="tl-desc">${escHtml(p.desc||"")}</div>
+          <span class="tl-tag">${escHtml(p.tag||"")}</span>
+        </div>`;
+        const dot   = `<div class="tl-dot">${escHtml(p.emoji||"•")}</div>`;
+        const empty = `<div class="tl-empty"></div>`;
+        return `<div class="tl-item rev ${delays[i%6]}">
+          ${isLeft ? card : empty}
+          ${dot}
+          ${isLeft ? empty : card}
+        </div>`;
+      }).join("");
+      parcoursWrap.querySelectorAll(".rev").forEach(el => rObs.observe(el));
+      parcoursWrap.querySelectorAll(".tl-item").forEach((el, i) => { el.style.transitionDelay = `${i * 0.13}s`; });
+    }
+  }
+
+  // Programme — en-tête
+  const ps = d.programmeSection || {};
+  if (ps.tag)         setTxt("dyn-prog-tag", ps.tag);
+  if (ps.titleAccent) setTxt("dyn-prog-accent", ps.titleAccent);
+  if (ps.title) {
+    const el = document.getElementById("dyn-prog-title");
+    if (el && el.childNodes[0]) el.childNodes[0].textContent = ps.title + " ";
+  }
+  if (ps.subtitle) setTxt("dyn-prog-sub", ps.subtitle);
+
+  // Programme — axes
+  if (d.programme) {
+    const prog = d.programme;
+    const progWrap = document.getElementById("dyn-programme");
+    if (progWrap) {
+      const axes = prog.axes || [];
+      const delays2 = ["d1","d2","d3","d1","d2","d3"];
+      const heroTitle = (prog.heroTitle || "").replace(/\n/g, "<br>");
+      progWrap.innerHTML = `
+        <div class="prog-hero rev">
+          <div>
+            <h3 class="prog-hero-title">${heroTitle}</h3>
+            <p class="prog-hero-sub">${escHtml(prog.heroText||"")}</p>
+          </div>
+          <div class="prog-hero-big">2032</div>
+        </div>
+        <div class="prog-grid">
+          ${axes.map((ax, i) => `
+            <div class="prog-card rev ${delays2[i]}">
+              <div class="prog-num">${String(i+1).padStart(2,"0")}</div>
+              <h3 class="prog-title">${escHtml(ax.title||"")}</h3>
+              <p class="prog-txt">${escHtml(ax.text||"")}</p>
+              <ul class="prog-pts">
+                ${(ax.points||[]).map(pt => `<li>${escHtml(pt)}</li>`).join("")}
+              </ul>
+            </div>`).join("")}
+        </div>`;
+      progWrap.querySelectorAll(".rev").forEach(el => rObs.observe(el));
+    }
+  }
+
+  // Galerie — en-tête
+  const gs = d.galerieSection || {};
+  if (gs.tag)         setTxt("dyn-gal-tag", gs.tag);
+  if (gs.titleAccent) setTxt("dyn-gal-accent", gs.titleAccent);
+  if (gs.title) {
+    const el = document.getElementById("dyn-gal-title");
+    if (el && el.childNodes[0]) el.childNodes[0].textContent = gs.title + " ";
+  }
+
+  // Actualités — en-tête
+  const as_ = d.actusSection || {};
+  if (as_.tag)         setTxt("dyn-actu-tag", as_.tag);
+  if (as_.titleAccent) setTxt("dyn-actu-accent", as_.titleAccent);
+  if (as_.gridTitle)   setTxt("dyn-actu-grid-title", as_.gridTitle);
+  if (as_.title) {
+    const el = document.getElementById("dyn-actu-title");
+    if (el && el.childNodes[0]) el.childNodes[0].textContent = as_.title + " ";
+  }
+
+  // Engagement
+  const eng = d.engagement || {};
+  if (eng.tag)         setTxt("dyn-eng-tag", eng.tag);
+  if (eng.titleAccent) setTxt("dyn-eng-title-accent", eng.titleAccent);
+  if (eng.title) {
+    const el = document.getElementById("dyn-eng-title");
+    if (el && el.childNodes[0]) el.childNodes[0].innerHTML = eng.title.replace(/\n/g,"<br>") + " ";
+  }
+  if (eng.desc) setTxt("dyn-eng-desc", eng.desc);
+  if (Array.isArray(eng.cards) && eng.cards.length) {
+    const el = document.getElementById("dyn-eng-cards");
+    if (el) el.innerHTML = eng.cards.map(c => `<div class="eng-card"><div class="eng-ct">${escHtml(c.title||"")}</div><div class="eng-cd">${escHtml(c.desc||"")}</div></div>`).join("");
+  }
+
+  // CTA
+  const cta = d.cta || {};
+  if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=escHtml(cta.title).replace(/\n/g,"<br>"); }
+  if (cta.subtitle) setTxt("dyn-cta-sub", cta.subtitle);
+  if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el) el.textContent=cta.btn1.text||cta.btn1; }
+  if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el) el.textContent=cta.btn2.text||cta.btn2; }
+  if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el) el.textContent=cta.btn3.text||cta.btn3; }
+
+  // Contact — en-tête
+  const ct = d.contact || {};
+  if (ct.tag)          setTxt("dyn-ct-tag", ct.tag);
+  if (ct.titleAccent)  setTxt("dyn-ct-accent", ct.titleAccent);
+  if (ct.title) {
+    const el = document.getElementById("dyn-ct-title");
+    if (el && el.childNodes[0]) el.childNodes[0].textContent = ct.title + " ";
+  }
+  if (ct.sidebarTitle) {
+    const el = document.getElementById("dyn-ct-sidebar-title");
+    if (el) el.innerHTML = escHtml(ct.sidebarTitle).replace(/\n/g,"<br>");
+  }
+  if (ct.sidebarDesc)  setTxt("dyn-ct-sidebar-desc", ct.sidebarDesc);
+
+  // Footer
+  const ft = d.footer || {};
+  if (ft.logoSub)   setTxt("dyn-ft-logo-sub", ft.logoSub);
+  if (ft.brand)     setTxt("dyn-ft-brand", ft.brand);
+  if (ft.copyright) setTxt("dyn-ft-copyright", ft.copyright);
+}
+
 // cursor
 const cur=document.getElementById("cursor"),ring=document.getElementById("cursorRing");
 document.addEventListener("mousemove",e=>{
