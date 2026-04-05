@@ -20,6 +20,8 @@ const I18N = {
     "hero.btn1":        "🤝 Rejoindre la campagne",
     "hero.btn2":        "Notre programme",
     "hero.scroll":      "Découvrir",
+    "hero.eyebrow":      "Campagne législative · République du Congo",
+    "prog.sub":      "Six axes stratégiques pour transformer Ewo et renforcer le Congo.",
 
     // ── About ───────────────────────────────────────────────────
     "about.tag":        "Qui est-il ?",
@@ -259,6 +261,8 @@ const I18N = {
     "hero.btn1":        "🤝 Join the campaign",
     "hero.btn2":        "Our programme",
     "hero.scroll":      "Discover",
+    "hero.eyebrow":      "Legislative campaign · Republic of Congo",
+    "prog.sub":      "Six strategic pillars to transform Ewo and strengthen Congo.",
 
     "about.tag":        "Who is he?",
     "about.title":      "A man shaped by",
@@ -483,6 +487,8 @@ const I18N = {
     "hero.btn1":        "🤝 Unirse a la campaña",
     "hero.btn2":        "Nuestro programa",
     "hero.scroll":      "Descubrir",
+    "hero.eyebrow":      "Campaña legislativa · República del Congo",
+    "prog.sub":      "Seis ejes estratégicos para transformar Ewo y reforzar el Congo.",
 
     "about.tag":        "¿Quién es?",
     "about.title":      "Un hombre forjado por",
@@ -707,6 +713,8 @@ const I18N = {
     "hero.btn1":        "🤝 加入竞选",
     "hero.btn2":        "查看纲领",
     "hero.scroll":      "了解更多",
+    "hero.eyebrow":      "立法竞选 · 刚果共和国",
+    "prog.sub":      "六大战略轴心，转型Ewo，强化刚果。",
 
     "about.tag":        "他是谁？",
     "about.title":      "一个在实践中磨砺的人",
@@ -931,6 +939,8 @@ const I18N = {
     "hero.btn1":        "🤝 Присоединиться к кампании",
     "hero.btn2":        "Наша программа",
     "hero.scroll":      "Узнать больше",
+    "hero.eyebrow":      "Законодательная кампания · Республика Конго",
+    "prog.sub":      "Шесть стратегических направлений для преобразования Эво и укрепления Конго.",
 
     "about.tag":        "Кто он?",
     "about.title":      "Человек, закалённый",

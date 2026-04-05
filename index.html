@@ -166,7 +166,7 @@
     <div class="hero-eyebrow">
       <div class="hero-eyebrow-line"></div>
       <div class="hero-eyebrow-ticker">
-        <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
+        <span data-i18n="hero.eyebrow">Campagne législative · République du Congo &nbsp;·&nbsp; </span>
         <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
         <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
       </div>
@@ -189,7 +189,7 @@
   </div>
   <a href="#about" class="hero-scroll">
     <div class="hero-scroll-line"></div>
-    <span>Découvrir</span>
+    <span data-i18n="hero.scroll">Découvrir</span>
   </a>
 </section>
 
@@ -298,7 +298,7 @@
       <span class="stag" id="dyn-prog-tag">Notre vision</span>
       <h2 class="stitle" id="dyn-prog-title">Programme <span class="r" id="dyn-prog-accent">2027–2032</span></h2>
       <div class="sline" style="margin:18px auto 0"></div>
-      <p id="dyn-prog-sub" style="font-size:16px;color:rgba(255,255,255,.45);max-width:600px;margin:20px auto 0;font-weight:300;line-height:1.9">Six axes stratégiques pour transformer Ewo et renforcer le Congo.</p>
+      <p id="dyn-prog-sub" data-i18n="prog.sub" style="font-size:16px;color:rgba(255,255,255,.45);max-width:600px;margin:20px auto 0;font-weight:300;line-height:1.9">Six axes stratégiques pour transformer Ewo et renforcer le Congo.</p>
     </div>
     <div class="prog-wrap" id="dyn-programme">
       <!-- Contenu généré dynamiquement via data.json -->
@@ -396,14 +396,14 @@
           <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
         </div>
         <div style="text-align:center;padding:0 24px">
-          <div style="color:#fff;font-weight:700;font-size:16px;margin-bottom:6px">BININGA devant le Conseil des droits de l'homme — ONU</div>
-          <div style="color:rgba(255,255,255,.7);font-size:13px">Examen Périodique Universel · Genève, 30 janvier 2024</div>
+          <div style="color:#fff;font-weight:700;font-size:16px;margin-bottom:6px" data-i18n="video.un.title">BININGA devant le Conseil des droits de l'homme — ONU</div>
+          <div style="color:rgba(255,255,255,.7);font-size:13px" data-i18n="video.un.date">Examen Périodique Universel · Genève, 30 janvier 2024</div>
         </div>
       </div>
       <!-- Badge bas -->
       <div style="position:absolute;bottom:14px;right:14px;color:rgba(255,255,255,.5);font-size:11px;display:flex;align-items:center;gap:5px">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
-        Ouvrir sur UN WebTV
+        <span data-i18n="video.un.open">Ouvrir sur UN WebTV</span>
       </div>
     </a>
   </div>
@@ -447,25 +447,25 @@
         <!-- CHAMPS DEMANDE (audience / question / autre) -->
         <div id="aud-reason">
           <div class="fgrp">
-            <label>Raison de la demande *</label>
-            <textarea name="raison" id="raison-text" rows="5" placeholder="Rédigez ici votre requête. Expliquez l'objet de votre demande, votre situation, et ce que vous attendez du Député…" style="resize:vertical"></textarea>
+            <label data-i18n="form.reason">Raison de la demande *</label>
+            <textarea name="raison" id="raison-text" rows="5" placeholder="Rédigez ici votre requête. Expliquez l'objet de votre demande, votre situation, et ce que vous attendez du Député…" data-i18n-ph="form.reason.ph" style="resize:vertical"></textarea>
           </div>
         </div>
 
         <!-- CHAMPS RÉCLAMATION (cachés par défaut) -->
         <div id="geo-extras" style="display:none">
-          <div class="recl-badge">⚠️ Signalement officiel</div>
+          <div class="recl-badge" data-i18n="form.recl.badge">⚠️ Signalement officiel</div>
           <div class="fgrp">
-            <label>Description du sinistre / problème *</label>
-            <textarea name="description" id="desc-sinistre" rows="3" placeholder="Décrivez précisément le problème, le sinistre ou la situation à signaler au Député…"></textarea>
+            <label data-i18n="form.recl.desc">Description du sinistre / problème *</label>
+            <textarea name="description" id="desc-sinistre" rows="3" placeholder="Décrivez précisément le problème, le sinistre ou la situation à signaler au Député…" data-i18n-ph="form.recl.desc.ph"></textarea>
           </div>
 
           <!-- GÉOLOCALISATION -->
           <div class="geo-box">
-            <div class="geo-box-title">📍 Localisation du sinistre</div>
-            <div class="geo-status" id="geo-status"><span class="dot"></span> Non localisé, cliquez pour géolocaliser</div>
+            <div class="geo-box-title" data-i18n="form.geo.title">📍 Localisation du sinistre</div>
+            <div class="geo-status" id="geo-status"><span class="dot"></span> <span data-i18n="form.geo.status">Non localisé, cliquez pour géolocaliser</span></div>
             <button type="button" class="btn-geo" id="btn-geo" onclick="localizeSinistre()">
-              <span aria-hidden="true">📍</span> Géolocaliser ma position
+              <span aria-hidden="true">📍</span> <span data-i18n="form.geo.btn">Géolocaliser ma position</span>
             </button>
             <div class="geo-addr" id="geo-addr" style="display:none"></div>
             <div class="geo-map-preview" id="geo-map" style="display:none"></div>
@@ -477,7 +477,7 @@
 
           <!-- PHOTO -->
           <div class="fgrp">
-            <label>📷 Photo du sinistre <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#999">(optionnel, jpg/png, max 3 Mo)</span></label>
+            <label><span data-i18n="form.photo.lbl">📷 Photo du sinistre</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#999" data-i18n="form.photo.opt">(optionnel, jpg/png, max 3 Mo)</span></label>
             <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="handleSinistrePhoto(this)" style="padding:8px">
             <div class="photo-preview" id="photo-preview"></div>
             <input type="hidden" name="photo_url" id="photo-url">
@@ -513,13 +513,13 @@
     </div>
     <div class="ct-wrap">
       <div class="rev-l">
-        <h3 class="ct-title" id="dyn-ct-sidebar-title">Quartier Général<br>de Campagne</h3>
+        <h3 class="ct-title" id="dyn-ct-sidebar-title" data-i18n-html="ct.sidebar.title">Quartier Général<br>de Campagne</h3>
         <p class="ct-txt" id="dyn-ct-sidebar-desc" data-i18n="ct.sidebar.desc">Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.</p>
         <div class="ct-items">
-          <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl">Adresse</span><span class="ct-val" id="dyn-ct-address">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
-          <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
-          <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl">Email</span><span class="ct-val" id="dyn-ct-email">contact@bininga.cg</span></div></div>
-          <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl">Réseaux sociaux</span><span class="ct-val" id="dyn-ct-social">@AimeBingingaOfficiel</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl" data-i18n="ct.lbl.address">Adresse</span><span class="ct-val" id="dyn-ct-address">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl" data-i18n="ct.lbl.phone">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
+          <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl" data-i18n="ct.lbl.email">Email</span><span class="ct-val" id="dyn-ct-email">contact@bininga.cg</span></div></div>
+          <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl" data-i18n="ct.lbl.social">Réseaux sociaux</span><span class="ct-val" id="dyn-ct-social">@AimeBingingaOfficiel</span></div></div>
         </div>
       </div>
       <div class="ct-form rev-r">
@@ -584,7 +584,7 @@
   </div>
   <div class="ft-bottom">
     <p id="dyn-ft-copyright" data-i18n="ft.copyright">© 2026 Campagne Aimé BININGA · Parti Congolais du Travail · Tous droits réservés</p>
-    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')">Cookies</a></div>
+    <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')" data-i18n="ft.bottom.mentions">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')" data-i18n="ft.bottom.privacy">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')" data-i18n="ft.bottom.cookies">Cookies</a></div>
   </div>
 </footer>
 
@@ -592,23 +592,23 @@
 <nav class="mob-tabbar" id="mobTabbar" aria-label="Navigation rapide">
   <a href="#hero" class="mob-tab-item active" data-tab="accueil">
     <span class="mob-tab-icon">🏠</span>
-    <span class="mob-tab-lbl">Accueil</span>
+    <span class="mob-tab-lbl" data-i18n="mob.tab.home">Accueil</span>
   </a>
   <a href="#about" class="mob-tab-item" data-tab="profil">
     <span class="mob-tab-icon">👤</span>
-    <span class="mob-tab-lbl">Biographie</span>
+    <span class="mob-tab-lbl" data-i18n="mob.tab.bio">Biographie</span>
   </a>
   <a href="#actu" class="mob-tab-item" data-tab="actu">
     <span class="mob-tab-icon">📰</span>
-    <span class="mob-tab-lbl">Actualités</span>
+    <span class="mob-tab-lbl" data-i18n="mob.tab.news">Actualités</span>
   </a>
   <a href="#engagement" class="mob-tab-item" data-tab="audience">
     <span class="mob-tab-icon">🤝</span>
-    <span class="mob-tab-lbl">Audience</span>
+    <span class="mob-tab-lbl" data-i18n="mob.tab.audience">Audience</span>
   </a>
   <a href="#contact" class="mob-tab-item" data-tab="contact">
     <span class="mob-tab-icon">✉️</span>
-    <span class="mob-tab-lbl">Contact</span>
+    <span class="mob-tab-lbl" data-i18n="mob.tab.contact">Contact</span>
   </a>
 </nav>
 
@@ -625,22 +625,22 @@
 <div class="lmodal-overlay" id="modal-mentions">
   <div class="lmodal">
     <div class="lmodal-head">
-      <h3>Mentions légales</h3>
-      <button class="lmodal-close" onclick="closeLegal('mentions')" aria-label="Fermer">✕</button>
+      <h3 data-i18n="modal.mentions.title">Mentions légales</h3>
+      <button class="lmodal-close" onclick="closeLegal('mentions')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
-      <h4>Éditeur du site</h4>
-      <p>Ce site est édité par la <strong>Cellule de communication de la campagne d'Ange Aimé Wilfrid BININGA</strong>, candidat aux élections législatives de 2027 pour la 1re circonscription d'Ewo (Cuvette-Ouest), République du Congo.</p>
-      <h4>Responsable de la publication</h4>
-      <p><strong>Ange Aimé Wilfrid BININGA</strong>, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo depuis le 19 août 2017. Membre du Parti Congolais du Travail (PCT).</p>
-      <h4>Contact</h4>
-      <p>Ewo, département de la Cuvette-Ouest, République du Congo.<br>Pour toute demande : via le formulaire de contact disponible sur ce site.</p>
-      <h4>Hébergement</h4>
-      <p>Ce site est hébergé par un prestataire tiers. Les informations relatives à l'hébergeur sont disponibles sur simple demande auprès de la cellule de communication.</p>
-      <h4>Propriété intellectuelle</h4>
-      <p>L'ensemble des contenus de ce site (textes, photos, graphismes) est la propriété exclusive de la campagne Aimé BININGA ou de leurs auteurs respectifs. Toute reproduction sans autorisation préalable est interdite.</p>
-      <h4>Limitation de responsabilité</h4>
-      <p>Les informations publiées sur ce site sont fournies à titre indicatif. La campagne ne saurait être tenue responsable des inexactitudes ou omissions qui pourraient y figurer.</p>
+      <h4 data-i18n="modal.mentions.publisher.h">Éditeur du site</h4>
+      <p data-i18n-html="modal.mentions.publisher.p">Ce site est édité par la <strong>Cellule de communication de la campagne d'Ange Aimé Wilfrid BININGA</strong>, candidat aux élections législatives de 2027 pour la 1re circonscription d'Ewo (Cuvette-Ouest), République du Congo.</p>
+      <h4 data-i18n="modal.mentions.resp.h">Responsable de la publication</h4>
+      <p data-i18n-html="modal.mentions.resp.p"><strong>Ange Aimé Wilfrid BININGA</strong>, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo depuis le 19 août 2017. Membre du Parti Congolais du Travail (PCT).</p>
+      <h4 data-i18n="modal.mentions.contact.h">Contact</h4>
+      <p data-i18n-html="modal.mentions.contact.p">Ewo, département de la Cuvette-Ouest, République du Congo.<br>Pour toute demande : via le formulaire de contact disponible sur ce site.</p>
+      <h4 data-i18n="modal.mentions.hosting.h">Hébergement</h4>
+      <p data-i18n-html="modal.mentions.hosting.p">Ce site est hébergé par un prestataire tiers. Les informations relatives à l'hébergeur sont disponibles sur simple demande auprès de la cellule de communication.</p>
+      <h4 data-i18n="modal.mentions.ip.h">Propriété intellectuelle</h4>
+      <p data-i18n-html="modal.mentions.ip.p">L'ensemble des contenus de ce site (textes, photos, graphismes) est la propriété exclusive de la campagne Aimé BININGA ou de leurs auteurs respectifs. Toute reproduction sans autorisation préalable est interdite.</p>
+      <h4 data-i18n="modal.mentions.liability.h">Limitation de responsabilité</h4>
+      <p data-i18n-html="modal.mentions.liability.p">Les informations publiées sur ce site sont fournies à titre indicatif. La campagne ne saurait être tenue responsable des inexactitudes ou omissions qui pourraient y figurer.</p>
     </div>
   </div>
 </div>
@@ -649,8 +649,8 @@
 <div class="lmodal-overlay" id="modal-achat">
   <div class="lmodal" style="max-width:560px">
     <div class="lmodal-head">
-      <h3>Acheter le livre, 40 €</h3>
-      <button class="lmodal-close" onclick="document.getElementById('modal-achat').classList.remove('open');document.body.style.overflow=''" aria-label="Fermer">✕</button>
+      <h3 data-i18n="pub.modal.title">Acheter le livre, 40 €</h3>
+      <button class="lmodal-close" onclick="document.getElementById('modal-achat').classList.remove('open');document.body.style.overflow=''" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body" id="achat-step-1">
       <!-- Aperçu livre -->
@@ -674,7 +674,7 @@
       </div>
 
       <!-- Options d'achat -->
-      <p style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px;letter-spacing:.5px;text-transform:uppercase">Choisissez votre mode d'achat</p>
+      <p style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:14px;letter-spacing:.5px;text-transform:uppercase" data-i18n="pub.modal.choose">Choisissez votre mode d'achat</p>
 
       <div class="buy-platforms">
         <!-- Fnac -->
@@ -683,8 +683,8 @@
           <div class="buy-platform-left">
             <div class="buy-platform-logo">🟡</div>
             <div>
-              <div class="buy-platform-name">Fnac</div>
-              <div class="buy-platform-desc">Disponible en ligne · Livraison rapide · Retrait en magasin</div>
+              <div class="buy-platform-name" data-i18n="pub.modal.fnac.name">Fnac</div>
+              <div class="buy-platform-desc" data-i18n="pub.modal.fnac.desc">Disponible en ligne · Livraison rapide · Retrait en magasin</div>
             </div>
           </div>
           <div class="buy-platform-price">40 € →</div>
@@ -696,8 +696,8 @@
           <div class="buy-platform-left">
             <div class="buy-platform-logo">📚</div>
             <div>
-              <div class="buy-platform-name">L'Harmattan (éditeur officiel)</div>
-              <div class="buy-platform-desc">Paiement sécurisé · Livraison mondiale · Broché ou numérique</div>
+              <div class="buy-platform-name" data-i18n="pub.modal.harmattan.name">L'Harmattan (éditeur officiel)</div>
+              <div class="buy-platform-desc" data-i18n="pub.modal.harmattan.desc">Paiement sécurisé · Livraison mondiale · Broché ou numérique</div>
             </div>
           </div>
           <div class="buy-platform-price">40 € →</div>
@@ -710,21 +710,21 @@
             <div class="buy-platform-logo">📦</div>
             <div>
               <div class="buy-platform-name">Amazon.fr</div>
-              <div class="buy-platform-desc">Livraison rapide · Prime disponible</div>
+              <div class="buy-platform-desc" data-i18n="pub.modal.amazon.desc">Livraison rapide · Prime disponible</div>
             </div>
           </div>
           <div class="buy-platform-price">→</div>
         </a>
 
-        <div class="buy-divider">ou</div>
+        <div class="buy-divider" data-i18n="pub.modal.or">ou</div>
 
         <!-- Commande directe via bureau -->
         <a class="buy-platform local" href="#" onclick="event.preventDefault();showOrderForm()">
           <div class="buy-platform-left">
             <div class="buy-platform-logo">🇨🇬</div>
             <div>
-              <div class="buy-platform-name">Commander via le bureau du Député</div>
-              <div class="buy-platform-desc">Livraison au Congo · Paiement à la livraison · Dédicace possible</div>
+              <div class="buy-platform-name" data-i18n="pub.modal.deputy.name">Commander via le bureau du Député</div>
+              <div class="buy-platform-desc" data-i18n="pub.modal.deputy.desc">Livraison au Congo · Paiement à la livraison · Dédicace possible</div>
             </div>
           </div>
           <div class="buy-platform-price">→</div>
@@ -734,30 +734,30 @@
 
     <!-- Formulaire commande locale (caché par défaut) -->
     <div class="lmodal-body" id="achat-step-2" style="display:none">
-      <button onclick="showBuyOptions()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0">← Retour aux options</button>
-      <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px">Notre équipe vous contacte sous 48h pour confirmer la commande et organiser la livraison.</p>
+      <button onclick="showBuyOptions()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0" data-i18n="pub.order.back">← Retour aux options</button>
+      <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px" data-i18n="pub.order.note">Notre équipe vous contacte sous 48h pour confirmer la commande et organiser la livraison.</p>
       <form class="order-form" onsubmit="submitOrder(event,this)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div class="fgrp"><label>Prénom *</label><input type="text" name="prenom" placeholder="Votre prénom" required></div>
-          <div class="fgrp"><label>Nom *</label><input type="text" name="nom" placeholder="Votre nom" required></div>
+          <div class="fgrp"><label data-i18n="form.firstname">Prénom *</label><input type="text" name="prenom" placeholder="Votre prénom" required data-i18n-ph="form.firstname.ph"></div>
+          <div class="fgrp"><label data-i18n="form.lastname">Nom *</label><input type="text" name="nom" placeholder="Votre nom" required data-i18n-ph="form.lastname.ph"></div>
         </div>
-        <div class="fgrp"><label>Téléphone *</label><input type="tel" name="telephone" placeholder="+242 XX XXX XXXX" required></div>
-        <div class="fgrp"><label>Email</label><input type="email" name="email" placeholder="votre@email.com"></div>
-        <div class="fgrp"><label>Ville / Adresse *</label><input type="text" name="adresse" placeholder="Brazzaville, Pointe-Noire, Ewo…" required></div>
-        <div class="fgrp"><label>Quantité</label>
+        <div class="fgrp"><label data-i18n="form.phone">Téléphone *</label><input type="tel" name="telephone" placeholder="+242 XX XXX XXXX" required></div>
+        <div class="fgrp"><label data-i18n="form.email">Email</label><input type="email" name="email" placeholder="votre@email.com"></div>
+        <div class="fgrp"><label data-i18n="form.address">Ville / Adresse *</label><input type="text" name="adresse" placeholder="Brazzaville, Pointe-Noire, Ewo…" required data-i18n-ph="form.address.ph"></div>
+        <div class="fgrp"><label data-i18n="pub.order.qty.lbl">Quantité</label>
           <select name="quantite">
-            <option value="1">1 exemplaire</option>
-            <option value="2">2 exemplaires</option>
-            <option value="3">3 exemplaires</option>
-            <option value="5">5 exemplaires</option>
-            <option value="autre">Autre (préciser en note)</option>
+            <option value="1" data-i18n="pub.order.qty.1">1 exemplaire</option>
+            <option value="2" data-i18n="pub.order.qty.2">2 exemplaires</option>
+            <option value="3" data-i18n="pub.order.qty.3">3 exemplaires</option>
+            <option value="5" data-i18n="pub.order.qty.5">5 exemplaires</option>
+            <option value="autre" data-i18n="pub.order.qty.other">Autre (préciser en note)</option>
           </select>
         </div>
-        <div class="fgrp"><label>Note (dédicace, précision…)</label><textarea name="note" rows="2" placeholder="Ex : dédicace souhaitée, heure de disponibilité…"></textarea></div>
-        <div class="order-note">💳 Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.</div>
-        <button type="submit" class="pub-btn-primary" id="order-btn" style="width:100%;margin-top:16px;justify-content:center"><span aria-hidden="true">📦</span> Envoyer ma commande</button>
+        <div class="fgrp"><label data-i18n="pub.order.notes.lbl">Note (dédicace, précision…)</label><textarea name="note" rows="2" placeholder="Ex : dédicace souhaitée, heure de disponibilité…" data-i18n-ph="pub.order.notes.ph"></textarea></div>
+        <div class="order-note" data-i18n="pub.order.payment">💳 Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.</div>
+        <button type="submit" class="pub-btn-primary" id="order-btn" data-i18n="pub.order.submit" style="width:100%;margin-top:16px;justify-content:center"><span aria-hidden="true">📦</span> Envoyer ma commande</button>
       </form>
-      <div id="order-ok" style="display:none;text-align:center;padding:20px 0;color:#2ecc71;font-size:15px;font-weight:600">✅ Commande enregistrée ! Notre équipe vous contacte sous 48h.</div>
+      <div id="order-ok" data-i18n="pub.order.success" style="display:none;text-align:center;padding:20px 0;color:#2ecc71;font-size:15px;font-weight:600">✅ Commande enregistrée ! Notre équipe vous contacte sous 48h.</div>
     </div>
   </div>
 </div>
@@ -766,22 +766,22 @@
 <div class="lmodal-overlay" id="modal-confidentialite">
   <div class="lmodal">
     <div class="lmodal-head">
-      <h3>Politique de confidentialité</h3>
-      <button class="lmodal-close" onclick="closeLegal('confidentialite')" aria-label="Fermer">✕</button>
+      <h3 data-i18n="modal.privacy.title">Politique de confidentialité</h3>
+      <button class="lmodal-close" onclick="closeLegal('confidentialite')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
-      <h4>Données collectées</h4>
-      <p>Ce site collecte des données personnelles uniquement via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message).</p>
-      <h4>Finalité du traitement</h4>
-      <p>Les données collectées sont utilisées exclusivement pour <strong>répondre à vos demandes</strong> et assurer le suivi de votre contact avec l'équipe du Député. Elles ne font l'objet d'aucune cession à des tiers ni d'aucune utilisation commerciale.</p>
-      <h4>Stockage des données</h4>
-      <p>Les soumissions sont conservées dans l'espace d'administration sécurisé du site. Elles ne sont accessibles qu'aux membres habilités de la cellule de communication.</p>
-      <h4>Durée de conservation</h4>
-      <p>Les données sont conservées pour la durée nécessaire au traitement de votre demande, et au maximum <strong>12 mois</strong> à compter de la soumission.</p>
-      <h4>Vos droits</h4>
-      <p>Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous via le formulaire du site.</p>
-      <h4>Cookies</h4>
-      <p>Ce site n'utilise pas de cookies de suivi ou publicitaires. Des cookies techniques essentiels au fonctionnement du site peuvent être utilisés.</p>
+      <h4 data-i18n="modal.privacy.collected.h">Données collectées</h4>
+      <p data-i18n-html="modal.privacy.collected.p">Ce site collecte des données personnelles uniquement via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message).</p>
+      <h4 data-i18n="modal.privacy.purpose.h">Finalité du traitement</h4>
+      <p data-i18n-html="modal.privacy.purpose.p">Les données collectées sont utilisées exclusivement pour <strong>répondre à vos demandes</strong> et assurer le suivi de votre contact avec l'équipe du Député. Elles ne font l'objet d'aucune cession à des tiers ni d'aucune utilisation commerciale.</p>
+      <h4 data-i18n="modal.privacy.storage.h">Stockage des données</h4>
+      <p data-i18n-html="modal.privacy.storage.p">Les soumissions sont conservées dans l'espace d'administration sécurisé du site. Elles ne sont accessibles qu'aux membres habilités de la cellule de communication.</p>
+      <h4 data-i18n="modal.privacy.duration.h">Durée de conservation</h4>
+      <p data-i18n-html="modal.privacy.duration.p">Les données sont conservées pour la durée nécessaire au traitement de votre demande, et au maximum <strong>12 mois</strong> à compter de la soumission.</p>
+      <h4 data-i18n="modal.privacy.rights.h">Vos droits</h4>
+      <p data-i18n-html="modal.privacy.rights.p">Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous via le formulaire du site.</p>
+      <h4 data-i18n="modal.privacy.cookies.h">Cookies</h4>
+      <p data-i18n-html="modal.privacy.cookies.p">Ce site n'utilise pas de cookies de suivi ou publicitaires. Des cookies techniques essentiels au fonctionnement du site peuvent être utilisés.</p>
     </div>
   </div>
 </div>
@@ -791,20 +791,20 @@
 <div class="lmodal-overlay" id="modal-cookies">
   <div class="lmodal">
     <div class="lmodal-head">
-      <h3>Gestion des cookies</h3>
-      <button class="lmodal-close" onclick="closeLegal('cookies')" aria-label="Fermer">✕</button>
+      <h3 data-i18n="modal.cookies.title">Gestion des cookies</h3>
+      <button class="lmodal-close" onclick="closeLegal('cookies')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
-      <h4>Qu'est-ce qu'un cookie ?</h4>
-      <p>Un cookie est un petit fichier déposé sur votre terminal lors de la visite d'un site. Il permet de mémoriser des informations relatives à votre navigation.</p>
-      <h4>Cookies utilisés sur ce site</h4>
-      <p><strong>Cookies techniques (essentiels) :</strong> nécessaires au fonctionnement du site (navigation, sécurité). Ils ne peuvent pas être désactivés.</p>
-      <p><strong>Cookies de mesure d'audience :</strong> ce site n'utilise pas de cookies de mesure d'audience ou d'analyse de comportement.</p>
-      <p><strong>Cookies publicitaires :</strong> ce site ne dépose aucun cookie publicitaire ou de reciblage.</p>
-      <h4>Données stockées localement</h4>
-      <p>Ce site utilise le <strong>stockage local (localStorage)</strong> de votre navigateur uniquement pour la gestion interne de l'administration du site. Ces données ne sont pas transmises à des tiers.</p>
-      <h4>Vos choix</h4>
-      <p>Vous pouvez à tout moment supprimer les données stockées via les paramètres de votre navigateur (<em>Outils → Confidentialité → Effacer les données de navigation</em>).</p>
+      <h4 data-i18n="modal.cookies.what.h">Qu'est-ce qu'un cookie ?</h4>
+      <p data-i18n-html="modal.cookies.what.p">Un cookie est un petit fichier déposé sur votre terminal lors de la visite d'un site. Il permet de mémoriser des informations relatives à votre navigation.</p>
+      <h4 data-i18n="modal.cookies.used.h">Cookies utilisés sur ce site</h4>
+      <p data-i18n-html="modal.cookies.technical.p"><strong>Cookies techniques (essentiels) :</strong> nécessaires au fonctionnement du site (navigation, sécurité). Ils ne peuvent pas être désactivés.</p>
+      <p data-i18n-html="modal.cookies.analytics.p"><strong>Cookies de mesure d'audience :</strong> ce site n'utilise pas de cookies de mesure d'audience ou d'analyse de comportement.</p>
+      <p data-i18n-html="modal.cookies.advertising.p"><strong>Cookies publicitaires :</strong> ce site ne dépose aucun cookie publicitaire ou de reciblage.</p>
+      <h4 data-i18n="modal.cookies.storage.h">Données stockées localement</h4>
+      <p data-i18n-html="modal.cookies.storage.p">Ce site utilise le <strong>stockage local (localStorage)</strong> de votre navigateur uniquement pour la gestion interne de l'administration du site. Ces données ne sont pas transmises à des tiers.</p>
+      <h4 data-i18n="modal.cookies.choices.h">Vos choix</h4>
+      <p data-i18n-html="modal.cookies.choices.p">Vous pouvez à tout moment supprimer les données stockées via les paramètres de votre navigateur (<em>Outils → Confidentialité → Effacer les données de navigation</em>).</p>
     </div>
   </div>
 </div>
