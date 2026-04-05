@@ -95,7 +95,7 @@
 <script src="static/i18n.js"></script>
 </head>
 <body>
-<a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'">Aller au contenu principal</a>
+<a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
 
 <!-- PAGE LOADER -->
 <div id="loader">
@@ -132,7 +132,7 @@
     <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh')" title="中文">🇨🇳</button>
     <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru')" title="Русский">🇷🇺</button>
   </div>
-  <button class="hbg" id="hbg" aria-label="Ouvrir le menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  <button class="hbg" id="hbg" aria-label="Ouvrir le menu" aria-expanded="false" data-i18n="aria.menu.open" data-i18n-attr="aria-label"><span></span><span></span><span></span></button>
 </nav>
 
 <!-- MOBILE NAV -->
@@ -257,35 +257,35 @@
           <div style="font-size:9px;color:#888;text-align:center;margin-top:auto;margin-bottom:4px;font-style:italic">Préface du Pr Frédéric Joël Aïvo<br>Avant-propos du Pr Babacar Gueye</div>
           <div class="pcc-harmattan">L'Harmattan Congo-Brazzaville</div>
         </div>
-        <span class="pub-cover-badge">En vente</span>
+        <span class="pub-cover-badge" data-i18n="pub.cover.badge">En vente</span>
       </div>
       <div class="pub-price-badge">40 €</div>
     </div>
 
     <!-- Informations -->
     <div class="pub-info rev">
-      <span class="pub-tag">Publication académique · Droit public</span>
-      <h2 class="pub-title">Les mutations constitutionnelles<br>en Afrique noire francophone</h2>
-      <p class="pub-subtitle">À partir des exemples du Congo, du Bénin et du Sénégal</p>
-      <p class="pub-desc">Ce livre traite des mutations constitutionnelles dans les États d'Afrique noire francophone depuis le renouveau démocratique des années 1990. Ces mutations se manifestent au moyen de la révision constitutionnelle, des lois et règlements infra-constitutionnels, de l'interprétation des normes et de la pratique des acteurs de la vie politique et institutionnelle. D'une part, elles favorisent le reflux des promesses démocratiques du début des années 1990 ; d'autre part, à contresens de cette tendance, elles participent à l'affirmation de l'irréversibilité de la dynamique démocratique.</p>
+      <span class="pub-tag" data-i18n="pub.tag">Publication académique · Droit public</span>
+      <h2 class="pub-title" data-i18n-html="pub.title.html">Les mutations constitutionnelles<br>en Afrique noire francophone</h2>
+      <p class="pub-subtitle" data-i18n="pub.subtitle">À partir des exemples du Congo, du Bénin et du Sénégal</p>
+      <p class="pub-desc" data-i18n="pub.desc">Ce livre traite des mutations constitutionnelles dans les États d'Afrique noire francophone depuis le renouveau démocratique des années 1990. Ces mutations se manifestent au moyen de la révision constitutionnelle, des lois et règlements infra-constitutionnels, de l'interprétation des normes et de la pratique des acteurs de la vie politique et institutionnelle.</p>
       <div class="pub-meta">
-        <span class="pub-meta-item"><strong>Éditeur</strong> L'Harmattan</span>
-        <span class="pub-meta-item"><strong>Parution</strong> 12 sept. 2019</span>
-        <span class="pub-meta-item"><strong>Pages</strong> 353</span>
-        <span class="pub-meta-item"><strong>ISBN</strong> 978-2-343-18410-4</span>
-        <span class="pub-meta-item"><strong>Format</strong> 24 × 16 cm</span>
+        <span class="pub-meta-item" data-i18n-html="pub.meta.publisher"><strong>Éditeur</strong> L'Harmattan</span>
+        <span class="pub-meta-item" data-i18n-html="pub.meta.date"><strong>Parution</strong> 12 sept. 2019</span>
+        <span class="pub-meta-item" data-i18n-html="pub.meta.pages"><strong>Pages</strong> 353</span>
+        <span class="pub-meta-item" data-i18n-html="pub.meta.isbn"><strong>ISBN</strong> 978-2-343-18410-4</span>
+        <span class="pub-meta-item" data-i18n-html="pub.meta.format"><strong>Format</strong> 24 × 16 cm</span>
       </div>
 
       <!-- Bloc achat -->
       <div class="pub-buy-block">
-        <div class="pub-buy-price">40 € <span>port en sus selon destination</span></div>
-        <div class="pub-buy-note">Disponible en librairie et en ligne · Paiement sécurisé</div>
+        <div class="pub-buy-price">40 € <span data-i18n="pub.buy.shipping">port en sus selon destination</span></div>
+        <div class="pub-buy-note" data-i18n="pub.buy.note">Disponible en librairie et en ligne · Paiement sécurisé</div>
         <div class="pub-buy-btns">
-          <button class="pub-btn-primary" onclick="openAchat()"><span aria-hidden="true">🛒</span> Acheter ce livre</button>
+          <button class="pub-btn-primary" onclick="openAchat()" data-i18n="pub.buy.btn"><span aria-hidden="true">🛒</span> Acheter ce livre</button>
         </div>
       </div>
 
-      <p class="pub-preface">Préface du Professeur Frédéric Joël Aïvo · Avant-propos du Professeur Babacar Gueye<br>Docteur en droit public, Université Cheikh Anta Diop de Dakar · Enseignant-chercheur, Université Marien Ngouabi</p>
+      <p class="pub-preface" data-i18n-html="pub.preface">Préface du Professeur Frédéric Joël Aïvo · Avant-propos du Professeur Babacar Gueye<br>Docteur en droit public, Université Cheikh Anta Diop de Dakar · Enseignant-chercheur, Université Marien Ngouabi</p>
     </div>
 
   </div>
@@ -330,8 +330,8 @@
     </div>
 
     <!-- Navigation -->
-    <button class="actu-hero-nav actu-hero-prev" id="actu-prev" aria-label="Précédent">‹</button>
-    <button class="actu-hero-nav actu-hero-next" id="actu-next" aria-label="Suivant">›</button>
+    <button class="actu-hero-nav actu-hero-prev" id="actu-prev" aria-label="Précédent" data-i18n="aria.prev" data-i18n-attr="aria-label">‹</button>
+    <button class="actu-hero-nav actu-hero-next" id="actu-next" aria-label="Suivant" data-i18n="aria.next" data-i18n-attr="aria-label">›</button>
 
     <!-- Dots -->
     <div class="actu-hero-dots" id="actu-hero-dots"></div>
@@ -364,10 +364,10 @@
 <!-- ═══════════ VIDÉO ═══════════ -->
 <section id="video-section" data-mob-tab="actu">
   <div class="video-inner rev">
-    <span class="stag">Le Député en action</span>
-    <h2 class="stitle">Discours & <span class="r">terrain</span></h2>
+    <span class="stag" data-i18n="video.tag">Le Député en action</span>
+    <h2 class="stitle">Discours &amp; <span class="r" data-i18n="video.title.accent">terrain</span></h2>
     <div class="sline" style="margin:16px auto 0"></div>
-    <p class="ssub">Suivez les interventions, discours et actions de terrain d'Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député de la circonscription d'Ewo.</p>
+    <p class="ssub" data-i18n="video.desc">Suivez les interventions, discours et actions de terrain d'Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député de la circonscription d'Ewo.</p>
     <div class="video-frame-wrap">
       <video
         id="main-video"
@@ -388,7 +388,7 @@
       <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(21,101,192,.6) 0%,transparent 70%)"></div>
       <!-- Logo ONU -->
       <div style="position:absolute;top:18px;left:18px;display:flex;align-items:center;gap:8px">
-        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)">🌍 Nations Unies · UN WebTV</span>
+        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)" data-i18n="video.un.badge">🌍 Nations Unies · UN WebTV</span>
       </div>
       <!-- Bouton play central -->
       <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
