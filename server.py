@@ -38,6 +38,98 @@ def _sse_broadcast(event_type: str, data: dict):
             try: _SSE_CLIENTS.remove(q)
             except ValueError: pass
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# ── Notifications email temps réel ────────────────────────────────────────────
+# Variables d'environnement requises :
+#   NOTIF_EMAIL_FROM  → adresse Gmail d'envoi (ex: monbot@gmail.com)
+#   NOTIF_EMAIL_PASS  → mot de passe d'application Gmail (16 caractères)
+#   NOTIF_EMAIL_TO    → destinataire(s) séparés par virgule (ex: eliebakala@gmail.com)
+
+def _send_notif_email(entry: dict, notif_type: str):
+    """Envoie un email de notification au(x) destinataire(s) configuré(s)."""
+    from_addr = os.environ.get("NOTIF_EMAIL_FROM", "").strip()
+    password  = os.environ.get("NOTIF_EMAIL_PASS", "").strip()
+    to_raw    = os.environ.get("NOTIF_EMAIL_TO", "eliebakala@gmail.com").strip()
+    if not from_addr or not password:
+        return  # SMTP non configuré — silencieux
+
+    to_list = [a.strip() for a in to_raw.split(",") if a.strip()]
+    if not to_list:
+        return
+
+    labels = {
+        "bininga_audiences":      "📋 Demande d'audience",
+        "bininga_contacts":       "✉️ Message de contact",
+        "bininga_newsletter":     "📩 Inscription newsletter",
+        "bininga_commande_livre": "📚 Commande de livre",
+    }
+    src    = entry.get("source") or entry.get("type", "contact")
+    label  = labels.get(src, "📬 Nouveau message")
+    nom    = f"{entry.get('prenom','')} {entry.get('nom','')}".strip() or "Inconnu"
+    ts     = entry.get("ts", "")
+
+    # Corps email HTML
+    def row(k, v):
+        return f'<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">{k}</td><td style="padding:6px 12px;font-weight:600">{v}</td></tr>'
+
+    rows = ""
+    for field, display in [
+        ("nom",         "Nom"),
+        ("prenom",      "Prénom"),
+        ("telephone",   "Téléphone"),
+        ("email",       "Email"),
+        ("adresse",     "Adresse"),
+        ("objet",       "Objet"),
+        ("raison",      "Raison / Message"),
+        ("message",     "Message"),
+        ("description", "Description"),
+        ("sujet",       "Sujet"),
+    ]:
+        val = entry.get(field, "").strip() if isinstance(entry.get(field), str) else ""
+        if val:
+            rows += row(display, val)
+    if entry.get("geo_lat"):
+        maps = entry.get("geo_maps_url", f"https://maps.google.com/?q={entry['geo_lat']},{entry.get('geo_lng','')}")
+        rows += row("Localisation", f'<a href="{maps}">{entry["geo_lat"]}, {entry.get("geo_lng","")}</a>')
+
+    html_body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
+      <div style="background:#1a1a2e;padding:20px 24px;border-radius:8px 8px 0 0">
+        <h2 style="color:#fff;margin:0;font-size:18px">{label}</h2>
+        <p style="color:rgba(255,255,255,.6);margin:4px 0 0;font-size:13px">{ts}</p>
+      </div>
+      <div style="background:#f9f9f9;padding:4px 0;border-radius:0 0 8px 8px">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          {rows}
+        </table>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:16px;text-align:center">
+        Notif automatique — site bininga.cg
+      </p>
+    </div>
+    """
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"[BININGA] {label} — {nom}"
+    msg["From"]    = from_addr
+    msg["To"]      = ", ".join(to_list)
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
+            srv.login(from_addr, password)
+            srv.sendmail(from_addr, to_list, msg.as_string())
+        print(f"[EMAIL] Notification envoyée à {to_list} ({label})")
+    except Exception as e:
+        print(f"[EMAIL] Erreur envoi : {e}")
+
+def _send_notif_email_async(entry: dict, notif_type: str):
+    """Lance l'envoi email dans un thread séparé (non bloquant)."""
+    t = threading.Thread(target=_send_notif_email, args=(entry, notif_type), daemon=True)
+    t.start()
 
 # ── Module de monitoring (facultatif, stdlib uniquement) ───────────────────────
 try:
@@ -2308,6 +2400,8 @@ DA:"""
                 if etype == "bininga_audiences" and entry.get("objet") == "Réclamation":
                     _notif_type = "reclamation"
                 _sse_broadcast(_notif_type, {"nom": nom, "prenom": prenom, "objet": entry.get("objet", "")})
+                # ── Email de notification temps réel ─────────────────────────────
+                _send_notif_email_async(entry, _notif_type)
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
                 phone_contact = entry.get("telephone", "").strip()
