@@ -2068,9 +2068,41 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         f"🎯 Question 1 : En quelle année {nom} a-t-il fait adopter la loi HALC à l'Assemblée Nationale ? À vous de jouer !",
                     ])
 
-                # ── Réponse par défaut ────────────────────────────────────────
+                # ── Réponse par défaut — IA (Gemini / Groq fallback) ─────────
                 else:
-                    reply = f"Je n'ai pas d'information sur ce sujet spécifique. Pour toute question qui ne figure pas sur ce site, je vous invite à contacter directement l'équipe de {nom} via le formulaire de contact."
+                    try:
+                        history_ctx = payload.get("history", [])
+                        hist_txt = ""
+                        for h in history_ctx[-6:]:
+                            role_lbl = "Visiteur" if h.get("role") == "user" else "DA"
+                            hist_txt += f"{role_lbl}: {h.get('content','')}\n"
+
+                        about_intro = about.get("intro", "")
+                        about_paras = " ".join(about.get("paragraphs", [])[:3])
+                        prog_axes   = ", ".join(
+                            ax.get("title","") for ax in programme.get("axes",[])[:5]
+                            if isinstance(ax, dict) and ax.get("title")
+                        )
+                        ai_prompt = f"""Tu es DA, l'assistante virtuelle officielle et bienveillante du site de {nom}, {role}.
+Tu réponds en français, de façon chaleureuse, concise (3-5 phrases max), et toujours en lien avec {nom} ou son site.
+Tu ne parles jamais d'autres politiciens, ni de sujets sans rapport. Si tu ne sais pas, tu orientes vers le formulaire de contact.
+
+Contexte sur {nom} :
+- {about_intro[:400]}
+- {about_paras[:400]}
+- Programme : {prog_axes}
+
+Historique de la conversation :
+{hist_txt}
+Visiteur: {question}
+DA:"""
+                        ai_reply = _gemini_call(ai_prompt, max_tokens=300)
+                        # Nettoyer si le modèle répète "DA:"
+                        if ai_reply.lower().startswith("da:"):
+                            ai_reply = ai_reply[3:].strip()
+                        reply = ai_reply
+                    except Exception:
+                        reply = f"Je n'ai pas d'information précise sur ce sujet. Pour toute question, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site."
 
                 self._json({"ok": True, "reply": reply})
             except Exception as e:
