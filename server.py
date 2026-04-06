@@ -2350,16 +2350,91 @@ DA:"""
                     self._json({"ok": False, "message": str(e)}, 500)
                 return
 
-            # POST /api/yaro/run — scraping manuel
+            # POST /api/yaro/run — génération veille juridique via IA (inline)
             if path == "/api/yaro/run":
                 try:
-                    import subprocess, sys
-                    subprocess.Popen(
-                        [sys.executable, "legal_intelligence.py", "--now"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                    )
-                    audit_log("YARO_IA", ip, "Scraping manuel lancé")
-                    self._json({"ok": True, "message": "Scraping lancé en arrière-plan."})
+                    import sqlite3 as _sq3
+
+                    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+                    if not gemini_key:
+                        self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
+                        return
+
+                    YARO_THEMES = [
+                        {"source": "OHADA Info",        "sujet": "droit OHADA et droit des affaires en Afrique centrale",                        "keywords": ["contrat", "OHADA"]},
+                        {"source": "JO Congo",           "sujet": "Journal Officiel du Congo-Brazzaville — textes législatifs et réglementaires récents", "keywords": ["loi", "décret", "réforme"]},
+                        {"source": "Justice Congo",      "sujet": "réforme judiciaire et système de justice au Congo-Brazzaville",                 "keywords": ["justice", "tribunal", "réforme"]},
+                        {"source": "Énergie Congo",      "sujet": "réglementation pétrolière, minière et énergétique au Congo-Brazzaville",        "keywords": ["pétrole", "contrat"]},
+                        {"source": "Environnement Congo","sujet": "droit forestier, environnemental et foncier au Congo-Brazzaville",              "keywords": ["forêt", "contrat"]},
+                        {"source": "Diplomatie Congo",   "sujet": "coopération judiciaire internationale et accords bilatéraux du Congo-Brazzaville","keywords": ["diplomatie", "contrat"]},
+                    ]
+
+                    def _yaro_init_db(conn):
+                        conn.execute("""
+                            CREATE TABLE IF NOT EXISTS articles (
+                                id        INTEGER PRIMARY KEY AUTOINCREMENT,
+                                source    TEXT NOT NULL,
+                                titre     TEXT NOT NULL,
+                                titre_fr  TEXT,
+                                url       TEXT UNIQUE,
+                                keywords  TEXT,
+                                lang_orig TEXT DEFAULT 'fr',
+                                ts        TEXT DEFAULT (datetime('now'))
+                            )""")
+                        conn.execute("CREATE INDEX IF NOT EXISTS idx_ts  ON articles(ts)")
+                        conn.execute("CREATE INDEX IF NOT EXISTS idx_src ON articles(source)")
+                        conn.commit()
+
+                    def _yaro_save(conn, source, titre, url, kws):
+                        try:
+                            conn.execute(
+                                "INSERT OR IGNORE INTO articles (source, titre, titre_fr, url, keywords, lang_orig) VALUES (?,?,?,?,?,?)",
+                                (source, titre[:300], titre[:300], url, ",".join(kws), "fr")
+                            )
+                            conn.commit()
+                        except Exception:
+                            pass
+
+                    yaro_db = _sq3.connect(_YARO_DB)
+                    _yaro_init_db(yaro_db)
+                    total = 0
+
+                    for theme in YARO_THEMES:
+                        today_str = datetime.now().strftime("%d %B %Y")
+                        prompt = f"""Tu es un expert en veille juridique spécialisé dans le droit africain.
+
+Génère 4 bulletins de veille juridique portant sur : {theme['sujet']}
+Date de référence : {today_str}
+
+Chaque bulletin doit couvrir un aspect différent (actualité législative, jurisprudence, accord international, analyse).
+
+Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
+[
+  {{
+    "titre": "titre du bulletin (factuel, informatif, max 120 caractères)",
+    "url": "https://yaro-ref.cg/{secrets.token_hex(6)}"
+  }}
+]"""
+                        try:
+                            raw = _gemini_call(prompt, max_tokens=600)
+                            if raw.startswith("```"):
+                                raw = "\n".join(raw.split("\n")[1:])
+                            if raw.endswith("```"):
+                                raw = "\n".join(raw.split("\n")[:-1])
+                            items = json.loads(raw.strip())
+                            if isinstance(items, list):
+                                for it in items:
+                                    titre = (it.get("titre") or "").strip()
+                                    url_b = (it.get("url") or f"https://yaro-ref.cg/{secrets.token_hex(8)}").strip()
+                                    if titre:
+                                        _yaro_save(yaro_db, theme["source"], titre, url_b, theme["keywords"])
+                                        total += 1
+                        except Exception as ge:
+                            print(f"[YARO] Erreur thème {theme['source']} : {ge}")
+
+                    yaro_db.close()
+                    audit_log("YARO_IA", ip, f"Veille juridique IA lancée — {total} bulletins générés")
+                    self._json({"ok": True, "message": f"{total} bulletins générés via IA."})
                 except Exception as e:
                     self._json({"ok": False, "message": str(e)}, 500)
                 return
