@@ -194,6 +194,9 @@ NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
 # Fichier éditorial IA
 EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
 
+# Fichier YouTube IA
+YOUTUBE_FILE = os.path.join(DATA_DIR, "youtube.json")
+
 # Fichier CRM — rétention 10 ans
 CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
@@ -1568,6 +1571,24 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "stats": data.get("stats", {}),
                 "monitor_running": monitor_running,
             })
+            return
+
+        # ── /api/youtube — liste des contenus YouTube (GET) ──
+        if path == "/api/youtube":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            vids = _pg_load("youtube")
+            if vids is None:
+                vids = []
+                if os.path.exists(YOUTUBE_FILE):
+                    try:
+                        with open(YOUTUBE_FILE, "r", encoding="utf-8") as f:
+                            vids = json.load(f)
+                    except Exception:
+                        vids = []
+            self._json({"ok": True, "videos": vids})
             return
 
         # ── /api/editorial — liste des articles éditoriaux (GET) ──
@@ -3041,6 +3062,170 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                 try:
                     with open(EDITORIAL_FILE, "w", encoding="utf-8") as f:
                         json.dump(arts, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── YOUTUBE IA ─────────────────────────────────────────────
+        # ════════════════════════════════════════════════════════════
+
+        # ── /api/youtube/generate — génère le contenu YouTube via IA ──
+        if path == "/api/youtube/generate":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload    = json.loads(body.decode("utf-8"))
+                titre_src  = payload.get("titre", "").strip()
+                type_video = payload.get("type", "portrait").strip()
+
+                if not titre_src:
+                    self._json({"ok": False, "message": "Titre requis"}, 400)
+                    return
+
+                key = os.environ.get("GEMINI_API_KEY", "").strip()
+                if not key:
+                    self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
+                    return
+
+                # Charger les données du député pour le contexte
+                try:
+                    with open(DATA_FILE, "r", encoding="utf-8") as f:
+                        site_data = json.load(f)
+                    hero  = site_data.get("hero", {})
+                    about = site_data.get("about", {})
+                    context_name = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or "BININGA"
+                    context_role = hero.get("role", "Député-Ministre")
+                    context_intro = about.get("intro", "")
+                except Exception:
+                    context_name  = "Ange Aimé Wilfrid BININGA"
+                    context_role  = "Député-Ministre de la Justice, Garde des Sceaux (Congo-Brazzaville)"
+                    context_intro = ""
+
+                prompt = f"""Tu es un expert en communication politique et création de contenu YouTube francophone.
+
+Personnalité politique : {context_name} — {context_role}
+{context_intro}
+
+Génère le contenu YouTube complet pour la vidéo suivante :
+Titre : "{titre_src}"
+Type : {type_video}
+
+Réponds UNIQUEMENT avec ce JSON (sans markdown ni texte autour) :
+{{
+  "titre_youtube": "titre accrocheur optimisé SEO (max 70 caractères)",
+  "description": "description YouTube complète (300-500 mots) avec paragraphes, appel à l'action et hashtags en fin",
+  "script": "script de la vidéo (3-5 minutes de narration, structuré avec intro, développement, conclusion)",
+  "tags": ["liste", "de", "15", "tags", "pertinents"],
+  "miniature_texte": "texte court pour la miniature (max 5 mots percutants)",
+  "duree_estimee": "durée estimée (ex: 4 minutes)"
+}}"""
+
+                try:
+                    raw = _gemini_call(prompt, max_tokens=2000)
+                except Exception as api_err:
+                    self._json({"ok": False, "message": f"Erreur API IA : {api_err}"}, 500)
+                    return
+
+                # Nettoyer le JSON
+                if raw.startswith("```"):
+                    raw = "\n".join(raw.split("\n")[1:])
+                if raw.endswith("```"):
+                    raw = "\n".join(raw.split("\n")[:-1])
+                raw = raw.strip()
+                contenu = json.loads(raw)
+
+                now_str    = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                video_id   = secrets.token_hex(10)
+                draft = {
+                    "id":         video_id,
+                    "titre":      titre_src,
+                    "type":       type_video,
+                    "statut":     "brouillon",
+                    "created_at": now_str,
+                    "updated_at": now_str,
+                    "contenu":    contenu,
+                }
+                vids = _pg_load("youtube") or []
+                if not vids and os.path.exists(YOUTUBE_FILE):
+                    try:
+                        with open(YOUTUBE_FILE, "r", encoding="utf-8") as f:
+                            vids = json.load(f)
+                    except Exception:
+                        vids = []
+                vids.insert(0, draft)
+                _pg_save("youtube", vids)
+                try:
+                    with open(YOUTUBE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(vids, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                audit_log("YOUTUBE", ip, f"Contenu YouTube généré : {titre_src[:60]}")
+                self._json({"ok": True, "video": draft})
+            except json.JSONDecodeError as e:
+                self._json({"ok": False, "message": f"Réponse IA invalide : {e}"}, 500)
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/youtube/save — modifier le statut ou les données d'un contenu ──
+        if path == "/api/youtube/save":
+            if not has_role(token, "admin", "ministre", "editeur"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            try:
+                payload   = json.loads(body.decode("utf-8"))
+                video_id  = payload.get("id", "")
+                vids = _pg_load("youtube") or []
+                if not vids and os.path.exists(YOUTUBE_FILE):
+                    try:
+                        with open(YOUTUBE_FILE, "r", encoding="utf-8") as f:
+                            vids = json.load(f)
+                    except Exception:
+                        vids = []
+                found = next((v for v in vids if v["id"] == video_id), None)
+                if not found:
+                    self._json({"ok": False, "message": "Contenu introuvable"}, 404)
+                    return
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                for field in ("titre", "type", "statut", "contenu"):
+                    if field in payload:
+                        found[field] = payload[field]
+                found["updated_at"] = now_str
+                _pg_save("youtube", vids)
+                try:
+                    with open(YOUTUBE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(vids, f, indent=2, ensure_ascii=False)
+                except Exception:
+                    pass
+                self._json({"ok": True, "video": found})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
+        # ── /api/youtube/delete — supprimer un contenu YouTube ──
+        if path == "/api/youtube/delete":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                payload  = json.loads(body.decode("utf-8"))
+                video_id = payload.get("id", "")
+                vids = _pg_load("youtube") or []
+                if not vids and os.path.exists(YOUTUBE_FILE):
+                    try:
+                        with open(YOUTUBE_FILE, "r", encoding="utf-8") as f:
+                            vids = json.load(f)
+                    except Exception:
+                        vids = []
+                vids = [v for v in vids if v["id"] != video_id]
+                _pg_save("youtube", vids)
+                try:
+                    with open(YOUTUBE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(vids, f, indent=2, ensure_ascii=False)
                 except Exception:
                     pass
                 self._json({"ok": True})
