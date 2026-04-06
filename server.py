@@ -1163,8 +1163,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             all_contacts = load_contacts()
-            audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
-            contacts  = [c for c in all_contacts if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            def _is_audience(c):
+                return c.get("type") == "bininga_audiences" or c.get("source") == "bininga_audiences"
+            def _is_newsletter(c):
+                return c.get("type") == "bininga_newsletter" or c.get("source") == "bininga_newsletter"
+            audiences = [c for c in all_contacts if _is_audience(c)]
+            contacts  = [c for c in all_contacts if not _is_audience(c) and not _is_newsletter(c)]
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
             return
 
@@ -1174,9 +1178,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             all_c = load_contacts()
-            audiences = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") != "Réclamation"]
-            recls     = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") == "Réclamation"]
-            contacts  = [c for c in all_c if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            def _is_aud(c):
+                return c.get("type") == "bininga_audiences" or c.get("source") == "bininga_audiences"
+            def _is_nl(c):
+                return c.get("type") == "bininga_newsletter" or c.get("source") == "bininga_newsletter"
+            audiences = [c for c in all_c if _is_aud(c) and c.get("objet") != "Réclamation"]
+            recls     = [c for c in all_c if _is_aud(c) and c.get("objet") == "Réclamation"]
+            contacts  = [c for c in all_c if not _is_aud(c) and not _is_nl(c)]
             self._json({
                 "ok":          True,
                 "aud_total":   len(audiences),
@@ -2286,10 +2294,14 @@ DA:"""
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
+                # Normalisation : s'assurer que type et source sont cohérents
+                raw_src = entry.get("source") or entry.get("type", "contact")
+                entry["source"] = raw_src
+                entry["type"]   = raw_src
                 append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
-                etype  = entry.get("source") or entry.get("type", "contact")
+                etype  = raw_src
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
                 # ── Notification SSE temps réel ───────────────────────────────
                 _notif_type = {"bininga_audiences": "audience", "bininga_contacts": "contact"}.get(etype, "contact")

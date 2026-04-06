@@ -1712,7 +1712,9 @@ const PANEL_TITLES = {
   editorial:"✍️ Éditorial IA — Contenus"
 };
 
+let _currentPanel = "dashboard";
 function showPanel(name, el) {
+  _currentPanel = name;
   document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".sb-item").forEach(i => i.classList.remove("active"));
   document.getElementById("panel-"+name).classList.add("active");
@@ -3235,6 +3237,20 @@ function _addNotif(type, data) {
   _renderNotifList();
   _playNotifSound();
   _shakebell();
+
+  // Rafraîchissement automatique du panneau actif selon le type d'événement
+  if (type === "audience" || type === "reclamation") {
+    syncMessages().then(() => {
+      if (_currentPanel === "audiences")    renderAudiences();
+      if (_currentPanel === "reclamations") renderReclamations();
+      if (_currentPanel === "dashboard")    refreshDashboard();
+    });
+  } else if (type === "contact") {
+    syncMessages().then(() => {
+      if (_currentPanel === "contacts")  renderContacts();
+      if (_currentPanel === "dashboard") refreshDashboard();
+    });
+  }
 
   // Notification navigateur
   if (Notification.permission === "granted" && document.visibilityState !== "visible") {
