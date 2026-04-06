@@ -522,12 +522,16 @@ def load_users():
         return []
 
 def save_users(users):
-    _pg_save("users", users)
+    db_ok = _pg_save("users", users)
+    file_ok = False
     try:
         with open(USERS_FILE, "w", encoding="utf-8") as f:
             json.dump(users, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde users fichier : {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder les utilisateurs (DB et fichier indisponibles)")
 
 def init_users():
     """Crée le compte admin par défaut si inexistant (DB ou fichier)."""
@@ -672,8 +676,9 @@ def save_data(data):
     """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
     with _DATA_LOCK:
         # 1. PostgreSQL — source de vérité persistante
-        _pg_save("site_data", data)
+        db_ok = _pg_save("site_data", data)
         # 2. Fichier local — fallback + backup
+        file_ok = False
         try:
             if os.path.exists(DATA_FILE):
                 backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
@@ -685,8 +690,11 @@ def save_data(data):
                     except Exception: pass
             with open(DATA_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+            file_ok = True
         except Exception as e:
-            print(f"[BININGA] Erreur sauvegarde data.json (non bloquant) : {e}")
+            print(f"[BININGA] Erreur sauvegarde data.json : {e}")
+        if not db_ok and not file_ok:
+            raise RuntimeError("Impossible de sauvegarder le contenu du site (DB et fichier indisponibles)")
 
 # ── Veille IA : lecture/écriture ──────────────────────────
 def load_news() -> dict:
@@ -712,35 +720,36 @@ def save_news(data: dict):
 # Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
 # Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
 
-_PG_CONN  = None
-_PG_LOCK  = threading.Lock()   # protège la connexion en mode multi-thread
+_PG_LOCK  = threading.Lock()   # verrou global (conservé pour compatibilité)
+_pg_local = threading.local()  # connexion par thread (thread-safe)
 
 def _pg():
-    """Retourne une connexion PostgreSQL active, ou None si indisponible."""
-    global _PG_CONN
+    """Retourne une connexion PostgreSQL par thread, ou None si indisponible.
+    Chaque thread HTTP a sa propre connexion (psycopg2 n'est pas thread-safe)."""
     raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
     url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
-    with _PG_LOCK:
-        try:
-            import psycopg2
-            if _PG_CONN is None or _PG_CONN.closed:
-                _PG_CONN = psycopg2.connect(url, connect_timeout=5)
-                _PG_CONN.autocommit = True
-                with _PG_CONN.cursor() as cur:
-                    cur.execute("""
-                        CREATE TABLE IF NOT EXISTS bininga_store (
-                            key         TEXT PRIMARY KEY,
-                            data        TEXT NOT NULL,
-                            updated_at  TIMESTAMPTZ DEFAULT NOW()
-                        )
-                    """)
-            return _PG_CONN
-        except Exception as e:
-            print(f"[DB] PostgreSQL indisponible : {e}")
-            _PG_CONN = None
-            return None
+    try:
+        import psycopg2
+        conn = getattr(_pg_local, 'conn', None)
+        if conn is None or conn.closed:
+            conn = psycopg2.connect(url, connect_timeout=5)
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS bininga_store (
+                        key         TEXT PRIMARY KEY,
+                        data        TEXT NOT NULL,
+                        updated_at  TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
+            _pg_local.conn = conn
+        return conn
+    except Exception as e:
+        print(f"[DB] PostgreSQL indisponible : {e}")
+        _pg_local.conn = None
+        return None
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
@@ -814,7 +823,6 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
-    global _PG_CONN
     conn = _pg()
     if not conn:
         return None
@@ -823,14 +831,13 @@ def _pg_load(key: str):
             cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
             row = cur.fetchone()
             return json.loads(row[0]) if row else None
-    except Exception:
-        with _PG_LOCK:
-            _PG_CONN = None   # force reconnexion au prochain appel
+    except Exception as e:
+        print(f"[DB] Erreur lecture '{key}' : {e}")
+        _pg_local.conn = None   # force reconnexion au prochain appel
         return None
 
 def _pg_save(key: str, value) -> bool:
     """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
-    global _PG_CONN
     conn = _pg()
     if not conn:
         return False
@@ -845,8 +852,7 @@ def _pg_save(key: str, value) -> bool:
         return True
     except Exception as e:
         print(f"[DB] Erreur écriture '{key}' : {e}")
-        with _PG_LOCK:
-            _PG_CONN = None   # force reconnexion au prochain appel
+        _pg_local.conn = None   # force reconnexion au prochain appel
         return False
 
 # ── Contacts (formulaires publics) ──────────────────────────
@@ -865,12 +871,16 @@ def load_contacts() -> list:
 
 def save_contacts(contacts: list):
     """Persiste les contacts dans PostgreSQL ET dans le fichier."""
-    _pg_save("contacts", contacts)
+    db_ok = _pg_save("contacts", contacts)
+    file_ok = False
     try:
         with open(CONTACT_FILE, "w", encoding="utf-8") as f:
             json.dump(contacts, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde contacts : {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder les contacts (DB et fichier indisponibles)")
 
 _CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
 _CRM_LOCK     = threading.Lock()   # même protection pour le CRM
@@ -920,13 +930,17 @@ def load_crm() -> dict:
 
 def save_crm(data: dict):
     # PostgreSQL (source de vérité)
-    _pg_save("crm", data)
+    db_ok = _pg_save("crm", data)
     # Fichier JSON (backup local)
+    file_ok = False
     try:
         with open(CRM_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde CRM: {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder le CRM (DB et fichier indisponibles)")
 
 # ── Migration fichiers → PostgreSQL au démarrage ───────────
 def _migrate_files_to_db():
@@ -1195,10 +1209,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             client_q = _queue_mod.Queue(maxsize=200)
             with _SSE_LOCK:
                 _SSE_CLIENTS.append(client_q)
+            sse_origin = self._cors_origin()
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache")
             self.send_header("X-Accel-Buffering", "no")
+            if sse_origin:
+                self.send_header("Access-Control-Allow-Origin", sse_origin)
+                self.send_header("Vary", "Origin")
             self.end_headers()
             try:
                 self.wfile.write(b": connected\n\n")
