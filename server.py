@@ -871,7 +871,7 @@ def _groq_call(prompt: str, max_tokens: int = 800) -> str:
     return resp["choices"][0]["message"]["content"].strip()
 
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
-    """Appelle Gemini Flash, avec fallback automatique sur Groq si quota dépassé."""
+    """Appelle Gemini Flash, avec fallback automatique sur Groq puis Claude."""
     import urllib.request as ur
     global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -913,8 +913,42 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
                 raise
 
     # Fallback Groq
-    print(f"[AI] Gemini indisponible ({gemini_err}) — fallback Groq")
-    return _groq_call(prompt, max_tokens)
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq_key:
+        try:
+            print(f"[AI] Gemini indisponible ({gemini_err}) — fallback Groq")
+            return _groq_call(prompt, max_tokens)
+        except Exception as ge:
+            print(f"[AI] Groq aussi échoué : {ge}")
+
+    # Fallback Claude (Anthropic)
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if anthropic_key:
+        try:
+            print(f"[AI] Groq indisponible — fallback Claude")
+            payload_c = json.dumps({
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": prompt}],
+            }).encode()
+            req_c = ur.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=payload_c,
+                headers={
+                    "content-type": "application/json",
+                    "x-api-key": anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                },
+            )
+            with ur.urlopen(req_c, timeout=30) as r:
+                resp_c = json.loads(r.read())
+            text_c = resp_c["content"][0]["text"].strip()
+            print("[AI] Claude fallback OK")
+            return text_c
+        except Exception as ce:
+            print(f"[AI] Claude aussi échoué : {ce}")
+
+    raise RuntimeError("Aucune API IA disponible (GEMINI_API_KEY / GROQ_API_KEY / ANTHROPIC_API_KEY non configurés)")
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""

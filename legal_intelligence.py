@@ -1,6 +1,6 @@
 """
 legal_intelligence.py — YARO IA Veille Juridique
-Génération de bulletins de veille juridique via l'API Gemini (+ fallback Groq).
+Génération de bulletins de veille juridique via l'API Gemini (+ fallback Groq, puis Claude).
 Exécution quotidienne à 02h00 (ou manuellement via --now).
 """
 
@@ -64,8 +64,7 @@ _GEMINI_MODEL_CACHE = None
 
 def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
     """
-    Appelle l'API Gemini via le proxy système (hérité du processus parent).
-    Fallback automatique sur Groq si Gemini indisponible.
+    Appelle l'API Gemini. Fallback automatique : Groq, puis Claude (Anthropic).
     """
     global _GEMINI_MODEL_CACHE
     key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -133,7 +132,33 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
         except Exception as ge:
             log.error("[AI] Groq aussi échoué : %s", ge)
 
-    raise RuntimeError("Aucune API IA disponible (GEMINI_API_KEY / GROQ_API_KEY non configurés)")
+    # Fallback Claude (Anthropic)
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
+    if anthropic_key:
+        try:
+            payload_c = json.dumps({
+                "model": "claude-haiku-4-5-20251001",
+                "max_tokens": max_tokens,
+                "messages": [{"role": "user", "content": prompt}],
+            }).encode()
+            req_c = urllib.request.Request(
+                "https://api.anthropic.com/v1/messages",
+                data=payload_c,
+                headers={
+                    "content-type": "application/json",
+                    "x-api-key": anthropic_key,
+                    "anthropic-version": "2023-06-01",
+                },
+            )
+            with urllib.request.urlopen(req_c, timeout=30) as r:
+                resp_c = json.loads(r.read())
+            text_c = resp_c["content"][0]["text"].strip()
+            log.info("[AI] Claude fallback OK")
+            return text_c
+        except Exception as ce:
+            log.error("[AI] Claude aussi échoué : %s", ce)
+
+    raise RuntimeError("Aucune API IA disponible (GEMINI_API_KEY / GROQ_API_KEY / ANTHROPIC_API_KEY non configurés)")
 
 
 # ── Base de données ─────────────────────────────────────────────────────────────
