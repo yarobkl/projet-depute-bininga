@@ -146,11 +146,129 @@ var I18N_DATA_EN = {
     gridTitle: "Other actions of the Deputy Minister"
   },
 
+  actus: {
+    slides: [
+      { chip: "⚖️ Justice · March 27, 2023", date: "March 27, 2023, Brazzaville — People's Palace", title: "Magistracy: sanctions and appointments\npresented by Minister BININGA", subtitle: "Convened in ordinary session under the authority of President Denis Sassou-N'Guesso, the Supreme Council of the Magistracy sanctioned 23 magistrates. Official report presented by Minister of Justice Ange Aimé Wilfrid Bininga." },
+      { chip: "⚡ Energy · August 2024", date: "August 20, 2024, Cuvette-Ouest, Congo", title: "Energy boulevard:\nEwo soon connected to the national electricity grid", subtitle: "Prime Minister Anatole Collinet Makosso visited the construction works of the 110 KV power line and the Boundji-Ewo paved road. Out of 180 pylons, 116 are already installed; Ewo will be electrified within a few months." },
+      { chip: "🌍 Judicial Diplomacy · Dec. 12, 2025", date: "December 12, 2025, Brazzaville, Congo", title: "BININGA & the Rwandan Ambassador:\njudicial partnership and bilateral cooperation", subtitle: "The Rwandan Ambassador to Congo (@parfaitbus) paid a courtesy visit to Minister of Justice Aimé Wilfrid Bininga. The meeting allowed discussion of a judicial partnership and the strengthening of cooperation between the two countries." },
+      { chip: "🗳️ Presidential Campaign · March 9, 2026", date: "Ewo, Cuvette-Ouest, Lebankaya Axis", title: "BININGA at the heart of 13 villages:\nthe Sassou Nguesso campaign in Ewo", subtitle: "As coordinator of Presidential Candidate Denis Sassou Nguesso's campaign in the Ewo district and municipality, Aimé Bininga toured the Lebankaya axis to carry the presidential message to the people. Strong mobilization at every stage." },
+      { chip: "Diplomacy · February 2026", date: "February 18, 2026, Place Vendôme, Paris", title: "BININGA & Darmanin:\na new judicial era Congo–France", subtitle: "Received at Place Vendôme by his French counterpart Gérald Darmanin, Minister BININGA engages in the revision of the 50-year-old bilateral judicial convention. Three new conventions — mutual assistance, extraditions, and transfers — expected by summer 2026." },
+      { chip: "Official portrait", date: "Republic of Congo, Keeper of the Seals", title: "Ange Aimé Wilfrid BININGA,\nin service of Justice and his people", subtitle: "Jurist, reformer, diplomat, MP for Ewo and Minister of Justice, Human Rights and Promotion of Indigenous Peoples. A man of the field whose action resonates from Congo to the international stage." },
+      { chip: "Indigenous Peoples · Aug. 9, 2025", date: "August 9, 2025, Brazzaville — Congo", title: "International Day of Indigenous Peoples 2025:\nCongo reaffirms its commitment", subtitle: "On the occasion of the International Day of Indigenous Peoples, Congo reaffirms its commitment to the protection and promotion of the rights of indigenous peoples, under the impetus of Minister BININGA." },
+      { chip: "Legislative elections 2022", date: "2022, Ewo — Cuvette-Ouest", title: "Legislative elections 2022:\nAimé Ange Wilfrid BININGA in continuity", subtitle: "Re-elected in the 1st constituency of Ewo, Aimé Ange Wilfrid BININGA continues his commitment to his constituency and the Republic. A renewed trust from the voters of Cuvette-Ouest." }
+    ],
+    vedettes: [
+      {
+        badge: "🌍 Diplomacy",
+        tag: "Rwanda–Congo Judicial Cooperation",
+        date: "📅 December 12, 2025 · Brazzaville",
+        title: "Rwanda Ambassador visits Minister BININGA to strengthen bilateral judicial cooperation",
+        text1: "On December 12, 2025, the Rwandan Ambassador to the Republic of Congo (@parfaitbus) paid a courtesy visit to the Minister of Justice, Human Rights and Indigenous Peoples, Ange Aimé Wilfrid BININGA. This diplomatic meeting took place in a spirit of openness and cooperation between the two African nations.",
+        quote: "« The meeting allowed the discussion of establishing a judicial partnership and strengthening cooperation between the two countries. »",
+        text2: "During this meeting, both parties examined the means to strengthen judicial ties between Rwanda and Congo-Brazzaville. Protocol gift exchanges marked the visit, testifying to the quality of relations between the two countries. This initiative is part of the international dynamic carried by Minister BININGA, who multiplies judicial partnerships for the benefit of the Republic of Congo.",
+        tags: ["Diplomacy", "Rwanda", "Congo-Brazzaville", "Justice", "Judicial Cooperation", "December 2025"]
+      },
+      {
+        badge: "🗳️ Live from Ewo",
+        tag: "Presidential Campaign · Ewo District",
+        date: "📅 March 9, 2026 · Lebankaya Axis, Cuvette-Ouest",
+        title: "BININGA tours 13 villages to carry the message of President-Candidate Denis Sassou Nguesso",
+        text1: "In his capacity as coordinator of Presidential Candidate Denis Sassou Nguesso's campaign in the Ewo district and municipality, Aimé Ange Wilfrid BININGA conducted a field tour on the Lebankaya axis this Monday, meeting directly with populations from several localities in the area.",
+        quote: "A strong mobilization of populations who came to hear the message carried by the campaign delegation, with renewed support for Denis Sassou Nguesso's candidacy.",
+        text2: "This proximity mission led him successively to the villages of Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami and Ngayi. At each stage, the exchanges allowed reaffirmation of local communities' attachment to the presidential candidacy, a dynamic that reflects the deep bond between BININGA and the Ewo inhabitants he has represented since 2017.",
+        tags: ["Campaign 2026", "Sassou Nguesso", "Ewo District", "Field", "13 villages", "Cuvette-Ouest"]
+      },
+      {
+        badge: "Diplomacy",
+        tag: "Judicial Diplomacy",
+        date: "📅 February 18, 2026 · Paris, Place Vendôme",
+        title: "BININGA and Darmanin relaunch Congo–France judicial cooperation",
+        text1: "Received at Place Vendôme by his French counterpart Gérald Darmanin, Keeper of the Seals Ange Aimé Wilfrid BININGA engaged in decisive negotiations to modernize the bilateral judicial convention linking the two countries since 1974 — an agreement over 50 years old.",
+        quote: "« Three new conventions are being finalized: mutual judicial assistance, extraditions and transfers of convicted persons. The goal is a signature before summer 2026. »",
+        text2: "A move welcomed by both Ministries of Justice, which opens a new chapter in Franco-Congolese relations. Driven by his vision of a modern, accessible justice, Minister BININGA places this diplomatic mission in direct continuity with his institutional reforms in Congo.",
+        tags: ["Diplomacy", "Justice", "Congo–France", "Reforms", "Paris 2026"]
+      },
+      {
+        badge: "⚡ Energy & Development",
+        tag: "Energy Boulevard · Cuvette-Ouest",
+        date: "📅 August 20, 2024 · Cuvette-Ouest, Congo",
+        title: "Energy boulevard: Ewo soon connected to the national electricity grid",
+        text1: "On August 20, 2024, Prime Minister Anatole Collinet Makosso visited the construction works of the 110 KV power line and the Boundji-Ewo paved road. He announced the imminent connection of Ewo, capital of Cuvette-Ouest, to the national Congolese electricity grid.",
+        quote: "« Out of 180 pylons, 116 are already installed. The transformer substation is being built. Ewo will be connected to the national electricity grid within a few months. »",
+        text2: "This major advance for the Cuvette-Ouest is part of the energy boulevard, one of the strategic axes of President Denis Sassou-N'Guesso's programme. The 25 km paved road connecting Boundji to Ewo, already completed, and the completion of the 110 KV line will permanently transform the daily lives of Ewo's inhabitants. A long-awaited transformation for the entire region.",
+        tags: ["Energy", "Ewo", "Energy Boulevard", "Cuvette-Ouest", "Development", "August 2024"]
+      },
+      {
+        badge: "Human Rights · UN",
+        tag: "Universal Periodic Review — Geneva",
+        date: "📅 January 30, 2024 · Geneva, UN Human Rights Council",
+        title: "Human rights in Congo: significant advances presented by BININGA at the UN",
+        text1: "On January 30, 2024, Minister BININGA led the Congolese delegation before the United Nations Human Rights Council in Geneva, as part of Congo's 4th Universal Periodic Review (UPR). Before the 14 States examined during the 44th session of the UPR Working Group, he presented the significant advances made by Congo in the area of human rights.",
+        quote: "Congo reaffirms its unwavering commitment to the protection of human rights, with notable advances for indigenous peoples, restorative justice and detention conditions.",
+        text2: "The troika composed of Côte d'Ivoire, Luxembourg and the Maldives reported the formulated recommendations. The Working Group adopted the conclusions on February 2, 2024. This major diplomatic mission, broadcast live by UN WebTV, illustrates Congo's international commitment under the leadership of Keeper of the Seals Aimé Ange Wilfrid BININGA.",
+        tags: ["Human rights", "UN", "UPR 2024", "Geneva", "Congo", "Bininga", "Indigenous peoples"]
+      },
+      {
+        badge: "Judicial Reform",
+        tag: "Restorative Justice · Draft Law",
+        date: "📅 Brazzaville — Republic of Congo",
+        title: "Human rights: validation of the draft law establishing restorative justice",
+        text1: "Under the impetus of Minister BININGA, Congo has taken a decisive step in the modernization of its judicial system with the validation of the draft law establishing restorative justice. This innovative mechanism promotes the rehabilitation of offenders and the repair of harm suffered by victims.",
+        quote: "Restorative justice represents a major advance that places the human being at the heart of the Congolese judicial system, promoting reconciliation and reparation.",
+        text2: "This reform is part of the global vision of justice modernization carried by the Keeper of the Seals, which aims to build a more humane, more accessible and more effective justice in the service of all Congolese citizens.",
+        tags: ["Restorative justice", "Judicial reform", "Human rights", "Congo", "Draft law"]
+      },
+      {
+        badge: "Human Rights · Indigenous Peoples",
+        tag: "Indigenous Youth · National Priority",
+        date: "📅 Brazzaville — Republic of Congo",
+        title: "Human rights: indigenous youth, a priority of the BININGA Ministry",
+        text1: "The Ministry of Justice, Human Rights and Promotion of Indigenous Peoples, under BININGA's leadership, has placed indigenous youth at the heart of its agenda. Specific programmes have been deployed to guarantee these young people access to education, healthcare and employment.",
+        quote: "The promotion of indigenous youth is a moral imperative and an investment in the future of Congo. No child should be left behind.",
+        text2: "These initiatives are based on a strengthened legal framework and close collaboration with international organisations and local communities to ensure that the fundamental rights of young indigenous people are effectively respected across the entire Congolese territory.",
+        tags: ["Indigenous youth", "Human rights", "Education", "Employment", "Congo", "Indigenous peoples"]
+      }
+    ],
+    cards: [
+      { cat: "Reform · Anti-Corruption", title: "Adoption of the HALC law, 107 votes in favour", desc: "Voted 107 for, 6 against, the High Authority to Fight Corruption, championed by BININGA, remains one of the most decisive institutional reforms of the decade." },
+      { cat: "Justice", month: "Mar", title: "Magistracy: 23 sanctions pronounced under Minister BININGA's authority", desc: "The Supreme Council of the Magistracy sanctioned 23 unworthy magistrates at its ordinary session of March 27, 2023." },
+      { cat: "Human Rights", month: "Jan", title: "The government recalls advances in improving the lives of indigenous peoples", desc: "At the 45th UPR session in Geneva, Minister Bininga presented Congo's progress on the promotion and protection of indigenous peoples before the UN Human Rights Council." },
+      { cat: "Energy · Cuvette-Ouest", month: "Aug", title: "Energy boulevard: Ewo soon connected to the national electricity grid", desc: "Prime Minister Collinet Makosso visits the works of the 110 KV Boundji-Ewo line. 116 pylons out of 180 already installed, Ewo will be connected to the national grid within a few months." },
+      { cat: "International · IAEA", month: "Jul", title: "Diplomatic mission at the IAEA, Congo represented", desc: "Aimé BININGA represents the Republic of Congo in international bodies, carrying the country's voice on the world stage with authority and expertise." },
+      { cat: "Employment · Cuvette-Ouest", month: "Sep", title: "Youth employment forum for Cuvette-Ouest", desc: "300 young people mobilized to build employment solutions together in the region. An initiative carried directly by BININGA since his return to the field." },
+      { cat: "Education · Youth", month: "Oct", title: "50 scholarships awarded to young people from Ewo", desc: "A concrete commitment to the youth of Cuvette-Ouest. Fifty deserving students from Ewo receive direct support from the Deputy to continue their studies." },
+      { cat: "Social Dialogue", month: "Nov", title: "Historic agreement with Congolese trade unions", desc: "Drawing on his experience at the Ministry of the Civil Service, he facilitates a major social dialogue agreement — a victory for Congolese workers." },
+      { cat: "Judicial Diplomacy · Rwanda", month: "Dec", title: "Rwandan Ambassador visits Minister BININGA", desc: "Courtesy visit by Ambassador @parfaitbus to the Minister of Justice. Discussions on a judicial partnership and Rwanda–Congo-Brazzaville cooperation." },
+      { cat: "Justice · Ewo", month: "Dec", title: "Inauguration of the Ewo local court", desc: "A direct result of his commitment at the Ministry of Justice, justice is finally brought closer to the citizens of Cuvette-Ouest. An infrastructure awaited for years." },
+      { cat: "Presidential Campaign · Ewo", month: "Mar", title: "Campaign coordinator, tour on the Lebankaya axis", desc: "13 villages visited: Oboukou, Oyendze, Eti, Ossele, Abeke, Okogo, Lembessi, Kebili, Bia 1, Ntsouo, Bia 2, Ngami, Ngayi, strong support from populations." },
+      { cat: "Human rights · Indigenous employment", title: "Human rights: access of indigenous peoples to employment taken into account", desc: "Congo integrates access of indigenous peoples to employment into its human rights policies, a concrete advance carried by the Ministry of Justice and Human Rights." },
+      { cat: "Justice · Human rights", title: "Justice: Congo reiterates its will to ensure the protection of human rights", desc: "The Republic of Congo reaffirms its commitment to the protection of human rights, with a strengthened institutional framework under the impetus of the Ministry of Justice." },
+      { cat: "Legislative elections 2017 · Ewo", month: "Aug", title: "Legislative elections 2017: BININGA elected Deputy of the 1st constituency of Ewo", desc: "The final list of elected deputies confirms the election of Aimé Ange Wilfrid BININGA to the National Assembly in the 1st constituency of Ewo, a popular consecration of deep commitment." },
+      { cat: "Justice · Detention conditions", title: "Justice: improving living conditions in detention facilities continues", desc: "The Ministry of Justice, under BININGA's leadership, continues its action to improve living conditions in Congolese penitentiary establishments, in compliance with international standards." },
+      { cat: "Justice · Report", title: "L'Observateur: BININGA and judicial action in service of Congo", desc: "L'Observateur reviews the action of Minister Bininga at the Ministry of Justice, his reforms and his commitment to a more accessible and equitable justice for all Congolese." }
+    ]
+  },
+
+  gallery: {
+    slides: [
+      { title: "Supreme Council of the Magistracy", subtitle: "Ordinary session — Brazzaville, March 27, 2023" },
+      { title: "BININGA in action", subtitle: "Ange Aimé Wilfrid BININGA, Keeper of the Seals and MP for Ewo" },
+      { title: "BININGA in action", subtitle: "Ange Aimé Wilfrid BININGA, Keeper of the Seals and MP for Ewo" },
+      { title: "BININGA in action", subtitle: "Ange Aimé Wilfrid BININGA, Keeper of the Seals and MP for Ewo" },
+      { title: "BININGA in action", subtitle: "Ange Aimé Wilfrid BININGA, Keeper of the Seals and MP for Ewo" },
+      { title: "BININGA & Darmanin — Place Vendôme", subtitle: "Congo–France judicial cooperation, February 2026" },
+      { title: "Visit by the Rwandan Ambassador", subtitle: "Rwanda–Congo judicial cooperation, December 2025" },
+      { title: "Energy boulevard — Ewo", subtitle: "110 KV Boundji-Ewo line works, August 2024" }
+    ]
+  },
+
   engagement: {
     tag: "Contact us",
     title: "A complaint or a",
     titleAccent: "request",
     desc: "Do you have a complaint, concern or wish to contact the Deputy's team? Submit your audience request and we will get back to you as soon as possible.",
+    formTitle: "Audience request to the Deputy",
+    formSub: "Explain the purpose of your request, our team will contact you within 48 hours",
     cards: [
       { title: "Audience request", desc: "Meet the Deputy to present your situation" },
       { title: "Official complaint", desc: "Report a problem to your representative" },

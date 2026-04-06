@@ -42,6 +42,7 @@ function loadContent() {
   fetch("data.json?t=" + Date.now())
     .then(r => r.json())
     .then(d => {
+      window._FR_DATA = d; // sauvegarde pour les re-rendus i18n
       const h = d.hero || {};
       const a = d.about || {};
 
@@ -571,6 +572,114 @@ function applyDynLang(lang) {
   if (Array.isArray(eng.cards) && eng.cards.length) {
     const el = document.getElementById("dyn-eng-cards");
     if (el) el.innerHTML = eng.cards.map(c => `<div class="eng-card"><div class="eng-ct">${escHtml(c.title||"")}</div><div class="eng-cd">${escHtml(c.desc||"")}</div></div>`).join("");
+  }
+  if (eng.formTitle) setTxt("form-title-aud", eng.formTitle);
+  if (eng.formSub)   setTxt("form-sub-aud",   eng.formSub);
+
+  // Actualités — slides, vedettes, cards (re-rendu avec traductions i18n)
+  if (d.actus && window._FR_DATA) {
+    const frAc = window._FR_DATA.actus || {};
+    const i18nAc = d.actus;
+
+    // Slides hero
+    if (Array.isArray(i18nAc.slides) && Array.isArray(frAc.slides)) {
+      const slidesWrap2 = document.getElementById("actu-hero-track");
+      const dotsWrap2   = document.getElementById("actu-hero-dots");
+      if (slidesWrap2) {
+        const merged = frAc.slides.map((s,i) => { const t=i18nAc.slides[i]||{}; return Object.assign({},s,t); });
+        slidesWrap2.innerHTML = merged.map(s => `
+          <div class="actu-hero-slide">
+            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
+            <div class="actu-hero-overlay"></div>
+            <div class="actu-hero-content">
+              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(s.chip||'')}</span>
+              <div class="actu-hero-date">${escHtml(s.date||'')}</div>
+              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
+              <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
+            </div>
+          </div>`).join('');
+        if (dotsWrap2) dotsWrap2.innerHTML = merged.map((_,i)=>
+          `<button class="actu-hero-dot${i===0?' hd-active':''}" aria-label="Slide ${i+1}"></button>`).join('');
+        initActuSlider();
+      }
+    }
+
+    // Vedettes
+    if (Array.isArray(i18nAc.vedettes) && Array.isArray(frAc.vedettes)) {
+      const vedettesWrap2 = document.getElementById("actu-vedettes-wrap");
+      if (vedettesWrap2) {
+        const merged = frAc.vedettes.map((v,i) => { const t=i18nAc.vedettes[i]||{}; return Object.assign({},v,t); });
+        vedettesWrap2.innerHTML = merged.map((v,i) => {
+          const imgSide = v.image
+            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`
+            : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
+                 <div style="font-size:56px">${escHtml(v.placeholderEmoji||'📰')}</div>
+                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
+                 <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
+               </div>
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`;
+          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(t)}</span>`).join('');
+          return `<div class="actu-vedette rev"${i<merged.length-1?' style="margin-bottom:32px"':''}>
+            <div class="actu-vedette-img"${v.imageBg&&!v.image?` style="background:${v.imageBg}"`:''}">${imgSide}</div>
+            <div class="actu-vedette-body">
+              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.tag||'')}</div>
+              <div class="actu-vedette-date">${escHtml(v.date||'')}</div>
+              <h3 class="actu-vedette-title">${escHtml(v.title||'')}</h3>
+              ${v.text1?`<p class="actu-vedette-txt">${escHtml(v.text1)}</p>`:''}
+              ${v.quote?`<div class="actu-vedette-quote"${v.tagColor?` style="border-color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.quote)}</div>`:''}
+              ${v.text2?`<p class="actu-vedette-txt">${escHtml(v.text2)}</p>`:''}
+              ${tagsHtml?`<div class="actu-vedette-tags">${tagsHtml}</div>`:''}
+            </div>
+          </div>`;
+        }).join('');
+        vedettesWrap2.querySelectorAll(".rev").forEach(el=>rObs.observe(el));
+      }
+    }
+
+    // Cards grille
+    if (Array.isArray(i18nAc.cards) && Array.isArray(frAc.cards)) {
+      const cardsGrid2 = document.getElementById("actu-cards-grid");
+      if (cardsGrid2) {
+        const merged = frAc.cards.map((c,i) => { const t=i18nAc.cards[i]||{}; return Object.assign({},c,t); });
+        cardsGrid2.innerHTML = merged.map(c => `
+          <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
+            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
+            <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
+            <div class="actu-card-ic">${escHtml(c.icon||'')}</div>
+            <div class="actu-card-dt">
+              <span class="actu-card-day">${escHtml(c.day||'')}</span>
+              <span class="actu-card-mon">${escHtml(c.month||'')}<br>${escHtml(c.year||'')}</span>
+            </div>
+            <div class="actu-card-title">${escHtml(c.title||'')}</div>
+            <div class="actu-card-desc">${escHtml(c.desc||'')}</div>
+          </div>`).join('');
+        cardsGrid2.querySelectorAll(".rev").forEach(el=>rObs.observe(el));
+      }
+    }
+  }
+
+  // Galerie — slides (re-rendu textes avec traductions i18n)
+  if (d.gallery && window._FR_DATA) {
+    const frGal = window._FR_DATA.gallery || {};
+    const i18nGal = d.gallery;
+    if (Array.isArray(i18nGal.slides) && Array.isArray(frGal.slides)) {
+      const galTrack2 = document.getElementById("galTrack");
+      if (galTrack2) {
+        const merged = frGal.slides.map((s,i) => { const t=i18nGal.slides[i]||{}; return Object.assign({},s,t); });
+        galTrack2.innerHTML = merged.map(s => `
+          <div class="gal-slide">
+            ${s.image
+              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}">`
+              : `<div class="gal-slide-placeholder"><div style="font-size:50px">${escHtml(s.emoji||'🖼️')}</div></div>`}
+            <div class="gal-cap">
+              <h3>${escHtml(s.title||'')}</h3>
+              <p>${escHtml(s.subtitle||'')}</p>
+            </div>
+          </div>`).join('');
+        initSlider();
+      }
+    }
   }
 
   // CTA
