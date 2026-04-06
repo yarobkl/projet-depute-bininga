@@ -8,13 +8,33 @@
   let _ttsVoice = null;
 
   // ── TTS — Web Speech API ────────────────────────────────
+  // Noms de voix féminines françaises connus sur iOS/macOS/Android/Windows
+  const FEMALE_FR_NAMES = [
+    "marie","amélie","amelie","elsa","julie","léa","lea","clara","sophie",
+    "audrey","camille","alice","isabelle","zoé","zoe","céline","celine",
+    "virginie","pauline","lucie","thomas" // Thomas est parfois la seule voix fr-FR sur iOS
+  ];
+
   function initVoice() {
     if (!window.speechSynthesis) return;
     function pickVoice() {
       const voices = window.speechSynthesis.getVoices();
-      _ttsVoice = voices.find(v => v.lang.startsWith("fr") && v.localService)
-               || voices.find(v => v.lang.startsWith("fr"))
-               || voices[0] || null;
+      const frVoices = voices.filter(v => v.lang.startsWith("fr"));
+      if (!frVoices.length) { _ttsVoice = voices[0] || null; return; }
+
+      // 1. Chercher une voix féminine française locale par nom
+      _ttsVoice = frVoices.find(v =>
+        FEMALE_FR_NAMES.some(n => v.name.toLowerCase().includes(n)) && v.localService
+      )
+      // 2. Chercher une voix féminine française (non locale) par nom
+      || frVoices.find(v =>
+        FEMALE_FR_NAMES.some(n => v.name.toLowerCase().includes(n))
+      )
+      // 3. Première voix française locale (qualité supérieure)
+      || frVoices.find(v => v.localService)
+      // 4. Première voix française
+      || frVoices[0]
+      || voices[0] || null;
     }
     pickVoice();
     window.speechSynthesis.onvoiceschanged = pickVoice;
@@ -23,11 +43,12 @@
   function speak(text) {
     if (!_ttsOn || !window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const clean = text.replace(/[👋🎯✅❌⚠️]/gu, "").trim();
+    const clean = text.replace(/[👋🎯✅❌⚠️📋✉️📰📍📷]/gu, "").replace(/•/g, "").trim();
     const utt = new SpeechSynthesisUtterance(clean);
     utt.lang  = "fr-FR";
-    utt.rate  = 0.95;
-    utt.pitch = 1;
+    utt.rate  = 0.88;   // Plus lent = plus naturel, moins robotique
+    utt.pitch = 1.12;   // Légèrement plus haut = voix féminine chaleureuse
+    utt.volume = 1;
     if (_ttsVoice) utt.voice = _ttsVoice;
     const btn = document.getElementById("chatTtsBtn");
     utt.onstart = () => { if (btn) btn.classList.add("tts-speaking"); };
