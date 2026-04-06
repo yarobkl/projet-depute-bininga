@@ -7,7 +7,7 @@
   --n:#060606;--n2:#111;--n3:#1c1c1c;
   --w:#fff;
   --success:#2ecc71;--warn:#f39c12;--err:#e74c3c;--info:#3498db;
-  --t:all .3s ease;
+  --t:color .3s ease, background-color .3s ease, border-color .3s ease, box-shadow .3s ease, opacity .3s ease, transform .3s ease;
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(--w);min-height:100vh;font-size:14px}
 

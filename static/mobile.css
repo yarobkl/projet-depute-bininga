@@ -1,0 +1,891 @@
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE-FIRST IMPROVEMENTS — BININGA
+   Corrections CLS, responsive, performance — toutes les pages
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── 1. RESET TRANSITIONS COÛTEUSES ─────────────────────────
+   "all" anime width/height/padding → reflow garanti → CLS
+   On remplace par des propriétés compositing-friendly.        */
+:root {
+  --t: color .3s ease, background-color .3s ease,
+       border-color .3s ease, box-shadow .3s ease,
+       opacity .3s ease, transform .3s ease;
+}
+
+/* ── 2. FONDATIONS MOBILES ────────────────────────────────── */
+html {
+  /* Empêche le zoom auto iOS sur les inputs */
+  -webkit-text-size-adjust: 100%;
+  /* Scroll stable sans rebond blanc */
+  overscroll-behavior-y: none;
+}
+
+body {
+  /* Évite la barre de scroll horizontale fantôme */
+  overflow-x: hidden;
+  /* Scroll inertiel fluide iOS */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── 3. PRÉVENTION CLS — IMAGES ───────────────────────────
+   Sans dimensions explicites, le navigateur ne réserve aucun
+   espace avant le chargement → layout shift.                 */
+img {
+  /* Évite les images qui débordent */
+  max-width: 100%;
+  /* Supprime l'espace vide sous les images inline */
+  display: block;
+  /* Placeholder visuel pendant le chargement */
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Images avec ratio connu : réservation d'espace immédiate */
+.about-img-frame img   { aspect-ratio: 3 / 4; }
+.gal-slide img         { aspect-ratio: 21 / 9; }
+.actu-hero-slide img   { aspect-ratio: 16 / 9; }
+.actu-vedette-img img  { aspect-ratio: 4 / 3; }
+.actu-card-img img     { aspect-ratio: 16 / 9; }
+.gi img                { aspect-ratio: 1; }
+.sinistre-photo        { aspect-ratio: 4 / 3; width: 100%; }
+
+/* ── 4. ANIMATIONS GPU-ONLY ──────────────────────────────
+   Remplace box-shadow animé (coûteux) par opacity.         */
+.chat-fab {
+  will-change: transform, opacity;
+}
+@keyframes da-pulse {
+  0%, 100% { box-shadow: 0 6px 24px rgba(200,16,46,.65); opacity: 1; }
+  50%       { box-shadow: 0 6px 24px rgba(200,16,46,.65); opacity: .88; }
+}
+
+.chat-fab-ring {
+  will-change: transform, opacity;
+}
+
+/* Hover boutons : transform seul — pas de box-shadow animé */
+.btn-r:hover,
+.btn-g:hover {
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+
+/* Évite le recalcul layout sur les cartes au hover */
+.prog-card:hover,
+.actu-card:hover,
+.actu-vedette:hover,
+.kpi-card:hover,
+.gi:hover {
+  transform: translateY(-4px);
+  will-change: transform;
+}
+
+/* ── 5. STABILITÉ HERO ────────────────────────────────────
+   min-height 100svh évite le shift dû à la barre URL mobile */
+#hero {
+  min-height: 100svh;
+}
+
+/* Réserve l'espace des stats avant le JS */
+.hero-stat-strip {
+  min-height: 64px;
+  contain: layout;
+}
+
+/* L'image côté droit ne doit pas déclencher de reflow */
+.hero-img-side {
+  contain: strict;
+}
+
+/* ── 6. SECTIONS — ESPACEMENT ADAPTATIF ──────────────────
+   clamp(min, preferred, max) évite les media queries répétées */
+#about,
+#parcours,
+#programme,
+#galerie,
+#actu,
+#engagement,
+#contact,
+#publication,
+#video-section {
+  padding-top:    clamp(60px, 10vw, 120px);
+  padding-bottom: clamp(60px, 10vw, 120px);
+  padding-left:   clamp(16px, 5vw, 7%);
+  padding-right:  clamp(16px, 5vw, 7%);
+}
+
+/* ── 7. NAV MOBILE ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  nav {
+    padding-left: clamp(16px, 4vw, 24px);
+    padding-right: clamp(16px, 4vw, 24px);
+  }
+
+  /* Évite que la nav change de hauteur au scroll (CLS) */
+  nav,
+  nav.sc {
+    height: calc(56px + env(safe-area-inset-top));
+  }
+
+  .hbg {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+  }
+}
+
+/* ── 8. HERO — PETITS ÉCRANS ──────────────────────────────── */
+@media (max-width: 600px) {
+  .hero-content {
+    padding-top: clamp(80px, 18vw, 110px);
+    padding-bottom: clamp(24px, 6vw, 40px);
+  }
+
+  .hero-name {
+    /* Évite la double déclaration conflictuelle */
+    font-size: clamp(32px, 10vw, 52px);
+    line-height: 1;
+  }
+
+  .hero-slogan {
+    font-size: clamp(18px, 5vw, 28px);
+  }
+
+  .hero-sub {
+    font-size: 14px;
+  }
+
+  .hero-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero-btns .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 20px;
+  }
+
+  /* Ticker stats : stable, pas d'overflow */
+  .hero-stat-strip {
+    overflow: hidden;
+  }
+
+  .hstat {
+    min-width: 160px;
+  }
+}
+
+/* ── 9. ABOUT — STABILITÉ BADGE ABSOLU ────────────────────── */
+@media (max-width: 900px) {
+  .about-img-wrap {
+    /* Empêche le badge absolu de déborder hors du parent */
+    overflow: visible;
+  }
+
+  .about-badge {
+    /* Repositionné pour ne pas déborder */
+    left: 0;
+    top: auto;
+    bottom: -16px;
+  }
+}
+
+/* ── 10. TIMELINE MOBILE ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .tl-item {
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .tl-dot {
+    width: 40px;
+    height: 40px;
+    font-size: 15px;
+  }
+
+  .tl-card {
+    padding: 0 0 0 12px;
+  }
+
+  .tl-title {
+    font-size: clamp(16px, 4vw, 20px);
+  }
+
+  .tl-desc {
+    font-size: 13px;
+  }
+}
+
+/* ── 11. GALERIE — RATIO STABLE ───────────────────────────── */
+@media (max-width: 600px) {
+  .gal-slide {
+    aspect-ratio: 4 / 3;
+  }
+
+  .gal-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .gi:first-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 2 / 1;
+  }
+}
+
+/* ── 12. ACTU HERO — HAUTEUR STABLE ──────────────────────── */
+@media (max-width: 768px) {
+  .actu-hero {
+    /* svh = sans la barre URL → pas de CLS au défilement */
+    height: clamp(280px, 55svh, 420px);
+    min-height: unset;
+  }
+
+  .actu-hero-slide img {
+    aspect-ratio: 16 / 9;
+  }
+
+  .actu-hero-content {
+    padding: 0 4% 30px;
+  }
+
+  .actu-hero-nav {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+
+  .actu-hero-prev { left: 12px; }
+  .actu-hero-next { right: 12px; }
+}
+
+@media (max-width: 480px) {
+  .actu-hero {
+    height: clamp(220px, 48svh, 320px);
+  }
+
+  .actu-hero-title {
+    font-size: clamp(18px, 5vw, 26px);
+  }
+
+  .actu-vedette-body {
+    padding: 20px 16px;
+  }
+}
+
+/* ── 13. ENGAGEMENT — FORMULAIRE MOBILE ──────────────────── */
+@media (max-width: 600px) {
+  .eng-form,
+  .ct-form {
+    padding: 20px 16px;
+  }
+
+  /* Évite le keyboard resize shift */
+  .fgrp input,
+  .fgrp select,
+  .fgrp textarea {
+    font-size: 16px; /* Bloque le zoom iOS */
+  }
+}
+
+/* ── 14. FOOTER MOBILE ────────────────────────────────────── */
+@media (max-width: 600px) {
+  footer {
+    padding: clamp(36px, 8vw, 60px) clamp(16px, 4%, 24px) clamp(20px, 5vw, 32px);
+  }
+
+  .ft-bottom {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+  }
+
+  .ft-legal {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+}
+
+/* ── 15. NEWSLETTER MOBILE ────────────────────────────────── */
+@media (max-width: 600px) {
+  .nl-form {
+    flex-direction: column;
+  }
+
+  .nl-form input {
+    font-size: 16px;
+  }
+
+  .nl-form button {
+    width: 100%;
+  }
+}
+
+/* ── 16. VIDEO SECTION ────────────────────────────────────── */
+.video-frame-wrap {
+  /* CLS : réserve l'espace avant que l'iframe se charge */
+  aspect-ratio: 16 / 9;
+  position: relative;
+}
+
+/* ── 17. PUBLICATION MOBILE ───────────────────────────────── */
+@media (max-width: 600px) {
+  .pub-wrap {
+    gap: 24px;
+  }
+
+  .pub-book {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  .pub-cover-css,
+  .pub-cover-img {
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  .pub-buy-btns {
+    flex-direction: column;
+  }
+
+  .pub-btn-primary,
+  .pub-btn-ext {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── 18. CHAT WIDGET MOBILE ───────────────────────────────── */
+@media (max-width: 600px) {
+  .chat-fab {
+    bottom: max(16px, env(safe-area-inset-bottom) + 8px);
+    right: 16px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .chat-fab-ring {
+    bottom: max(9px, env(safe-area-inset-bottom) + 1px);
+    right: 9px;
+  }
+
+  .chat-window {
+    /* Pleine largeur avec marges safe */
+    left: 10px;
+    right: 10px;
+    bottom: max(80px, env(safe-area-inset-bottom) + 72px);
+    width: auto;
+    max-width: 100%;
+    /* Hauteur adaptative — évite le clavier iOS */
+    height: min(52vh, 380px);
+    border-radius: 16px;
+    /* Stabilise contre le resize clavier */
+    will-change: transform;
+  }
+
+  .chat-input {
+    font-size: 16px; /* Bloque le zoom iOS */
+  }
+
+  .chat-bubble {
+    max-width: min(240px, 70vw);
+  }
+}
+
+/* ── 19. MODAL LÉGALE MOBILE ──────────────────────────────── */
+@media (max-width: 600px) {
+  .lmodal-overlay {
+    padding: 10px;
+    align-items: flex-end; /* Sheet bottom sur mobile */
+  }
+
+  .lmodal {
+    max-height: 85svh;
+    border-radius: 14px 14px 0 0;
+  }
+
+  .lmodal-head {
+    padding: 18px 18px 14px;
+  }
+
+  .lmodal-body {
+    padding: 16px 18px;
+    font-size: 13px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN — MOBILE IMPROVEMENTS
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 20. SIDEBAR ADMIN ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sidebar {
+    /* Évite le flash de contenu déplacé au chargement */
+    will-change: left;
+  }
+
+  /* Topbar stable en hauteur */
+  .topbar {
+    height: auto;
+    min-height: 56px;
+    padding: 10px 14px;
+    flex-wrap: wrap;
+    gap: 6px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .topbar-title {
+    font-size: 14px;
+  }
+
+  /* KPI : 2 colonnes égales sur tablette */
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+}
+
+/* ── 21. KPI CARTES MOBILES ───────────────────────────────── */
+@media (max-width: 600px) {
+  .kpi-grid {
+    /* 2 colonnes lisibles sur petit écran, PAS 4 */
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .kpi-card {
+    padding: 14px 12px;
+  }
+
+  .kpi-val {
+    font-size: clamp(22px, 6vw, 32px);
+  }
+
+  .kpi-label {
+    font-size: 9px;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .kpi-sub {
+    font-size: 10px;
+  }
+
+  /* Content area */
+  .content {
+    padding: clamp(10px, 3vw, 20px);
+  }
+
+  .card {
+    padding: 14px 12px;
+  }
+}
+
+/* ── 22. NOTIFICATION PANEL — OVERFLOW FIX ────────────────── */
+.notif-panel {
+  /* Empêche le débordement hors écran sur mobile */
+  max-width: calc(100vw - 28px);
+}
+
+@media (max-width: 480px) {
+  .notif-panel {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 70svh;
+    overflow-y: auto;
+  }
+
+  .notif-list {
+    max-height: 55svh;
+  }
+}
+
+/* ── 23. TABLES MONITORING — SCROLL HORIZONTAL ────────────── */
+.mon-ep-table,
+.card table {
+  /* Wrap dans un conteneur scrollable */
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
+}
+
+/* Conteneurs monitoring */
+@media (max-width: 600px) {
+  .mon-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .mon-kpi-card {
+    padding: 10px 12px;
+  }
+
+  .mon-kpi-val {
+    font-size: clamp(16px, 4vw, 22px);
+  }
+
+  .sec-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mon-report-row {
+    gap: 8px;
+  }
+
+  .mon-report-stat {
+    min-width: 70px;
+    padding: 6px 10px;
+  }
+
+  .mon-report-stat-n {
+    font-size: 16px;
+  }
+
+  /* Requêtes récentes : path tronqué proprement */
+  .mon-req-path {
+    max-width: 160px;
+  }
+
+  .mon-ep-path {
+    max-width: 140px;
+  }
+}
+
+/* ── 24. FORMULAIRES ADMIN ────────────────────────────────── */
+@media (max-width: 600px) {
+  .user-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Inputs : pas de zoom iOS */
+  .form-group input,
+  .form-group select,
+  .form-group textarea,
+  .login-field,
+  .note-form textarea,
+  select.form-input {
+    font-size: 16px;
+  }
+
+  /* Cartes messages */
+  .msg-top {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .msg-footer {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  /* CRM */
+  .crm-card-top {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .crm-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+/* ── 25. LOGIN ADMIN — PETITS ÉCRANS ──────────────────────── */
+@media (max-width: 440px) {
+  .login-box {
+    padding: 28px 18px;
+    margin: 12px;
+    border-radius: 12px;
+  }
+
+  .login-box h1 {
+    font-size: 18px;
+  }
+}
+
+/* ── 26. TABS ADMIN MOBILE ────────────────────────────────── */
+@media (max-width: 600px) {
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 4px;
+    padding-bottom: 4px;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    white-space: nowrap;
+    padding: 7px 12px;
+    font-size: 11px;
+  }
+}
+
+/* ── 27. TOAST MOBILE ─────────────────────────────────────── */
+@media (max-width: 600px) {
+  #toast {
+    left: 12px;
+    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom) + 8px);
+    text-align: center;
+    font-size: 13px;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MINISTRE.HTML — MOBILE IMPROVEMENTS
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 28. SIDEBAR MINISTRE ─────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Même logique que admin */
+  .min-sidebar,
+  .min-main,
+  .espace-sidebar {
+    /* Variables pour les pages internes */
+    will-change: left;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PERFORMANCE GLOBALE
+   ════════════════════════════════════════════════════════════ */
+
+/* ── 29. CONTAIN POUR LES SECTIONS STATIQUES ──────────────── */
+#about,
+#parcours,
+#programme,
+#galerie,
+#publication,
+#newsletter {
+  contain: layout;
+}
+
+/* ── 30. SCROLL OPTIMISATION ──────────────────────────────── */
+
+/* Scrollable sur mobile sans rebond non désiré */
+.chat-messages,
+.notif-list,
+.msg-list,
+.log-list,
+.crm-list,
+.sb-nav {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Scrollbars fines sur mobile */
+@media (max-width: 768px) {
+  .chat-messages::-webkit-scrollbar,
+  .notif-list::-webkit-scrollbar,
+  .sidebar::-webkit-scrollbar {
+    width: 3px;
+  }
+}
+
+/* ── 31. TOUCH TARGETS — ACCESSIBILITÉ ────────────────────── */
+@media (pointer: coarse) {
+  /* Taille minimale 44×44px pour tous les éléments interactifs */
+  .btn,
+  .sb-item,
+  .tab,
+  .hamburger,
+  .hbg,
+  .gal-btn,
+  .actu-hero-nav,
+  .pub-btn-primary,
+  .pub-btn-ext,
+  .buy-platform,
+  .notif-bell,
+  .sbtn,
+  .btn-danger,
+  .btn-maps,
+  .mob-close,
+  .lmodal-close,
+  .chat-send,
+  .chat-header-close {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Remove hover-only effects (no hover on touch) */
+  .prog-card:hover,
+  .actu-card:hover,
+  .gi:hover {
+    transform: none;
+  }
+}
+
+/* ── 32. PREVENT FONT SCALING ON ROTATE ───────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Paysage mobile : réduit les sections hautes */
+  #hero {
+    min-height: 100svh;
+  }
+
+  .hero-content {
+    padding-top: 72px;
+    padding-bottom: 20px;
+  }
+
+  .actu-hero {
+    height: clamp(200px, 50svh, 320px);
+  }
+
+  /* Chat : plus petite hauteur en paysage */
+  .chat-window {
+    height: min(60svh, 300px);
+  }
+}
+
+/* ── 33. MEDIUM SCREENS (tablettes 601-900px) ─────────────── */
+@media (min-width: 601px) and (max-width: 900px) {
+  /* Hiérarchie intermédiaire : pas le mobile, pas le desktop */
+  .actu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .prog-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gal-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .hero-name {
+    font-size: clamp(44px, 7vw, 72px);
+  }
+
+  .hero-slogan {
+    font-size: clamp(22px, 4vw, 36px);
+  }
+}
+
+/* ── 34. LARGE MOBILE (414-600px) ─────────────────────────── */
+@media (min-width: 414px) and (max-width: 600px) {
+  /* Plus d'espace sur iPhone Plus/Pro Max */
+  .hero-content {
+    padding-left: clamp(18px, 5vw, 28px);
+    padding-right: clamp(18px, 5vw, 28px);
+  }
+
+  .kpi-grid {
+    gap: 10px;
+  }
+
+  .kpi-card {
+    padding: 16px 14px;
+  }
+}
+
+/* ── 35. VERY SMALL SCREENS (< 360px) ─────────────────────── */
+@media (max-width: 360px) {
+  .hero-name {
+    font-size: clamp(28px, 9vw, 38px);
+  }
+
+  .btn {
+    padding: 12px 16px;
+    font-size: 12px;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .kpi-val {
+    font-size: 20px;
+  }
+
+  .content {
+    padding: 10px 8px;
+  }
+
+  .card {
+    padding: 12px 10px;
+  }
+
+  .tabs {
+    gap: 3px;
+  }
+
+  .tab {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+}
+
+/* ── 36. STABILISATION FINALE ─────────────────────────────── */
+
+/* Évite que les pseudo-éléments décoratifs causent un overflow */
+#about::before {
+  overflow: hidden;
+  max-width: 100vw;
+}
+
+/* Garantit que les cartes ne créent pas de stacking context inutile */
+.kpi-card,
+.card,
+.msg-item,
+.crm-card {
+  transform: translateZ(0);
+}
+
+/* Stable sticky topbar — évite le jitter au scroll */
+.topbar {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Évite les animations sur les éléments réduits en mouvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .stat-ticker-track {
+    animation: none !important;
+  }
+
+  .chat-fab-ring {
+    animation: none !important;
+  }
+
+  .chat-bubble.visible {
+    animation: none !important;
+  }
+}
