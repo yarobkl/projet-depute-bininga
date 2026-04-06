@@ -38,6 +38,98 @@ def _sse_broadcast(event_type: str, data: dict):
             try: _SSE_CLIENTS.remove(q)
             except ValueError: pass
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# ── Notifications email temps réel ────────────────────────────────────────────
+# Variables d'environnement requises :
+#   NOTIF_EMAIL_FROM  → adresse Gmail d'envoi (ex: monbot@gmail.com)
+#   NOTIF_EMAIL_PASS  → mot de passe d'application Gmail (16 caractères)
+#   NOTIF_EMAIL_TO    → destinataire(s) séparés par virgule (ex: eliebakala@gmail.com)
+
+def _send_notif_email(entry: dict, notif_type: str):
+    """Envoie un email de notification au(x) destinataire(s) configuré(s)."""
+    from_addr = os.environ.get("NOTIF_EMAIL_FROM", "").strip()
+    password  = os.environ.get("NOTIF_EMAIL_PASS", "").strip()
+    to_raw    = os.environ.get("NOTIF_EMAIL_TO", "eliebakala@gmail.com").strip()
+    if not from_addr or not password:
+        return  # SMTP non configuré — silencieux
+
+    to_list = [a.strip() for a in to_raw.split(",") if a.strip()]
+    if not to_list:
+        return
+
+    labels = {
+        "bininga_audiences":      "📋 Demande d'audience",
+        "bininga_contacts":       "✉️ Message de contact",
+        "bininga_newsletter":     "📩 Inscription newsletter",
+        "bininga_commande_livre": "📚 Commande de livre",
+    }
+    src    = entry.get("source") or entry.get("type", "contact")
+    label  = labels.get(src, "📬 Nouveau message")
+    nom    = f"{entry.get('prenom','')} {entry.get('nom','')}".strip() or "Inconnu"
+    ts     = entry.get("ts", "")
+
+    # Corps email HTML
+    def row(k, v):
+        return f'<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">{k}</td><td style="padding:6px 12px;font-weight:600">{v}</td></tr>'
+
+    rows = ""
+    for field, display in [
+        ("nom",         "Nom"),
+        ("prenom",      "Prénom"),
+        ("telephone",   "Téléphone"),
+        ("email",       "Email"),
+        ("adresse",     "Adresse"),
+        ("objet",       "Objet"),
+        ("raison",      "Raison / Message"),
+        ("message",     "Message"),
+        ("description", "Description"),
+        ("sujet",       "Sujet"),
+    ]:
+        val = entry.get(field, "").strip() if isinstance(entry.get(field), str) else ""
+        if val:
+            rows += row(display, val)
+    if entry.get("geo_lat"):
+        maps = entry.get("geo_maps_url", f"https://maps.google.com/?q={entry['geo_lat']},{entry.get('geo_lng','')}")
+        rows += row("Localisation", f'<a href="{maps}">{entry["geo_lat"]}, {entry.get("geo_lng","")}</a>')
+
+    html_body = f"""
+    <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">
+      <div style="background:#1a1a2e;padding:20px 24px;border-radius:8px 8px 0 0">
+        <h2 style="color:#fff;margin:0;font-size:18px">{label}</h2>
+        <p style="color:rgba(255,255,255,.6);margin:4px 0 0;font-size:13px">{ts}</p>
+      </div>
+      <div style="background:#f9f9f9;padding:4px 0;border-radius:0 0 8px 8px">
+        <table style="width:100%;border-collapse:collapse;font-size:14px">
+          {rows}
+        </table>
+      </div>
+      <p style="font-size:11px;color:#aaa;margin-top:16px;text-align:center">
+        Notif automatique — site bininga.cg
+      </p>
+    </div>
+    """
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"[BININGA] {label} — {nom}"
+    msg["From"]    = from_addr
+    msg["To"]      = ", ".join(to_list)
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=10) as srv:
+            srv.login(from_addr, password)
+            srv.sendmail(from_addr, to_list, msg.as_string())
+        print(f"[EMAIL] Notification envoyée à {to_list} ({label})")
+    except Exception as e:
+        print(f"[EMAIL] Erreur envoi : {e}")
+
+def _send_notif_email_async(entry: dict, notif_type: str):
+    """Lance l'envoi email dans un thread séparé (non bloquant)."""
+    t = threading.Thread(target=_send_notif_email, args=(entry, notif_type), daemon=True)
+    t.start()
 
 # ── Module de monitoring (facultatif, stdlib uniquement) ───────────────────────
 try:
@@ -522,12 +614,16 @@ def load_users():
         return []
 
 def save_users(users):
-    _pg_save("users", users)
+    db_ok = _pg_save("users", users)
+    file_ok = False
     try:
         with open(USERS_FILE, "w", encoding="utf-8") as f:
             json.dump(users, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde users fichier : {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder les utilisateurs (DB et fichier indisponibles)")
 
 def init_users():
     """Crée le compte admin par défaut si inexistant (DB ou fichier)."""
@@ -672,8 +768,9 @@ def save_data(data):
     """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
     with _DATA_LOCK:
         # 1. PostgreSQL — source de vérité persistante
-        _pg_save("site_data", data)
+        db_ok = _pg_save("site_data", data)
         # 2. Fichier local — fallback + backup
+        file_ok = False
         try:
             if os.path.exists(DATA_FILE):
                 backup = DATA_FILE.replace(".json", f"_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
@@ -685,8 +782,11 @@ def save_data(data):
                     except Exception: pass
             with open(DATA_FILE, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
+            file_ok = True
         except Exception as e:
-            print(f"[BININGA] Erreur sauvegarde data.json (non bloquant) : {e}")
+            print(f"[BININGA] Erreur sauvegarde data.json : {e}")
+        if not db_ok and not file_ok:
+            raise RuntimeError("Impossible de sauvegarder le contenu du site (DB et fichier indisponibles)")
 
 # ── Veille IA : lecture/écriture ──────────────────────────
 def load_news() -> dict:
@@ -712,35 +812,36 @@ def save_news(data: dict):
 # Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
 # Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
 
-_PG_CONN  = None
-_PG_LOCK  = threading.Lock()   # protège la connexion en mode multi-thread
+_PG_LOCK  = threading.Lock()   # verrou global (conservé pour compatibilité)
+_pg_local = threading.local()  # connexion par thread (thread-safe)
 
 def _pg():
-    """Retourne une connexion PostgreSQL active, ou None si indisponible."""
-    global _PG_CONN
+    """Retourne une connexion PostgreSQL par thread, ou None si indisponible.
+    Chaque thread HTTP a sa propre connexion (psycopg2 n'est pas thread-safe)."""
     raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
     if not raw_url:
         return None
     url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
-    with _PG_LOCK:
-        try:
-            import psycopg2
-            if _PG_CONN is None or _PG_CONN.closed:
-                _PG_CONN = psycopg2.connect(url, connect_timeout=5)
-                _PG_CONN.autocommit = True
-                with _PG_CONN.cursor() as cur:
-                    cur.execute("""
-                        CREATE TABLE IF NOT EXISTS bininga_store (
-                            key         TEXT PRIMARY KEY,
-                            data        TEXT NOT NULL,
-                            updated_at  TIMESTAMPTZ DEFAULT NOW()
-                        )
-                    """)
-            return _PG_CONN
-        except Exception as e:
-            print(f"[DB] PostgreSQL indisponible : {e}")
-            _PG_CONN = None
-            return None
+    try:
+        import psycopg2
+        conn = getattr(_pg_local, 'conn', None)
+        if conn is None or conn.closed:
+            conn = psycopg2.connect(url, connect_timeout=5)
+            conn.autocommit = True
+            with conn.cursor() as cur:
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS bininga_store (
+                        key         TEXT PRIMARY KEY,
+                        data        TEXT NOT NULL,
+                        updated_at  TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
+            _pg_local.conn = conn
+        return conn
+    except Exception as e:
+        print(f"[DB] PostgreSQL indisponible : {e}")
+        _pg_local.conn = None
+        return None
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
@@ -814,7 +915,6 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
 
 def _pg_load(key: str):
     """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
-    global _PG_CONN
     conn = _pg()
     if not conn:
         return None
@@ -823,14 +923,13 @@ def _pg_load(key: str):
             cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
             row = cur.fetchone()
             return json.loads(row[0]) if row else None
-    except Exception:
-        with _PG_LOCK:
-            _PG_CONN = None   # force reconnexion au prochain appel
+    except Exception as e:
+        print(f"[DB] Erreur lecture '{key}' : {e}")
+        _pg_local.conn = None   # force reconnexion au prochain appel
         return None
 
 def _pg_save(key: str, value) -> bool:
     """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
-    global _PG_CONN
     conn = _pg()
     if not conn:
         return False
@@ -845,8 +944,7 @@ def _pg_save(key: str, value) -> bool:
         return True
     except Exception as e:
         print(f"[DB] Erreur écriture '{key}' : {e}")
-        with _PG_LOCK:
-            _PG_CONN = None   # force reconnexion au prochain appel
+        _pg_local.conn = None   # force reconnexion au prochain appel
         return False
 
 # ── Contacts (formulaires publics) ──────────────────────────
@@ -865,12 +963,16 @@ def load_contacts() -> list:
 
 def save_contacts(contacts: list):
     """Persiste les contacts dans PostgreSQL ET dans le fichier."""
-    _pg_save("contacts", contacts)
+    db_ok = _pg_save("contacts", contacts)
+    file_ok = False
     try:
         with open(CONTACT_FILE, "w", encoding="utf-8") as f:
             json.dump(contacts, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde contacts : {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder les contacts (DB et fichier indisponibles)")
 
 _CONTACT_LOCK = threading.Lock()   # évite les race conditions en multi-thread
 _CRM_LOCK     = threading.Lock()   # même protection pour le CRM
@@ -920,13 +1022,17 @@ def load_crm() -> dict:
 
 def save_crm(data: dict):
     # PostgreSQL (source de vérité)
-    _pg_save("crm", data)
+    db_ok = _pg_save("crm", data)
     # Fichier JSON (backup local)
+    file_ok = False
     try:
         with open(CRM_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
+        file_ok = True
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde CRM: {e}")
+    if not db_ok and not file_ok:
+        raise RuntimeError("Impossible de sauvegarder le CRM (DB et fichier indisponibles)")
 
 # ── Migration fichiers → PostgreSQL au démarrage ───────────
 def _migrate_files_to_db():
@@ -1149,8 +1255,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             all_contacts = load_contacts()
-            audiences = [c for c in all_contacts if c.get("type") == "bininga_audiences"]
-            contacts  = [c for c in all_contacts if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            def _is_audience(c):
+                return c.get("type") == "bininga_audiences" or c.get("source") == "bininga_audiences"
+            def _is_newsletter(c):
+                return c.get("type") == "bininga_newsletter" or c.get("source") == "bininga_newsletter"
+            audiences = [c for c in all_contacts if _is_audience(c)]
+            contacts  = [c for c in all_contacts if not _is_audience(c) and not _is_newsletter(c)]
             self._json({"ok": True, "audiences": audiences, "contacts": contacts})
             return
 
@@ -1160,9 +1270,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             all_c = load_contacts()
-            audiences = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") != "Réclamation"]
-            recls     = [c for c in all_c if c.get("type") == "bininga_audiences" and c.get("objet") == "Réclamation"]
-            contacts  = [c for c in all_c if c.get("type") not in ("bininga_audiences", "bininga_newsletter")]
+            def _is_aud(c):
+                return c.get("type") == "bininga_audiences" or c.get("source") == "bininga_audiences"
+            def _is_nl(c):
+                return c.get("type") == "bininga_newsletter" or c.get("source") == "bininga_newsletter"
+            audiences = [c for c in all_c if _is_aud(c) and c.get("objet") != "Réclamation"]
+            recls     = [c for c in all_c if _is_aud(c) and c.get("objet") == "Réclamation"]
+            contacts  = [c for c in all_c if not _is_aud(c) and not _is_nl(c)]
             self._json({
                 "ok":          True,
                 "aud_total":   len(audiences),
@@ -1195,10 +1309,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             client_q = _queue_mod.Queue(maxsize=200)
             with _SSE_LOCK:
                 _SSE_CLIENTS.append(client_q)
+            sse_origin = self._cors_origin()
             self.send_response(200)
             self.send_header("Content-Type", "text/event-stream; charset=utf-8")
             self.send_header("Cache-Control", "no-cache")
             self.send_header("X-Accel-Buffering", "no")
+            if sse_origin:
+                self.send_header("Access-Control-Allow-Origin", sse_origin)
+                self.send_header("Vary", "Origin")
             self.end_headers()
             try:
                 self.wfile.write(b": connected\n\n")
@@ -2268,16 +2386,22 @@ DA:"""
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
+                # Normalisation : s'assurer que type et source sont cohérents
+                raw_src = entry.get("source") or entry.get("type", "contact")
+                entry["source"] = raw_src
+                entry["type"]   = raw_src
                 append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
-                etype  = entry.get("source") or entry.get("type", "contact")
+                etype  = raw_src
                 audit_log("CONTACT", ip, f"Message de {nom} {prenom} ({etype})")
                 # ── Notification SSE temps réel ───────────────────────────────
                 _notif_type = {"bininga_audiences": "audience", "bininga_contacts": "contact"}.get(etype, "contact")
                 if etype == "bininga_audiences" and entry.get("objet") == "Réclamation":
                     _notif_type = "reclamation"
                 _sse_broadcast(_notif_type, {"nom": nom, "prenom": prenom, "objet": entry.get("objet", "")})
+                # ── Email de notification temps réel ─────────────────────────────
+                _send_notif_email_async(entry, _notif_type)
                 # ── Toute interaction → CRM (règle fondamentale : aucune perte) ──
                 email_contact = entry.get("email", "").strip()
                 phone_contact = entry.get("telephone", "").strip()

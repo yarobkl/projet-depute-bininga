@@ -101,6 +101,9 @@ async function logout() {
   SESSION_ROLE          = "";
   SESSION_NOM           = "";
   SESSION_IS_MAIN_ADMIN = false;
+  // Couper la connexion SSE proprement
+  if (_sseRetryTimer) { clearTimeout(_sseRetryTimer); _sseRetryTimer = null; }
+  if (_sseSource) { try { _sseSource.close(); } catch {} _sseSource = null; }
   sessionStorage.removeItem("bininga_session");
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
@@ -1709,7 +1712,9 @@ const PANEL_TITLES = {
   editorial:"✍️ Éditorial IA — Contenus"
 };
 
+let _currentPanel = "dashboard";
 function showPanel(name, el) {
+  _currentPanel = name;
   document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".sb-item").forEach(i => i.classList.remove("active"));
   document.getElementById("panel-"+name).classList.add("active");
@@ -3181,9 +3186,18 @@ function initNotifications() {
   });
 }
 
+let _sseRetryDelay = 3000;
+let _sseRetryTimer = null;
+
 function _connectSSE() {
-  if (_sseSource) { try { _sseSource.close(); } catch {} }
+  if (_sseSource) { try { _sseSource.close(); } catch {} _sseSource = null; }
+  if (!SESSION_TOKEN) return;  // pas de token valide → pas de connexion
+
   _sseSource = new EventSource(`/api/events?t=${encodeURIComponent(SESSION_TOKEN)}`);
+
+  _sseSource.onopen = () => {
+    _sseRetryDelay = 3000;  // réinitialiser le délai de reconnexion
+  };
 
   ["visit","prog_view","contact","audience","reclamation"].forEach(type => {
     _sseSource.addEventListener(type, e => {
@@ -3192,8 +3206,13 @@ function _connectSSE() {
   });
 
   _sseSource.onerror = () => {
-    try { _sseSource.close(); } catch {}
-    setTimeout(_connectSSE, 6000);
+    try { _sseSource.close(); } catch {} _sseSource = null;
+    if (!SESSION_TOKEN) return;  // déconnecté, ne pas reconnecter
+    if (_sseRetryTimer) clearTimeout(_sseRetryTimer);
+    _sseRetryTimer = setTimeout(() => {
+      _sseRetryDelay = Math.min(_sseRetryDelay * 2, 60000);  // backoff exponentiel max 60s
+      _connectSSE();
+    }, _sseRetryDelay);
   };
 }
 
@@ -3218,6 +3237,20 @@ function _addNotif(type, data) {
   _renderNotifList();
   _playNotifSound();
   _shakebell();
+
+  // Rafraîchissement automatique du panneau actif selon le type d'événement
+  if (type === "audience" || type === "reclamation") {
+    syncMessages().then(() => {
+      if (_currentPanel === "audiences")    renderAudiences();
+      if (_currentPanel === "reclamations") renderReclamations();
+      if (_currentPanel === "dashboard")    refreshDashboard();
+    });
+  } else if (type === "contact") {
+    syncMessages().then(() => {
+      if (_currentPanel === "contacts")  renderContacts();
+      if (_currentPanel === "dashboard") refreshDashboard();
+    });
+  }
 
   // Notification navigateur
   if (Notification.permission === "granted" && document.visibilityState !== "visible") {
