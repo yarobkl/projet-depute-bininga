@@ -4,7 +4,7 @@
   --g:#B8973A;--gl:#e8c55a;
   --n:#060606;--n2:#111;--n3:#1c1c1c;
   --w:#fff;
-  --t:all .4s cubic-bezier(.25,.46,.45,.94);
+  --t:color .3s cubic-bezier(.25,.46,.45,.94), background-color .3s cubic-bezier(.25,.46,.45,.94), border-color .3s cubic-bezier(.25,.46,.45,.94), box-shadow .3s cubic-bezier(.25,.46,.45,.94), opacity .3s cubic-bezier(.25,.46,.45,.94), transform .3s cubic-bezier(.25,.46,.45,.94);
 }
 html{scroll-behavior:smooth;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(72px + env(safe-area-inset-top))}
 body{font-family:'DM Sans',sans-serif;background:var(--n);color:var(--w);overflow-x:hidden}
@@ -390,11 +390,10 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
   #hero{padding-left:4%;padding-right:4%}
   #about,#parcours,#programme,#galerie,#actu,#engagement,#contact{padding:60px 4%}
   .hero-content{padding:88px 4% 60px}
-  .hero-name{font-size:clamp(36px,10vw,52px)}
+  .hero-name{font-size:clamp(30px,9vw,46px)}
   .hero-role{letter-spacing:2px;font-size:11px}
   .hero-btns{flex-direction:column;align-items:flex-start}
   .hero-btns .btn{width:100%;justify-content:center}
-  .hero-name{font-size:clamp(30px,9vw,46px)}
   .hero-stat-strip{position:relative}
   .ft-grid{grid-template-columns:repeat(3,1fr);gap:20px 12px}.ft-grid>div:first-child{grid-column:1/-1}
   .fg2{grid-template-columns:1fr}
