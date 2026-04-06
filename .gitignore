@@ -41,3 +41,5 @@ editorial.json
 monitoring.db
 monitoring.db-shm
 monitoring.db-wal
+news.db
+youtube.json
