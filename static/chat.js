@@ -4,6 +4,53 @@
   let _loading  = false;
   let _history  = [];
   let _welcomed = false;
+  let _ttsOn    = false;
+  let _ttsVoice = null;
+
+  // ── TTS — Web Speech API ────────────────────────────────
+  function initVoice() {
+    if (!window.speechSynthesis) return;
+    function pickVoice() {
+      const voices = window.speechSynthesis.getVoices();
+      _ttsVoice = voices.find(v => v.lang.startsWith("fr") && v.localService)
+               || voices.find(v => v.lang.startsWith("fr"))
+               || voices[0] || null;
+    }
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speak(text) {
+    if (!_ttsOn || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const clean = text.replace(/[👋🎯✅❌⚠️]/gu, "").trim();
+    const utt = new SpeechSynthesisUtterance(clean);
+    utt.lang  = "fr-FR";
+    utt.rate  = 0.95;
+    utt.pitch = 1;
+    if (_ttsVoice) utt.voice = _ttsVoice;
+    const btn = document.getElementById("chatTtsBtn");
+    utt.onstart = () => { if (btn) btn.classList.add("tts-speaking"); };
+    utt.onend   = () => { if (btn) btn.classList.remove("tts-speaking"); };
+    utt.onerror = () => { if (btn) btn.classList.remove("tts-speaking"); };
+    window.speechSynthesis.speak(utt);
+  }
+
+  function toggleTTS() {
+    if (!window.speechSynthesis) return;
+    _ttsOn = !_ttsOn;
+    const btn = document.getElementById("chatTtsBtn");
+    if (!btn) return;
+    if (_ttsOn) {
+      btn.classList.add("tts-on");
+      btn.title = "Désactiver la voix";
+      speak("Voix activée. Je suis DA, l'assistant virtuel du Ministre BININGA.");
+    } else {
+      window.speechSynthesis.cancel();
+      btn.classList.remove("tts-on", "tts-speaking");
+      btn.title = "Activer la voix";
+    }
+  }
 
   function toggleChat() {
     _open = !_open;
@@ -47,6 +94,7 @@
     div.appendChild(bub);
     box.appendChild(div);
     scrollMessages();
+    if (role === "bot") speak(text);
   }
 
   function showTyping() {
@@ -185,6 +233,8 @@
     }
   })();
 
+  initVoice();
   window.toggleChat = toggleChat;
   window.sendChat   = sendChat;
+  window.toggleTTS  = toggleTTS;
 })();

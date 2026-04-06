@@ -6,7 +6,7 @@
   --w:#fff;
   --t:all .4s cubic-bezier(.25,.46,.45,.94);
 }
-html{scroll-behavior:smooth;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{scroll-behavior:smooth;font-size:16px;-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:calc(72px + env(safe-area-inset-top))}
 body{font-family:'DM Sans',sans-serif;background:var(--n);color:var(--w);overflow-x:hidden}
 
 /* CURSOR */
@@ -15,8 +15,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--n);color:var(--w);overflo
 @media(hover:none),(pointer:coarse){.cursor,.cursor-ring{display:none!important}}
 
 /* NAV */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 6%;display:flex;align-items:center;justify-content:space-between;height:72px;transition:var(--t)}
-nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px solid rgba(200,16,46,.15);height:60px}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:env(safe-area-inset-top) 6% 0;display:flex;align-items:center;justify-content:space-between;height:calc(72px + env(safe-area-inset-top));transition:var(--t)}
+nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px solid rgba(200,16,46,.15);height:calc(60px + env(safe-area-inset-top))}
 .nlogo{display:flex;align-items:center;gap:14px;text-decoration:none}
 .nlogo-badge{width:42px;height:42px;background:var(--r);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--w);letter-spacing:1px;transition:var(--t);box-shadow:0 0 20px rgba(200,16,46,.3)}
 .nlogo:hover .nlogo-badge{transform:rotate(5deg) scale(1.05);box-shadow:0 0 30px rgba(200,16,46,.6)}

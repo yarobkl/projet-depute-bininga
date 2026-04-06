@@ -39,3 +39,5 @@ attacks.log
 Thumbs.db
 editorial.json
 monitoring.db
+monitoring.db-shm
+monitoring.db-wal
