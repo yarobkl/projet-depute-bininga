@@ -347,6 +347,10 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .loader-fill{height:100%;width:0;background:linear-gradient(to right,var(--r),var(--g));animation:lFill 1.2s cubic-bezier(.4,0,.2,1) .3s forwards}
 @keyframes lFill{to{width:100%}}
 .loader-txt{font-size:10px;letter-spacing:4px;color:rgba(255,255,255,.25);text-transform:uppercase;animation:fadeUp .6s .25s ease both}
+.loader-dev{font-size:8px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.12);animation:fadeUp .6s .55s ease both,devPulse 2.2s 1.2s ease-in-out infinite}
+.loader-dev span{background:linear-gradient(90deg,rgba(255,255,255,.18) 0%,rgba(212,185,106,.7) 40%,rgba(255,255,255,.55) 55%,rgba(212,185,106,.7) 70%,rgba(255,255,255,.18) 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:devShimmer 3.5s 1.5s linear infinite}
+@keyframes devPulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.07);opacity:1}}
+@keyframes devShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
 
 /* Btn micro-animations */
 .btn{position:relative;overflow:hidden}
