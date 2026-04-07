@@ -20,6 +20,17 @@ from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ██  BOUCLIER — OPERATION SÉCURITÉ IA & BOTS (multi-couches)                ██
+# ══════════════════════════════════════════════════════════════════════════════
+try:
+    from security_ai_guard import AI_GUARD, is_vault_protected, is_canary_path
+    _AI_GUARD_ENABLED = True
+    print("[BOUCLIER] Forces Spéciales Numériques activées — 6 couches de défense en ligne")
+except ImportError:
+    _AI_GUARD_ENABLED = False
+    print("[BOUCLIER] Module security_ai_guard non trouvé — protection basique seulement")
+
 # ── SSE — Notifications temps réel admin ──────────────────────────────────────
 _SSE_CLIENTS: list = []
 _SSE_LOCK = threading.Lock()
@@ -1183,9 +1194,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                              "max-age=63072000; includeSubDomains; preload")
         self.send_header("Content-Security-Policy", csp)
 
-    def _guard(self):
-        """Vérifie IP bannie + rate limit. Retourne True si la requête doit être bloquée."""
+    def _guard(self, path: str = "", method: str = "GET", body_size: int = 0):
+        """Vérifie IP bannie + rate limit + Bouclier IA. Retourne True si bloquée."""
         ip = self.client_address[0]
+
+        # ── Bouclier multi-couches (IA/bots/lockdown/coffre-fort/canaris) ──────
+        if _AI_GUARD_ENABLED:
+            headers_dict = dict(self.headers)
+            blocked, reason = AI_GUARD.inspect(ip, method, path, headers_dict, body_size)
+            if blocked:
+                self._error(403, "Accès refusé")
+                return True
+
+        # ── Système existant (IP bannies + rate limiting) ─────────────────────
         if check_and_ban_ip(ip):
             self._error(403, "Accès refusé")
             return True
@@ -1202,7 +1223,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         self._mon_t0   = time.time()   # monitoring : chronomètre
         self._mon_path = path          # monitoring : chemin
 
-        if self._guard():
+        if self._guard(path=path, method="GET"):
             return
 
         # Scan User-Agent
@@ -1392,12 +1413,51 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 [{"ip": k, **v} for k, v in ATTACK_SCORES.items()],
                 key=lambda x: x["score"], reverse=True
             )[:50]
+            ai_report = AI_GUARD.get_report() if _AI_GUARD_ENABLED else {}
             self._json({
                 "ok": True,
                 "blocked": sorted(BLOCKED_IPS),
                 "suspects": suspects,
                 "attacks": load_attacks(100),
+                "ai_guard": ai_report,
             })
+            return
+
+        # ── /api/security/bouclier — Rapport complet du Bouclier IA ─────────────
+        if path == "/api/security/bouclier":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            if not _AI_GUARD_ENABLED:
+                self._json({"ok": False, "message": "Bouclier IA non disponible"}, 503)
+                return
+            self._json({"ok": True, **AI_GUARD.get_report()})
+            return
+
+        # ── /api/security/lockdown — Activer/désactiver le mode lockdown ─────────
+        if path == "/api/security/lockdown":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            if not _AI_GUARD_ENABLED:
+                self._json({"ok": False, "message": "Bouclier IA non disponible"}, 503)
+                return
+            qs_ld = parse_qs(urlparse(self.path).query)
+            action = qs_ld.get("action", ["status"])[0]
+            if action == "activate":
+                duration = int(qs_ld.get("duration", ["900"])[0])
+                reason = qs_ld.get("reason", ["Admin manual"])[0]
+                AI_GUARD.lockdown.activate(reason, duration)
+                audit_log("LOCKDOWN_ADMIN", ip, f"Lockdown activé {duration}s — {reason}")
+                self._json({"ok": True, "message": f"Mode sécurité LOCKDOWN activé ({duration}s)"})
+            elif action == "deactivate":
+                AI_GUARD.lockdown.deactivate()
+                audit_log("LOCKDOWN_ADMIN", ip, "Lockdown désactivé manuellement")
+                self._json({"ok": True, "message": "Mode sécurité levé"})
+            else:
+                self._json({"ok": True, "status": AI_GUARD.lockdown.status()})
             return
 
         # ── /api/monitoring/* — dashboard de surveillance ──────────────────────
@@ -1748,7 +1808,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "message": "All security state reset (test mode)"})
             return
 
-        if self._guard():
+        raw_length = int(self.headers.get("Content-Length", 0))
+        if self._guard(path=path, method="POST", body_size=raw_length):
             return
 
         # Scanner UA check
@@ -2714,8 +2775,10 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 BLOCKED_IPS.discard(target)
                 ATTACK_SCORES.pop(target, None)
                 save_blocked_ips()
+                if _AI_GUARD_ENABLED:
+                    AI_GUARD.manual_unban(target)
                 audit_log("UNBLOCK_IP", ip, f"IP débloquée : {target}")
-                self._json({"ok": True, "message": f"IP {target} débloquée"})
+                self._json({"ok": True, "message": f"IP {target} débloquée (Bouclier + système)"})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
@@ -2728,13 +2791,43 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 data   = json.loads(body.decode("utf-8"))
                 target = data.get("ip", "").strip()
                 reason = data.get("reason", "Blocage manuel")
+                duration = int(data.get("duration", 86400))
                 if not target:
                     self._json({"ok": False, "message": "IP requise"}, 400)
                     return
                 BLOCKED_IPS.add(target)
                 save_blocked_ips()
+                if _AI_GUARD_ENABLED:
+                    AI_GUARD.manual_ban(target, duration, reason)
                 audit_log("MANUAL_BAN", ip, f"IP bannie manuellement : {target} — {reason}")
-                self._json({"ok": True, "message": f"IP {target} bloquée"})
+                self._json({"ok": True, "message": f"IP {target} bloquée (Bouclier + système)"})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 400)
+            return
+
+        # ── /api/security/bouclier/lockdown — Lockdown via POST ──────────────────
+        if path == "/api/security/bouclier/lockdown":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            if not _AI_GUARD_ENABLED:
+                self._json({"ok": False, "message": "Bouclier IA non disponible"}, 503)
+                return
+            try:
+                data     = json.loads(body.decode("utf-8"))
+                action   = data.get("action", "status")
+                if action == "activate":
+                    duration = int(data.get("duration", 900))
+                    reason   = data.get("reason", "Admin déclenché manuellement")
+                    AI_GUARD.lockdown.activate(reason, duration)
+                    audit_log("LOCKDOWN_ADMIN", ip, f"Lockdown activé {duration}s")
+                    self._json({"ok": True, "message": f"LOCKDOWN ACTIVE — {duration}s"})
+                elif action == "deactivate":
+                    AI_GUARD.lockdown.deactivate()
+                    audit_log("LOCKDOWN_ADMIN", ip, "Lockdown levé")
+                    self._json({"ok": True, "message": "Mode sécurité levé"})
+                else:
+                    self._json({"ok": True, "status": AI_GUARD.lockdown.status()})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
