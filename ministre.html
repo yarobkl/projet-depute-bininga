@@ -610,6 +610,17 @@ function init() {
   syncMessages().then(() => refreshAll());
   loadNews();
   setInterval(loadNews, 5 * 60 * 1000); // rafraîchit la veille toutes les 5 min
+  // Polling toutes les 2 min (filet si SSE/réseau coupe sur mobile)
+  setInterval(() => {
+    if (!SESSION_TOKEN) return;
+    syncMessages().then(() => refreshAll());
+  }, 2 * 60 * 1000);
+  // Resync quand l'onglet redevient visible (retour d'écran off sur mobile)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && SESSION_TOKEN) {
+      syncMessages().then(() => refreshAll());
+    }
+  });
 }
 
 async function syncMessages() {

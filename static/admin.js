@@ -268,10 +268,40 @@ async function deleteUser(username) {
 // ══════════════════════════════════════════════════════════════════════════
 let siteData = {};
 
+let _contactsPoller = null;
+
+function _startContactsPoller() {
+  if (_contactsPoller) clearInterval(_contactsPoller);
+  // Sync toutes les 2 minutes (filet de sécurité si le SSE se coupe)
+  _contactsPoller = setInterval(() => {
+    if (!SESSION_TOKEN) return;
+    syncMessages().then(() => {
+      if (_currentPanel === "contacts")     renderContacts();
+      if (_currentPanel === "audiences")    renderAudiences();
+      if (_currentPanel === "reclamations") renderReclamations();
+      if (_currentPanel === "dashboard")    refreshDashboard();
+    });
+  }, 2 * 60 * 1000);
+}
+
 function init() {
   loadSiteData();
   syncMessages().then(() => refreshDashboard());
   startNewsPoller();
+  _startContactsPoller();
+  // Resync + reconnexion SSE quand l'onglet redevient visible (mobile: retour d'écran off)
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && SESSION_TOKEN) {
+      syncMessages().then(() => {
+        if (_currentPanel === "contacts")     renderContacts();
+        if (_currentPanel === "audiences")    renderAudiences();
+        if (_currentPanel === "reclamations") renderReclamations();
+        if (_currentPanel === "dashboard")    refreshDashboard();
+      });
+      // Reconnecter le SSE si coupé
+      if (!_sseSource) _connectSSE();
+    }
+  });
   // Badge initial
   apiFetch("/api/news", { headers: { "X-Admin-Token": SESSION_TOKEN } })
     .then(r => r.json())
