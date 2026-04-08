@@ -1391,6 +1391,116 @@ function manualBlock() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+//  BOUCLIER IA — Forces Spéciales Numériques
+// ══════════════════════════════════════════════════════════════════════════
+
+const _THREAT_LABELS = { 0: "AUCUNE", 1: "FAIBLE", 2: "MOYENNE", 3: "HAUTE", 4: "CRITIQUE" };
+const _THREAT_COLORS = { 0: "#2ecc71", 1: "#3498db", 2: "#f39c12", 3: "#e67e22", 4: "#e74c3c" };
+
+async function loadBouclier() {
+  try {
+    const res  = await apiFetch("/api/security/bouclier", { headers: authHeaders() });
+    const data = await res.json();
+    if (!data.ok) {
+      document.getElementById("bouclier-threats-list").innerHTML =
+        `<div class="msg-empty" style="color:#e74c3c">${esc(data.message || "Bouclier IA non disponible")}</div>`;
+      return;
+    }
+    _renderBouclier(data);
+  } catch(e) {
+    document.getElementById("bouclier-threats-list").innerHTML =
+      `<div class="msg-empty">Serveur non disponible</div>`;
+  }
+}
+
+function _renderBouclier(d) {
+  // Stats
+  document.getElementById("bouclier-n-tracked").textContent  = d.tracked_ips  ?? "—";
+  document.getElementById("bouclier-n-banned").textContent   = d.temp_banned   ?? "—";
+  document.getElementById("bouclier-n-lockdowns").textContent = d.lockdown?.count ?? "—";
+
+  // Statut lockdown
+  const bar    = document.getElementById("bouclier-status-bar");
+  const icon   = document.getElementById("bouclier-status-icon");
+  const txt    = document.getElementById("bouclier-status-txt");
+  const sub    = document.getElementById("bouclier-status-sub");
+  const timer  = document.getElementById("bouclier-lockdown-timer");
+  const badge  = document.getElementById("bouclier-badge");
+  const ld     = d.lockdown || {};
+
+  if (ld.active) {
+    bar.style.background   = "rgba(231,76,60,.08)";
+    bar.style.borderColor  = "rgba(231,76,60,.3)";
+    icon.textContent       = "🔴";
+    txt.textContent        = "MODE LOCKDOWN — Site en protection totale";
+    txt.style.color        = "#e74c3c";
+    sub.textContent        = ld.reason || "";
+    timer.style.display    = "";
+    timer.textContent      = `Jusqu'à ${ld.until || "—"}`;
+    badge.style.display    = "";
+  } else {
+    bar.style.background   = "rgba(46,204,113,.06)";
+    bar.style.borderColor  = "rgba(46,204,113,.15)";
+    icon.textContent       = "🟢";
+    txt.textContent        = "Bouclier actif — protection en cours";
+    txt.style.color        = "#2ecc71";
+    sub.textContent        = "6 couches de défense opérationnelles";
+    timer.style.display    = "none";
+    badge.style.display    = "none";
+  }
+
+  // Top menaces
+  const list    = document.getElementById("bouclier-threats-list");
+  const threats = d.top_threats || [];
+  if (!threats.length) {
+    list.innerHTML = '<div class="msg-empty">Aucune menace active ✅</div>';
+    return;
+  }
+  list.innerHTML = threats.map(t => {
+    const lvl   = t.level ?? 0;
+    const color = _THREAT_COLORS[lvl] || "#888";
+    const label = _THREAT_LABELS[lvl] || "?";
+    const pct   = Math.min(100, Math.round(t.score / 60 * 100));
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:7px">
+      <span style="font-family:monospace;font-size:12px;color:#fff;flex:0 0 110px;overflow:hidden;text-overflow:ellipsis">${esc(t.ip)}</span>
+      <div style="flex:1;height:5px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:.3s"></div>
+      </div>
+      <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:${color}22;color:${color};border:1px solid ${color}44;white-space:nowrap">${label} (${t.score})</span>
+      <button onclick="manualBlockIp('${esc(t.ip)}')" style="padding:3px 8px;background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.25);border-radius:5px;font-size:10px;cursor:pointer;flex-shrink:0">Bannir</button>
+    </div>`;
+  }).join("");
+}
+
+async function activateLockdown() {
+  const reason   = (document.getElementById("lockdown-reason")?.value.trim()  || "Menace détectée");
+  const duration = parseInt(document.getElementById("lockdown-duration")?.value || "15", 10) * 60;
+  if (!confirm(`Activer le LOCKDOWN ?\n\nRaison : ${reason}\nDurée : ${Math.round(duration/60)} min\n\nLe site sera inaccessible au public.`)) return;
+  try {
+    const res  = await apiFetch("/api/security/bouclier/lockdown", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ action: "activate", reason, duration })
+    });
+    const data = await res.json();
+    showToast(data.ok ? "🔒 LOCKDOWN activé !" : (data.message || "Erreur"), !data.ok);
+    if (data.ok) loadBouclier();
+  } catch { showToast("Erreur serveur", true); }
+}
+
+async function deactivateLockdown() {
+  if (!confirm("Lever le lockdown ? Le site redeviendra accessible.")) return;
+  try {
+    const res  = await apiFetch("/api/security/bouclier/lockdown", {
+      method: "POST", headers: authHeaders(),
+      body: JSON.stringify({ action: "deactivate" })
+    });
+    const data = await res.json();
+    showToast(data.ok ? "🔓 Lockdown levé" : (data.message || "Erreur"), !data.ok);
+    if (data.ok) loadBouclier();
+  } catch { showToast("Erreur serveur", true); }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
 //  JOURNAUX D'AUDIT
 // ══════════════════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════════════════
@@ -1762,7 +1872,7 @@ function showPanel(name, el) {
   if (name === "monitoring")   loadMonitoring();
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
-  if (name === "security")     loadSecurity();
+  if (name === "security")     { loadSecurity(); loadBouclier(); }
   if (name === "veille")       loadNews();
   if (name === "editorial")    loadEditorial();
   if (name === "youtube")      loadYoutube();
