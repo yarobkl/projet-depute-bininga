@@ -792,6 +792,13 @@ class AIGuard:
         Si blocked=True, renvoyer HTTP 403.
         """
 
+        # ── IPs de confiance absolue (localhost + admin) — exemption totale ─────
+        # 127.0.0.1 / ::1 = la machine elle-même (tests CI, outils internes).
+        # Les IPs dans ADMIN_TRUSTED_IPS sont définies par l'opérateur et ne
+        # doivent jamais être bloquées.
+        if ip in ("127.0.0.1", "::1") or self.lockdown.is_whitelisted(ip):
+            return False, ""
+
         # ── COUCHE 3 : Lockdown ────────────────────────────────────────────────
         if self.lockdown.is_active():
             if not self.lockdown.is_whitelisted(ip):
