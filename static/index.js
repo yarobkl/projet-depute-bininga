@@ -214,10 +214,13 @@ function loadContent() {
       const gal = d.gallery;
       const galWrap = document.getElementById("gal-wrap");
       if (gal && galWrap) {
-        const slidesHtml = (gal.slides || []).map(s => `
+        const slides = gal.slides || [];
+        const grid   = gal.grid   || [];
+
+        const slidesHtml = slides.map(s => `
           <div class="gal-slide">
             ${s.image
-              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}">`
+              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}" loading="lazy">`
               : `<div class="gal-slide-placeholder"><div style="font-size:50px">${escHtml(s.emoji||'🖼️')}</div></div>`}
             <div class="gal-cap">
               <h3>${escHtml(s.title||'')}</h3>
@@ -225,30 +228,36 @@ function loadContent() {
             </div>
           </div>`).join("");
 
-        const dotsHtml = (gal.slides || []).map((_, i) =>
+        const dotsHtml = slides.map((_, i) =>
           `<button class="gal-dot${i===0?' a':''}" onclick="gGo(${i})"></button>`
         ).join("");
 
-        const gridHtml = (gal.grid || []).map(g =>
-          `<div class="gi">${g.image
-            ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}">`
+        // data-src et data-alt pour la lightbox, onclick géré en JS après injection
+        const gridHtml = grid.map((g, i) =>
+          `<div class="gi" data-gi="${i}">${g.image
+            ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}" loading="lazy">`
             : `<div class="gi-ph">${escHtml(g.emoji||'🖼️')}</div>`
           }<div class="gi-ov">🔍</div></div>`
         ).join("");
 
         galWrap.innerHTML = `
-          <div class="gal-slider rev">
+          <div class="gal-slider">
             <div class="gal-track" id="galTrack">${slidesHtml}</div>
             <button class="gal-btn p" onclick="gSlide(-1)">‹</button>
             <button class="gal-btn n" onclick="gSlide(1)">›</button>
             <div class="gal-dots" id="galDots">${dotsHtml}</div>
           </div>
-          <div class="gal-grid rev">${gridHtml}</div>`;
+          <div class="gal-grid">${gridHtml}</div>`;
 
-        // Réinitialiser le slider avec le bon nombre de slides
+        // Attacher la lightbox sur chaque item de la grille
+        galWrap.querySelectorAll(".gi").forEach((el, i) => {
+          const src = (grid[i] && grid[i].image) ? grid[i].image : null;
+          const alt = (grid[i] && grid[i].alt)   ? grid[i].alt   : "";
+          if (src) el.addEventListener("click", () => openLightbox(src, alt));
+        });
+
+        // Réinitialiser le slider
         initSlider();
-        // Enregistrer les nouveaux éléments .rev auprès de l'observer
-        galWrap.querySelectorAll(".rev").forEach(el => rObs.observe(el));
       }
 
       // SEO
@@ -747,7 +756,7 @@ function initSlider() {
   upd();
 }
 function upd(){if(!galTrackEl)return;galTrackEl.style.transform=`translateX(-${cs*100}%)`;galDotEls.forEach((d,i)=>d.classList.toggle("a",i===cs))}
-function gSlide(d){cs=(cs+d+galSlides.length)%galSlides.length;upd()}
+function gSlide(d){if(!galSlides.length)return;cs=(cs+d+galSlides.length)%galSlides.length;upd()}
 function gGo(n){cs=n;upd()}
 
 // counters — effet slot machine
@@ -1038,13 +1047,35 @@ window.addEventListener("load", () => {
   obs.observe(progEl);
 })();
 
-// ── SCROLL REVEAL ─────────────────────────────────────────
-const revObs = new IntersectionObserver((entries) => {
-  entries.forEach(el => {
-    if(el.isIntersecting){ el.target.classList.add("vis"); revObs.unobserve(el.target); }
-  });
-}, { threshold: 0.08, rootMargin: "0px 0px -40px 0px" });
-document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el => revObs.observe(el));
+// ── LIGHTBOX GALERIE ──────────────────────────────────────
+function openLightbox(src, alt) {
+  const ov = document.createElement("div");
+  ov.id = "gal-lightbox";
+  ov.style.cssText = "position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.93);display:flex;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;animation:lb-in .2s ease";
+  const img = document.createElement("img");
+  img.src = src;
+  img.alt = alt || "";
+  img.style.cssText = "max-width:90vw;max-height:90vh;object-fit:contain;border-radius:4px;box-shadow:0 0 60px rgba(0,0,0,.8)";
+  const close = document.createElement("button");
+  close.textContent = "✕";
+  close.setAttribute("aria-label","Fermer");
+  close.style.cssText = "position:absolute;top:18px;right:22px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;opacity:.7;line-height:1;z-index:1";
+  close.onmouseover = () => close.style.opacity="1";
+  close.onmouseout  = () => close.style.opacity=".7";
+  const caption = document.createElement("p");
+  if(alt){ caption.textContent=alt; caption.style.cssText="position:absolute;bottom:22px;left:0;right:0;text-align:center;color:rgba(255,255,255,.6);font-size:13px;padding:0 20px"; }
+  function closeLb(){ ov.remove(); document.removeEventListener("keydown",onKey); }
+  function onKey(e){ if(e.key==="Escape") closeLb(); }
+  ov.appendChild(img);
+  ov.appendChild(close);
+  if(alt) ov.appendChild(caption);
+  ov.addEventListener("click", e=>{ if(e.target===ov||e.target===close) closeLb(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(ov);
+}
+const _lbStyle = document.createElement("style");
+_lbStyle.textContent = "@keyframes lb-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}";
+document.head.appendChild(_lbStyle);
 
 // ── STAGGER TIMELINE ─────────────────────────────────────
 document.querySelectorAll(".tl-item").forEach((el, i) => {
