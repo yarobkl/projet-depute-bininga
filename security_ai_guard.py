@@ -310,24 +310,52 @@ def is_canary_path(path: str) -> bool:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ██  UTILITAIRE — Détection des ressources statiques                         ██
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Extensions de fichiers statiques : jamais comptées dans l'analyse comportementale
+# Un vrai navigateur charge des dizaines de ces fichiers en parallèle, en < 50ms,
+# ce qui déclencherait tous les faux positifs si on les comptait.
+_STATIC_EXTENSIONS = frozenset({
+    ".css", ".js", ".mjs", ".map",
+    ".ico", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif",
+    ".woff", ".woff2", ".ttf", ".eot", ".otf",
+    ".mp4", ".webm", ".ogv", ".mp3", ".ogg",
+    ".pdf", ".zip",
+})
+
+def _is_static_path(path: str) -> bool:
+    """Retourne True si c'est une ressource statique (CSS, JS, image, font…)."""
+    if path.startswith("/static/"):
+        return True
+    ext = os.path.splitext(path.split("?")[0])[1].lower()
+    return ext in _STATIC_EXTENSIONS
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ██  COUCHE 6 — CONTRE-MESURES (analyse comportementale)                    ██
 # ══════════════════════════════════════════════════════════════════════════════
 
 class BehaviorTracker:
-    """Analyse comportementale par IP pour détecter les patterns robots."""
+    """Analyse comportementale par IP pour détecter les patterns robots.
 
-    # Fenêtre d'analyse (secondes)
-    WINDOW = 60
+    IMPORTANT — Protection contre les faux positifs :
+      Les fichiers statiques (CSS/JS/images) sont EXCLUS de toute analyse.
+      Un vrai navigateur charge 10–30 ressources en parallèle en < 50ms.
+      On n'analyse que les requêtes de pages HTML et les appels API.
+    """
 
-    # Seuils de détection
-    MAX_DISTINCT_PATHS  = 40    # chemins distincts / minute → scan
-    MAX_404_COUNT       = 15    # 404 / minute → scanner
-    MIN_INTERVAL_MS     = 200   # < 200ms entre requêtes → bot mécanique
-    CADENCE_VARIANCE_MS = 50    # variance < 50ms sur 5 req → cadence robot
+    WINDOW = 60   # fenêtre glissante en secondes
+
+    # Seuils — calibrés pour ne PAS pénaliser les vrais utilisateurs
+    MAX_DISTINCT_PATHS  = 80    # scan agressif (un humain normal < 20 pages/min)
+    MAX_404_COUNT       = 20    # 404 répétés = scanner (un humain < 3 erreurs)
+    MIN_INTERVAL_MS     = 100   # < 100ms entre 2 pages/API non-statiques = impossible humain
+    CADENCE_VARIANCE_MS = 30    # variance < 30ms sur 8 req non-statiques = machine
+    MIN_CADENCE_SAMPLES = 8     # besoin d'au moins 8 échantillons avant de juger
 
     def __init__(self):
         self._lock    = threading.Lock()
-        # ip → {"timestamps": deque, "paths": set, "404s": int, "intervals": deque}
         self._data: dict = {}
 
     def _cleanup_old(self, entry: dict, now: float):
@@ -335,11 +363,15 @@ class BehaviorTracker:
         while ts and now - ts[0] > self.WINDOW:
             ts.popleft()
         ivs = entry["intervals"]
-        while ivs and len(ivs) > 10:
+        while ivs and len(ivs) > 15:
             ivs.popleft()
 
     def record(self, ip: str, path: str, status: int = 200) -> dict:
         """Enregistre une requête et retourne les signaux détectés."""
+        # Ignorer complètement les fichiers statiques
+        if _is_static_path(path):
+            return {}
+
         now = time.time()
         signals = {}
         with self._lock:
@@ -354,16 +386,16 @@ class BehaviorTracker:
             entry = self._data[ip]
             self._cleanup_old(entry, now)
 
-            # Intervalle entre requêtes
+            # Intervalle entre requêtes significatives (pages + API)
             if entry["last_ts"] is not None:
                 interval_ms = (now - entry["last_ts"]) * 1000
                 entry["intervals"].append(interval_ms)
-                # Trop rapide → bot mécanique
+                # Trop rapide pour un humain (pages/API seulement, pas static)
                 if interval_ms < self.MIN_INTERVAL_MS:
                     signals["suspicious_cadence"] = True
-                # Cadence très régulière sur plusieurs requêtes
-                if len(entry["intervals"]) >= 5:
-                    ivs = list(entry["intervals"])[-5:]
+                # Cadence mécanique : variance trop faible sur de nombreux échantillons
+                if len(entry["intervals"]) >= self.MIN_CADENCE_SAMPLES:
+                    ivs = list(entry["intervals"])[-self.MIN_CADENCE_SAMPLES:]
                     variance = max(ivs) - min(ivs)
                     if variance < self.CADENCE_VARIANCE_MS:
                         signals["suspicious_cadence"] = True
@@ -372,13 +404,13 @@ class BehaviorTracker:
             entry["timestamps"].append(now)
             entry["paths"].add(path)
 
-            # 404 répétés
+            # 404 répétés (scan de répertoires)
             if status == 404:
                 entry["404s"] += 1
                 if entry["404s"] > self.MAX_404_COUNT:
                     signals["repeated_404"] = True
 
-            # Explosion de chemins distincts
+            # Explosion de chemins distincts (uniquement pages/API, sans static)
             if len(entry["paths"]) > self.MAX_DISTINCT_PATHS:
                 signals["path_explosion"] = True
 
@@ -415,50 +447,42 @@ class TrafficProfiler:
     COUCHE 7 — Analyse l'empreinte globale du trafic pour détecter les agents
     non identifiés qui se déguisent en vrais navigateurs.
 
-    Détecte :
-      - Absence de headers que TOUS les vrais navigateurs envoient
-      - Accès direct aux APIs sans jamais visiter une page HTML
-      - Ratio API/pages anormal (bots ne visitent que les APIs)
-      - Cadence moyenne régulière même lente (scraper prudent)
-      - Ignorance des cookies de session (fantôme numérique)
-      - Comportement de bot malgré un UA de vrai navigateur
+    PROTECTION CONTRE LES FAUX POSITIFS :
+      - Les fichiers statiques sont exclus de TOUS les compteurs
+      - `direct_api_access` ne se déclenche qu'après 8+ appels API sans page
+        (évite la race condition navigateur : HTML + API chargent en parallèle)
+      - `api_only_pattern` requiert 20+ appels, non 10
+      - Volumétrie horaire : 600 req/h (10/min), pas 300
+      - Cadence lente : 10 échantillons requis, pas 6
+      - Les AJAX du JS (avec Referer) ne sont pas pénalisés pour Accept-Language
+      - `no_accept_encoding` : uniquement sur les vraies pages, pas les AJAX
     """
 
-    HOUR_WINDOW   = 3600    # fenêtre 1h pour volumétrie
-    MAX_REQ_HOUR  = 300     # seuil déclenchement flood horaire
-    API_RATIO_MIN = 10      # min requêtes pour calculer le ratio API
-    API_RATIO_THR = 0.85    # 85%+ de requêtes API = bot probable
+    HOUR_WINDOW          = 3600   # fenêtre 1h
+    MAX_REQ_HOUR         = 600    # 10 req/min = utilisateur très actif mais humain
+    API_DIRECT_THRESHOLD = 8      # API calls sans page avant de flaguer direct_api
+    API_ONLY_MIN         = 20     # min appels pour conclure "API only"
 
-    # Intervalle médian 300ms–2s avec variance < 100ms = scraper lent régulier
-    MEDIUM_MIN_MS   = 300
-    MEDIUM_MAX_MS   = 2000
-    MEDIUM_VAR_MAX  = 100
+    # Cadence lente régulière : scraper prudent (300ms–3s, variance < 80ms, 10 samples)
+    MEDIUM_MIN_MS        = 300
+    MEDIUM_MAX_MS        = 3000
+    MEDIUM_VAR_MAX       = 80
+    MEDIUM_MIN_SAMPLES   = 10
 
     def __init__(self):
         self._lock = threading.Lock()
-        # ip → {
-        #   "timestamps": deque (1h),
-        #   "page_visits": int,
-        #   "api_calls": int,
-        #   "has_visited_page": bool,
-        #   "session_cookies_seen": set,
-        #   "session_cookies_sent": set,
-        #   "intervals_medium": deque,
-        #   "last_ts": float|None,
-        # }
         self._data: dict = {}
 
     def _get(self, ip: str) -> dict:
         if ip not in self._data:
             self._data[ip] = {
-                "timestamps":           deque(),
-                "page_visits":          0,
-                "api_calls":            0,
-                "has_visited_page":     False,
-                "session_cookies_seen": set(),
-                "session_cookies_sent": set(),
-                "intervals_medium":     deque(maxlen=10),
-                "last_ts":              None,
+                "timestamps":       deque(),
+                "page_visits":      0,
+                "api_calls":        0,
+                "has_visited_page": False,
+                "loads_static":     False,   # charge-t-il des fichiers statiques ?
+                "intervals_medium": deque(maxlen=15),
+                "last_ts":          None,
             }
         return self._data[ip]
 
@@ -467,6 +491,12 @@ class TrafficProfiler:
         while ts and now - ts[0] > self.HOUR_WINDOW:
             ts.popleft()
 
+    def record_static(self, ip: str):
+        """Signale qu'une ressource statique a été chargée : signal humain fort."""
+        with self._lock:
+            entry = self._get(ip)
+            entry["loads_static"] = True
+
     def analyze(
         self,
         ip: str,
@@ -474,69 +504,80 @@ class TrafficProfiler:
         headers: dict,
         set_cookie: Optional[str] = None,
     ) -> list:
-        """
-        Analyse une requête et retourne la liste des signaux détectés.
-        `set_cookie` = valeur du header Set-Cookie renvoyé par le serveur
-        (à passer depuis le handler si disponible — optionnel).
-        """
+        """Analyse une requête et retourne la liste des signaux détectés."""
+
+        # Les fichiers statiques ne font QUE marquer loads_static = True
+        if _is_static_path(path):
+            self.record_static(ip)
+            return []
+
         signals  = []
         now      = time.time()
         ua       = headers.get("user-agent", headers.get("User-Agent", ""))
         is_api   = path.startswith("/api/")
-        is_page  = not is_api and not path.startswith("/static/")
+        is_page  = not is_api
+        # Requête AJAX : le JS du site appelle l'API depuis une page déjà chargée
+        referer  = headers.get("referer", headers.get("Referer", ""))
+        is_ajax  = is_api and bool(referer)
 
         with self._lock:
             entry = self._get(ip)
             self._purge_old(entry, now)
 
-            # ── Volumétrie horaire ──────────────────────────────────────────
+            # ── Volumétrie horaire (pages + API seulement) ─────────────────
             entry["timestamps"].append(now)
             if len(entry["timestamps"]) > self.MAX_REQ_HOUR:
                 signals.append("hourly_flood")
 
-            # ── Intervalles (cadence lente régulière) ──────────────────────
+            # ── Cadence lente régulière (scraper prudent) ──────────────────
             if entry["last_ts"] is not None:
                 interval_ms = (now - entry["last_ts"]) * 1000
                 if self.MEDIUM_MIN_MS <= interval_ms <= self.MEDIUM_MAX_MS:
                     entry["intervals_medium"].append(interval_ms)
-                    if len(entry["intervals_medium"]) >= 6:
+                    if len(entry["intervals_medium"]) >= self.MEDIUM_MIN_SAMPLES:
                         ivs = list(entry["intervals_medium"])
                         variance = max(ivs) - min(ivs)
                         if variance < self.MEDIUM_VAR_MAX:
                             signals.append("medium_regular_cadence")
             entry["last_ts"] = now
 
-            # ── Visites pages vs appels API ────────────────────────────────
+            # ── Ratio pages / API ──────────────────────────────────────────
             if is_page:
                 entry["page_visits"]      += 1
                 entry["has_visited_page"]  = True
             if is_api:
                 entry["api_calls"] += 1
-                # Premier contact direct avec l'API sans jamais visiter de page
-                if not entry["has_visited_page"] and entry["api_calls"] == 1:
-                    signals.append("direct_api_access")
 
-            total = entry["page_visits"] + entry["api_calls"]
-            if total >= self.API_RATIO_MIN and entry["page_visits"] == 0:
+            # Accès API sans page — race condition évitée : on attend 8 appels
+            # (le navigateur charge HTML + API en parallèle : normal sur 1-2 appels)
+            if (is_api and not entry["has_visited_page"]
+                    and entry["api_calls"] >= self.API_DIRECT_THRESHOLD
+                    and not entry["loads_static"]):
+                signals.append("direct_api_access")
+
+            # API only : jamais de page visitée, beaucoup d'appels API
+            if (entry["api_calls"] >= self.API_ONLY_MIN
+                    and entry["page_visits"] == 0
+                    and not entry["loads_static"]):
                 signals.append("api_only_pattern")
 
-            # ── Fingerprint headers ────────────────────────────────────────
-            headers_lower = {k.lower() for k in headers}
-            for required in _BROWSER_REQUIRED_HEADERS:
-                if required not in headers_lower:
-                    if required == "accept-encoding":
-                        signals.append("no_accept_encoding")
-                    # Accept déjà géré en Couche 1
-
-            conn = headers.get("connection", headers.get("Connection", "")).lower()
-            if conn == "close":
-                signals.append("connection_close")
+            # ── Fingerprint headers (uniquement sur les vraies pages, pas AJAX) ──
+            if not is_ajax:
+                headers_lower = {k.lower() for k in headers}
+                if "accept-encoding" not in headers_lower:
+                    signals.append("no_accept_encoding")
+                conn = headers.get("connection", headers.get("Connection", "")).lower()
+                if conn == "close":
+                    signals.append("connection_close")
 
             # ── UA navigateur réel mais comportement de bot ────────────────
-            if _REAL_BROWSER_UA.search(ua):
+            # Seulement si l'IP ne charge AUCUN fichier statique
+            # (un vrai navigateur charge toujours du CSS/JS/images)
+            if _REAL_BROWSER_UA.search(ua) and not entry["loads_static"]:
                 bot_signals = {
                     "no_accept_encoding", "connection_close",
-                    "api_only_pattern", "medium_regular_cadence", "hourly_flood",
+                    "api_only_pattern", "medium_regular_cadence",
+                    "hourly_flood", "direct_api_access",
                 }
                 if len(set(signals) & bot_signals) >= 2:
                     signals.append("browser_ua_bot_behavior")
@@ -584,7 +625,10 @@ class AIGuard:
     """
 
     # Score minimal pour ban temporaire automatique
-    AUTO_BAN_THRESHOLD = 40
+    # Relevé à 60 pour éviter les faux positifs sur les vrais utilisateurs.
+    # Un bot identifié (ai_agent_ua=20 + headless=25) dépasse ce seuil en 2 requêtes.
+    # Un vrai utilisateur avec quelques signaux ambigus (< 30 pts) ne sera jamais banni.
+    AUTO_BAN_THRESHOLD = 60
 
     def __init__(self):
         self.lockdown = LockdownManager()
@@ -687,10 +731,18 @@ class AIGuard:
 
     # ── Analyse des headers ────────────────────────────────────────────────────
 
-    def _analyze_headers(self, ip: str, headers: dict) -> list:
-        """Retourne la liste des signaux détectés dans les headers."""
+    def _analyze_headers(self, ip: str, headers: dict, path: str = "") -> list:
+        """Retourne la liste des signaux détectés dans les headers.
+
+        PROTECTION FAUX POSITIFS :
+          - Les fichiers statiques ne sont pas analysés (appelant doit filtrer)
+          - Accept-Language ignoré pour les requêtes AJAX (JS n'envoie pas toujours ce header)
+          - Accept ignoré pour les API calls avec Referer (appels JS légitimes)
+        """
         signals = []
         ua = headers.get("user-agent", headers.get("User-Agent", "")).strip()
+        referer = headers.get("referer", headers.get("Referer", ""))
+        is_ajax = path.startswith("/api/") and bool(referer)
 
         # User-Agent vide ou trop court
         if len(ua) < _MIN_UA_LENGTH:
@@ -702,7 +754,6 @@ class AIGuard:
 
         # Agent IA connu
         elif _AI_AGENTS.search(ua):
-            # Pas de ban d'emblée pour les bots légitimes
             if not _LEGIT_BOTS.search(ua):
                 signals.append(("ai_agent_ua", f"Agent IA: {ua[:80]}"))
 
@@ -711,13 +762,16 @@ class AIGuard:
                      ua, re.I):
             signals.append(("headless_browser", f"Headless: {ua[:80]}"))
 
-        # Pas de header Accept (tous les navigateurs l'envoient)
-        if not headers.get("accept", headers.get("Accept", "")):
-            signals.append(("no_accept_header", "Pas de header Accept"))
+        # Pas de header Accept — UNIQUEMENT sur les pages HTML, pas les AJAX
+        # (Le JS du navigateur n'envoie pas toujours Accept sur les fetch())
+        if not is_ajax:
+            if not headers.get("accept", headers.get("Accept", "")):
+                signals.append(("no_accept_header", "Pas de header Accept"))
 
-        # Pas de Accept-Language
-        if not headers.get("accept-language", headers.get("Accept-Language", "")):
-            signals.append(("no_accept_language", "Pas de Accept-Language"))
+            # Pas de Accept-Language — UNIQUEMENT sur les pages directes
+            # (Les appels fetch() JS n'incluent pas ce header par défaut)
+            if not headers.get("accept-language", headers.get("Accept-Language", "")):
+                signals.append(("no_accept_language", "Pas de Accept-Language"))
 
         return signals
 
@@ -776,8 +830,15 @@ class AIGuard:
             self._add_score(ip, "method_abuse", f"Méthode: {method}")
             return True, f"Méthode HTTP non autorisée: {method}"
 
+        # ── Fichiers statiques : signal humain, pas d'analyse comportementale ──
+        # Un vrai navigateur charge 10–30 CSS/JS/images en parallèle en < 50ms.
+        # Les analyser déclencherait des faux positifs sur TOUS les utilisateurs.
+        if _is_static_path(path):
+            self.profiler.record_static(ip)   # marque l'IP comme chargeant du static
+            return False, ""                  # jamais bloqué pour du static
+
         # ── COUCHE 1 : Analyse headers ─────────────────────────────────────────
-        header_signals = self._analyze_headers(ip, headers)
+        header_signals = self._analyze_headers(ip, headers, path)
         total_score = self._get_score(ip)
         for signal, detail in header_signals:
             total_score = self._add_score(ip, signal, detail)
