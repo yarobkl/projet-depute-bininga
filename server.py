@@ -784,21 +784,35 @@ def load_audit(limit=100):
         return []
 
 # ── Données du site (Hero, À propos, Galerie, etc.) ────────
+_DATA_CACHE      = None   # contenu en cache
+_DATA_CACHE_AT   = 0.0   # timestamp du dernier chargement
+_DATA_CACHE_TTL  = 60    # secondes avant rechargement
+
 def load_data():
-    """Charge le contenu du site : PostgreSQL en priorité, fichier en fallback."""
+    """Charge le contenu du site : PostgreSQL en priorité, fichier en fallback.
+    Résultat mis en cache 60 s pour éviter un hit DB à chaque message chatbot."""
+    global _DATA_CACHE, _DATA_CACHE_AT
+    now = time.time()
+    if _DATA_CACHE is not None and (now - _DATA_CACHE_AT) < _DATA_CACHE_TTL:
+        return _DATA_CACHE
     db = _pg_load("site_data")
     if db is not None:
+        _DATA_CACHE, _DATA_CACHE_AT = db, now
         return db
     if not os.path.exists(DATA_FILE):
         return {}
     try:
         with open(DATA_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            data = json.load(f)
+        _DATA_CACHE, _DATA_CACHE_AT = data, now
+        return data
     except Exception:
         return {}
 
 def save_data(data):
     """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
+    global _DATA_CACHE, _DATA_CACHE_AT
+    _DATA_CACHE, _DATA_CACHE_AT = data, time.time()  # met à jour le cache immédiatement
     with _DATA_LOCK:
         # 1. PostgreSQL — source de vérité persistante
         db_ok = _pg_save("site_data", data)
@@ -879,7 +893,7 @@ def _pg():
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
 
-def _groq_call(prompt: str, max_tokens: int = 800) -> str:
+def _groq_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     """Appelle Groq (llama gratuit) et retourne le texte généré."""
     import urllib.request as ur
     key = os.environ.get("GROQ_API_KEY", "").strip()
@@ -896,11 +910,11 @@ def _groq_call(prompt: str, max_tokens: int = 800) -> str:
         data=payload,
         headers={"content-type": "application/json", "authorization": f"Bearer {key}"},
     )
-    with ur.urlopen(req, timeout=30) as r:
+    with ur.urlopen(req, timeout=timeout) as r:
         resp = json.loads(r.read())
     return resp["choices"][0]["message"]["content"].strip()
 
-def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
+def _gemini_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     """Appelle Gemini Flash, avec fallback automatique sur Groq puis Claude."""
     import urllib.request as ur
     global _GEMINI_MODEL_CACHE
@@ -926,7 +940,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
             url = f"https://generativelanguage.googleapis.com/{version}/models/{model}:generateContent?key={key}"
             try:
                 req = ur.Request(url, data=payload, headers={"content-type": "application/json"})
-                with ur.urlopen(req, timeout=30) as r:
+                with ur.urlopen(req, timeout=timeout) as r:
                     resp = json.loads(r.read())
                 parts = resp.get("candidates", [{}])[0].get("content", {}).get("parts", [])
                 text  = parts[0].get("text", "").strip() if parts else ""
@@ -947,7 +961,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
     if groq_key:
         try:
             print(f"[AI] Gemini indisponible ({gemini_err}) — fallback Groq")
-            return _groq_call(prompt, max_tokens)
+            return _groq_call(prompt, max_tokens, timeout=timeout)
         except Exception as ge:
             print(f"[AI] Groq aussi échoué : {ge}")
 
@@ -970,7 +984,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800) -> str:
                     "anthropic-version": "2023-06-01",
                 },
             )
-            with ur.urlopen(req_c, timeout=30) as r:
+            with ur.urlopen(req_c, timeout=timeout) as r:
                 resp_c = json.loads(r.read())
             text_c = resp_c["content"][0]["text"].strip()
             print("[AI] Claude fallback OK")
@@ -2391,26 +2405,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             role_lbl = "Visiteur" if h.get("role") == "user" else "DA"
                             hist_txt += f"{role_lbl}: {h.get('content','')}\n"
 
-                        about_intro = about.get("intro", "")
-                        about_paras = " ".join(about.get("paragraphs", [])[:3])
+                        about_intro = about.get("intro", "")[:200]
                         prog_axes   = ", ".join(
-                            ax.get("title","") for ax in programme.get("axes",[])[:5]
+                            ax.get("title","") for ax in programme.get("axes",[])[:4]
                             if isinstance(ax, dict) and ax.get("title")
                         )
-                        ai_prompt = f"""Tu es DA, l'assistante virtuelle officielle et bienveillante du site de {nom}, {role}.
-Tu réponds en français, de façon chaleureuse, concise (3-5 phrases max), et toujours en lien avec {nom} ou son site.
-Tu ne parles jamais d'autres politiciens, ni de sujets sans rapport. Si tu ne sais pas, tu orientes vers le formulaire de contact.
-
-Contexte sur {nom} :
-- {about_intro[:400]}
-- {about_paras[:400]}
-- Programme : {prog_axes}
-
-Historique de la conversation :
-{hist_txt}
-Visiteur: {question}
+                        ai_prompt = f"""Tu es DA, assistante virtuelle du site de {nom}, {role}.
+Réponds en français, chaleureusement, en 2-3 phrases max, uniquement sur {nom}.
+Si tu ne sais pas, oriente vers le formulaire de contact.
+Contexte : {about_intro} Programme : {prog_axes}
+{hist_txt}Visiteur: {question}
 DA:"""
-                        ai_reply = _gemini_call(ai_prompt, max_tokens=300)
+                        ai_reply = _gemini_call(ai_prompt, max_tokens=150, timeout=12)
                         # Nettoyer si le modèle répète "DA:"
                         if ai_reply.lower().startswith("da:"):
                             ai_reply = ai_reply[3:].strip()
