@@ -883,6 +883,14 @@ def _pg():
                         updated_at  TIMESTAMPTZ DEFAULT NOW()
                     )
                 """)
+                cur.execute("""
+                    CREATE TABLE IF NOT EXISTS bininga_photos (
+                        id           TEXT PRIMARY KEY,
+                        data         BYTEA NOT NULL,
+                        content_type TEXT NOT NULL DEFAULT 'image/jpeg',
+                        created_at   TIMESTAMPTZ DEFAULT NOW()
+                    )
+                """)
             _pg_local.conn = conn
         return conn
     except Exception as e:
@@ -1028,6 +1036,43 @@ def _pg_save(key: str, value) -> bool:
         _pg_local.conn = None   # force reconnexion au prochain appel
         return False
 
+def _pg_save_photo(photo_id: str, data_bytes: bytes, content_type: str = "image/jpeg") -> bool:
+    """Sauvegarde une photo binaire dans PostgreSQL. Retourne True si succès."""
+    conn = _pg()
+    if not conn:
+        return False
+    try:
+        import psycopg2
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO bininga_photos (id, data, content_type)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (id) DO UPDATE
+                SET data = EXCLUDED.data, content_type = EXCLUDED.content_type
+            """, (photo_id, psycopg2.Binary(data_bytes), content_type))
+        return True
+    except Exception as e:
+        print(f"[DB] Erreur sauvegarde photo '{photo_id}' : {e}")
+        _pg_local.conn = None
+        return False
+
+def _pg_load_photo(photo_id: str):
+    """Charge une photo depuis PostgreSQL. Retourne (bytes, content_type) ou None."""
+    conn = _pg()
+    if not conn:
+        return None
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT data, content_type FROM bininga_photos WHERE id = %s", (photo_id,))
+            row = cur.fetchone()
+            if row:
+                return bytes(row[0]), row[1]
+            return None
+    except Exception as e:
+        print(f"[DB] Erreur lecture photo '{photo_id}' : {e}")
+        _pg_local.conn = None
+        return None
+
 # ── Contacts (formulaires publics) ──────────────────────────
 def load_contacts() -> list:
     """Charge les contacts : PostgreSQL en priorité, fichier en fallback."""
@@ -1140,16 +1185,21 @@ def _migrate_files_to_db():
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
         except Exception:
             pass
-    # Contenu du site (data.json)
-    if _pg_load("site_data") is None and os.path.exists(DATA_FILE):
+    # Contenu du site (data.json) — TOUJOURS synchroniser depuis le fichier au démarrage
+    # Garantit que les photos et articles du dépôt sont toujours visibles sur le site
+    if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if data:
-                _pg_save("site_data", data)
-                print(f"[DB] Migration : contenu du site importé depuis data.json")
-        except Exception:
-            pass
+                fresh = json.load(f)
+            if fresh:
+                _pg_save("site_data", fresh)
+                g = fresh.get("gallery", {})
+                a = fresh.get("actus", {})
+                print(f"[DB] Contenu synchronisé depuis data.json — "
+                      f"galerie: {len(g.get('grid', []))} photos, "
+                      f"actus: {len(a.get('slides', []))+len(a.get('cards', []))} articles")
+        except Exception as e:
+            print(f"[DB] Erreur sync data.json : {e}")
     # Users
     if _pg_load("users") is None and os.path.exists(USERS_FILE):
         try:
@@ -1600,6 +1650,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "dir": safe_dir, "folders": folders, "files": files})
             return
 
+        # ── /api/sinistre-photo/<id> — Sert une photo de réclamation depuis PostgreSQL ──
+        if path.startswith("/api/sinistre-photo/"):
+            photo_id = path[len("/api/sinistre-photo/"):]
+            # Valider l'ID (caractères alphanumériques + _ seulement)
+            if not photo_id or not all(c.isalnum() or c in "_" for c in photo_id):
+                self.send_error(400)
+                return
+            result = _pg_load_photo(photo_id)
+            if not result:
+                self.send_error(404)
+                return
+            img_bytes, content_type = result
+            self.send_response(200)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Content-Length", str(len(img_bytes)))
+            self.send_header("Cache-Control", "max-age=86400, private")
+            self.end_headers()
+            self.wfile.write(img_bytes)
+            return
+
         # ── /api/crm — Liste des contacts CRM avec pagination et recherche ──
         if path == "/api/crm":
             token = self.headers.get("X-Admin-Token", "")
@@ -1855,6 +1925,31 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
             except Exception as e:
                 self._error(500, str(e))
+        elif safe and relative.startswith("images/") and not relative.startswith("images/sinistres/"):
+            # Fichier image absent du disque → fallback PostgreSQL (images uploadées via admin)
+            fname  = os.path.basename(relative)
+            result = _pg_load_photo("upload_" + fname)
+            if result:
+                img_bytes, img_mime = result
+                # Restaurer sur disque pour les prochaines requêtes
+                try:
+                    os.makedirs(os.path.dirname(safe), exist_ok=True)
+                    with open(safe, "wb") as fh:
+                        fh.write(img_bytes)
+                except Exception:
+                    pass
+                origin = self._cors_origin()
+                self.send_response(200)
+                self.send_header("Content-Type", img_mime)
+                self.send_header("Content-Length", str(len(img_bytes)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                if origin:
+                    self.send_header("Access-Control-Allow-Origin", origin)
+                self._security_headers()
+                self.end_headers()
+                self.wfile.write(img_bytes)
+            else:
+                self._error(404, "Fichier non trouvé")
         else:
             self._error(404, "Fichier non trouvé")
 
@@ -2048,14 +2143,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             if not _is_valid_image(data_bytes):
                 self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
                 return
-            uid   = secrets.token_hex(6)
-            ts    = datetime.now().strftime("%Y%m%d_%H%M%S")
-            fname = f"{ts}_{uid}.jpg"
-            os.makedirs(os.path.join("images", "sinistres"), exist_ok=True)
-            with open(os.path.join("images", "sinistres", fname), "wb") as f:
-                f.write(data_bytes)
-            audit_log("SINISTRE_PHOTO", ip, f"Photo sinistre reçue : {fname}")
-            self._json({"ok": True, "path": "images/sinistres/" + fname})
+            uid      = secrets.token_hex(6)
+            ts       = datetime.now().strftime("%Y%m%d_%H%M%S")
+            photo_id = f"{ts}_{uid}"
+            # Détecter le type MIME réel
+            ext = safe_name.lower().rsplit(".", 1)[-1] if "." in safe_name else "jpg"
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg",
+                        "png": "image/png", "webp": "image/webp"}
+            content_type = mime_map.get(ext, "image/jpeg")
+            # Stocker dans PostgreSQL (priorité) — survit aux redéploiements
+            if _pg_save_photo(photo_id, data_bytes, content_type):
+                photo_path = f"/api/sinistre-photo/{photo_id}"
+            else:
+                # Fallback filesystem si pas de PostgreSQL
+                fname = f"{photo_id}.jpg"
+                os.makedirs(os.path.join("images", "sinistres"), exist_ok=True)
+                with open(os.path.join("images", "sinistres", fname), "wb") as fh:
+                    fh.write(data_bytes)
+                photo_path = f"images/sinistres/{fname}"
+            audit_log("SINISTRE_PHOTO", ip, f"Photo sinistre reçue : {photo_id}")
+            self._json({"ok": True, "path": photo_path})
             return
 
         # ── /api/chat (public — chatbot assistant du site) ──
@@ -2663,6 +2770,9 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                         entry[k] = v[:2000]
                     elif isinstance(v, (int, float, bool)):
                         entry[k] = v
+                # Normaliser photo-url → photo_url (champ formulaire HTML vs clé Python)
+                if "photo-url" in entry and "photo_url" not in entry:
+                    entry["photo_url"] = entry.pop("photo-url")
                 # Normalisation : s'assurer que type et source sont cohérents
                 raw_src = entry.get("source") or entry.get("type", "contact")
                 entry["source"] = raw_src
@@ -3027,12 +3137,44 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             if not safe_name.lower().endswith(".svg") and not _is_valid_image(data_bytes):
                 self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
                 return
+            # Sauvegarder sur disque
             os.makedirs("images", exist_ok=True)
             with open(os.path.join("images", safe_name), "wb") as f:
                 f.write(data_bytes)
+            # Sauvegarder aussi dans PostgreSQL (survit aux redéploiements)
+            ext = safe_name.lower().rsplit(".", 1)[-1] if "." in safe_name else "jpg"
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+                        "webp": "image/webp", "gif": "image/gif", "svg": "image/svg+xml"}
+            img_mime = mime_map.get(ext, "image/jpeg")
+            _pg_save_photo("upload_" + safe_name, data_bytes, img_mime)
             print(f"[BININGA] 📷 Image uploadée : {safe_name}")
             audit_log("UPLOAD", ip, f"Image uploadée : {safe_name}")
             self._json({"ok": True, "path": "images/" + safe_name})
+            return
+
+        # ── /api/admin/force-sync — force PostgreSQL à reprendre data.json ──
+        if path == "/api/admin/force-sync":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                if not os.path.exists(DATA_FILE):
+                    self._json({"ok": False, "message": "data.json introuvable"}, 404)
+                    return
+                with open(DATA_FILE, "r", encoding="utf-8") as f:
+                    fresh = json.load(f)
+                save_data(fresh)
+                audit_log("FORCE_SYNC", ip, "Synchronisation forcée data.json → PostgreSQL")
+                counts = {
+                    "gallery_slides": len(fresh.get("gallery", {}).get("slides", [])),
+                    "gallery_grid":   len(fresh.get("gallery", {}).get("grid", [])),
+                    "actus_slides":   len(fresh.get("actus", {}).get("slides", [])),
+                    "actus_cards":    len(fresh.get("actus", {}).get("cards", [])),
+                    "parcours":       len(fresh.get("parcours", [])),
+                }
+                self._json({"ok": True, "message": "Synchronisation réussie — contenu rechargé depuis data.json", "counts": counts})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
             return
 
         # ── /api/save ──

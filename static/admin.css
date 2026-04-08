@@ -360,6 +360,20 @@ select.form-input:focus{border-color:var(--r)}
   .user-item { flex-wrap: wrap; }
   .login-box { padding: 32px 22px; margin: 16px; }
   .mon-kpi-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* ── Notification panel : position fixe sous le header sur mobile ── */
+  .notif-panel {
+    position: fixed;
+    top: 58px;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    border-radius: 0 0 14px 14px;
+    max-height: calc(100vh - 74px);
+    overflow-y: auto;
+    z-index: 10000;
+  }
+  .notif-list { max-height: none; }
 }
 
 /* ══════════════════════════════════════════════════════════
