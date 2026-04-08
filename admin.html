@@ -768,6 +768,113 @@
           </div>
         </div>
 
+        <!-- ── BOUCLIER IA — Forces Spéciales Numériques ── -->
+        <div class="card" style="margin-top:16px;border-color:rgba(200,16,46,.25)" id="bouclier-card">
+          <div class="card-header">
+            <div class="card-title">🛡️ Bouclier IA — Forces Spéciales Numériques</div>
+            <div class="card-actions">
+              <span id="bouclier-badge" style="display:none;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)">LOCKDOWN</span>
+              <button class="sbtn sbtn-progress" onclick="loadBouclier()">🔄</button>
+            </div>
+          </div>
+
+          <!-- Statut global -->
+          <div id="bouclier-status-bar" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:14px;background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.15)">
+            <span id="bouclier-status-icon" style="font-size:18px">🟢</span>
+            <div style="flex:1">
+              <div id="bouclier-status-txt" style="font-size:13px;font-weight:700;color:#2ecc71">Bouclier actif — protection en cours</div>
+              <div id="bouclier-status-sub" style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">6 couches de défense opérationnelles</div>
+            </div>
+            <div id="bouclier-lockdown-timer" style="display:none;font-size:12px;font-weight:700;color:#e74c3c;background:rgba(231,76,60,.12);padding:4px 10px;border-radius:6px;border:1px solid rgba(231,76,60,.3)"></div>
+          </div>
+
+          <!-- Couches de défense (visuelles) -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">🔍</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">RECONNAISSANCE</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">30+ agents IA</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">🔥</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">FIREWALL</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">Score 0–50+</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">🔒</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">LOCKDOWN</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">Mode sécurité</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">🗄️</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">COFFRE-FORT</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">20+ fichiers</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">🪤</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">CANARIS</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">40+ pièges</div>
+            </div>
+            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
+              <div style="font-size:15px;margin-bottom:4px">⚡</div>
+              <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">CONTRE-MESURES</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">Tarpit → Ban</div>
+            </div>
+            <div style="background:rgba(155,89,182,.08);border:1px solid rgba(155,89,182,.25);border-radius:8px;padding:10px;text-align:center;grid-column:span 2">
+              <div style="font-size:15px;margin-bottom:4px">👻</div>
+              <div style="font-size:10px;font-weight:700;color:#9b59b6">EMPREINTE TRAFIC</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">Agents déguisés · Ratio API · Cadence lente · Fingerprint headers</div>
+            </div>
+          </div>
+
+          <!-- Stats rapides -->
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+            <div class="sec-stat">
+              <div class="sec-stat-n" id="bouclier-n-tracked" style="color:#3498db">—</div>
+              <div class="sec-stat-l">IPs trackées</div>
+            </div>
+            <div class="sec-stat">
+              <div class="sec-stat-n" id="bouclier-n-banned" style="color:#e74c3c">—</div>
+              <div class="sec-stat-l">Bans temporaires</div>
+            </div>
+            <div class="sec-stat">
+              <div class="sec-stat-n" id="bouclier-n-lockdowns" style="color:#f39c12">—</div>
+              <div class="sec-stat-l">Lockdowns totaux</div>
+            </div>
+            <div class="sec-stat">
+              <div class="sec-stat-n" id="bouclier-n-ghosts" style="color:#9b59b6">—</div>
+              <div class="sec-stat-l">Agents fantômes</div>
+            </div>
+          </div>
+
+          <!-- Top menaces -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🎯 Top Menaces Actives</div>
+            <div id="bouclier-threats-list" style="display:flex;flex-direction:column;gap:5px">
+              <div class="msg-empty">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- Contrôles Lockdown -->
+          <div style="background:rgba(231,76,60,.04);border:1px solid rgba(231,76,60,.15);border-radius:10px;padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#e74c3c;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">🔒 Contrôle Lockdown Manuel</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <div style="flex:1;min-width:180px">
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">Raison</div>
+                <input id="lockdown-reason" type="text" placeholder="Ex : Attaque détectée"
+                  style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;outline:none">
+              </div>
+              <div style="width:100px">
+                <div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:4px">Durée (min)</div>
+                <input id="lockdown-duration" type="number" value="15" min="1" max="1440"
+                  style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:12px;outline:none">
+              </div>
+              <button onclick="activateLockdown()" style="padding:8px 16px;background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.35);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🔒 Activer Lockdown</button>
+              <button onclick="deactivateLockdown()" style="padding:8px 16px;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.25);border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">🔓 Lever</button>
+            </div>
+          </div>
+        </div>
+
         <!-- ── RÉINITIALISATION ── -->
         <div class="card role-admin" style="border-color:rgba(231,76,60,.25);margin-bottom:0" id="reset-card">
           <div class="card-header"><div class="card-title" style="color:#e74c3c">⚠️ Zone de réinitialisation</div></div>
