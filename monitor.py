@@ -437,7 +437,8 @@ def send_email_notification(new_articles: list[dict]):
     if count > 10:
         body_parts.append(f"<p>… et {count - 10} autre(s) article(s). Voir le panneau YARO IA.</p>")
 
-    body_parts.append('<p><a href="https://bininga.cg/admin.html">→ Ouvrir l\'espace admin</a></p>')
+    _admin_path = os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025").strip("/")
+    body_parts.append(f'<p><a href="https://bininga.cg/{_admin_path}">→ Ouvrir l\'espace admin</a></p>')
     html_body = "\n".join(body_parts)
 
     msg = MIMEMultipart("alternative")

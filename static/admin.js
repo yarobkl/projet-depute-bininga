@@ -3175,6 +3175,45 @@ function renderYoutubeList() {
   }).join("");
 }
 
+function _ytCopyBtn(label, dataAttr) {
+  return `<button onclick="ytCopySection(this,'${dataAttr}')" style="padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.color='rgba(255,255,255,.5)'">📋 ${label}</button>`;
+}
+
+function ytCopySection(btn, attr) {
+  const el = document.querySelector(`[data-yt-copy="${attr}"]`);
+  if (!el) return;
+  navigator.clipboard.writeText(el.dataset.ytRaw || el.textContent).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = "✅ Copié !";
+    btn.style.color = "#2ecc71";
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = "rgba(255,255,255,.5)"; }, 1800);
+  }).catch(() => showToast("Copie non supportée par ce navigateur", true));
+}
+
+function ytCopyAll(id) {
+  const v = _youtubeData.find(x => x.id === id);
+  if (!v) return;
+  const c = v.contenu || {};
+  const tagsStr = (c.tags || []).map(t => `#${t}`).join(" ");
+  const text = [
+    `TITRE : ${c.titre_youtube || ""}`,
+    ``,
+    `DESCRIPTION :`,
+    c.description || "",
+    ``,
+    `TAGS : ${tagsStr}`,
+    ``,
+    `MINIATURE : ${c.miniature_texte || ""}`,
+    `DURÉE ESTIMÉE : ${c.duree_estimee || ""}`,
+    ``,
+    `── SCRIPT ──`,
+    c.script || "",
+  ].join("\n");
+  navigator.clipboard.writeText(text).then(() => {
+    showToast("✅ Tout le contenu copié dans le presse-papier !");
+  }).catch(() => showToast("Copie non supportée", true));
+}
+
 function openYtModal(id) {
   const v = _youtubeData.find(x => x.id === id);
   if (!v) return;
@@ -3183,23 +3222,41 @@ function openYtModal(id) {
   const s  = sb[v.statut] || ['#888','?'];
   document.getElementById("yt-modal-titre-h").textContent = c.titre_youtube || v.titre || "Contenu YouTube";
   const tags = (c.tags || []).map(t => `<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;background:rgba(255,0,0,.1);color:#ff4444;border:1px solid rgba(255,0,0,.2);margin:2px">#${t}</span>`).join("");
+  const tagsRaw = (c.tags || []).map(t => `#${t}`).join(" ");
   document.getElementById("yt-modal-body").innerHTML = `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${s[0]}22;color:${s[0]};border:1px solid ${s[0]}44">${s[1]}</span>
       <span style="font-size:11px;color:rgba(255,255,255,.3)">🎬 ${c.duree_estimee || "—"}</span>
       <span style="font-size:11px;color:rgba(255,255,255,.25)">${v.created_at || ""}</span>
+      <button onclick="ytCopyAll('${v.id}')" style="margin-left:auto;padding:5px 12px;border-radius:7px;border:1px solid rgba(255,165,0,.3);background:rgba(255,165,0,.08);color:#f39c12;font-size:11px;font-weight:700;cursor:pointer">📦 Tout copier</button>
     </div>
-    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.4">${c.titre_youtube || ""}</div>
+    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
+      <div style="flex:1;font-size:15px;font-weight:700;color:#fff;line-height:1.4" data-yt-copy="titre" data-yt-raw="${(c.titre_youtube||"").replace(/"/g,"&quot;")}">${c.titre_youtube || ""}</div>
+      ${_ytCopyBtn("Titre","titre")}
+    </div>
     ${c.miniature_texte ? `<div style="display:inline-block;margin-bottom:12px;padding:6px 12px;background:rgba(255,0,0,.12);border:1px solid rgba(255,0,0,.25);border-radius:8px;font-size:12px;font-weight:700;color:#ff4444">🖼 Miniature : ${c.miniature_texte}</div>` : ""}
     <div style="background:rgba(52,152,219,.06);border-left:3px solid #3498db;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:#3498db;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Description YouTube</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;white-space:pre-wrap">${(c.description || "").slice(0,400)}${(c.description||"").length>400?"…":""}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:#3498db;text-transform:uppercase;letter-spacing:.5px;flex:1">Description YouTube</div>
+        ${_ytCopyBtn("Description","description")}
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;white-space:pre-wrap;max-height:220px;overflow-y:auto" data-yt-copy="description" data-yt-raw="${(c.description||"").replace(/"/g,"&quot;")}">${c.description || ""}</div>
     </div>
     <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Script</div>
-      <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;white-space:pre-wrap;max-height:300px;overflow-y:auto">${c.script || ""}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;flex:1">Script</div>
+        ${_ytCopyBtn("Script","script")}
+      </div>
+      <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;white-space:pre-wrap;max-height:300px;overflow-y:auto" data-yt-copy="script" data-yt-raw="${(c.script||"").replace(/"/g,"&quot;")}">${c.script || ""}</div>
     </div>
-    ${tags ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Tags</div><div>${tags}</div></div>` : ""}
+    ${tags ? `<div style="margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;flex:1">Tags</div>
+        ${_ytCopyBtn("Tags","tags")}
+      </div>
+      <div>${tags}</div>
+      <span style="display:none" data-yt-copy="tags" data-yt-raw="${tagsRaw.replace(/"/g,"&quot;")}"></span>
+    </div>` : ""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
       <button onclick="changeYtStatut('${v.id}','pret')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">✅ Marquer prêt</button>
       <button onclick="changeYtStatut('${v.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">🌐 Publié</button>

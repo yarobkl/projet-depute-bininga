@@ -221,14 +221,22 @@ _VAULT_FILES = frozenset({
     # Credentials & secrets
     "users.json", "sessions.json", ".env", ".env.local", ".env.production",
     ".env.bak", "credentials.json", "secrets.json", "config.json",
+    # Données métier (contacts, CRM, contenu éditorial)
+    "contacts.json", "crm.json", "editorial.json", "news_monitor.json",
+    "youtube.json", "data.json",
+    # Déploiement & configuration serveur
+    "railway.toml", "railway_public.toml", "Procfile",
+    "requirements.txt", "setup.py", "setup.cfg", "pyproject.toml",
     # Clés & certificats
     "cert.pem", "key.pem", "privkey.pem", "fullchain.pem",
     "id_rsa", "id_ed25519", "id_ecdsa", ".htpasswd",
     # Logs & données sensibles
     "audit.log", "attacks.log", "attack_scores.json", "blocked_ips.json",
-    "monitoring.db", "news.db",
+    "monitoring.db", "news.db", "monitor.log", "ai_guard.log",
+    "ai_guard_state.json", "legal_intelligence.log",
     # Code source
-    "server.py", "security_ai_guard.py",
+    "server.py", "security_ai_guard.py", "monitor.py",
+    "monitoring.py", "legal_intelligence.py",
     # Base de données
     "data.db", "database.db", "bininga.db",
     # Sauvegardes
@@ -240,6 +248,7 @@ _VAULT_EXTENSIONS = frozenset({
     ".p12", ".crt", ".cer", ".der", ".sh", ".bash", ".sql",
     ".db", ".sqlite", ".sqlite3", ".log", ".bak", ".swp",
     ".orig", ".cfg", ".ini", ".conf", ".config",
+    ".toml", ".lock",   # fichiers de déploiement (railway.toml, Pipfile.lock…)
 })
 
 _VAULT_PREFIXES = (
@@ -247,18 +256,47 @@ _VAULT_PREFIXES = (
     "/node_modules/", "/.github/",
 )
 
-def is_vault_protected(path: str) -> bool:
-    """Retourne True si le chemin touche un fichier du coffre-fort."""
-    filename = os.path.basename(path)
-    ext = os.path.splitext(filename)[1].lower()
+# Regex path traversal — détecte les séquences ../ encodées ou non
+_PATH_TRAVERSAL_RE = re.compile(
+    r"(?:"
+    r"\.\./|\.\.\\|"                          # ../  ..\
+    r"%2e%2e[%/\\]|%2e%2e$|"                 # %2e%2e/ (URL encoded)
+    r"\.%2e[%/\\]|%2e\.[%/\\]|"              # .%2e/ et %2e./
+    r"%252e%252e|"                            # double-encoded %25 2e
+    r"\.\.%2f|\.\.%5c|"                       # ..%2f  ..%5c
+    r"(?:%2e){2}|(?:\.{2})"                  # séquences génériques
+    r")",
+    re.IGNORECASE
+)
 
-    if filename in _VAULT_FILES:
-        return True
-    if ext in _VAULT_EXTENSIONS:
-        return True
-    for prefix in _VAULT_PREFIXES:
-        if path.startswith(prefix):
+def is_vault_protected(path: str) -> bool:
+    """Retourne True si le chemin touche un fichier du coffre-fort.
+
+    Décode l'URL avant d'analyser pour détecter les attaques par
+    encodage (%2e%2e%2f = ../).
+    """
+    from urllib.parse import unquote
+    # Décoder une fois (simple encoding) et deux fois (double encoding)
+    decoded_once = unquote(path)
+    decoded_twice = unquote(decoded_once)
+
+    # Tester sur les deux versions
+    for p in (path, decoded_once, decoded_twice):
+        # Path traversal détecté → coffre-fort activé
+        if _PATH_TRAVERSAL_RE.search(p):
             return True
+
+        filename = os.path.basename(p.split("?")[0])
+        ext = os.path.splitext(filename)[1].lower()
+
+        if filename in _VAULT_FILES:
+            return True
+        if ext in _VAULT_EXTENSIONS:
+            return True
+        for prefix in _VAULT_PREFIXES:
+            if p.startswith(prefix):
+                return True
+
     return False
 
 
@@ -268,6 +306,10 @@ def is_vault_protected(path: str) -> bool:
 
 # Chemins canaris : tout accès déclenche alerte immédiate + score critique
 _CANARY_PATHS = frozenset({
+    # Espace admin — URL publique = piège immédiat
+    # L'admin réel est servi sous ADMIN_SECRET_PATH (variable d'environnement)
+    "/admin.html", "/admin.htm", "/admin",
+    "/admin/", "/admin/login", "/admin/dashboard",
     # Fichiers de config piégés
     "/.well-known/secret-admin",
     "/api/internal/dump",
@@ -298,14 +340,18 @@ _CANARY_PATHS = frozenset({
 })
 
 def is_canary_path(path: str) -> bool:
-    """Vérifie si le chemin est un piège canari."""
-    path_lower = path.lower()
-    if path_lower in _CANARY_PATHS:
-        return True
-    # Canaris par suffixe
-    for canary in _CANARY_PATHS:
-        if path_lower.startswith(canary.rstrip("/") + "/"):
+    """Vérifie si le chemin est un piège canari.
+    Décode l'URL pour détecter les encodages (%2f, %2e, double-encoded).
+    """
+    from urllib.parse import unquote
+    decoded = unquote(unquote(path))   # double-decode
+
+    for p in (path.lower(), decoded.lower()):
+        if p in _CANARY_PATHS:
             return True
+        for canary in _CANARY_PATHS:
+            if p.startswith(canary.rstrip("/") + "/"):
+                return True
     return False
 
 
@@ -849,6 +895,19 @@ class AIGuard:
         total_score = self._get_score(ip)
         for signal, detail in header_signals:
             total_score = self._add_score(ip, signal, detail)
+
+        # ── BAN IMMÉDIAT si agent IA ou outil connu (FAILLE 1 corrigée) ───────
+        # GPTBot, curl, python-requests, Scrapy… sont identifiés avec certitude.
+        # Inutile d'attendre 2 requêtes : ban dès la 1ère détection.
+        # Attaque distribuée (1 IP = 1 requête) aussi couverte : chaque IP
+        # est bannie dès sa 1ère requête si son UA est un agent connu.
+        immediate_ban_signals = {"ai_agent_ua", "headless_browser", "scanner_tool"}
+        triggered = {s for s, _ in header_signals if s in immediate_ban_signals}
+        if triggered:
+            signal_str = ", ".join(triggered)
+            self._temp_ban(ip, 3600, f"Agent IA/bot identifié: {signal_str}")
+            _ai_audit("IMMEDIATE_BAN", ip, f"Ban immédiat — {signal_str} — {path}")
+            return True, f"Accès refusé — agent IA/bot identifié ({signal_str})"
 
         # ── COUCHE 6 : Comportement ────────────────────────────────────────────
         behavior_signals = self.behavior.record(ip, path)

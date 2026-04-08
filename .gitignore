@@ -30,6 +30,7 @@ blocked_ips.json
 attack_scores.json
 audit.log
 attacks.log
+data/ai_guard_state.json
 
 # PID files
 *.pid
