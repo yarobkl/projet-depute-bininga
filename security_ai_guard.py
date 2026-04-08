@@ -850,6 +850,19 @@ class AIGuard:
         for signal, detail in header_signals:
             total_score = self._add_score(ip, signal, detail)
 
+        # ── BAN IMMÉDIAT si agent IA ou outil connu (FAILLE 1 corrigée) ───────
+        # GPTBot, curl, python-requests, Scrapy… sont identifiés avec certitude.
+        # Inutile d'attendre 2 requêtes : ban dès la 1ère détection.
+        # Attaque distribuée (1 IP = 1 requête) aussi couverte : chaque IP
+        # est bannie dès sa 1ère requête si son UA est un agent connu.
+        immediate_ban_signals = {"ai_agent_ua", "headless_browser", "scanner_tool"}
+        triggered = {s for s, _ in header_signals if s in immediate_ban_signals}
+        if triggered:
+            signal_str = ", ".join(triggered)
+            self._temp_ban(ip, 3600, f"Agent IA/bot identifié: {signal_str}")
+            _ai_audit("IMMEDIATE_BAN", ip, f"Ban immédiat — {signal_str} — {path}")
+            return True, f"Accès refusé — agent IA/bot identifié ({signal_str})"
+
         # ── COUCHE 6 : Comportement ────────────────────────────────────────────
         behavior_signals = self.behavior.record(ip, path)
         for signal in behavior_signals:
