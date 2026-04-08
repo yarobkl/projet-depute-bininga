@@ -842,6 +842,26 @@ function scheduleAutoSave() {
   _autoSaveTimer = setTimeout(() => saveData(true), 1500);
 }
 
+async function forceSyncData() {
+  if (!confirm("Restaurer tout le contenu depuis le fichier de référence ?\nCela va écraser les données actuelles de la base.")) return;
+  const btn = document.getElementById("btn-force-sync");
+  if (btn) { btn.textContent = "⏳ Restauration…"; btn.disabled = true; }
+  try {
+    const res  = await apiFetch("/api/admin/force-sync", { method: "POST", headers: authHeaders() });
+    const data = await res.json();
+    if (data.ok) {
+      showToast("✅ Contenu restauré — galerie, articles et parcours rechargés !");
+      setTimeout(() => { loadSiteData(); }, 800);
+    } else {
+      showToast(data.message || "Erreur lors de la restauration", true);
+    }
+  } catch (e) {
+    showToast("Erreur : " + e.message, true);
+  } finally {
+    if (btn) { btn.textContent = "⚡ Restaurer le contenu"; btn.disabled = false; }
+  }
+}
+
 function saveData(silent = false) {
   if (_autoSaving) return;
   _autoSaving = true;

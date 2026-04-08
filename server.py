@@ -3115,6 +3115,31 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             self._json({"ok": True, "path": "images/" + safe_name})
             return
 
+        # ── /api/admin/force-sync — force PostgreSQL à reprendre data.json ──
+        if path == "/api/admin/force-sync":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                if not os.path.exists(DATA_FILE):
+                    self._json({"ok": False, "message": "data.json introuvable"}, 404)
+                    return
+                with open(DATA_FILE, "r", encoding="utf-8") as f:
+                    fresh = json.load(f)
+                save_data(fresh)
+                audit_log("FORCE_SYNC", ip, "Synchronisation forcée data.json → PostgreSQL")
+                counts = {
+                    "gallery_slides": len(fresh.get("gallery", {}).get("slides", [])),
+                    "gallery_grid":   len(fresh.get("gallery", {}).get("grid", [])),
+                    "actus_slides":   len(fresh.get("actus", {}).get("slides", [])),
+                    "actus_cards":    len(fresh.get("actus", {}).get("cards", [])),
+                    "parcours":       len(fresh.get("parcours", [])),
+                }
+                self._json({"ok": True, "message": "Synchronisation réussie — contenu rechargé depuis data.json", "counts": counts})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
+
         # ── /api/save ──
         if path == "/api/save":
             if not has_role(token, "admin", "editeur", "ministre"):
