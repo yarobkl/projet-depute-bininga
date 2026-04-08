@@ -497,16 +497,24 @@ def record_attack(ip: str, event_type: str, score: int, detail: str = ""):
         _ATTACK_SAVE_COUNTER = 0
         save_attack_scores()
 
-    # Bannissement automatique si seuil dépassé
-    if entry["score"] >= ATTACK_BAN_THRESHOLD and ip not in BLOCKED_IPS:
+    # Bannissement automatique si seuil dépassé (jamais les IPs de confiance)
+    if entry["score"] >= ATTACK_BAN_THRESHOLD and ip not in BLOCKED_IPS and not _is_trusted_ip(ip):
         BLOCKED_IPS.add(ip)
         save_blocked_ips()
         save_attack_scores()
         audit_log("AUTO_BAN", ip, f"Bannissement automatique — score {entry['score']} ({event_type})")
         print(f"[BININGA] 🚫 IP bannie automatiquement : {ip} (score={entry['score']})")
 
+_NEVER_BAN_IPS = frozenset({"127.0.0.1", "::1"})  # jamais bannir le serveur lui-même
+
+def _is_trusted_ip(ip: str) -> bool:
+    """Retourne True si l'IP ne doit jamais être bannie (localhost + admin_trusted_ips)."""
+    return ip in _NEVER_BAN_IPS or ip in TRUSTED_IPS
+
 def check_and_ban_ip(ip: str) -> bool:
-    """Retourne True si l'IP est bloquée."""
+    """Retourne True si l'IP est bloquée (les IPs de confiance ne peuvent jamais l'être)."""
+    if _is_trusted_ip(ip):
+        return False
     return ip in BLOCKED_IPS
 
 def check_token_rate(token: str) -> bool:
@@ -1721,9 +1729,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         if path_clean in ("admin.html", "admin.htm", "admin"):
             # Piège canari : ban immédiat 24h + log
             # (sauf pour les IPs de confiance : localhost, tests, admin whitelisté)
-            _is_trusted_ip = (ip in ("127.0.0.1", "::1") or
-                              (_AI_GUARD_ENABLED and AI_GUARD.lockdown.is_whitelisted(ip)))
-            if not _is_trusted_ip:
+            _admin_probe_trusted = (_is_trusted_ip(ip) or
+                                    (_AI_GUARD_ENABLED and AI_GUARD.lockdown.is_whitelisted(ip)))
+            if not _admin_probe_trusted:
                 record_attack(ip, "ADMIN_PROBE", 30, f"Sonde URL admin publique: {path}")
                 audit_log("ADMIN_PROBE", ip, f"Accès /admin.html depuis {ip} — banni 24h")
                 if _AI_GUARD_ENABLED:
