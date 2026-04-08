@@ -88,8 +88,17 @@
       if (badge) badge.style.display = "none";
       if (!_welcomed) {
         _welcomed = true;
+        addTimestamp();
         setTimeout(() => {
           addMessage("bot", "👋 Bonjour ! Je suis DA, l'assistant virtuel du Ministre Ange Aimé Wilfrid BININGA. En quoi puis-je vous aider ?");
+          setTimeout(() => {
+            addSuggestions([
+              "Qui est le Ministre BININGA ?",
+              "Ses projets & engagements",
+              "Comment le contacter ?",
+              "Son parcours politique"
+            ]);
+          }, 600);
         }, 400);
       }
       if (window.innerWidth > 600) setTimeout(() => { const i = document.getElementById("chatInput"); if(i) i.focus(); }, 300);
@@ -104,11 +113,52 @@
     if (b) b.scrollTop = b.scrollHeight;
   }
 
+  function addTimestamp() {
+    const box = document.getElementById("chatMessages");
+    if (!box) return;
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,"0");
+    const m = String(now.getMinutes()).padStart(2,"0");
+    const ts = document.createElement("div");
+    ts.className = "chat-timestamp";
+    ts.textContent = h + ":" + m;
+    box.appendChild(ts);
+  }
+
+  function addSuggestions(chips) {
+    const box = document.getElementById("chatMessages");
+    if (!box) return;
+    const wrap = document.createElement("div");
+    wrap.className = "chat-suggestions";
+    wrap.id = "chatSuggestions";
+    chips.forEach(label => {
+      const btn = document.createElement("button");
+      btn.className = "chat-suggestion-chip";
+      btn.textContent = label;
+      btn.onclick = () => {
+        const suggestions = document.getElementById("chatSuggestions");
+        if (suggestions) suggestions.remove();
+        const inp = document.getElementById("chatInput");
+        if (inp) inp.value = label;
+        sendChat();
+      };
+      wrap.appendChild(btn);
+    });
+    box.appendChild(wrap);
+    scrollMessages();
+  }
+
   function addMessage(role, text) {
     const box = document.getElementById("chatMessages");
     if (!box) return;
     const div = document.createElement("div");
     div.className = "chat-msg " + (role === "user" ? "chat-msg-user" : "chat-msg-bot");
+    if (role === "bot") {
+      const avatar = document.createElement("div");
+      avatar.className = "chat-bot-avatar";
+      avatar.textContent = "DA";
+      div.appendChild(avatar);
+    }
     const bub = document.createElement("div");
     bub.className = "msg-bubble";
     bub.textContent = text;
@@ -136,6 +186,7 @@
     const text = inp ? inp.value.trim() : "";
     if (!text) return;
     inp.value = "";
+    addTimestamp();
     addMessage("user", text);
     _history.push({ role: "user", content: text });
     _loading = true;
