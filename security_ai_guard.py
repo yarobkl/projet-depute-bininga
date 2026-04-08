@@ -268,6 +268,10 @@ def is_vault_protected(path: str) -> bool:
 
 # Chemins canaris : tout accès déclenche alerte immédiate + score critique
 _CANARY_PATHS = frozenset({
+    # Espace admin — URL publique = piège immédiat
+    # L'admin réel est servi sous ADMIN_SECRET_PATH (variable d'environnement)
+    "/admin.html", "/admin.htm", "/admin",
+    "/admin/", "/admin/login", "/admin/dashboard",
     # Fichiers de config piégés
     "/.well-known/secret-admin",
     "/api/internal/dump",

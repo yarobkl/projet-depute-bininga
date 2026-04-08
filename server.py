@@ -178,6 +178,11 @@ ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
 PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
 
+# URL secrète de l'espace admin — à définir dans Railway via ADMIN_SECRET_PATH
+# Par défaut : une URL non devinable. /admin.html devient un piège canari (ban 24h).
+# Exemple Railway : ADMIN_SECRET_PATH=mon-espace-prive-2025
+ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025").strip("/")
+
 # Origines autorisées pour CORS
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
     "BININGA_ORIGINS",
@@ -212,10 +217,16 @@ YOUTUBE_FILE = os.path.join(DATA_DIR, "youtube.json")
 CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
 
-# Rate limiting : ip → {count, blocked_until}
+# Rate limiting login par IP
 LOGIN_ATTEMPTS  = {}
 MAX_ATTEMPTS    = 5
 LOCKOUT_SECONDS = 1800  # 30 minutes
+
+# Rate limiting login par NOM D'UTILISATEUR (anti-attaque distribuée)
+# Une attaque distribuée (50 IPs × 5 tentatives) est stoppée ici.
+USERNAME_ATTEMPTS     = {}   # username → {count, blocked_until}
+USERNAME_MAX_ATTEMPTS = 10   # 10 échecs toutes IPs confondues → blocage 1h
+USERNAME_LOCKOUT_SECS = 3600 # 1 heure
 
 # Rate limiting par token (API calls) : token → {count, window_start}
 TOKEN_RATE_COUNTS: dict = {}
@@ -1703,6 +1714,43 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": True, "articles": data, "total": len(data)})
             return
 
+        # ── Protection URL admin ────────────────────────────────────────────────
+        # /admin.html est un piège : quiconque y accède est banni 24h.
+        # L'espace admin est accessible UNIQUEMENT via ADMIN_SECRET_PATH.
+        path_clean = path.lstrip("/")
+        if path_clean in ("admin.html", "admin.htm", "admin"):
+            # Piège canari : ban immédiat 24h + log
+            # (sauf pour les IPs de confiance : localhost, tests, admin whitelisté)
+            _is_trusted_ip = (ip in ("127.0.0.1", "::1") or
+                              (_AI_GUARD_ENABLED and AI_GUARD.lockdown.is_whitelisted(ip)))
+            if not _is_trusted_ip:
+                record_attack(ip, "ADMIN_PROBE", 30, f"Sonde URL admin publique: {path}")
+                audit_log("ADMIN_PROBE", ip, f"Accès /admin.html depuis {ip} — banni 24h")
+                if _AI_GUARD_ENABLED:
+                    AI_GUARD._temp_ban(ip, 86400, f"Sonde admin URL: {path}")
+            self._error(404, "Page non trouvée")
+            return
+        # URL secrète de l'espace admin → sert admin.html
+        if path_clean == ADMIN_SECRET_PATH or path_clean == ADMIN_SECRET_PATH + ".html":
+            safe_admin = _safe_path("admin.html")
+            if safe_admin and os.path.isfile(safe_admin):
+                with open(safe_admin, "rb") as f:
+                    content = f.read()
+                text = content.decode("utf-8", errors="replace")
+                text = text.replace("static/admin.js",  f"static/admin.js?v={BUILD_VERSION}")
+                text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html; charset=utf-8")
+                self.send_header("Content-Length", len(text.encode("utf-8")))
+                self.send_header("Cache-Control", "no-store, no-cache, must-revalidate")
+                self.send_header("X-Robots-Tag", "noindex, nofollow")
+                self._security_headers()
+                self.end_headers()
+                self.wfile.write(text.encode("utf-8"))
+                return
+            self._error(404, "Page non trouvée")
+            return
+
         # ── Fichiers statiques avec protection path traversal ──
         relative = "index.html" if path in ("/", "") else path.lstrip("/")
         safe = _safe_path(relative)
@@ -1751,6 +1799,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
                     text = text.replace("static/index.js", f"static/index.js?v={BUILD_VERSION}")
                     text = text.replace("static/index.css", f"static/index.css?v={BUILD_VERSION}")
+                    # Injecter l'URL secrète de l'admin (gestion.html, ministre.html…)
+                    text = text.replace("__ADMIN_PATH__", f"/{ADMIN_SECRET_PATH}")
                     content = text.encode("utf-8")
 
                 # Gzip compression pour texte/HTML/CSS/JS/JSON (pas pour vidéo)
@@ -1850,7 +1900,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/login ──
         if path == "/api/login":
-            # Rate limiting : bloquer si trop de tentatives
+            # Rate limiting par IP
             if _is_rate_limited(ip):
                 self._json({"ok": False, "message": "Trop de tentatives. Réessayez dans 5 minutes."}, 429)
                 return
@@ -1859,6 +1909,18 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 username = creds.get("username", "")
                 password = creds.get("password", "")
                 totp_code = str(creds.get("totp_code", "")).strip()
+
+                # ── Rate limiting par NOM D'UTILISATEUR (anti-attaque distribuée) ──
+                # Même si l'attaquant change d'IP à chaque essai, le username est bloqué.
+                ukey = username.lower().strip()
+                urec = USERNAME_ATTEMPTS.get(ukey, {})
+                if urec.get("blocked_until", 0) > time.time():
+                    wait = int(urec["blocked_until"] - time.time())
+                    audit_log("USERNAME_LOCKED", ip, f"Username {username} verrouillé — encore {wait}s")
+                    time.sleep(LOGIN_FAIL_DELAY)
+                    self._json({"ok": False, "message": f"Ce compte est temporairement verrouillé. Réessayez dans {wait//60+1} min."}, 429)
+                    return
+
                 user     = find_user(username)
                 if user and _verify_password(password, user.get("password_hash", "")):
                     # Vérification 2FA si activé
@@ -1887,6 +1949,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         save_users(users)
                         print(f"[BININGA] 🔒 Hash mis à jour (pbkdf2) pour : {username}")
                     _reset_login_attempts(ip)
+                    USERNAME_ATTEMPTS.pop(ukey, None)   # reset compteur username
                     token      = secrets.token_hex(32)
                     csrf_token = secrets.token_hex(24)
                     is_trusted = ip in TRUSTED_IPS
@@ -1913,10 +1976,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                                 "trusted_ip": is_trusted})
                 else:
                     _record_failed_login(ip)
+                    # Compteur par username (anti-attaque distribuée)
+                    urec = USERNAME_ATTEMPTS.get(ukey, {"count": 0, "blocked_until": 0})
+                    urec["count"] = urec.get("count", 0) + 1
+                    if urec["count"] >= USERNAME_MAX_ATTEMPTS:
+                        urec["blocked_until"] = time.time() + USERNAME_LOCKOUT_SECS
+                        urec["count"] = 0
+                        audit_log("USERNAME_BRUTE", ip, f"Username {username} verrouillé 1h après {USERNAME_MAX_ATTEMPTS} échecs distribués")
+                        record_attack(ip, "USERNAME_BRUTE", 15, f"Attaque distribuée sur {username}")
+                    USERNAME_ATTEMPTS[ukey] = urec
                     record_attack(ip, "LOGIN_FAIL", 2, f"Échec login user: {username}")
                     print(f"[BININGA] ⛔ Tentative échouée : {username} — {datetime.now().strftime('%H:%M:%S')}")
                     audit_log("LOGIN_FAIL", ip, f"Identifiant ou mot de passe incorrect (user: {username})")
-                    time.sleep(LOGIN_FAIL_DELAY)   # Anti brute-force + anti timing
+                    time.sleep(LOGIN_FAIL_DELAY)
                     self._json({"ok": False, "message": "Identifiant ou mot de passe incorrect"}, 401)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)

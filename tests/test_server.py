@@ -77,8 +77,14 @@ def test_api_load():
 
 
 def test_admin_accessible():
+    # /admin.html est maintenant un piège → doit retourner 404
     status, body = get("/admin.html")
-    assert status == 200, f"admin.html doit retourner 200, reçu {status}"
+    assert status == 404, f"/admin.html doit retourner 404 (piège), reçu {status}"
+    # L'URL secrète doit retourner 200
+    import os as _os
+    secret = _os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025").strip("/")
+    status2, body2 = get(f"/{secret}")
+    assert status2 == 200, f"URL secrète /{secret} doit retourner 200, reçu {status2}"
     print("✅ test_admin_accessible")
 
 
