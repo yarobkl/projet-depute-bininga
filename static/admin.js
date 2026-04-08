@@ -1415,9 +1415,10 @@ async function loadBouclier() {
 
 function _renderBouclier(d) {
   // Stats
-  document.getElementById("bouclier-n-tracked").textContent  = d.tracked_ips  ?? "—";
-  document.getElementById("bouclier-n-banned").textContent   = d.temp_banned   ?? "—";
+  document.getElementById("bouclier-n-tracked").textContent   = d.tracked_ips    ?? "—";
+  document.getElementById("bouclier-n-banned").textContent    = d.temp_banned     ?? "—";
   document.getElementById("bouclier-n-lockdowns").textContent = d.lockdown?.count ?? "—";
+  document.getElementById("bouclier-n-ghosts").textContent    = d.ghost_agents    ?? "—";
 
   // Statut lockdown
   const bar    = document.getElementById("bouclier-status-bar");
@@ -1444,7 +1445,7 @@ function _renderBouclier(d) {
     icon.textContent       = "🟢";
     txt.textContent        = "Bouclier actif — protection en cours";
     txt.style.color        = "#2ecc71";
-    sub.textContent        = "6 couches de défense opérationnelles";
+    sub.textContent        = "7 couches de défense opérationnelles";
     timer.style.display    = "none";
     badge.style.display    = "none";
   }

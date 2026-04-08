@@ -1,10 +1,10 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║         BININGA SECURITY SHIELD — OPERATION BOUCLIER v2.0                  ║
+║         BININGA SECURITY SHIELD — OPERATION BOUCLIER v3.0                  ║
 ║         Forces Spéciales Numériques — Anti-IA / Anti-Bot / Anti-Intrusion  ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
-6 COUCHES DE DÉFENSE ACTIVE :
+7 COUCHES DE DÉFENSE ACTIVE :
 
   COUCHE 1  RECONNAISSANCE  — Identification des robots, agents IA, crawlers
   COUCHE 2  FIREWALL        — Murs de feu dynamiques qui s'intensifient
@@ -12,6 +12,13 @@
   COUCHE 4  COFFRE-FORT     — Protection renforcée des fichiers sensibles
   COUCHE 5  CANARIS         — Pièges actifs (honeypots étendus + alertes)
   COUCHE 6  CONTRE-MESURES  — Réponses graduelles : tarpit → challenge → ban
+  COUCHE 7  EMPREINTE TRAFIC — Détection agents non identifiés / déguisés
+              · Fingerprint headers (Accept-Encoding, Connection, ordre)
+              · Ratio API/pages (bots n'utilisent que les APIs)
+              · Accès direct API sans visite préalable de page
+              · Cadence moyenne régulière (scraper lent mais mécanique)
+              · Volumétrie horaire anormale
+              · Cohérence UA vs comportement réel
 
 Usage :
     from security_ai_guard import AIGuard
@@ -106,21 +113,33 @@ _TARPIT_BY_LEVEL = {
 
 # Score attribué à chaque signal
 _SIGNAL_SCORES = {
+    # ── Couche 1 — Reconnaissance ──
     "ai_agent_ua":          20,   # User-Agent identifié comme agent IA
     "headless_browser":     25,   # Navigateur headless détecté
     "scanner_tool":         30,   # Outil de scan (nikto, sqlmap…)
     "empty_ua":             10,   # User-Agent vide/court
     "no_accept_header":      5,   # Pas de header Accept (humains en ont toujours)
     "no_accept_language":    5,   # Pas de Accept-Language
+    "oversized_ua":         10,   # UA très long = forge probable
+    # ── Couche 6 — Comportement ──
     "suspicious_cadence":   15,   # Requêtes trop régulières (robot cadence)
     "path_explosion":       20,   # Trop de chemins distincts en peu de temps
+    "repeated_404":         10,   # Beaucoup de 404 = scan de répertoires
+    "slow_drip":             8,   # Requêtes lentes espacées = scraper prudent
+    # ── Couche 2/4/5 ──
     "sensitive_file_probe":  25,  # Tentative d'accès fichier sensible
     "canary_triggered":     50,   # Piège canari déclenché → ban immédiat
     "lockdown_violation":   50,   # Accès pendant lockdown sans whitelist
-    "repeated_404":         10,   # Beaucoup de 404 = scan de répertoires
-    "slow_drip":             8,   # Requêtes lentes espacées = scraper prudent
     "method_abuse":         20,   # Méthodes HTTP inhabituelles (TRACE, etc.)
-    "oversized_ua":         10,   # UA très long = forge probable
+    # ── Couche 7 — Empreinte trafic (agents non identifiés) ──
+    "no_accept_encoding":    8,   # Pas d'Accept-Encoding = outil automatisé
+    "connection_close":      6,   # Connection:close au lieu de keep-alive
+    "direct_api_access":    12,   # /api/* sans jamais visiter une page HTML
+    "api_only_pattern":     18,   # 100% des requêtes = API, jamais de page
+    "ghost_session":        15,   # Ignore complètement les cookies de session
+    "medium_regular_cadence": 12, # Cadence 300ms-2s très régulière = scraper lent
+    "hourly_flood":         15,   # Trop de requêtes sur 1h (scraper persistant)
+    "browser_ua_bot_behavior": 20, # UA de vrai navigateur mais comportement de bot
 }
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -376,6 +395,156 @@ class BehaviorTracker:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# ██  COUCHE 7 — EMPREINTE TRAFIC (agents non identifiés / déguisés)          ██
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Headers qu'un vrai navigateur envoie toujours
+_BROWSER_REQUIRED_HEADERS = frozenset({
+    "accept-encoding",   # gzip/deflate/br — tous les navigateurs
+    "accept",            # type MIME accepté
+})
+
+# User-Agents de vrais navigateurs (présence = on attend un comportement humain)
+_REAL_BROWSER_UA = re.compile(
+    r"(?:Mozilla/5\.0.*(?:Chrome|Firefox|Safari|Edge|Opera))",
+    re.IGNORECASE
+)
+
+class TrafficProfiler:
+    """
+    COUCHE 7 — Analyse l'empreinte globale du trafic pour détecter les agents
+    non identifiés qui se déguisent en vrais navigateurs.
+
+    Détecte :
+      - Absence de headers que TOUS les vrais navigateurs envoient
+      - Accès direct aux APIs sans jamais visiter une page HTML
+      - Ratio API/pages anormal (bots ne visitent que les APIs)
+      - Cadence moyenne régulière même lente (scraper prudent)
+      - Ignorance des cookies de session (fantôme numérique)
+      - Comportement de bot malgré un UA de vrai navigateur
+    """
+
+    HOUR_WINDOW   = 3600    # fenêtre 1h pour volumétrie
+    MAX_REQ_HOUR  = 300     # seuil déclenchement flood horaire
+    API_RATIO_MIN = 10      # min requêtes pour calculer le ratio API
+    API_RATIO_THR = 0.85    # 85%+ de requêtes API = bot probable
+
+    # Intervalle médian 300ms–2s avec variance < 100ms = scraper lent régulier
+    MEDIUM_MIN_MS   = 300
+    MEDIUM_MAX_MS   = 2000
+    MEDIUM_VAR_MAX  = 100
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        # ip → {
+        #   "timestamps": deque (1h),
+        #   "page_visits": int,
+        #   "api_calls": int,
+        #   "has_visited_page": bool,
+        #   "session_cookies_seen": set,
+        #   "session_cookies_sent": set,
+        #   "intervals_medium": deque,
+        #   "last_ts": float|None,
+        # }
+        self._data: dict = {}
+
+    def _get(self, ip: str) -> dict:
+        if ip not in self._data:
+            self._data[ip] = {
+                "timestamps":           deque(),
+                "page_visits":          0,
+                "api_calls":            0,
+                "has_visited_page":     False,
+                "session_cookies_seen": set(),
+                "session_cookies_sent": set(),
+                "intervals_medium":     deque(maxlen=10),
+                "last_ts":              None,
+            }
+        return self._data[ip]
+
+    def _purge_old(self, entry: dict, now: float):
+        ts = entry["timestamps"]
+        while ts and now - ts[0] > self.HOUR_WINDOW:
+            ts.popleft()
+
+    def analyze(
+        self,
+        ip: str,
+        path: str,
+        headers: dict,
+        set_cookie: Optional[str] = None,
+    ) -> list:
+        """
+        Analyse une requête et retourne la liste des signaux détectés.
+        `set_cookie` = valeur du header Set-Cookie renvoyé par le serveur
+        (à passer depuis le handler si disponible — optionnel).
+        """
+        signals  = []
+        now      = time.time()
+        ua       = headers.get("user-agent", headers.get("User-Agent", ""))
+        is_api   = path.startswith("/api/")
+        is_page  = not is_api and not path.startswith("/static/")
+
+        with self._lock:
+            entry = self._get(ip)
+            self._purge_old(entry, now)
+
+            # ── Volumétrie horaire ──────────────────────────────────────────
+            entry["timestamps"].append(now)
+            if len(entry["timestamps"]) > self.MAX_REQ_HOUR:
+                signals.append("hourly_flood")
+
+            # ── Intervalles (cadence lente régulière) ──────────────────────
+            if entry["last_ts"] is not None:
+                interval_ms = (now - entry["last_ts"]) * 1000
+                if self.MEDIUM_MIN_MS <= interval_ms <= self.MEDIUM_MAX_MS:
+                    entry["intervals_medium"].append(interval_ms)
+                    if len(entry["intervals_medium"]) >= 6:
+                        ivs = list(entry["intervals_medium"])
+                        variance = max(ivs) - min(ivs)
+                        if variance < self.MEDIUM_VAR_MAX:
+                            signals.append("medium_regular_cadence")
+            entry["last_ts"] = now
+
+            # ── Visites pages vs appels API ────────────────────────────────
+            if is_page:
+                entry["page_visits"]      += 1
+                entry["has_visited_page"]  = True
+            if is_api:
+                entry["api_calls"] += 1
+                # Premier contact direct avec l'API sans jamais visiter de page
+                if not entry["has_visited_page"] and entry["api_calls"] == 1:
+                    signals.append("direct_api_access")
+
+            total = entry["page_visits"] + entry["api_calls"]
+            if total >= self.API_RATIO_MIN and entry["page_visits"] == 0:
+                signals.append("api_only_pattern")
+
+            # ── Fingerprint headers ────────────────────────────────────────
+            headers_lower = {k.lower() for k in headers}
+            for required in _BROWSER_REQUIRED_HEADERS:
+                if required not in headers_lower:
+                    if required == "accept-encoding":
+                        signals.append("no_accept_encoding")
+                    # Accept déjà géré en Couche 1
+
+            conn = headers.get("connection", headers.get("Connection", "")).lower()
+            if conn == "close":
+                signals.append("connection_close")
+
+            # ── UA navigateur réel mais comportement de bot ────────────────
+            if _REAL_BROWSER_UA.search(ua):
+                bot_signals = {
+                    "no_accept_encoding", "connection_close",
+                    "api_only_pattern", "medium_regular_cadence", "hourly_flood",
+                }
+                if len(set(signals) & bot_signals) >= 2:
+                    signals.append("browser_ua_bot_behavior")
+
+        return signals
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # ██  MOTEUR CENTRAL — AIGuard                                                ██
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -420,6 +589,7 @@ class AIGuard:
     def __init__(self):
         self.lockdown = LockdownManager()
         self.behavior = BehaviorTracker()
+        self.profiler = TrafficProfiler()   # COUCHE 7
         self._lock    = threading.Lock()
         # ip → cumulative score
         self._scores: dict = {}
@@ -617,6 +787,13 @@ class AIGuard:
         for signal in behavior_signals:
             total_score = self._add_score(ip, signal, f"Comportement: {signal}")
 
+        # ── COUCHE 7 : Empreinte trafic (agents non identifiés) ───────────────
+        profile_signals = self.profiler.analyze(ip, path, headers)
+        for signal in profile_signals:
+            total_score = self._add_score(ip, signal, f"Empreinte: {signal}")
+        if profile_signals:
+            _ai_audit("PROFILE_SIGNALS", ip, ", ".join(profile_signals))
+
         # ── COUCHE 2 : Niveau de menace et réponse ────────────────────────────
         threat = self._get_threat_level(ip)
 
@@ -655,11 +832,18 @@ class AIGuard:
             key=lambda x: x[1],
             reverse=True
         )[:20]
+        # Stats Couche 7 : agents déguisés détectés
+        ghost_agents = sum(
+            1 for ip, entry in self.profiler._data.items()
+            if entry.get("page_visits", 0) == 0 and entry.get("api_calls", 0) >= 5
+        )
         return {
-            "lockdown":   self.lockdown.status(),
-            "temp_banned": sum(1 for v in self._temp_banned.values() if v > now),
-            "tracked_ips": len(self._scores),
-            "top_threats": [
+            "lockdown":     self.lockdown.status(),
+            "temp_banned":  sum(1 for v in self._temp_banned.values() if v > now),
+            "tracked_ips":  len(self._scores),
+            "ghost_agents": ghost_agents,   # agents non identifiés détectés
+            "layers":       7,
+            "top_threats":  [
                 {"ip": ip, "score": score, "level": self._get_threat_level(ip)}
                 for ip, score in top_threats
             ],

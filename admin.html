@@ -789,7 +789,7 @@
           </div>
 
           <!-- Couches de défense (visuelles) -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
             <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:10px;text-align:center">
               <div style="font-size:15px;margin-bottom:4px">🔍</div>
               <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">RECONNAISSANCE</div>
@@ -820,10 +820,15 @@
               <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.6)">CONTRE-MESURES</div>
               <div style="font-size:10px;color:rgba(255,255,255,.3)">Tarpit → Ban</div>
             </div>
+            <div style="background:rgba(155,89,182,.08);border:1px solid rgba(155,89,182,.25);border-radius:8px;padding:10px;text-align:center;grid-column:span 2">
+              <div style="font-size:15px;margin-bottom:4px">👻</div>
+              <div style="font-size:10px;font-weight:700;color:#9b59b6">EMPREINTE TRAFIC</div>
+              <div style="font-size:10px;color:rgba(255,255,255,.3)">Agents déguisés · Ratio API · Cadence lente · Fingerprint headers</div>
+            </div>
           </div>
 
           <!-- Stats rapides -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
             <div class="sec-stat">
               <div class="sec-stat-n" id="bouclier-n-tracked" style="color:#3498db">—</div>
               <div class="sec-stat-l">IPs trackées</div>
@@ -835,6 +840,10 @@
             <div class="sec-stat">
               <div class="sec-stat-n" id="bouclier-n-lockdowns" style="color:#f39c12">—</div>
               <div class="sec-stat-l">Lockdowns totaux</div>
+            </div>
+            <div class="sec-stat">
+              <div class="sec-stat-n" id="bouclier-n-ghosts" style="color:#9b59b6">—</div>
+              <div class="sec-stat-l">Agents fantômes</div>
             </div>
           </div>
 
