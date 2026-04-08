@@ -1185,16 +1185,21 @@ def _migrate_files_to_db():
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
         except Exception:
             pass
-    # Contenu du site (data.json)
-    if _pg_load("site_data") is None and os.path.exists(DATA_FILE):
+    # Contenu du site (data.json) — TOUJOURS synchroniser depuis le fichier au démarrage
+    # Garantit que les photos et articles du dépôt sont toujours visibles sur le site
+    if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            if data:
-                _pg_save("site_data", data)
-                print(f"[DB] Migration : contenu du site importé depuis data.json")
-        except Exception:
-            pass
+                fresh = json.load(f)
+            if fresh:
+                _pg_save("site_data", fresh)
+                g = fresh.get("gallery", {})
+                a = fresh.get("actus", {})
+                print(f"[DB] Contenu synchronisé depuis data.json — "
+                      f"galerie: {len(g.get('grid', []))} photos, "
+                      f"actus: {len(a.get('slides', []))+len(a.get('cards', []))} articles")
+        except Exception as e:
+            print(f"[DB] Erreur sync data.json : {e}")
     # Users
     if _pg_load("users") is None and os.path.exists(USERS_FILE):
         try:
@@ -1920,6 +1925,31 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(content)
             except Exception as e:
                 self._error(500, str(e))
+        elif safe and relative.startswith("images/") and not relative.startswith("images/sinistres/"):
+            # Fichier image absent du disque → fallback PostgreSQL (images uploadées via admin)
+            fname  = os.path.basename(relative)
+            result = _pg_load_photo("upload_" + fname)
+            if result:
+                img_bytes, img_mime = result
+                # Restaurer sur disque pour les prochaines requêtes
+                try:
+                    os.makedirs(os.path.dirname(safe), exist_ok=True)
+                    with open(safe, "wb") as fh:
+                        fh.write(img_bytes)
+                except Exception:
+                    pass
+                origin = self._cors_origin()
+                self.send_response(200)
+                self.send_header("Content-Type", img_mime)
+                self.send_header("Content-Length", str(len(img_bytes)))
+                self.send_header("Cache-Control", "public, max-age=86400")
+                if origin:
+                    self.send_header("Access-Control-Allow-Origin", origin)
+                self._security_headers()
+                self.end_headers()
+                self.wfile.write(img_bytes)
+            else:
+                self._error(404, "Fichier non trouvé")
         else:
             self._error(404, "Fichier non trouvé")
 
@@ -3107,9 +3137,16 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             if not safe_name.lower().endswith(".svg") and not _is_valid_image(data_bytes):
                 self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
                 return
+            # Sauvegarder sur disque
             os.makedirs("images", exist_ok=True)
             with open(os.path.join("images", safe_name), "wb") as f:
                 f.write(data_bytes)
+            # Sauvegarder aussi dans PostgreSQL (survit aux redéploiements)
+            ext = safe_name.lower().rsplit(".", 1)[-1] if "." in safe_name else "jpg"
+            mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
+                        "webp": "image/webp", "gif": "image/gif", "svg": "image/svg+xml"}
+            img_mime = mime_map.get(ext, "image/jpeg")
+            _pg_save_photo("upload_" + safe_name, data_bytes, img_mime)
             print(f"[BININGA] 📷 Image uploadée : {safe_name}")
             audit_log("UPLOAD", ip, f"Image uploadée : {safe_name}")
             self._json({"ok": True, "path": "images/" + safe_name})
