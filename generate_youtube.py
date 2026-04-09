@@ -174,8 +174,8 @@ Type : {theme['type']}
 Fournis un objet JSON avec exactement ces champs :
 {{
   "titre_youtube": "titre accrocheur optimisé SEO (max 70 caractères)",
-  "description": "description YouTube complète (300-500 mots) avec paragraphes, appel à l'action et hashtags en fin",
-  "script": "script de la vidéo (3-5 minutes de narration, structuré avec intro, développement, conclusion)",
+  "description": "description YouTube courte (100-150 mots) avec appel à l'action et 3-5 hashtags en fin",
+  "script": "script de la vidéo (1-2 minutes de narration, structuré avec intro, point clé, conclusion)",
   "tags": ["liste", "de", "15", "tags", "pertinents"],
   "miniature_texte": "texte court pour la miniature (max 5 mots percutants)",
   "duree_estimee": "durée estimée en minutes"
