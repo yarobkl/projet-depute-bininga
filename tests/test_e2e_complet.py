@@ -330,6 +330,14 @@ def _check_connexion_lecteur():
 
 
 def _check_supprimer_utilisateurs(token, csrf):
+    # Changer le rôle du compte ministre avant suppression (les comptes ministre sont protégés)
+    post("/api/users/upsert", {
+        "username": "ministre_test",
+        "password": "ministre2025",
+        "role": "editeur",
+        "nom": "Ministre Test"
+    }, token=token, csrf=csrf)
+
     for username in ["editeur_test", "lecteur_test", "ministre_test"]:
         status, body = post("/api/users/delete", {
             "username": username
@@ -513,6 +521,7 @@ if __name__ == "__main__":
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
     import http.server
+    import socketserver
     import json
     import server as srv
 
@@ -525,7 +534,10 @@ if __name__ == "__main__":
     with open(SESSIONS_FILE, "w") as f:
         json.dump({}, f)
 
-    httpd = http.server.HTTPServer(("127.0.0.1", PORT), srv.BiningaHandler)
+    class _ThreadedHTTPServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
+        daemon_threads = True
+
+    httpd = _ThreadedHTTPServer(("127.0.0.1", PORT), srv.BiningaHandler)
     t = threading.Thread(target=httpd.serve_forever)
     t.daemon = True
     t.start()
