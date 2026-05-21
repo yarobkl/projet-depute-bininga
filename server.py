@@ -1487,7 +1487,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 or path.startswith(("/static/", "/images/"))
             )
         )
-        if _AI_GUARD_ENABLED and not public_get:
+        path_clean = path.strip("/")
+        admin_entry_get = method == "GET" and path_clean in (ADMIN_SECRET_PATH, ADMIN_SECRET_PATH + ".html")
+        if _AI_GUARD_ENABLED and not public_get and not admin_entry_get:
             headers_dict = dict(self.headers)
             blocked, reason = AI_GUARD.inspect(ip, method, path, headers_dict, body_size)
             if blocked:
