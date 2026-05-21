@@ -194,8 +194,8 @@ async function loadUsers() {
           <div class="user-meta">${esc(u.username)}</div>
         </div>
         <span class="role-badge ${esc(u.role)}">${esc(roleLabels[u.role] || u.role)}</span>
-        ${canEditUser(u) ? `<button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(this.closest('.user-item').dataset.username,this.closest('.user-item').dataset.nom,this.closest('.user-item').dataset.role)">✏️ Modifier</button>` : ''}
-        ${canDeleteUser(u) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(this.closest('.user-item').dataset.username)">🗑</button>` : ''}
+        ${canEditUser(u) ? `<button class="sbtn sbtn-progress" style="margin-left:8px" onclick="editUser(this.closest('.user-item').dataset.username,this.closest('.user-item').dataset.nom,this.closest('.user-item').dataset.role)">Modifier</button>` : ''}
+        ${canDeleteUser(u) ? `<button class="btn-danger" style="padding:5px 10px" onclick="deleteUser(this.closest('.user-item').dataset.username)">Supprimer</button>` : ''}
       </div>
     `).join("");
   } catch {
@@ -378,9 +378,9 @@ function renderSlides() {
         <div style="width:80px;height:56px;border-radius:6px;overflow:hidden;background:#1c1c1c;display:flex;align-items:center;justify-content:center;margin-bottom:6px;border:1px solid rgba(255,255,255,.08)">
           ${s.image
             ? `<img src="${esc(s.image)}" style="width:100%;height:100%;object-fit:cover">`
-            : `<span style="font-size:24px">${esc(s.emoji||'🖼️')}</span>`}
+            : `<span style="font-size:24px">Image</span>`}
         </div>
-        <button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px" onclick="uploadForSlide(${i})">📷 Photo</button>
+        <button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px" onclick="uploadForSlide(${i})">Photo</button>
       </div>
       <div class="form-group" style="margin:0">
         <label>Titre</label>
@@ -396,7 +396,7 @@ function renderSlides() {
           style="min-height:72px">${esc(s.subtitle||'')}</textarea>
       </div>
       <div style="padding-top:22px;display:flex;flex-direction:column;gap:6px">
-        <button class="btn-danger" onclick="delSlide(${i})" title="Supprimer">🗑</button>
+        <button class="btn-danger" onclick="delSlide(${i})" title="Supprimer">Supprimer</button>
         ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveSlide(${i},-1)" title="Monter">↑</button>` : ''}
         ${i < slides.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveSlide(${i},1)" title="Descendre">↓</button>` : ''}
       </div>
@@ -417,17 +417,17 @@ function renderGrid() {
         <div style="width:100%;aspect-ratio:1;border-radius:6px;overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center;margin-bottom:8px">
           ${g.image
             ? `<img src="${esc(g.image)}" style="width:100%;height:100%;object-fit:cover">`
-            : `<span style="font-size:32px">${esc(g.emoji||'🖼️')}</span>`}
+            : `<span style="font-size:32px">Image</span>`}
         </div>
         <input type="text" value="${esc(g.alt||'')}" placeholder="Description"
           oninput="updGrid(${i},'alt',this.value)"
           style="width:100%;font-size:11px;margin-bottom:6px">
         <div style="display:flex;gap:4px;justify-content:center">
-          <button class="sbtn sbtn-progress" style="font-size:10px;padding:3px 7px" onclick="uploadForGrid(${i})">📷</button>
-          <input type="text" value="${esc(g.emoji||'')}" placeholder="😀"
+          <button class="sbtn sbtn-progress" style="font-size:10px;padding:3px 7px" onclick="uploadForGrid(${i})">Photo</button>
+          <input type="text" value="${esc(g.emoji||'')}" placeholder="Icône"
             oninput="updGrid(${i},'emoji',this.value)"
             style="width:42px;font-size:13px;text-align:center">
-          <button class="btn-danger" style="font-size:11px;padding:3px 7px" onclick="delGrid(${i})">🗑</button>
+          <button class="btn-danger" style="font-size:11px;padding:3px 7px" onclick="delGrid(${i})">Supprimer</button>
         </div>
       </div>
     `).join("") + `</div>`;
@@ -523,7 +523,7 @@ function delSlide(i) {
 }
 function addSlide() {
   if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
-  siteData.gallery.slides.push({ image: "", emoji: "🖼️", title: "", subtitle: "" });
+  siteData.gallery.slides.push({ image: "", emoji: "", title: "", subtitle: "" });
   renderSlides();
 }
 function moveSlide(i, dir) {
@@ -548,7 +548,7 @@ function delGrid(i) {
 }
 function addGridPhoto() {
   if (!siteData.gallery) siteData.gallery = { slides: [], grid: [] };
-  siteData.gallery.grid.push({ image: "", alt: "", emoji: "🖼️" });
+  siteData.gallery.grid.push({ image: "", alt: "", emoji: "" });
   renderGrid();
 }
 
@@ -574,10 +574,10 @@ function renderActuSlides() {
     <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Slide ${i+1}</div>
-        <button class="btn-danger" onclick="delActuSlide(${i})" title="Supprimer">🗑</button>
+        <button class="btn-danger" onclick="delActuSlide(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-slide-img-${i}" value="${esc(s.image||'')}" placeholder="images/photo.jpg" oninput="updActuSlide(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuSlide(${i})">📷 Upload</button></div></div>
+        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-slide-img-${i}" value="${esc(s.image||'')}" placeholder="images/photo.jpg" oninput="updActuSlide(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuSlide(${i})">Upload</button></div></div>
         <div class="form-group" style="margin:0"><label>Texte alt</label><input type="text" value="${esc(s.alt||'')}" oninput="updActuSlide(${i},'alt',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Badge (chip)</label><input type="text" value="${esc(s.chip||'')}" oninput="updActuSlide(${i},'chip',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(s.chipColor||'')}" placeholder="#2e7d32" oninput="updActuSlide(${i},'chipColor',this.value)"></div>
@@ -616,10 +616,10 @@ function renderActuVedettes() {
     <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Article ${i+1}</div>
-        <button class="btn-danger" onclick="delActuVedette(${i})" title="Supprimer">🗑</button>
+        <button class="btn-danger" onclick="delActuVedette(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-vedette-img-${i}" value="${esc(v.image||'')}" placeholder="images/photo.jpg" oninput="updActuVedette(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuVedette(${i})">📷 Upload</button></div></div>
+        <div class="form-group" style="margin:0"><label>Image</label><div style="display:flex;gap:6px;align-items:center"><input type="text" id="actu-vedette-img-${i}" value="${esc(v.image||'')}" placeholder="images/photo.jpg" oninput="updActuVedette(${i},'image',this.value)" style="flex:1"><button class="sbtn sbtn-progress" style="font-size:10px;padding:4px 8px;white-space:nowrap" onclick="uploadForActuVedette(${i})">Upload</button></div></div>
         <div class="form-group" style="margin:0"><label>Badge (ex: Diplomatie)</label><input type="text" value="${esc(v.badge||'')}" oninput="updActuVedette(${i},'badge',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Couleur badge (vide = rouge)</label><input type="text" value="${esc(v.badgeColor||'')}" placeholder="#2e7d32" oninput="updActuVedette(${i},'badgeColor',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Catégorie</label><input type="text" value="${esc(v.tag||'')}" oninput="updActuVedette(${i},'tag',this.value)"></div>
@@ -671,7 +671,7 @@ function renderActuCards() {
     <div style="background:var(--n3);border-radius:8px;padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Carte ${i+1}</div>
-        <button class="btn-danger" onclick="delActuCard(${i})" title="Supprimer">🗑</button>
+        <button class="btn-danger" onclick="delActuCard(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:50px 50px 70px 1fr 1fr auto;gap:8px;align-items:start">
         <div class="form-group" style="margin:0"><label>Icône</label><input type="text" value="${esc(c.icon||'')}" oninput="updActuCard(${i},'icon',this.value)" style="text-align:center"></div>
@@ -715,7 +715,7 @@ function loadSiteData() {
       fetch("data.json?t=" + Date.now())
         .then(r => r.json())
         .then(applyData)
-        .catch(() => showToast("⚠️ Impossible de charger les données", true));
+        .catch(() => showToast("Impossible de charger les données", true));
     });
 }
 
@@ -1093,10 +1093,10 @@ function renderMsgList(containerId, list, storageKey, mode) {
       .join("");
 
     // Raison demande d'audience / question
-    const raisonHtml = m.raison ? `<div class="sinistre-desc"><span>📝 Requête</span>${esc(m.raison)}</div>` : "";
+    const raisonHtml = m.raison ? `<div class="sinistre-desc"><span>Requête</span>${esc(m.raison)}</div>` : "";
 
     // Description sinistre
-    const descHtml = m.description ? `<div class="sinistre-desc"><span>📝 Description</span>${esc(m.description)}</div>` : "";
+    const descHtml = m.description ? `<div class="sinistre-desc"><span>Description</span>${esc(m.description)}</div>` : "";
 
     // Bloc géolocalisation
     let geoHtml = "";
@@ -1106,55 +1106,55 @@ function renderMsgList(containerId, list, storageKey, mode) {
       const mapsUrl = m.geo_maps_url || `https://www.google.com/maps?q=${lat},${lng}&z=16`;
       geoHtml = `<div class="sinistre-geo">
         <div class="sinistre-geo-header">
-          <span class="sinistre-geo-label">📍 Zone du sinistre</span>
-          <a href="${esc(mapsUrl)}" target="_blank" class="btn-maps">🗺️ Ouvrir Google Maps</a>
+          <span class="sinistre-geo-label">Zone du sinistre</span>
+          <a href="${esc(mapsUrl)}" target="_blank" class="btn-maps">Ouvrir Google Maps</a>
         </div>
         ${m.geo_label ? `<div class="sinistre-addr">${esc(m.geo_label)}</div>` : ""}
         <iframe class="sinistre-map"
           src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
           allowfullscreen loading="lazy"></iframe>
-        <div class="sinistre-coords">🌐 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
+        <div class="sinistre-coords">${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
       </div>`;
     }
 
     // Photo sinistre
     const photoHtml = m.photo_url ? `<div class="sinistre-photo-wrap">
-      <div class="sinistre-photo-label">📷 Photo du sinistre</div>
+      <div class="sinistre-photo-label">Photo du sinistre</div>
       <img src="${esc(m.photo_url)}" class="sinistre-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
     </div>` : "";
 
     // Bouton Répondre (uniquement si email disponible)
     const replyBtn = m.email
-      ? `<a class="sbtn sbtn-progress" href="mailto:${m.email}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">📧 Répondre</a>`
-      : (m.telephone ? `<span class="sbtn" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:default">📞 ${esc(m.telephone)}</span>` : "");
+      ? `<a class="sbtn sbtn-progress" href="mailto:${m.email}?subject=${encodeURIComponent('Réponse — Cabinet Aimé BININGA')}&body=${encodeURIComponent('Bonjour ' + (m.prenom||'') + ' ' + (m.nom||'') + ',\n\n')}" style="text-decoration:none">Répondre</a>`
+      : (m.telephone ? `<span class="sbtn" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:default">Tél. ${esc(m.telephone)}</span>` : "");
 
     // Identifiant HTML-safe pour les boutons
     const btnId = msgKey ? encodeURIComponent(msgKey) : String(realIdx);
     // Bouton ping Député (visible sur tous les messages)
     const pingBtn  = m._pinged
-      ? `<span class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</span>`
-      : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${btnId}')">🚨 Alerter le Député</button>`;
+      ? `<span class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">Député alerté</span>`
+      : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${btnId}')">Alerter le Député</button>`;
     let actions = "";
     if (mode === "status3") {
       actions = `
-        <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${btnId}','en_attente')">⏳ En attente</button>
-        <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${btnId}','en_cours')">🔄 En cours</button>
-        <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${btnId}','traite')">✅ Traité</button>
+        <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${btnId}','en_attente')">En attente</button>
+        <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${btnId}','en_cours')">En cours</button>
+        <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${btnId}','traite')">Traité</button>
         ${replyBtn}
         ${pingBtn}
       `;
     } else {
-      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${btnId}','lu')">✅ Marquer comme lu</button>${replyBtn}${pingBtn}`;
+      actions = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${btnId}','lu')">Marquer comme lu</button>${replyBtn}${pingBtn}`;
     }
 
     const hasSinistre = !!(m.geo_lat || m.photo_url || m.description);
-    const pingBadge   = m._pinged ? `<span class="badge badge-pinged">🚨 Député alerté</span>` : "";
+    const pingBadge   = m._pinged ? `<span class="badge badge-pinged">Député alerté</span>` : "";
 
     return `<div class="msg-item${hasSinistre ? " msg-sinistre" : ""}">
       <div class="msg-top">
         <div>
           <div class="msg-name">${esc(m.prenom||"")} ${esc(m.nom||"")}</div>
-          <div class="msg-date">📅 ${esc(m._date||m.ts||"")}${hasSinistre ? ' <span class="sinistre-chip">📍 Géolocalisé</span>' : ""}</div>
+          <div class="msg-date">${esc(m._date||m.ts||"")}${hasSinistre ? ' <span class="sinistre-chip">Géolocalisé</span>' : ""}</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center">${pingBadge}${badge}</div>
       </div>
@@ -1170,12 +1170,12 @@ function renderMsgList(containerId, list, storageKey, mode) {
 }
 
 function buildBadge(status, objet) {
-  if (objet === "Réclamation") return `<span class="badge badge-recl">⚠️ Réclamation</span>`;
+  if (objet === "Réclamation") return `<span class="badge badge-recl">Réclamation</span>`;
   const map = {
-    en_attente: `<span class="badge badge-wait">⏳ En attente</span>`,
-    en_cours:   `<span class="badge badge-progress">🔄 En cours</span>`,
-    traite:     `<span class="badge badge-done">✅ Traité</span>`,
-    non_lu:     `<span class="badge badge-unread">🔵 Non lu</span>`,
+    en_attente: `<span class="badge badge-wait">En attente</span>`,
+    en_cours:   `<span class="badge badge-progress">En cours</span>`,
+    traite:     `<span class="badge badge-done">Traité</span>`,
+    non_lu:     `<span class="badge badge-unread">Non lu</span>`,
     lu:         `<span class="badge badge-read">✓ Lu</span>`,
   };
   return map[status] || map.en_attente;
@@ -1218,11 +1218,11 @@ function buildNotesSection(m, storageKey, btnId) {
     </div>`).join("");
   return `
     <div class="notes-section">
-      <div class="notes-title">💬 Notes internes (admin ↔ ministre)</div>
+      <div class="notes-title">Notes internes (admin ↔ ministre)</div>
       ${notesHtml || '<div style="font-size:11px;color:rgba(255,255,255,.2);margin-bottom:6px">Aucune note pour l\'instant</div>'}
       <div class="note-form">
         <textarea id="note-ta-${btnId}" placeholder="Ajouter une note interne…" rows="2"></textarea>
-        <button onclick="addNote('${storageKey}','${btnId}')">💬 Ajouter</button>
+        <button onclick="addNote('${storageKey}','${btnId}')">Ajouter</button>
       </div>
     </div>`;
 }
@@ -1284,26 +1284,26 @@ function pingDepute(storageKey, idOrIdx) {
   refreshDashboard();
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
-  showToast("🚨 Le Député a été alerté sur ce dossier !");
+  showToast("Le Député a été alerté sur ce dossier.");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
 //  SÉCURITÉ — Anti-Intrusion
 // ══════════════════════════════════════════════════════════════════════════
 const ATTACK_LABELS = {
-  SQL_INJECTION:       "💉 SQL Injection",
-  CMD_INJECTION:       "💀 Cmd Injection",
-  XSS_ATTEMPT:         "🕸️ XSS",
-  PATH_TRAVERSAL_DEEP: "📁 Path Traversal",
-  SCANNER_UA:          "🤖 Scanner",
-  FILE_READ_ATTEMPT:   "🔍 Lecture fichier",
-  HONEYPOT:            "🪤 Honeypot",
-  HONEYPOT_POST:       "🪤 Honeypot POST",
-  LOGIN_FAIL:          "🔑 Échec login",
-  RATE_ABUSE:          "🌊 Rate Abuse",
-  AUTO_BAN:            "🚫 Ban auto",
-  MANUAL_BAN:          "🚫 Ban manuel",
-  OVERSIZED_REQUEST:   "📦 Trop grand",
+  SQL_INJECTION:       "SQL Injection",
+  CMD_INJECTION:       "Cmd Injection",
+  XSS_ATTEMPT:         "XSS",
+  PATH_TRAVERSAL_DEEP: "Path Traversal",
+  SCANNER_UA:          "Scanner",
+  FILE_READ_ATTEMPT:   "Lecture fichier",
+  HONEYPOT:            "Honeypot",
+  HONEYPOT_POST:       "Honeypot POST",
+  LOGIN_FAIL:          "Échec login",
+  RATE_ABUSE:          "Rate Abuse",
+  AUTO_BAN:            "Ban auto",
+  MANUAL_BAN:          "Ban manuel",
+  OVERSIZED_REQUEST:   "Trop grand",
 };
 
 async function loadSecurity() {
@@ -1344,11 +1344,11 @@ async function loadSecurity() {
 
     // IPs bloquées
     if (!data.blocked.length) {
-      listBlocked.innerHTML = '<div class="msg-empty">Aucune IP bloquée ✅</div>';
+      listBlocked.innerHTML = '<div class="msg-empty">Aucune IP bloquée</div>';
     } else {
       listBlocked.innerHTML = data.blocked.map(ip => `
         <div class="ip-row">
-          <span class="ip-addr">🚫 ${esc(ip)}</span>
+          <span class="ip-addr">${esc(ip)}</span>
           <span class="ip-score danger">BANNI</span>
           <button class="sbtn sbtn-done" style="font-size:10px;padding:3px 8px"
             onclick="unblockIp('${esc(ip)}')">Débloquer</button>
@@ -1359,7 +1359,7 @@ async function loadSecurity() {
     // IPs suspectes (non bannis)
     const suspects = data.suspects.filter(s => !data.blocked.includes(s.ip));
     if (!suspects.length) {
-      listSuspects.innerHTML = '<div class="msg-empty">Aucune IP suspecte ✅</div>';
+      listSuspects.innerHTML = '<div class="msg-empty">Aucune IP suspecte</div>';
     } else {
       listSuspects.innerHTML = suspects.slice(0,20).map(s => {
         const pct   = Math.min(100, Math.round(s.score / 25 * 100));
@@ -1367,7 +1367,7 @@ async function loadSecurity() {
         const color = s.score >= 20 ? "#e74c3c" : s.score >= 10 ? "#f39c12" : "#3498db";
         return `<div class="ip-row" style="flex-direction:column;align-items:stretch;gap:4px">
           <div style="display:flex;align-items:center;gap:8px">
-            <span class="ip-addr">⚠️ ${esc(s.ip)}</span>
+            <span class="ip-addr">${esc(s.ip)}</span>
             <span class="ip-score ${cls}">Score ${s.score}</span>
             <button class="btn-danger" style="padding:3px 8px;font-size:10px"
               onclick="manualBlockIp('${esc(s.ip)}')">Bannir</button>
@@ -1380,7 +1380,7 @@ async function loadSecurity() {
 
     // Log d'attaques
     if (!data.attacks.length) {
-      listAttacks.innerHTML = '<div class="msg-empty">Aucune attaque enregistrée ✅</div>';
+      listAttacks.innerHTML = '<div class="msg-empty">Aucune attaque enregistrée</div>';
     } else {
       listAttacks.innerHTML = data.attacks.map(a => `
         <div class="atk-row">
@@ -1473,7 +1473,7 @@ function _renderBouclier(d) {
   if (ld.active) {
     bar.style.background   = "rgba(231,76,60,.08)";
     bar.style.borderColor  = "rgba(231,76,60,.3)";
-    icon.textContent       = "🔴";
+    icon.textContent       = "!!";
     txt.textContent        = "MODE LOCKDOWN — Site en protection totale";
     txt.style.color        = "#e74c3c";
     sub.textContent        = ld.reason || "";
@@ -1495,7 +1495,7 @@ function _renderBouclier(d) {
   const list    = document.getElementById("bouclier-threats-list");
   const threats = d.top_threats || [];
   if (!threats.length) {
-    list.innerHTML = '<div class="msg-empty">Aucune menace active ✅</div>';
+    list.innerHTML = '<div class="msg-empty">Aucune menace active</div>';
     return;
   }
   list.innerHTML = threats.map(t => {
@@ -1524,7 +1524,7 @@ async function activateLockdown() {
       body: JSON.stringify({ action: "activate", reason, duration })
     });
     const data = await res.json();
-    showToast(data.ok ? "🔒 LOCKDOWN activé !" : (data.message || "Erreur"), !data.ok);
+    showToast(data.ok ? "Lockdown activé" : (data.message || "Erreur"), !data.ok);
     if (data.ok) loadBouclier();
   } catch { showToast("Erreur serveur", true); }
 }
@@ -1537,7 +1537,7 @@ async function deactivateLockdown() {
       body: JSON.stringify({ action: "deactivate" })
     });
     const data = await res.json();
-    showToast(data.ok ? "🔓 Lockdown levé" : (data.message || "Erreur"), !data.ok);
+    showToast(data.ok ? "Lockdown levé" : (data.message || "Erreur"), !data.ok);
     if (data.ok) loadBouclier();
   } catch { showToast("Erreur serveur", true); }
 }
@@ -1660,13 +1660,13 @@ async function restartMonitor() {
     });
     const data = await res.json();
     if (data.ok) {
-      alert("✅ YARO IA redémarré avec succès");
+      showToast("YARO IA redémarré avec succès");
       setTimeout(loadNews, 2000);
     } else {
-      alert("❌ Erreur : " + data.message);
+      showToast("Erreur : " + data.message, true);
     }
   } catch(e) {
-    alert("❌ Erreur réseau lors du redémarrage");
+    showToast("Erreur réseau lors du redémarrage", true);
   }
 }
 
@@ -1688,8 +1688,8 @@ async function toggleMonitorLog() {
 
 const CAT_LABELS = {
   bininga:     { label: "Bininga",      color: "rgba(200,16,46,.8)",    bg: "rgba(200,16,46,.12)" },
-  loi_justice: { label: "⚖️ Lois & Justice", color: "rgba(46,204,113,.9)", bg: "rgba(46,204,113,.1)" },
-  recherche:   { label: "🔍 Recherche", color: "rgba(52,152,219,.9)",   bg: "rgba(52,152,219,.1)" },
+  loi_justice: { label: "Lois & Justice", color: "rgba(46,204,113,.9)", bg: "rgba(46,204,113,.1)" },
+  recherche:   { label: "Recherche", color: "rgba(52,152,219,.9)",   bg: "rgba(52,152,219,.1)" },
 };
 
 function _newsDate(a) {
@@ -1751,7 +1751,7 @@ function renderNewsItems() {
       : src.includes("youtube")
       ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(255,0,0,.12);color:#ff4444;font-weight:700">▶ YouTube</span>`
       : src.includes("facebook") || src.includes("instagram")
-      ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(66,103,178,.15);color:#4267b2;font-weight:700">📘 Facebook</span>`
+      ? `<span style="padding:1px 6px;border-radius:8px;font-size:10px;background:rgba(66,103,178,.15);color:#4267b2;font-weight:700">Facebook</span>`
       : "";
     const aiBlock  = a.ai_summary
       ? `<div style="margin-top:8px;padding:8px 12px;background:rgba(52,152,219,.06);border-left:2px solid rgba(52,152,219,.3);border-radius:0 6px 6px 0;font-size:11.5px;color:rgba(255,255,255,.65);font-style:italic">${esc(a.ai_summary)}</div>`
@@ -1777,9 +1777,9 @@ function renderNewsItems() {
           ${aiBlock}
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-          <a href="${esc(a.url)}" target="_blank" rel="noopener" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(52,152,219,.1);color:#3498db;border:1px solid rgba(52,152,219,.2);text-decoration:none;white-space:nowrap">🔗 Lire</a>
+          <a href="${esc(a.url)}" target="_blank" rel="noopener" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(52,152,219,.1);color:#3498db;border:1px solid rgba(52,152,219,.2);text-decoration:none;white-space:nowrap">Lire</a>
           ${!isRead?`<button onclick="markNewsRead('${esc(a.id)}')" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer;white-space:nowrap">✓ Lu</button>`:""}
-          <button onclick="deleteNewsItem('${esc(a.id)}')" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(200,16,46,.08);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;white-space:nowrap">🗑</button>
+          <button onclick="deleteNewsItem('${esc(a.id)}')" style="padding:4px 10px;border-radius:5px;font-size:11px;font-weight:600;background:rgba(200,16,46,.08);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;white-space:nowrap">Supprimer</button>
         </div>
       </div>
     </div>`;
@@ -1860,13 +1860,13 @@ async function loadAuditLogs() {
     if (!data.ok) { el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
     if (!data.logs.length) { el.innerHTML = '<div class="msg-empty">Aucune entrée pour le moment.</div>'; return; }
 
-    const icons  = { LOGIN_OK:"🔓", LOGIN_FAIL:"⛔", SAVE:"💾", UPLOAD:"📷", USER_UPSERT:"👤", USER_DELETE:"🗑️" };
+    const icons  = { LOGIN_OK:"OK", LOGIN_FAIL:"NO", SAVE:"SV", UPLOAD:"UP", USER_UPSERT:"US", USER_DELETE:"DL" };
     const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", UPLOAD:"Upload image", USER_UPSERT:"Utilisateur créé / modifié", USER_DELETE:"Utilisateur supprimé" };
     const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", UPLOAD:"upload", USER_UPSERT:"ok", USER_DELETE:"fail" };
 
     el.innerHTML = data.logs.map(log => `
       <div class="log-item">
-        <div class="log-icon">${icons[log.action] || "📋"}</div>
+        <div class="log-icon">${icons[log.action] || "LOG"}</div>
         <div class="log-body">
           <div class="log-action ${cls[log.action] || ''}">${labels[log.action] || esc(log.action)}</div>
           ${log.detail ? `<div class="log-detail">${esc(log.detail)}</div>` : ''}
@@ -1900,7 +1900,7 @@ async function loadBackups() {
     }
     el.innerHTML = data.backups.map(b => `
       <div class="log-row">
-        <div class="log-icon">💾</div>
+        <div class="log-icon">BK</div>
         <div class="log-body">
           <div class="log-action save">${esc(b.name)}</div>
           <div class="log-detail">
@@ -2006,7 +2006,7 @@ function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g
 async function resetSystem(targets) {
   const labels = { contacts: "tous les messages/audiences", crm: "les contacts CRM" };
   const desc   = targets.map(t => labels[t] || t).join(" et ");
-  if (!confirm(`⚠️ RÉINITIALISATION GLOBALE\n\nCette action supprimera définitivement :\n→ ${desc}\n\nConfirmez-vous ?`)) return;
+  if (!confirm(`RÉINITIALISATION GLOBALE\n\nCette action supprimera définitivement :\n→ ${desc}\n\nConfirmez-vous ?`)) return;
   if (!confirm("Dernière confirmation — cette action est irréversible. Continuer ?")) return;
   try {
     const res  = await apiFetch("/api/reset", { method: "POST", headers: authHeaders(), body: JSON.stringify({ targets }) });
@@ -2018,7 +2018,7 @@ async function resetSystem(targets) {
       localStorage.removeItem("bininga_contacts");
     }
     syncMessages().then(() => refreshDashboard());
-    showToast("✅ Réinitialisation effectuée");
+    showToast("Réinitialisation effectuée");
   } catch (e) {
     showToast("Erreur réseau", true);
   }
@@ -2117,7 +2117,7 @@ function renderParcours() {
         <textarea oninput="updParcours(${i},'desc',this.value)" style="min-height:80px">${esc(p.desc||'')}</textarea>
       </div>
       <div style="padding-top:22px;display:flex;flex-direction:column;gap:6px">
-        <button class="btn-danger" onclick="delParcoursItem(${i})" title="Supprimer">🗑</button>
+        <button class="btn-danger" onclick="delParcoursItem(${i})" title="Supprimer">Supprimer</button>
         ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveParcours(${i},-1)" title="Monter">↑</button>` : ""}
         ${i < items.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveParcours(${i},1)" title="Descendre">↓</button>` : ""}
       </div>
@@ -2174,7 +2174,7 @@ function renderAxes() {
       <div style="display:grid;grid-template-columns:50px 1fr 1fr auto;gap:10px;align-items:start;margin-bottom:12px">
         <div class="form-group" style="margin:0">
           <label>Icône</label>
-          <input type="text" value="${esc(ax.icon||'')}" placeholder="⚖️" oninput="updAxe(${i},'icon',this.value)" style="width:50px;text-align:center;font-size:20px">
+          <input type="text" value="${esc(ax.icon||'')}" placeholder="Icône" oninput="updAxe(${i},'icon',this.value)" style="width:50px;text-align:center;font-size:20px">
         </div>
         <div class="form-group" style="margin:0">
           <label>Titre de l'axe</label>
@@ -2185,7 +2185,7 @@ function renderAxes() {
           <textarea oninput="updAxe(${i},'text',this.value)" style="min-height:64px">${esc(ax.text||'')}</textarea>
         </div>
         <div style="padding-top:22px;display:flex;flex-direction:column;gap:4px">
-          <button class="btn-danger" onclick="delAxe(${i})" title="Supprimer">🗑</button>
+          <button class="btn-danger" onclick="delAxe(${i})" title="Supprimer">Supprimer</button>
           ${i > 0 ? `<button class="sbtn sbtn-wait" onclick="moveAxe(${i},-1)">↑</button>` : ""}
           ${i < axes.length-1 ? `<button class="sbtn sbtn-wait" onclick="moveAxe(${i},1)">↓</button>` : ""}
         </div>
@@ -2358,7 +2358,7 @@ async function fbLoad(dir, pushHistory = true) {
              style="cursor:pointer;background:#161616;border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 8px;text-align:center;transition:all .2s"
              onmouseover="this.style.borderColor='rgba(200,16,46,.4)';this.style.background='#1e1e1e'"
              onmouseout="this.style.borderColor='rgba(255,255,255,.07)';this.style.background='#161616'">
-          <div style="font-size:28px;margin-bottom:8px">📁</div>
+          <div style="font-size:13px;font-weight:700;margin-bottom:8px;color:rgba(255,255,255,.55)">Dossier</div>
           <div style="font-size:11px;color:rgba(255,255,255,.7);word-break:break-word;line-height:1.3">${esc(f.name)}</div>
         </div>`);
     });
@@ -2374,7 +2374,7 @@ async function fbLoad(dir, pushHistory = true) {
           <img src="${esc(f.path)}" alt="${esc(f.name)}"
                style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:6px;display:block"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-          <div style="display:none;width:100%;aspect-ratio:1;background:#1e1e1e;border-radius:6px;align-items:center;justify-content:center;font-size:22px">🖼️</div>
+          <div style="display:none;width:100%;aspect-ratio:1;background:#1e1e1e;border-radius:6px;align-items:center;justify-content:center;font-size:11px;color:rgba(255,255,255,.45)">Image</div>
           <div style="font-size:10px;color:rgba(255,255,255,.45);margin-top:5px;word-break:break-word;line-height:1.3;padding:0 2px">${esc(f.name)}</div>
         </div>`);
     });
@@ -2430,7 +2430,7 @@ function pickOrUploadImage(callback) {
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">Choisir une image</div>
       <div style="font-size:12px;color:rgba(255,255,255,.35);margin-bottom:24px">Parcourez les dossiers ou uploadez un nouveau fichier</div>
       <div style="display:flex;flex-direction:column;gap:10px">
-        <button id="pick-browse" style="padding:11px 20px;background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">📁 Parcourir les dossiers</button>
+        <button id="pick-browse" style="padding:11px 20px;background:rgba(200,16,46,.15);border:1px solid rgba(200,16,46,.3);color:#fff;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">Parcourir les dossiers</button>
         <button id="pick-upload" style="padding:11px 20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:13px">⬆️ Uploader un fichier</button>
         <button id="pick-cancel" style="padding:9px 20px;background:transparent;border:none;color:rgba(255,255,255,.3);cursor:pointer;font-size:12px">Annuler</button>
       </div>
@@ -2525,9 +2525,9 @@ async function loadCrm(page) {
         let cached = [];
         try { cached = JSON.parse(raw).contacts || []; } catch { }
         if (cached.length > 0) {
-          if (el) el.innerHTML = `<div class="msg-empty">🔄 Restauration de ${cached.length} contact(s) CRM depuis la sauvegarde locale…</div>`;
+          if (el) el.innerHTML = `<div class="msg-empty">Restauration de ${cached.length} contact(s) CRM depuis la sauvegarde locale…</div>`;
           const ok = await _crmRestoreFromBackup();
-          if (ok > 0) { showToast(`✅ ${ok} contact(s) CRM restaurés automatiquement`); loadCrm(1); return; }
+          if (ok > 0) { showToast(`${ok} contact(s) CRM restaurés automatiquement`); loadCrm(1); return; }
         }
       }
     }
@@ -2567,12 +2567,12 @@ function crmTab(tab, btn) {
 
 // ── Rendu de la liste de contacts ────────────────────────────────────────
 const CRM_SOURCE_BADGE = {
-  audience:    `<span class="crm-tag crm-tag-aud">📋 Audience</span>`,
-  contact:     `<span class="crm-tag crm-tag-ct">✉️ Contact</span>`,
-  reclamation: `<span class="crm-tag crm-tag-recl">⚠️ Réclamation</span>`,
-  signalement: `<span class="crm-tag crm-tag-sig">🚩 Signalement</span>`,
-  newsletter:  `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>`,
-  manuel:      `<span class="crm-tag crm-tag-man">✏️ Manuel</span>`,
+  audience:    `<span class="crm-tag crm-tag-aud">Audience</span>`,
+  contact:     `<span class="crm-tag crm-tag-ct">Contact</span>`,
+  reclamation: `<span class="crm-tag crm-tag-recl">Réclamation</span>`,
+  signalement: `<span class="crm-tag crm-tag-sig">Signalement</span>`,
+  newsletter:  `<span class="crm-tag crm-tag-nl">Newsletter</span>`,
+  manuel:      `<span class="crm-tag crm-tag-man">Manuel</span>`,
 };
 
 function _updateBulkBar() {
@@ -2608,7 +2608,7 @@ async function crmBulkDelete() {
     });
     const data = await res.json();
     if (data.ok) {
-      showToast(`✅ ${data.deleted} contact(s) supprimé(s)`);
+      showToast(`${data.deleted} contact(s) supprimé(s)`);
       _crmSelected.clear();
       await loadCrm(_crmPage);
       setTimeout(_crmBackupAllInBackground, 500);
@@ -2642,7 +2642,7 @@ function renderCrmList() {
     const checked = _crmSelected.has(c.id) ? "checked" : "";
     const srcTag  = CRM_SOURCE_BADGE[c.source]  || `<span class="crm-tag crm-tag-man">${esc(c.source)}</span>`;
     const nlBadge = c.newsletter && c.email
-      ? `<span class="crm-tag crm-tag-nl">📧 Newsletter</span>` : "";
+      ? `<span class="crm-tag crm-tag-nl">Newsletter</span>` : "";
     const tags    = (c.tags || []).map(t => `<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("");
     const notesCnt = (c.notes || []).length;
     return `
@@ -2655,9 +2655,9 @@ function renderCrmList() {
           <div>
             <div class="crm-card-name">${esc(c.prenom || "")} ${esc(c.nom || "")}</div>
             <div class="crm-card-meta">
-              ${c.email ? `<span>📧 ${esc(c.email)}</span>` : ""}
-              ${c.telephone ? `<span>📞 ${esc(c.telephone)}</span>` : ""}
-              <span title="Expiration">🗓️ jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
+              ${c.email ? `<span>Email : ${esc(c.email)}</span>` : ""}
+              ${c.telephone ? `<span>Tél. : ${esc(c.telephone)}</span>` : ""}
+              <span title="Expiration">Jusqu'au ${esc((c.expires_at||"").slice(0,10))}</span>
             </div>
           </div>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">${srcTag}${nlBadge}${tags}</div>
@@ -2666,12 +2666,12 @@ function renderCrmList() {
         <div class="crm-card-footer">
           <div style="font-size:11px;color:rgba(255,255,255,.3)">
             Créé le ${esc((c.created_at||"").slice(0,10))}
-            ${notesCnt ? `· 💬 ${notesCnt} note${notesCnt>1?"s":""}` : ""}
+            ${notesCnt ? `· ${notesCnt} note${notesCnt>1?"s":""}` : ""}
           </div>
           <div style="display:flex;gap:6px">
-            <button class="sbtn sbtn-progress" onclick="crmDetail('${esc(c.id)}')">👁 Voir</button>
-            <button class="sbtn sbtn-read"     onclick="crmEditModal('${esc(c.id)}')">✏️ Modifier</button>
-            <button class="btn-danger" style="padding:4px 9px" onclick="crmDelete('${esc(c.id)}')">🗑</button>
+            <button class="sbtn sbtn-progress" onclick="crmDetail('${esc(c.id)}')">Voir</button>
+            <button class="sbtn sbtn-read"     onclick="crmEditModal('${esc(c.id)}')">Modifier</button>
+            <button class="btn-danger" style="padding:4px 9px" onclick="crmDelete('${esc(c.id)}')">Supprimer</button>
           </div>
         </div>
       </div>
@@ -2687,7 +2687,7 @@ async function crmImport() {
     const res  = await apiFetch("/api/crm/import", { method: "POST", headers: authHeaders(), body: JSON.stringify({}) });
     const data = await res.json();
     if (data.ok) {
-      showToast(`✅ ${data.imported} contact(s) importé(s) !`);
+      showToast(`${data.imported} contact(s) importé(s)`);
       loadCrm();
     } else {
       showToast(data.message || "Erreur", true);
@@ -2803,7 +2803,7 @@ function crmDetail(id) {
   body.innerHTML = `
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">
       ${srcTag}
-      ${c.newsletter && c.email ? '<span class="crm-tag crm-tag-nl">📧 Newsletter</span>' : ""}
+      ${c.newsletter && c.email ? '<span class="crm-tag crm-tag-nl">Newsletter</span>' : ""}
       ${(c.tags||[]).map(t=>`<span class="crm-tag crm-tag-man">${esc(t)}</span>`).join("")}
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px">
@@ -2818,23 +2818,23 @@ function crmDetail(id) {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
       <div>
-        <div class="notes-title">💬 Notes internes (${notesCnt})</div>
+        <div class="notes-title">Notes internes (${notesCnt})</div>
         <div id="crm-notes-list-${esc(c.id)}">${notesHtml}</div>
         <div class="note-form" style="margin-top:10px">
           <textarea id="crm-note-ta-${esc(c.id)}" placeholder="Ajouter une note…" rows="2"></textarea>
-          <button onclick="crmAddNote('${esc(c.id)}')">💬 Ajouter</button>
+          <button onclick="crmAddNote('${esc(c.id)}')">Ajouter</button>
         </div>
       </div>
       <div>
-        <div class="notes-title">📋 Historique</div>
+        <div class="notes-title">Historique</div>
         <div style="font-size:12px">${histHtml}</div>
       </div>
     </div>
 
     <div style="display:flex;gap:8px;margin-top:20px;padding-top:16px;border-top:1px solid rgba(255,255,255,.06)">
-      ${c.email ? `<a href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Réponse Cabinet BININGA')}" class="sbtn sbtn-progress" style="text-decoration:none">📧 Envoyer un email</a>` : ""}
-      <button class="sbtn sbtn-read" onclick="crmEditModal('${esc(c.id)}');closeCrmDetail()">✏️ Modifier</button>
-      <button class="btn-danger" style="padding:5px 11px" onclick="if(confirm('Supprimer ce contact ?')){crmDelete('${esc(c.id)}');closeCrmDetail();}">🗑 Supprimer</button>
+      ${c.email ? `<a href="mailto:${esc(c.email)}?subject=${encodeURIComponent('Réponse Cabinet BININGA')}" class="sbtn sbtn-progress" style="text-decoration:none">Envoyer un email</a>` : ""}
+      <button class="sbtn sbtn-read" onclick="crmEditModal('${esc(c.id)}');closeCrmDetail()">Modifier</button>
+      <button class="btn-danger" style="padding:5px 11px" onclick="if(confirm('Supprimer ce contact ?')){crmDelete('${esc(c.id)}');closeCrmDetail();}">Supprimer</button>
     </div>`;
 
   modal.style.display = "flex";
@@ -2880,7 +2880,7 @@ async function nlSend() {
                 : filtre === "tous"       ? _crmContacts.filter(c => c.email).length
                 : _crmContacts.filter(c => c.email && c.tags && c.tags.includes(filtre)).length;
   if (!confirm(`Envoyer cette newsletter à ${nlCount} destinataire(s) ?`)) return;
-  btn.disabled = true; btn.textContent = "⏳ Envoi en cours…";
+  btn.disabled = true; btn.textContent = "Envoi en cours…";
   fb.style.display = "none";
   try {
     const res  = await apiFetch("/api/crm/newsletter/send", {
@@ -2891,10 +2891,10 @@ async function nlSend() {
     fb.style.display = "block";
     if (data.erreur) {
       fb.style.color   = "#f39c12";
-      fb.innerHTML = `⚠️ Envoyé à ${data.envoyes}/${data.total} destinataires.<br><small>${esc(data.erreur)}</small>`;
+      fb.innerHTML = `Envoyé à ${data.envoyes}/${data.total} destinataires.<br><small>${esc(data.erreur)}</small>`;
     } else {
       fb.style.color   = "#2ecc71";
-      fb.textContent   = `✅ Newsletter envoyée à ${data.envoyes} destinataire(s) !`;
+      fb.textContent   = `Newsletter envoyée à ${data.envoyes} destinataire(s) !`;
       document.getElementById("nl-sujet").value = "";
       document.getElementById("nl-corps").value = "";
     }
@@ -2902,9 +2902,9 @@ async function nlSend() {
   } catch(e) {
     fb.style.display = "block";
     fb.style.color   = "#e74c3c";
-    fb.textContent   = "❌ Erreur de connexion au serveur.";
+    fb.textContent   = "Erreur de connexion au serveur.";
   } finally {
-    btn.disabled = false; btn.textContent = "📧 Envoyer la newsletter";
+    btn.disabled = false; btn.textContent = "Envoyer la newsletter";
   }
 }
 
@@ -2921,10 +2921,10 @@ function renderNlHistory() {
         <div style="font-weight:700;font-size:13px;margin-bottom:4px">${esc(nl.sujet)}</div>
         <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:6px">${esc(nl.ts)} · ${nl.envoyes||0}/${nl.destinataires||0} envoyés</div>
         ${nl.apercu ? `<div style="font-size:12px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(nl.apercu)}</div>` : ""}
-        ${nl.erreur ? `<div style="font-size:11px;color:#f39c12;margin-top:4px">⚠️ ${esc(nl.erreur)}</div>` : ""}
+        ${nl.erreur ? `<div style="font-size:11px;color:#f39c12;margin-top:4px">Erreur : ${esc(nl.erreur)}</div>` : ""}
       </div>
       <span class="badge ${nl.statut === 'envoye' ? 'badge-done' : 'badge-wait'}" style="flex-shrink:0">
-        ${nl.statut === 'envoye' ? '✅ Envoyé' : '⚠️ Erreur'}
+        ${nl.statut === 'envoye'  ? 'Envoyé' : 'Erreur'}
       </span>
     </div>
   `).join("");
@@ -2942,8 +2942,8 @@ function tfaRefreshStatus(has2fa) {
   const btnDis   = document.getElementById("tfa-btn-disable");
   if (status) {
     status.innerHTML = _tfaHas2fa
-      ? '<span style="color:#2ecc71">✅ 2FA activé — votre compte est protégé</span>'
-      : '<span style="color:rgba(255,255,255,.4)">⚠️ 2FA non activé — recommandé pour les admins</span>';
+      ? '<span style="color:#2ecc71">2FA activé — votre compte est protégé</span>'
+      : '<span style="color:rgba(255,255,255,.4)">2FA non activé — recommandé pour les admins</span>';
   }
   if (btnSetup) btnSetup.style.display = _tfaHas2fa ? "none" : "";
   if (btnDis)   btnDis.style.display   = _tfaHas2fa ? "" : "none";
@@ -2975,7 +2975,7 @@ async function tfaActivate() {
     const res  = await apiFetch("/api/2fa/activate", { method: "POST", headers: authHeaders(), body: JSON.stringify({ code }) });
     const data = await res.json();
     if (data.ok) {
-      showToast("✅ 2FA activé avec succès !");
+      showToast("2FA activé avec succès !");
       tfaCancel();
       tfaRefreshStatus(true);
     } else showToast(data.message || "Erreur", true);
@@ -3238,7 +3238,7 @@ async function loadMonSummary() {
     const ts   = document.getElementById("mon-status-ts");
     bar.className = "mon-status-bar mon-" + (d.global_status || "unknown").toLowerCase();
     const statusLabel = { OK: "Système opérationnel", WARNING: "Attention — anomalies détectées", CRITICAL: "CRITIQUE — intervention requise", UNKNOWN: "Statut inconnu" };
-    icon.textContent = { OK: "✅", WARNING: "⚠️", CRITICAL: "🔴", UNKNOWN: "❓" }[d.global_status] || "❓";
+    icon.textContent = { OK: "OK", WARNING: "!", CRITICAL: "!!", UNKNOWN: "?" }[d.global_status] || "?";
     txt.textContent  = statusLabel[d.global_status] || d.global_status;
     if (ts) ts.textContent = d.ts || "";
 
@@ -3290,9 +3290,9 @@ async function loadMonAlerts() {
     if (!d.ok || !d.alerts.length) { box.innerHTML = '<p class="msg-empty">Aucune alerte active.</p>'; return; }
     box.innerHTML = d.alerts.map(a => {
       const cls = a.level === "CRITICAL" ? "mon-alert-crit" : a.level === "WARNING" ? "mon-alert-warn" : "mon-alert-info";
-      const emoji = a.level === "CRITICAL" ? "🔴" : a.level === "WARNING" ? "⚠️" : "ℹ️";
+      const mark = a.level === "CRITICAL" ? "!!" : a.level === "WARNING" ? "!" : "i";
       return `<div class="mon-alert-item ${cls}">
-        <div>${emoji}</div>
+        <div>${mark}</div>
         <div class="mon-alert-msg">
           <div class="mon-alert-rule">${esc(a.level)} — ${esc(a.rule)}</div>
           <div>${esc(a.message)}</div>
@@ -3394,7 +3394,7 @@ async function loadMonReport() {
            <ul class="mon-rec-list">${rp.recommendations.map(r => `<li>${esc(r)}</li>`).join("")}</ul></div>` : "";
     box.innerHTML = `
       <div class="mon-report-status" style="color:${statusColor}">
-        ${rp.status === "CRITICAL" ? "🔴" : rp.status === "WARNING" ? "⚠️" : "✅"} ${esc(rp.status || "OK")} — ${esc(rp.period || "")}
+        ${esc(rp.status || "OK")} — ${esc(rp.period || "")}
       </div>
       <div class="mon-report-row">
         ${[["Requêtes",rp.requests_total],["Erreurs HTTP",rp.errors_total],["Exceptions",rp.exceptions],["Alertes",rp.active_alerts],["Latence moy",rp.avg_latency_ms+"ms"],["Taux err.",rp.error_rate+"%"]].map(([l,v])=>`
@@ -3404,7 +3404,7 @@ async function loadMonReport() {
       ${rp.slow_endpoints?.length ? `<div style="margin-top:10px"><b style="font-size:12px;color:rgba(255,255,255,.5)">ENDPOINTS LENTS</b>
         ${rp.slow_endpoints.map(e=>`<div style="font-size:12px;padding:4px 0;font-family:monospace;color:rgba(255,255,255,.7)">${esc(e.path)} — <span style="color:#f39c12">${e.avg_ms}ms</span></div>`).join("")}</div>` : ""}
       <div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:14px">Généré le ${esc(rp.generated_at||"")}</div>
-      <button class="sbtn sbtn-progress" style="margin-top:12px" onclick="loadMonReport()">🔄 Régénérer</button>`;
+      <button class="sbtn sbtn-progress" style="margin-top:12px" onclick="loadMonReport()">Régénérer</button>`;
   } catch { box.innerHTML = '<p style="color:#e74c3c">Erreur réseau.</p>'; }
 }
 
@@ -3420,11 +3420,11 @@ let _audioCtx    = null;
 let _notifOpen   = false;
 
 const _NOTIF_META = {
-  visit:      { icon: "👁️",  title: "Nouveau visiteur",   panel: "monitoring",   color: "#3498db" },
-  prog_view:  { icon: "📋",  title: "Programme consulté", panel: "monitoring",   color: "#9b59b6" },
-  contact:    { icon: "✉️",  title: "Nouveau message",    panel: "contacts",     color: "#2ecc71" },
-  audience:   { icon: "📋",  title: "Demande d'audience", panel: "audiences",    color: "#f39c12" },
-  reclamation:{ icon: "⚠️",  title: "Nouvelle réclamation",panel: "reclamations",color: "#e74c3c" },
+  visit:      { icon: "VI",  title: "Nouveau visiteur",   panel: "monitoring",   color: "#3498db" },
+  prog_view:  { icon: "PR",  title: "Programme consulté", panel: "monitoring",   color: "#9b59b6" },
+  contact:    { icon: "ME",  title: "Nouveau message",    panel: "contacts",     color: "#2ecc71" },
+  audience:   { icon: "PR",  title: "Demande d'audience", panel: "audiences",    color: "#f39c12" },
+  reclamation:{ icon: "RE",  title: "Nouvelle réclamation",panel: "reclamations",color: "#e74c3c" },
 };
 
 function initNotifications() {
@@ -3469,7 +3469,7 @@ function _connectSSE() {
 }
 
 function _addNotif(type, data) {
-  const meta = _NOTIF_META[type] || { icon: "🔔", title: "Notification", panel: "dashboard" };
+  const meta = _NOTIF_META[type] || { icon: "NT", title: "Notification", panel: "dashboard" };
   let desc = "";
   if (data.nom)   desc = (data.nom + " " + (data.prenom || "")).trim();
   if (data.objet) desc += (desc ? " — " : "") + data.objet;

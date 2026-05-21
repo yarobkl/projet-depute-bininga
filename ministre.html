@@ -296,8 +296,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
     <div class="header-right">
       <div class="header-date" id="hdr-date"></div>
       <a href="index.html" target="_blank" class="header-btn">Voir le site</a>
-      <a href="__ADMIN_PATH__" class="header-btn">⚙️ Administration</a>
-      <button class="header-btn" onclick="logout()">↩ Déconnexion</button>
+      <a href="__ADMIN_PATH__" class="header-btn">Administration</a>
+      <button class="header-btn" onclick="logout()">Déconnexion</button>
     </div>
   </header>
 
@@ -739,7 +739,7 @@ function refreshPriority() {
 
   const el = document.getElementById("priority-list");
   if (!urgent.length) {
-    el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.2);padding:10px 0">✅ Aucune urgence en cours</div>';
+    el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.2);padding:10px 0">Aucune urgence en cours</div>';
     return;
   }
   el.innerHTML = urgent.map(m => {
@@ -839,7 +839,7 @@ function renderReponses() {
   setText("nt-rep", all.length);
   const el = document.getElementById("list-reponses");
   if (!all.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">Aucune réponse envoyée pour le moment.</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-text">Aucune réponse envoyée pour le moment.</div></div>';
     return;
   }
   const storageKey = m => m.objet !== undefined ? "bininga_audiences" : "bininga_contacts";
@@ -852,7 +852,7 @@ function renderReponses() {
 function renderMsgList(containerId, list, storageKey, mode) {
   const el = document.getElementById(containerId);
   if (!list.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Aucun message dans cette catégorie.</div></div>';
+    el.innerHTML = '<div class="empty"><div class="empty-icon"></div><div class="empty-text">Aucun message dans cette catégorie.</div></div>';
     return;
   }
   el.innerHTML = list.map(m => buildCard(m, storageKey, mode)).join("");
@@ -874,10 +874,10 @@ function buildCard(m, storageKey, mode) {
     .join("");
 
   // Raison demande d'audience / question
-  const raisonHtml = m.raison ? `<div class="sin-desc"><div class="sin-label">📝 Requête</div>${esc(m.raison)}</div>` : "";
+  const raisonHtml = m.raison ? `<div class="sin-desc"><div class="sin-label">Requête</div>${esc(m.raison)}</div>` : "";
 
   // Description sinistre
-  const descHtml = m.description ? `<div class="sin-desc"><div class="sin-label">📝 Description du sinistre</div>${esc(m.description)}</div>` : "";
+  const descHtml = m.description ? `<div class="sin-desc"><div class="sin-label">Description du sinistre</div>${esc(m.description)}</div>` : "";
 
   // Bloc géolocalisation
   let geoHtml = "";
@@ -887,57 +887,57 @@ function buildCard(m, storageKey, mode) {
     const mapsUrl = m.geo_maps_url || `https://www.google.com/maps?q=${lat},${lng}&z=16`;
     geoHtml = `<div class="sin-geo">
       <div class="sin-geo-hdr">
-        <span class="sin-geo-lbl">📍 Zone du sinistre — géolocalisée</span>
-        <a href="${esc(mapsUrl)}" target="_blank" class="btn-gmaps">🗺️ Google Maps</a>
+        <span class="sin-geo-lbl">Zone du sinistre — géolocalisée</span>
+        <a href="${esc(mapsUrl)}" target="_blank" class="btn-gmaps">Google Maps</a>
       </div>
       ${m.geo_label ? `<div class="sin-addr">${esc(m.geo_label)}</div>` : ""}
       <iframe class="sin-map"
         src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
         allowfullscreen loading="lazy"></iframe>
-      <div class="sin-coords">🌐 ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
+      <div class="sin-coords">${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}</div>
     </div>`;
   }
 
   // Photo
   const photoHtml = hasPhoto ? `<div class="sin-photo-wrap">
-    <div class="sin-label">📷 Photo du sinistre</div>
+    <div class="sin-label">Photo du sinistre</div>
     <img src="${esc(m.photo_url)}" class="sin-photo" onclick="this.classList.toggle('full')" title="Cliquer pour agrandir">
   </div>` : "";
 
   let statusBadge = "";
   if (mode === "status3") {
     const map = {
-      en_attente:`<span class="badge badge-wait">⏳ En attente</span>`,
-      en_cours:`<span class="badge badge-progress">🔄 En cours</span>`,
-      traite:`<span class="badge badge-done">✅ Traité</span>`,
+      en_attente:`<span class="badge badge-wait">En attente</span>`,
+      en_cours:`<span class="badge badge-progress">En cours</span>`,
+      traite:`<span class="badge badge-done">Traité</span>`,
     };
-    statusBadge = isRecl ? `<span class="badge badge-recl">⚠️ Réclamation</span>` : (map[status]||map.en_attente);
+    statusBadge = isRecl ? `<span class="badge badge-recl">Réclamation</span>` : (map[status]||map.en_attente);
   } else {
     statusBadge = status === "lu"
       ? `<span class="badge badge-lu">✓ Lu</span>`
-      : `<span class="badge badge-unread">🔵 Non lu</span>`;
+      : `<span class="badge badge-unread">Non lu</span>`;
   }
 
-  const replyBadge = hasReply ? `<span class="badge badge-reply">💬 Répondu</span>` : "";
-  const pingBadge  = m._pinged ? `<span class="badge badge-pinged">🚨 Député alerté</span>` : "";
+  const replyBadge = hasReply ? `<span class="badge badge-reply">Répondu</span>` : "";
+  const pingBadge  = m._pinged ? `<span class="badge badge-pinged">Député alerté</span>` : "";
 
   // Bouton ping Député
   const isGrave = isRecl || (!m._status || m._status === "en_attente");
   const pingBtn = isGrave && mode !== "readonly"
     ? (m._pinged
-        ? `<button class="sbtn" style="background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">🚨 Député alerté</button>`
-        : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${safeId}')">🚨 Alerter le Député</button>`)
+        ? `<button class="sbtn" style="background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);cursor:default">Député alerté</button>`
+        : `<button class="sbtn" style="background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2)" onclick="pingDepute('${storageKey}','${safeId}')">Alerter le Député</button>`)
     : "";
 
   let statusBtns = "";
   if (mode === "status3" && mode !== "readonly") {
     statusBtns = `
-      <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${safeId}','en_attente','${mode}')">⏳ En attente</button>
-      <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${safeId}','en_cours','${mode}')">🔄 En cours</button>
-      <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${safeId}','traite','${mode}')">✅ Traité</button>
+      <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${safeId}','en_attente','${mode}')">En attente</button>
+      <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${safeId}','en_cours','${mode}')">En cours</button>
+      <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${safeId}','traite','${mode}')">Traité</button>
       ${pingBtn}`;
   } else if (mode === "status2") {
-    statusBtns = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${safeId}','lu','${mode}')">✅ Marquer lu</button>${pingBtn}`;
+    statusBtns = `<button class="sbtn sbtn-read" onclick="setStatus('${storageKey}','${safeId}','lu','${mode}')">Marquer lu</button>${pingBtn}`;
   }
 
   // Reply section
@@ -947,11 +947,11 @@ function buildCard(m, storageKey, mode) {
       replySection = `
         <div class="reply-display" id="rd-${safeId}">
           <div class="reply-display-header">
-            <span class="reply-display-label">💬 Réponse envoyée</span>
+            <span class="reply-display-label">Réponse envoyée</span>
             <span class="reply-display-date">${esc(m._reply_date||"")}</span>
           </div>
           <div class="reply-display-text">${esc(m._reply)}</div>
-          <span class="reply-edit-btn" onclick="openReply('${safeId}','${storageKey}')">✏️ Modifier la réponse</span>
+          <span class="reply-edit-btn" onclick="openReply('${safeId}','${storageKey}')">Modifier la réponse</span>
         </div>
         <div class="reply-panel" id="rp-${safeId}">
           ${buildReplyForm(safeId, storageKey, m._reply, m.email||"", m.prenom||"", m.nom||"")}
@@ -965,13 +965,13 @@ function buildCard(m, storageKey, mode) {
   }
 
   const replyBtn = mode !== "readonly"
-    ? `<button class="sbtn sbtn-reply${hasReply?" active":""}" onclick="toggleReply('${safeId}')">✉️ ${hasReply?"Voir réponse":"Répondre"}</button>`
+    ? `<button class="sbtn sbtn-reply${hasReply?" active":""}" onclick="toggleReply('${safeId}')">${hasReply?"Voir réponse":"Répondre"}</button>`
     : "";
 
   // Preview
   const firstVal = Object.entries(m).filter(([k]) => !geoSkip.has(k) && k !== "nom" && k !== "prenom")[0];
   const preview  = m.description || (firstVal ? firstVal[1] : "");
-  const geoBadge = hasGeo ? `<span class="badge" style="background:rgba(52,152,219,.12);color:#6bbeff;border:1px solid rgba(52,152,219,.2)">📍 Géolocalisé</span>` : "";
+  const geoBadge = hasGeo ? `<span class="badge" style="background:rgba(52,152,219,.12);color:#6bbeff;border:1px solid rgba(52,152,219,.2)">Géolocalisé</span>` : "";
 
   return `<div class="msg-card${hasReply?" has-reply":""}${isRecl?" priority":""}" id="mc-${safeId}">
     <div class="msg-top" onclick="toggleCard('${safeId}')">
@@ -981,7 +981,7 @@ function buildCard(m, storageKey, mode) {
           ${esc(m.prenom||"")} ${esc(m.nom||"")}
           ${statusBadge} ${replyBadge} ${geoBadge} ${pingBadge}
         </div>
-        <div class="msg-date-line">📅 ${esc(m._date||m.ts||"")}</div>
+        <div class="msg-date-line">${esc(m._date||m.ts||"")}</div>
         <div class="msg-preview">${esc(preview)}</div>
       </div>
       <div class="msg-actions-top">
@@ -1004,16 +1004,16 @@ function buildCard(m, storageKey, mode) {
 
 function buildReplyForm(safeId, storageKey, existingText, email, prenom, nom) {
   const emailBtn = email
-    ? `<button class="btn-send" style="background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3)" onclick="openMailReply('${safeId}','${email.replace(/'/g,"\\'")}','${(prenom||"").replace(/'/g,"\\'")}','${(nom||"").replace(/'/g,"\\'")}')">📧 Envoyer par email</button>`
+    ? `<button class="btn-send" style="background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3)" onclick="openMailReply('${safeId}','${email.replace(/'/g,"\\'")}','${(prenom||"").replace(/'/g,"\\'")}','${(nom||"").replace(/'/g,"\\'")}')">Envoyer par email</button>`
     : "";
-  return `<div class="reply-panel-title">✉️ Rédiger une réponse</div>
+  return `<div class="reply-panel-title">Rédiger une réponse</div>
     <textarea class="reply-textarea" id="rt-${safeId}" placeholder="Votre réponse…">${esc(existingText || SIGNATURE())}</textarea>
     <div class="reply-meta">
       <span>Signature automatique incluse</span>
       <span id="rc-${safeId}">${(existingText || SIGNATURE()).length} caractères</span>
     </div>
     <div class="reply-actions">
-      <button class="btn-send" onclick="saveReply('${safeId}','${storageKey}')">💬 Enregistrer</button>
+      <button class="btn-send" onclick="saveReply('${safeId}','${storageKey}')">Enregistrer</button>
       ${emailBtn}
       <button class="btn-cancel-reply" onclick="closeReply('${safeId}')">Annuler</button>
     </div>`;
@@ -1094,7 +1094,7 @@ function saveReply(safeId, storageKey) {
   all[idx]._reply      = text;
   all[idx]._reply_date = new Date().toLocaleString("fr-FR");
   saveAll(storageKey, all);
-  showToast("✉️ Réponse enregistrée !", false, true);
+  showToast("Réponse enregistrée", false, true);
   refreshAll();
 }
 
@@ -1124,11 +1124,11 @@ function buildNotesSection(m, storageKey, safeId) {
     </div>`).join("");
   return `
     <div class="notes-section">
-      <div class="notes-title">💬 Notes internes (admin ↔ ministre)</div>
+      <div class="notes-title">Notes internes (admin ↔ ministre)</div>
       ${notesHtml || '<div style="font-size:11px;color:rgba(255,255,255,.2);margin-bottom:6px">Aucune note pour l\'instant</div>'}
       <div class="note-form">
         <textarea id="note-ta-${safeId}" placeholder="Ajouter une note interne…" rows="2"></textarea>
-        <button onclick="addNote('${storageKey}','${safeId}')">💬 Ajouter</button>
+        <button onclick="addNote('${storageKey}','${safeId}')">Ajouter</button>
       </div>
     </div>`;
 }
@@ -1166,7 +1166,7 @@ function pingDepute(storageKey, safeId) {
   all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
   saveAll(storageKey, all);
   refreshAll();
-  showToast("🚨 Le Député a été alerté sur ce dossier !");
+  showToast("Le Député a été alerté sur ce dossier.");
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1278,9 +1278,9 @@ function vRenderItems() {
   });
 
   list.innerHTML = sorted.map(a => {
-    const catLabel = (a.category||"bininga") === "loi_justice" ? "📜 Lois & Justice"
-                   : (a.category||"bininga") === "recherche"   ? "🔍 Recherche"
-                   : "🧑‍⚖️ Sur Bininga";
+    const catLabel = (a.category||"bininga") === "loi_justice" ? "Lois & Justice"
+                   : (a.category||"bininga") === "recherche"   ? "Recherche"
+                   : "Sur Bininga";
     const catColor = (a.category||"bininga") === "loi_justice" ? "#2ecc71"
                    : (a.category||"bininga") === "recherche"   ? "#3498db"
                    : "var(--rl)";
@@ -1302,7 +1302,7 @@ function vRenderItems() {
           <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:6px;line-height:1.4">${esc(a.title||"Sans titre")}</div>
           ${summary ? `<div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.55;margin-bottom:10px">${summary}${(a.summary||a.description||"").length > 280 ? "…" : ""}</div>` : ""}
           <div style="display:flex;gap:8px;flex-wrap:wrap">
-            ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:700;color:#3498db;text-decoration:none;padding:4px 10px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.2);border-radius:6px">🔗 Lire l'article</a>` : ""}
+            ${a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener" style="font-size:11px;font-weight:700;color:#3498db;text-decoration:none;padding:4px 10px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.2);border-radius:6px">Lire l'article</a>` : ""}
             ${unread ? `<button onclick="vMarkRead('${esc(a.id||"")}',this)" style="font-size:11px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:4px 10px;cursor:pointer">✓ Marquer lu</button>` : '<span style="font-size:11px;color:rgba(255,255,255,.2);padding:4px 0">✓ Lu</span>'}
           </div>
         </div>
@@ -1355,7 +1355,7 @@ async function vRunVeille(preset) {
     const data = await res.json();
     if (data.ok) {
       fb.style.display = "block";
-      fb.textContent = "✅ Veille lancée. Les résultats arriveront dans ~1 minute.";
+      fb.textContent = "Veille lancée. Les résultats arriveront dans ~1 minute.";
       setTimeout(() => { fb.style.display = "none"; }, 7000);
       setTimeout(loadNews, 12000);
     } else {
