@@ -7,8 +7,6 @@ Exporte la base MySQL/PostgreSQL dans backups/ avec :
 - manifest.json : résumé vérifiable
 """
 
-from __future__ import annotations
-
 import argparse
 import base64
 import json
