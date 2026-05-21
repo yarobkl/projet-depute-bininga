@@ -1196,6 +1196,49 @@ def _pg_load_photo(photo_id: str):
         _pg_local.conn = None
         return None
 
+def list_backups(limit: int = 20):
+    """Retourne les sauvegardes locales créées par backup_bininga.py."""
+    backup_root = os.path.join(BASE_DIR, "backups")
+    rows = []
+    if not os.path.isdir(backup_root):
+        return rows
+    for name in sorted(os.listdir(backup_root), reverse=True):
+        path = os.path.join(backup_root, name)
+        manifest_path = os.path.join(path, "manifest.json")
+        if not os.path.isdir(path) or not os.path.isfile(manifest_path):
+            continue
+        try:
+            with open(manifest_path, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+            rows.append({
+                "name": name,
+                "created_at": manifest.get("created_at", ""),
+                "backend": manifest.get("backend", ""),
+                "store_count": manifest.get("store_count", 0),
+                "photo_count": manifest.get("photo_count", 0),
+                "path": path,
+            })
+        except Exception as e:
+            rows.append({"name": name, "error": str(e), "path": path})
+    return rows[:limit]
+
+def run_backup_now():
+    """Lance une sauvegarde DB/photos immédiatement."""
+    import backup_bininga
+    dest = backup_bininga.export_backup()
+    backup_bininga.prune_old_backups(14)
+    manifest_path = os.path.join(str(dest), "manifest.json")
+    with open(manifest_path, "r", encoding="utf-8") as f:
+        manifest = json.load(f)
+    return {
+        "name": os.path.basename(str(dest)),
+        "path": str(dest),
+        "created_at": manifest.get("created_at", ""),
+        "backend": manifest.get("backend", ""),
+        "store_count": manifest.get("store_count", 0),
+        "photo_count": manifest.get("photo_count", 0),
+    }
+
 # ── Contacts (formulaires publics) ──────────────────────────
 def load_contacts() -> list:
     """Charge les contacts : PostgreSQL en priorité, fichier en fallback."""
@@ -1646,6 +1689,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
             self._json({"ok": True, "logs": load_audit()})
+            return
+
+        if path == "/api/backups":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            backups = list_backups()
+            latest = backups[0] if backups else None
+            self._json({
+                "ok": True,
+                "backups": backups,
+                "latest": latest,
+                "count": len(backups),
+                "database": _db_label(),
+            })
             return
 
         if path == "/api/security":
@@ -3040,6 +3099,7 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                     "/api/contacts/update", "/api/reset",
                     "/api/crm/upsert", "/api/crm/delete", "/api/crm/bulk-delete", "/api/crm/import",
                     "/api/crm/note", "/api/crm/newsletter/send",
+                    "/api/backups/run",
                     "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
@@ -3047,6 +3107,18 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
                 self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
                 return
+
+        if path == "/api/backups/run":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                backup = run_backup_now()
+                audit_log("BACKUP", ip, f"Sauvegarde manuelle : {backup['name']}")
+                self._json({"ok": True, "backup": backup})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
 
         # ── /api/contacts/clear ──
         if path == "/api/contacts/clear":

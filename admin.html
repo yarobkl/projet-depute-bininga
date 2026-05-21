@@ -142,6 +142,9 @@
         <span class="icon">📡</span> Monitoring
         <span class="sb-badge warn" id="badge-mon" style="display:none"></span>
       </div>
+      <div class="sb-item role-admin" style="display:none" onclick="showPanel('backups',this)">
+        <span class="icon">💾</span> Sauvegardes
+      </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
         <span class="icon">📜</span> Journaux d'audit
       </div>
@@ -158,7 +161,7 @@
     <div class="sb-footer">
       <button class="sb-btn sb-btn-primary role-editeur" id="btn-save" style="display:none" onclick="saveData()">💾 Enregistrer le contenu</button>
       <button class="sb-btn role-editeur" style="display:none;background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);margin-bottom:4px" onclick="loadSiteData();showToast('Données rechargées !')">🔄 Recharger les données</button>
-      <button class="sb-btn role-admin" id="btn-force-sync" style="display:none;background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25);margin-bottom:4px" onclick="forceSyncData()">⚡ Restaurer le contenu</button>
+      <button class="sb-btn role-admin" id="btn-force-sync" style="display:none;background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25);margin-bottom:4px" onclick="forceSyncData()">⚠️ Restaurer data.json</button>
       <a href="ministre.html" class="sb-btn role-admin" id="btn-ministre" style="display:none;background:rgba(184,151,58,.12);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;margin-bottom:8px">🏛️ Espace du Député</a>
       <a href="index.html" target="_blank" class="sb-btn sb-btn-ghost" style="text-decoration:none;margin-bottom:4px">🌐 Voir le site</a>
       <button class="sb-btn sb-btn-ghost" onclick="logout()">↩ Déconnexion</button>
@@ -1332,6 +1335,44 @@
         <div class="mon-section-title">Rapport automatique (24h)</div>
         <div id="mon-report-box" class="mon-report-box">
           <button class="sbtn sbtn-progress" onclick="loadMonReport()">📋 Générer le rapport</button>
+        </div>
+      </div>
+
+      <div class="panel" id="panel-backups">
+        <div class="panel-header">
+          <div class="panel-title">💾 Sauvegardes — Données & Photos</div>
+          <div class="card-actions">
+            <button class="sbtn sbtn-progress" id="btn-run-backup" onclick="runBackupNow()">Créer une sauvegarde maintenant</button>
+            <button class="sbtn sbtn-read" onclick="loadBackups()">Actualiser</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi-card red">
+            <div class="kpi-label">Dernière sauvegarde</div>
+            <div class="kpi-val" id="backup-last-date" style="font-size:22px">—</div>
+            <div class="kpi-sub">créée automatiquement ou manuellement</div>
+          </div>
+          <div class="kpi-card blue">
+            <div class="kpi-label">Photos protégées</div>
+            <div class="kpi-val" id="backup-photo-count">—</div>
+            <div class="kpi-sub">images exportées depuis la base</div>
+          </div>
+          <div class="kpi-card orange">
+            <div class="kpi-label">Copies conservées</div>
+            <div class="kpi-val" id="backup-copy-count">—</div>
+            <div class="kpi-sub">rotation locale sur o2switch</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Historique des sauvegardes</div>
+          </div>
+          <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px">
+            Chaque sauvegarde contient le contenu du site, les utilisateurs, contacts, CRM et les photos stockées en base. Une tâche automatique tourne tous les jours à 02:17.
+          </p>
+          <div id="backup-list" class="msg-empty">Chargement…</div>
         </div>
       </div>
 

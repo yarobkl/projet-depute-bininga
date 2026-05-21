@@ -843,7 +843,8 @@ function scheduleAutoSave() {
 }
 
 async function forceSyncData() {
-  if (!confirm("Restaurer tout le contenu depuis le fichier de référence ?\nCela va écraser les données actuelles de la base.")) return;
+  const ok = prompt("Action dangereuse : cela remplace la base actuelle par data.json.\nTapez RESTAURER pour confirmer.");
+  if (ok !== "RESTAURER") return;
   const btn = document.getElementById("btn-force-sync");
   if (btn) { btn.textContent = "⏳ Restauration…"; btn.disabled = true; }
   try {
@@ -858,7 +859,7 @@ async function forceSyncData() {
   } catch (e) {
     showToast("Erreur : " + e.message, true);
   } finally {
-    if (btn) { btn.textContent = "⚡ Restaurer le contenu"; btn.disabled = false; }
+    if (btn) { btn.textContent = "⚠️ Restaurer data.json"; btn.disabled = false; }
   }
 }
 
@@ -1858,6 +1859,68 @@ async function loadAuditLogs() {
   }
 }
 
+async function loadBackups() {
+  const el = document.getElementById("backup-list");
+  if (el) el.innerHTML = '<div class="msg-empty">Chargement…</div>';
+  try {
+    const res = await apiFetch("/api/backups", { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (!data.ok) {
+      if (el) el.innerHTML = `<div class="msg-empty">${esc(data.message || "Impossible de charger les sauvegardes")}</div>`;
+      return;
+    }
+    const latest = data.latest || {};
+    setText("backup-last-date", latest.created_at ? latest.created_at.replace("T", " ").slice(0, 16) : "—");
+    setText("backup-photo-count", latest.photo_count ?? "—");
+    setText("backup-copy-count", data.count || 0);
+    if (!el) return;
+    if (!data.backups.length) {
+      el.innerHTML = '<div class="msg-empty">Aucune sauvegarde trouvée.</div>';
+      return;
+    }
+    el.innerHTML = data.backups.map(b => `
+      <div class="log-row">
+        <div class="log-icon">💾</div>
+        <div class="log-body">
+          <div class="log-action save">${esc(b.name)}</div>
+          <div class="log-detail">
+            ${esc((b.created_at || "").replace("T", " ").slice(0, 19))}
+            · ${esc(b.backend || data.database || "db")}
+            · ${Number(b.photo_count || 0)} photo(s)
+            · ${Number(b.store_count || 0)} bloc(s) données
+          </div>
+          <div class="log-meta">${esc(b.path || "")}</div>
+        </div>
+      </div>
+    `).join("");
+  } catch (e) {
+    if (el) el.innerHTML = `<div class="msg-empty">Erreur serveur : ${esc(e.message)}</div>`;
+  }
+}
+
+async function runBackupNow() {
+  const btn = document.getElementById("btn-run-backup");
+  if (btn) { btn.disabled = true; btn.textContent = "Sauvegarde en cours…"; }
+  try {
+    const res = await apiFetch("/api/backups/run", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`Sauvegarde créée : ${data.backup.name}`);
+      await loadBackups();
+    } else {
+      showToast(data.message || "Erreur sauvegarde", true);
+    }
+  } catch (e) {
+    showToast("Erreur : " + e.message, true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Créer une sauvegarde maintenant"; }
+  }
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 //  NAVIGATION
 // ══════════════════════════════════════════════════════════════════════════
@@ -1867,7 +1930,7 @@ const PANEL_TITLES = {
   crm:"👥 CRM — Base de contacts",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
-  monitoring:"📡 Monitoring — Surveillance temps réel",
+  monitoring:"📡 Monitoring — Surveillance temps réel", backups:"💾 Sauvegardes",
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
   veille:"🤖 YARO IA — Actualités Bininga",
   editorial:"✍️ Éditorial IA — Contenus"
@@ -1891,6 +1954,7 @@ function showPanel(name, el) {
   if (name === "parcours")     renderParcours();
   if (name === "programme")    renderProgramme();
   if (name === "monitoring")   loadMonitoring();
+  if (name === "backups")      loadBackups();
   if (name === "logs")         loadAuditLogs();
   if (name === "users")        loadUsers();
   if (name === "security")     { loadSecurity(); loadBouclier(); }
