@@ -1438,7 +1438,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         ip = self.client_address[0]
 
         # ── Bouclier multi-couches (IA/bots/lockdown/coffre-fort/canaris) ──────
-        if _AI_GUARD_ENABLED:
+        public_get = (
+            method == "GET" and (
+                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml")
+                or path.startswith(("/static/", "/images/"))
+            )
+        )
+        if _AI_GUARD_ENABLED and not public_get:
             headers_dict = dict(self.headers)
             blocked, reason = AI_GUARD.inspect(ip, method, path, headers_dict, body_size)
             if blocked:
