@@ -3062,13 +3062,13 @@ function renderEditorialList() {
   const list = document.getElementById("editorial-list");
   const arts  = _editorialFilter === "tous" ? _editorialData : _editorialData.filter(a => a.statut === _editorialFilter);
   if (!arts.length) {
-    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucun article' + (_editorialFilter !== "tous" ? " dans cette catégorie" : "") + '.<br><small style="font-size:11px;margin-top:6px;display:block">Utilisez l\'onglet ⚡ Générer pour créer un premier article.</small></div>';
+    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucun article' + (_editorialFilter !== "tous" ? " dans cette catégorie" : "") + '.<br><small style="font-size:11px;margin-top:6px;display:block">Utilisez l\'onglet Générer pour créer un premier article.</small></div>';
     return;
   }
   const statutBadge = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
   list.innerHTML = arts.map(a => {
     const sb  = statutBadge[a.statut] || ['#888','?'];
-    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">• ${p}</div>`).join("");
+    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">- ${p}</div>`).join("");
     return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openEdModal('${a.id}')">
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
         <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${a.titre || "Sans titre"}</div>
@@ -3107,9 +3107,9 @@ function openEdModal(id) {
     ${pts ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Points clés</div><ul style="padding-left:16px;margin:0;color:rgba(255,255,255,.65);font-size:12px;line-height:1.6">${pts}</ul></div>` : ""}
     ${srcs ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sources</div>${srcs}</div>` : ""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
-      <button onclick="changeEdStatut('${a.id}','valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">✅ Valider</button>
-      <button onclick="changeEdStatut('${a.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">🌐 Publier</button>
-      <button onclick="deleteEdArticle('${a.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">🗑</button>
+      <button onclick="changeEdStatut('${a.id}','valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">Valider</button>
+      <button onclick="changeEdStatut('${a.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">Publier</button>
+      <button onclick="deleteEdArticle('${a.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">Supprimer</button>
     </div>`;
   document.getElementById("ed-modal").style.display = "";
   document.body.style.overflow = "hidden";
@@ -3206,260 +3206,10 @@ async function loadEdNewsPicker() {
         <div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:4px;line-height:1.4">${a.title||"Sans titre"}</div>
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:10px;color:rgba(255,255,255,.3)">${a.source||""} · ${(a.published||"").slice(0,10)}</span>
-          <span style="font-size:11px;color:var(--r);font-weight:700">✍️ Générer →</span>
+          <span style="font-size:11px;color:var(--r);font-weight:700">Générer →</span>
         </div>
       </div>`).join("");
   } catch { box.innerHTML = '<div style="color:#e74c3c;font-size:12px;padding:16px 0">Impossible de charger les actualités.</div>'; }
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-//  YOUTUBE IA
-// ══════════════════════════════════════════════════════════════════════════
-let _youtubeData = [], _youtubeFilter = "tous";
-
-function youtubeTab(tab, btn) {
-  document.getElementById("youtube-tab-videos").style.display  = tab === "videos"  ? "" : "none";
-  document.getElementById("youtube-tab-generer").style.display = tab === "generer" ? "" : "none";
-  document.querySelectorAll("#ytab-videos, #ytab-generer").forEach(b => {
-    b.style.color        = "rgba(255,255,255,.4)";
-    b.style.borderBottom = "2px solid transparent";
-  });
-  const active = document.getElementById("ytab-" + tab);
-  if (active) { active.style.color = "#fff"; active.style.borderBottom = "2px solid var(--r)"; }
-}
-
-function filterYoutube(statut, btn) {
-  _youtubeFilter = statut;
-  document.querySelectorAll(".yf-btn").forEach(b => {
-    b.style.background = "rgba(255,255,255,.04)";
-    b.style.color      = "rgba(255,255,255,.4)";
-    b.style.border     = "1px solid rgba(255,255,255,.1)";
-  });
-  if (btn) {
-    const colors = { brouillon: ["rgba(243,156,18,.06)","#f39c12","rgba(243,156,18,.3)"], pret: ["rgba(46,204,113,.06)","#2ecc71","rgba(46,204,113,.3)"], publie: ["rgba(52,152,219,.06)","#3498db","rgba(52,152,219,.3)"], tous: ["rgba(255,255,255,.08)","#fff","rgba(255,255,255,.15)"] };
-    const c = colors[statut] || colors.tous;
-    btn.style.background = c[0]; btn.style.color = c[1]; btn.style.border = `1px solid ${c[2]}`;
-  }
-  renderYoutubeList();
-}
-
-async function loadYoutube() {
-  const list = document.getElementById("youtube-list");
-  list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px 0;font-size:13px">Chargement…</div>';
-  try {
-    const res  = await apiFetch("/api/youtube", { headers: authHeaders() });
-    const data = await res.json();
-    if (!data.ok) { list.innerHTML = `<div style="color:#e74c3c;font-size:13px;padding:20px 0">${data.message}</div>`; return; }
-    _youtubeData = data.videos || [];
-    const badge = document.getElementById("badge-youtube");
-    const cnt   = document.getElementById("badge-yt-count");
-    if (_youtubeData.length > 0 && badge) { badge.textContent = _youtubeData.length; badge.style.display = ""; }
-    if (cnt) cnt.textContent = _youtubeData.length;
-    renderYoutubeList();
-  } catch { list.innerHTML = '<div style="color:#e74c3c;font-size:13px;padding:20px 0">Serveur non disponible</div>'; }
-}
-
-function renderYoutubeList() {
-  const list = document.getElementById("youtube-list");
-  const vids = _youtubeFilter === "tous" ? _youtubeData : _youtubeData.filter(v => v.statut === _youtubeFilter);
-  if (!vids.length) {
-    list.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Aucune vidéo' + (_youtubeFilter !== "tous" ? " dans cette catégorie" : "") + '.<br><small style="font-size:11px;margin-top:6px;display:block">Utilisez l\'onglet ⚡ Générer pour créer votre premier script.</small></div>';
-    return;
-  }
-  const statutBadge = { brouillon: ['#f39c12','Brouillon'], pret: ['#2ecc71','Prêt'], publie: ['#3498db','Publié'] };
-  list.innerHTML = vids.map(v => {
-    const sb   = statutBadge[v.statut] || ['#888','?'];
-    const tags = (v.contenu?.tags || []).slice(0,4).map(t => `<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(255,0,0,.1);color:#ff4444;margin:1px">#${t}</span>`).join("");
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openYtModal('${v.id}')">
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
-        <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${v.contenu?.titre_youtube || v.titre || "Sans titre"}</div>
-        <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sb[0]}22;color:${sb[0]};border:1px solid ${sb[0]}44">${sb[1]}</span>
-      </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px">🎬 ${v.contenu?.duree_estimee || "—"} · ${v.type || ""}</div>
-      <div style="margin-bottom:8px">${tags}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-        <span style="font-size:10px;color:rgba(255,255,255,.25)">${v.created_at || ""}</span>
-        <span style="font-size:10px;color:rgba(255,255,255,.35)">Voir →</span>
-      </div>
-    </div>`;
-  }).join("");
-}
-
-function _ytCopyBtn(label, dataAttr) {
-  return `<button onclick="ytCopySection(this,'${dataAttr}')" style="padding:3px 9px;border-radius:6px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);font-size:10px;font-weight:600;cursor:pointer;transition:all .2s" onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,.05)';this.style.color='rgba(255,255,255,.5)'">📋 ${label}</button>`;
-}
-
-function ytCopySection(btn, attr) {
-  const el = document.querySelector(`[data-yt-copy="${attr}"]`);
-  if (!el) return;
-  navigator.clipboard.writeText(el.dataset.ytRaw || el.textContent).then(() => {
-    const orig = btn.innerHTML;
-    btn.innerHTML = "✅ Copié !";
-    btn.style.color = "#2ecc71";
-    setTimeout(() => { btn.innerHTML = orig; btn.style.color = "rgba(255,255,255,.5)"; }, 1800);
-  }).catch(() => showToast("Copie non supportée par ce navigateur", true));
-}
-
-function ytCopyAll(id) {
-  const v = _youtubeData.find(x => x.id === id);
-  if (!v) return;
-  const c = v.contenu || {};
-  const tagsStr = (c.tags || []).map(t => `#${t}`).join(" ");
-  const text = [
-    `TITRE : ${c.titre_youtube || ""}`,
-    ``,
-    `DESCRIPTION :`,
-    c.description || "",
-    ``,
-    `TAGS : ${tagsStr}`,
-    ``,
-    `MINIATURE : ${c.miniature_texte || ""}`,
-    `DURÉE ESTIMÉE : ${c.duree_estimee || ""}`,
-    ``,
-    `── SCRIPT ──`,
-    c.script || "",
-  ].join("\n");
-  navigator.clipboard.writeText(text).then(() => {
-    showToast("✅ Tout le contenu copié dans le presse-papier !");
-  }).catch(() => showToast("Copie non supportée", true));
-}
-
-function openYtModal(id) {
-  const v = _youtubeData.find(x => x.id === id);
-  if (!v) return;
-  const c  = v.contenu || {};
-  const sb = { brouillon: ['#f39c12','Brouillon'], pret: ['#2ecc71','Prêt'], publie: ['#3498db','Publié'] };
-  const s  = sb[v.statut] || ['#888','?'];
-  document.getElementById("yt-modal-titre-h").textContent = c.titre_youtube || v.titre || "Contenu YouTube";
-  const tags = (c.tags || []).map(t => `<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;background:rgba(255,0,0,.1);color:#ff4444;border:1px solid rgba(255,0,0,.2);margin:2px">#${t}</span>`).join("");
-  const tagsRaw = (c.tags || []).map(t => `#${t}`).join(" ");
-  document.getElementById("yt-modal-body").innerHTML = `
-    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
-      <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${s[0]}22;color:${s[0]};border:1px solid ${s[0]}44">${s[1]}</span>
-      <span style="font-size:11px;color:rgba(255,255,255,.3)">🎬 ${c.duree_estimee || "—"}</span>
-      <span style="font-size:11px;color:rgba(255,255,255,.25)">${v.created_at || ""}</span>
-      <button onclick="ytCopyAll('${v.id}')" style="margin-left:auto;padding:5px 12px;border-radius:7px;border:1px solid rgba(255,165,0,.3);background:rgba(255,165,0,.08);color:#f39c12;font-size:11px;font-weight:700;cursor:pointer">📦 Tout copier</button>
-    </div>
-    <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
-      <div style="flex:1;font-size:15px;font-weight:700;color:#fff;line-height:1.4" data-yt-copy="titre" data-yt-raw="${(c.titre_youtube||"").replace(/"/g,"&quot;")}">${c.titre_youtube || ""}</div>
-      ${_ytCopyBtn("Titre","titre")}
-    </div>
-    ${c.miniature_texte ? `<div style="display:inline-block;margin-bottom:12px;padding:6px 12px;background:rgba(255,0,0,.12);border:1px solid rgba(255,0,0,.25);border-radius:8px;font-size:12px;font-weight:700;color:#ff4444">🖼 Miniature : ${c.miniature_texte}</div>` : ""}
-    <div style="background:rgba(52,152,219,.06);border-left:3px solid #3498db;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:#3498db;text-transform:uppercase;letter-spacing:.5px;flex:1">Description YouTube</div>
-        ${_ytCopyBtn("Description","description")}
-      </div>
-      <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.6;white-space:pre-wrap;max-height:220px;overflow-y:auto" data-yt-copy="description" data-yt-raw="${(c.description||"").replace(/"/g,"&quot;")}">${c.description || ""}</div>
-    </div>
-    <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:8px;padding:12px;margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;flex:1">Script</div>
-        ${_ytCopyBtn("Script","script")}
-      </div>
-      <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;white-space:pre-wrap;max-height:300px;overflow-y:auto" data-yt-copy="script" data-yt-raw="${(c.script||"").replace(/"/g,"&quot;")}">${c.script || ""}</div>
-    </div>
-    ${tags ? `<div style="margin-bottom:14px">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;flex:1">Tags</div>
-        ${_ytCopyBtn("Tags","tags")}
-      </div>
-      <div>${tags}</div>
-      <span style="display:none" data-yt-copy="tags" data-yt-raw="${tagsRaw.replace(/"/g,"&quot;")}"></span>
-    </div>` : ""}
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
-      <button onclick="changeYtStatut('${v.id}','pret')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">✅ Marquer prêt</button>
-      <button onclick="changeYtStatut('${v.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">🌐 Publié</button>
-      <button onclick="deleteYtVideo('${v.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">🗑</button>
-    </div>`;
-  document.getElementById("yt-modal").style.display = "";
-  document.body.style.overflow = "hidden";
-}
-
-function closeYtModal() {
-  document.getElementById("yt-modal").style.display = "none";
-  document.body.style.overflow = "";
-}
-
-async function changeYtStatut(id, statut) {
-  try {
-    const res  = await apiFetch("/api/youtube/save", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id, statut }) });
-    const data = await res.json();
-    if (data.ok) {
-      const v = _youtubeData.find(x => x.id === id);
-      if (v) v.statut = statut;
-      closeYtModal();
-      renderYoutubeList();
-      showToast("Statut mis à jour");
-    } else showToast(data.message || "Erreur", true);
-  } catch { showToast("Serveur non disponible", true); }
-}
-
-async function deleteYtVideo(id) {
-  if (!confirm("Supprimer ce contenu YouTube ?")) return;
-  try {
-    const res  = await apiFetch("/api/youtube/delete", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id }) });
-    const data = await res.json();
-    if (data.ok) {
-      _youtubeData = _youtubeData.filter(v => v.id !== id);
-      closeYtModal();
-      renderYoutubeList();
-      const cnt = document.getElementById("badge-yt-count");
-      if (cnt) cnt.textContent = _youtubeData.length;
-      showToast("Vidéo supprimée");
-    } else showToast(data.message || "Erreur", true);
-  } catch { showToast("Serveur non disponible", true); }
-}
-
-function ytSelectTheme(el, titre, type) {
-  document.querySelectorAll(".yt-theme-item").forEach(t => {
-    t.style.border     = "1px solid rgba(255,255,255,.1)";
-    t.style.background = "rgba(255,255,255,.04)";
-  });
-  el.style.border     = "1px solid rgba(255,0,0,.4)";
-  el.style.background = "rgba(255,0,0,.08)";
-  const titreEl = document.getElementById("yt-titre");
-  const typeEl  = document.getElementById("yt-type");
-  if (titreEl) titreEl.value = titre;
-  if (typeEl)  typeEl.value  = type;
-}
-
-async function generateYoutube() {
-  const btn   = document.getElementById("btn-generate-yt");
-  const titre = (document.getElementById("yt-titre")?.value.trim() || "");
-  const type  = (document.getElementById("yt-type")?.value.trim()  || "portrait");
-  if (!titre) { showToast("Saisissez un titre / sujet", true); return; }
-  if (btn) { btn.textContent = "⏳ Génération en cours…"; btn.disabled = true; }
-  try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60000);
-    const res  = await apiFetch("/api/youtube/generate", {
-      method: "POST", headers: authHeaders(),
-      body: JSON.stringify({ titre, type }),
-      signal: controller.signal
-    });
-    clearTimeout(timer);
-    const data = await res.json();
-    if (data.ok) {
-      _youtubeData.unshift(data.video);
-      const cnt = document.getElementById("badge-yt-count");
-      if (cnt) cnt.textContent = _youtubeData.length;
-      showToast("Contenu YouTube généré ✅");
-      youtubeTab("videos", document.getElementById("ytab-videos"));
-      renderYoutubeList();
-      openYtModal(data.video.id);
-      const titreEl = document.getElementById("yt-titre");
-      if (titreEl) titreEl.value = "";
-      document.querySelectorAll(".yt-theme-item").forEach(t => {
-        t.style.border     = "1px solid rgba(255,255,255,.1)";
-        t.style.background = "rgba(255,255,255,.04)";
-      });
-    } else showToast(data.message || "Erreur génération", true);
-  } catch (e) {
-    if (e.name === "AbortError") showToast("⏱️ Délai dépassé — réessayez", true);
-    else showToast("Erreur : " + e.message, true);
-  }
-  finally { if (btn) { btn.textContent = "⚡ Générer le contenu YouTube"; btn.disabled = false; } }
 }
 
 // ══════════════════════════════════════════════════════════════════════════

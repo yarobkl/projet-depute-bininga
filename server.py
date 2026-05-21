@@ -2079,20 +2079,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         # ── /api/youtube — liste des contenus YouTube (GET) ──
         if path == "/api/youtube":
-            token = self.headers.get("X-Admin-Token", "")
-            if not has_role(token, "admin", "ministre", "editeur"):
-                self._json({"ok": False, "message": "Non autorisé"}, 403)
-                return
-            vids = _pg_load("youtube")
-            if vids is None:
-                vids = []
-                if os.path.exists(YOUTUBE_FILE):
-                    try:
-                        with open(YOUTUBE_FILE, "r", encoding="utf-8") as f:
-                            vids = json.load(f)
-                    except Exception:
-                        vids = []
-            self._json({"ok": True, "videos": vids})
+            self._json({"ok": False, "message": "Module YouTube IA désactivé"}, 410)
             return
 
         # ── /api/editorial — liste des articles éditoriaux (GET) ──
@@ -3789,6 +3776,8 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
 
         # ── /api/youtube/generate — génère le contenu YouTube via IA ──
         if path == "/api/youtube/generate":
+            self._json({"ok": False, "message": "Module YouTube IA désactivé"}, 410)
+            return
             if not has_role(token, "admin", "ministre", "editeur"):
                 self._json({"ok": False, "message": "Non autorisé"}, 403)
                 return
@@ -3888,6 +3877,8 @@ Réponds UNIQUEMENT avec ce JSON (sans markdown ni texte autour) :
 
         # ── /api/youtube/save — modifier le statut ou les données d'un contenu ──
         if path == "/api/youtube/save":
+            self._json({"ok": False, "message": "Module YouTube IA désactivé"}, 410)
+            return
             if not has_role(token, "admin", "ministre", "editeur"):
                 self._json({"ok": False, "message": "Non autorisé"}, 403)
                 return
@@ -3923,6 +3914,8 @@ Réponds UNIQUEMENT avec ce JSON (sans markdown ni texte autour) :
 
         # ── /api/youtube/delete — supprimer un contenu YouTube ──
         if path == "/api/youtube/delete":
+            self._json({"ok": False, "message": "Module YouTube IA désactivé"}, 410)
+            return
             if not has_role(token, "admin"):
                 self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
                 return

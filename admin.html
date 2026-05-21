@@ -272,17 +272,17 @@
       <div class="panel" id="panel-audiences">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📋 Demandes d'audience</div>
+              <div class="card-title">Demandes d'audience</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
-              <button class="btn-danger" onclick="clearAll('bininga_audiences','audiences')">🗑️ Tout effacer</button>
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','audiences')">CSV</button>
+              <button class="btn-danger" onclick="clearAll('bininga_audiences','audiences')">Tout effacer</button>
             </div>
           </div>
           <div class="tabs">
             <button class="tab active" onclick="filterAud('all',this)">Toutes</button>
-            <button class="tab" onclick="filterAud('en_attente',this)">⏳ En attente</button>
-            <button class="tab" onclick="filterAud('en_cours',this)">🔄 En cours</button>
-            <button class="tab" onclick="filterAud('traite',this)">✅ Traitées</button>
+            <button class="tab" onclick="filterAud('en_attente',this)">En attente</button>
+            <button class="tab" onclick="filterAud('en_cours',this)">En cours</button>
+            <button class="tab" onclick="filterAud('traite',this)">Traitées</button>
           </div>
           <div class="msg-list" id="list-audiences"></div>
         </div>
@@ -292,16 +292,16 @@
       <div class="panel" id="panel-reclamations">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">⚠️ Réclamations</div>
+              <div class="card-title">Réclamations</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_audiences','reclamations')">CSV</button>
             </div>
           </div>
           <div class="tabs">
             <button class="tab active" onclick="filterRecl('all',this)">Toutes</button>
-            <button class="tab" onclick="filterRecl('en_attente',this)">⏳ En attente</button>
-            <button class="tab" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
-            <button class="tab" onclick="filterRecl('traite',this)">✅ Traitées</button>
+            <button class="tab" onclick="filterRecl('en_attente',this)">En attente</button>
+            <button class="tab" onclick="filterRecl('en_cours',this)">En cours</button>
+            <button class="tab" onclick="filterRecl('traite',this)">Traitées</button>
           </div>
           <div class="msg-list" id="list-reclamations"></div>
         </div>
@@ -311,15 +311,15 @@
       <div class="panel" id="panel-contacts">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">✉️ Messages de contact</div>
+              <div class="card-title">Messages de contact</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
-              <button class="btn-danger" onclick="clearAll('bininga_contacts','contacts')">🗑️ Tout effacer</button>
+              <button class="sbtn sbtn-progress" onclick="exportCSV('bininga_contacts','contacts')">CSV</button>
+              <button class="btn-danger" onclick="clearAll('bininga_contacts','contacts')">Tout effacer</button>
             </div>
           </div>
           <div class="tabs">
             <button class="tab active" onclick="filterCt('all',this)">Tous</button>
-            <button class="tab" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
+            <button class="tab" onclick="filterCt('non_lu',this)">Non lus</button>
             <button class="tab" onclick="filterCt('lu',this)">✓ Lus</button>
           </div>
           <div class="msg-list" id="list-contacts"></div>
@@ -549,7 +549,7 @@
       <div class="panel" id="panel-users">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">👥 Gestion des utilisateurs</div>
+            <div class="card-title">Gestion des utilisateurs</div>
           </div>
 
           <!-- Formulaire ajout / modification -->
@@ -581,7 +581,7 @@
               </div>
             </div>
             <div style="display:flex;gap:8px">
-              <button class="sbtn sbtn-progress" onclick="submitUserForm()">💾 Enregistrer</button>
+              <button class="sbtn sbtn-progress" onclick="submitUserForm()">Enregistrer</button>
               <button class="sbtn sbtn-wait" onclick="resetUserForm()">✕ Annuler</button>
             </div>
           </div>
@@ -691,9 +691,9 @@
           <!-- IPs bloquées -->
           <div class="card" style="margin-top:0">
             <div class="card-header">
-              <div class="card-title">🚫 IPs bloquées</div>
+              <div class="card-title">IPs bloquées</div>
               <div class="card-actions">
-                <button class="sbtn sbtn-progress" onclick="loadSecurity()">🔄</button>
+                <button class="sbtn sbtn-progress" onclick="loadSecurity()">Actualiser</button>
               </div>
             </div>
             <div style="margin-bottom:12px;display:flex;gap:8px">
@@ -708,7 +708,7 @@
           <!-- IPs suspectes (non bloquées) -->
           <div class="card" style="margin-top:0">
             <div class="card-header">
-              <div class="card-title">⚠️ IPs suspectes</div>
+              <div class="card-title">IPs suspectes</div>
             </div>
             <div id="sec-suspects-list" class="msg-empty">Chargement…</div>
           </div>
@@ -717,7 +717,7 @@
         <!-- Log d'attaques récentes -->
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🔍 Attaques récentes</div>
+            <div class="card-title">Attaques récentes</div>
             <div class="card-actions" style="font-size:11px;color:rgba(255,255,255,.3)">
               100 dernières entrées
             </div>
@@ -747,7 +747,7 @@
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <input type="text" id="tfa-confirm-code" placeholder="Code 6 chiffres" maxlength="6" inputmode="numeric"
                   style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none;width:160px">
-                <button onclick="tfaActivate()" style="padding:9px 18px;background:var(--r);color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">✅ Activer</button>
+                <button onclick="tfaActivate()" style="padding:9px 18px;background:var(--r);color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">Activer</button>
                 <button onclick="tfaCancel()" style="padding:9px 12px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer">Annuler</button>
               </div>
             </div>
@@ -756,14 +756,14 @@
               <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                 <input type="text" id="tfa-disable-code" placeholder="Code 2FA actuel" maxlength="6" inputmode="numeric"
                   style="padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:14px;font-family:inherit;outline:none;width:180px">
-                <button onclick="tfaDisable()" style="padding:9px 18px;background:#e74c3c;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">🗑 Désactiver le 2FA</button>
+                <button onclick="tfaDisable()" style="padding:9px 18px;background:#e74c3c;color:#fff;border:none;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer">Désactiver le 2FA</button>
                 <button onclick="tfaCancelDisable()" style="padding:9px 12px;background:transparent;color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.1);border-radius:7px;font-size:12px;cursor:pointer">Annuler</button>
               </div>
             </div>
             <!-- Actions principales -->
             <div id="tfa-actions" style="display:flex;gap:8px;flex-wrap:wrap">
-              <button id="tfa-btn-setup" onclick="tfaStartSetup()" style="padding:9px 18px;background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:none">🔑 Configurer le 2FA</button>
-              <button id="tfa-btn-disable" onclick="tfaStartDisable()" style="padding:9px 18px;background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);border-radius:7px;font-size:13px;cursor:pointer;display:none">🗑 Désactiver</button>
+              <button id="tfa-btn-setup" onclick="tfaStartSetup()" style="padding:9px 18px;background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;display:none">Configurer le 2FA</button>
+              <button id="tfa-btn-disable" onclick="tfaStartDisable()" style="padding:9px 18px;background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2);border-radius:7px;font-size:13px;cursor:pointer;display:none">Désactiver</button>
             </div>
           </div>
         </div>
@@ -771,16 +771,16 @@
         <!-- ── BOUCLIER IA — Forces Spéciales Numériques ── -->
         <div class="card" style="margin-top:16px;border-color:rgba(200,16,46,.25)" id="bouclier-card">
           <div class="card-header">
-            <div class="card-title">🛡️ Bouclier IA — Forces Spéciales Numériques</div>
+            <div class="card-title">Bouclier IA — Protection numérique</div>
             <div class="card-actions">
               <span id="bouclier-badge" style="display:none;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(231,76,60,.15);color:#e74c3c;border:1px solid rgba(231,76,60,.3)">LOCKDOWN</span>
-              <button class="sbtn sbtn-progress" onclick="loadBouclier()">🔄</button>
+              <button class="sbtn sbtn-progress" onclick="loadBouclier()">Actualiser</button>
             </div>
           </div>
 
           <!-- Statut global -->
           <div id="bouclier-status-bar" style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:14px;background:rgba(46,204,113,.06);border:1px solid rgba(46,204,113,.15)">
-            <span id="bouclier-status-icon" style="font-size:18px">🟢</span>
+            <span id="bouclier-status-icon" style="font-size:12px;font-weight:800;color:#2ecc71">OK</span>
             <div style="flex:1">
               <div id="bouclier-status-txt" style="font-size:13px;font-weight:700;color:#2ecc71">Bouclier actif — protection en cours</div>
               <div id="bouclier-status-sub" style="font-size:11px;color:rgba(255,255,255,.35);margin-top:2px">6 couches de défense opérationnelles</div>
@@ -1047,92 +1047,6 @@
         </div>
       </div>
 
-      <!-- ══ YOUTUBE IA ══ -->
-      <div class="panel legacy-panel" id="panel-youtube" hidden aria-hidden="true">
-        <div class="card">
-          <div class="card-header">
-            <div class="card-title">▶️ YouTube IA</div>
-            <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="loadYoutube()">🔄 Actualiser</button>
-            </div>
-          </div>
-
-          <div style="padding:10px 14px;background:rgba(255,0,0,.06);border:1px solid rgba(255,0,0,.15);border-radius:8px;font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;line-height:1.6">
-            🎬 Générez des scripts, descriptions et tags YouTube optimisés SEO pour la campagne du Député BININGA.<br>
-            <span style="color:rgba(255,255,255,.25)">Sélectionnez un thème prédéfini ou saisissez un sujet libre.</span>
-          </div>
-
-          <!-- Onglets -->
-          <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid rgba(255,255,255,.08)">
-            <button onclick="youtubeTab('videos',this)" id="ytab-videos"
-              style="flex:1;padding:9px 8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px">
-              📄 Vidéos
-              <span id="badge-yt-count" style="margin-left:4px;background:var(--r);color:#fff;border-radius:10px;padding:1px 6px;font-size:10px">0</span>
-            </button>
-            <button onclick="youtubeTab('generer',this)" id="ytab-generer"
-              style="flex:1;padding:9px 8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px">
-              ⚡ Générer
-            </button>
-          </div>
-
-          <!-- Tab : liste vidéos -->
-          <div id="youtube-tab-videos">
-            <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap">
-              <button onclick="filterYoutube('tous',this)" class="yf-btn yf-active" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.08);color:#fff;cursor:pointer">Tous</button>
-              <button onclick="filterYoutube('brouillon',this)" class="yf-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(243,156,18,.3);background:rgba(243,156,18,.06);color:#f39c12;cursor:pointer">Brouillons</button>
-              <button onclick="filterYoutube('pret',this)" class="yf-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.06);color:#2ecc71;cursor:pointer">Prêts</button>
-              <button onclick="filterYoutube('publie',this)" class="yf-btn" style="padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.06);color:#3498db;cursor:pointer">Publiés</button>
-            </div>
-            <div id="youtube-list" style="display:flex;flex-direction:column;gap:12px">
-              <div style="text-align:center;color:rgba(255,255,255,.3);padding:40px 0;font-size:13px">Chargement…</div>
-            </div>
-          </div>
-
-          <!-- Tab : générer -->
-          <div id="youtube-tab-generer" style="display:none">
-            <!-- Thèmes prédéfinis -->
-            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Thèmes prédéfinis</div>
-            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px" id="yt-themes-list">
-              <div onclick="ytSelectTheme(this,'Présentation — Qui est BININGA ?','portrait')" data-theme="portrait" class="yt-theme-item" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.8)">🎤 Présentation — Qui est BININGA ?</div>
-              <div onclick="ytSelectTheme(this,'Réforme de la Justice au Congo — Le bilan de BININGA','bilan')" data-theme="bilan" class="yt-theme-item" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.8)">⚖️ Réforme de la Justice au Congo — Le bilan</div>
-              <div onclick="ytSelectTheme(this,'Ewo, ma circonscription — Les projets pour la Cuvette-Ouest','terrain')" data-theme="terrain" class="yt-theme-item" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.8)">🏡 Ewo, ma circonscription — Projets Cuvette-Ouest</div>
-              <div onclick="ytSelectTheme(this,'Coopération Congo–France : une diplomatie judiciaire renouvelée','international')" data-theme="international" class="yt-theme-item" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.8)">🌍 Coopération Congo–France : diplomatie judiciaire</div>
-              <div onclick="ytSelectTheme(this,'Emploi et avenir des jeunes de la Cuvette-Ouest','social')" data-theme="social" class="yt-theme-item" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:rgba(255,255,255,.8)">👥 Emploi et avenir des jeunes de la Cuvette-Ouest</div>
-            </div>
-
-            <!-- Saisie libre -->
-            <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px;margin-bottom:12px">
-              <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Ou saisie libre</div>
-              <input id="yt-titre" type="text" placeholder="Titre / sujet de la vidéo *" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:8px">
-              <select id="yt-type" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:12px">
-                <option value="portrait">Portrait / Présentation</option>
-                <option value="bilan">Bilan / Rapport d'activité</option>
-                <option value="terrain">Terrain / Circonscription</option>
-                <option value="international">International / Diplomatie</option>
-                <option value="social">Social / Jeunesse</option>
-                <option value="evenement">Événement</option>
-              </select>
-              <button onclick="generateYoutube()" id="btn-generate-yt" class="sbtn sbtn-progress" style="width:100%;justify-content:center;font-size:13px;padding:11px">
-                ⚡ Générer le contenu YouTube
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal vidéo YouTube -->
-      <div id="yt-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.85);overflow-y:auto;-webkit-overflow-scrolling:touch">
-        <div style="max-width:680px;margin:0 auto;padding:16px">
-          <div style="background:#1a1a2e;border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,.1)">
-            <div style="padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px">
-              <div style="flex:1;font-size:14px;font-weight:700;color:#fff" id="yt-modal-titre-h">Contenu YouTube</div>
-              <button onclick="closeYtModal()" style="background:rgba(255,255,255,.08);border:none;color:rgba(255,255,255,.6);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px">✕</button>
-            </div>
-            <div style="padding:16px" id="yt-modal-body"></div>
-          </div>
-        </div>
-      </div>
-
       <!-- ══ VEILLE JURIDIQUE YARO IA ══ -->
       <div class="panel" id="panel-yaro-legal" style="background:transparent;border:none;padding:0">
 
@@ -1239,16 +1153,16 @@
       <!-- ════════════════ MONITORING ════════════════ -->
       <div class="panel" id="panel-monitoring">
         <div class="panel-header">
-          <div class="panel-title">📡 Monitoring — Surveillance temps réel</div>
+          <div class="panel-title">Monitoring — Surveillance temps réel</div>
           <div style="display:flex;gap:8px;align-items:center">
             <span id="mon-autorefresh-label" style="font-size:11px;color:rgba(255,255,255,.4)">Auto-refresh 30s</span>
-            <button class="sbtn sbtn-progress" onclick="loadMonitoring()">🔄 Actualiser</button>
+            <button class="sbtn sbtn-progress" onclick="loadMonitoring()">Actualiser</button>
           </div>
         </div>
 
         <!-- Statut global -->
         <div id="mon-status-bar" class="mon-status-bar mon-ok">
-          <span id="mon-status-icon">✅</span>
+          <span id="mon-status-icon">OK</span>
           <span id="mon-status-text">Système opérationnel</span>
           <span id="mon-status-ts" style="margin-left:auto;font-size:11px;opacity:.6"></span>
         </div>
@@ -1330,13 +1244,13 @@
         <!-- Rapport -->
         <div class="mon-section-title">Rapport automatique (24h)</div>
         <div id="mon-report-box" class="mon-report-box">
-          <button class="sbtn sbtn-progress" onclick="loadMonReport()">📋 Générer le rapport</button>
+          <button class="sbtn sbtn-progress" onclick="loadMonReport()">Générer le rapport</button>
         </div>
       </div>
 
       <div class="panel" id="panel-backups">
         <div class="panel-header">
-          <div class="panel-title">💾 Sauvegardes — Données & Photos</div>
+          <div class="panel-title">Sauvegardes — Données & Photos</div>
           <div class="card-actions">
             <button class="sbtn sbtn-progress" id="btn-run-backup" onclick="runBackupNow()">Créer une sauvegarde maintenant</button>
             <button class="sbtn sbtn-read" onclick="loadBackups()">Actualiser</button>
@@ -1375,9 +1289,9 @@
       <div class="panel" id="panel-logs">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">📜 Journaux d'audit</div>
+            <div class="card-title">Journaux d'audit</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="loadAuditLogs()">🔄 Actualiser</button>
+              <button class="sbtn sbtn-progress" onclick="loadAuditLogs()">Actualiser</button>
             </div>
           </div>
           <p style="font-size:12px;color:rgba(255,255,255,.3);margin-bottom:16px">
@@ -1408,8 +1322,8 @@
 
         <!-- Onglets -->
         <div class="tabs">
-          <button class="tab active" onclick="crmTab('contacts',this)">👥 Contacts</button>
-          <button class="tab" onclick="crmTab('newsletter',this)">📧 Newsletter</button>
+          <button class="tab active" onclick="crmTab('contacts',this)">Contacts</button>
+          <button class="tab" onclick="crmTab('newsletter',this)">Newsletter</button>
         </div>
 
         <!-- ══ ONGLET CONTACTS ══ -->
@@ -1418,15 +1332,15 @@
             <div class="card-header">
               <div class="card-title">Base de contacts (rétention 10 ans)</div>
               <div class="card-actions">
-                <button class="sbtn sbtn-progress" onclick="crmImport()">⬇️ Importer demandes</button>
+                <button class="sbtn sbtn-progress" onclick="crmImport()">Importer demandes</button>
                 <button class="sbtn sbtn-done" onclick="crmAddModal()">＋ Ajouter contact</button>
-                <a href="/api/crm/export" class="sbtn" style="background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600">📥 Export CSV</a>
+                <a href="/api/crm/export" class="sbtn" style="background:rgba(184,151,58,.1);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;padding:5px 11px;border-radius:6px;font-size:11px;font-weight:600">Export CSV</a>
               </div>
             </div>
 
             <!-- Barre de recherche & filtres -->
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-              <input type="text" id="crm-search" placeholder="🔍 Rechercher nom, email, tél…"
+              <input type="text" id="crm-search" placeholder="Rechercher nom, email, tél…"
                 oninput="loadCrm(1)"
                 style="flex:1;min-width:200px;padding:9px 13px;background:var(--n3);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:#fff;font-size:13px;font-family:inherit;outline:none">
               <select id="crm-filter-source" onchange="loadCrm(1)"
@@ -1449,7 +1363,7 @@
             <!-- Barre d'actions en masse -->
             <div id="crm-bulk-bar" style="display:none;align-items:center;gap:10px;margin-bottom:12px;padding:10px 14px;background:rgba(200,16,46,.1);border:1px solid rgba(200,16,46,.2);border-radius:8px">
               <span id="crm-bulk-count" style="font-size:13px;font-weight:600;color:var(--r)">0 sélectionné(s)</span>
-              <button onclick="crmBulkDelete()" style="padding:5px 12px;background:var(--r);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">🗑 Supprimer la sélection</button>
+              <button onclick="crmBulkDelete()" style="padding:5px 12px;background:var(--r);color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Supprimer la sélection</button>
               <button onclick="crmDeselectAll()" style="padding:5px 12px;background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-size:12px;cursor:pointer">✕ Déselectionner</button>
             </div>
 
@@ -1470,7 +1384,7 @@
           <!-- Composer -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">✍️ Composer une newsletter</div>
+              <div class="card-title">Composer une newsletter</div>
             </div>
             <div class="form-group">
               <label>Destinataires</label>
@@ -1495,7 +1409,7 @@
             <div style="display:flex;align-items:center;gap:12px">
               <button onclick="nlSend()" id="btn-nl-send"
                 style="padding:12px 24px;background:var(--r);color:#fff;border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
-                📧 Envoyer la newsletter
+                Envoyer la newsletter
               </button>
               <div id="nl-feedback" style="font-size:12px;display:none"></div>
             </div>
@@ -1504,7 +1418,7 @@
           <!-- Historique des newsletters -->
           <div class="card">
             <div class="card-header">
-              <div class="card-title">📋 Historique des envois</div>
+              <div class="card-title">Historique des envois</div>
             </div>
             <div id="nl-history"><div class="msg-empty">Aucune newsletter envoyée.</div></div>
           </div>
@@ -1623,7 +1537,11 @@ async function yaroLoadStats(){
   try {
     const r = await fetch("/api/yaro/stats",{headers:{"X-Admin-Token":tok}});
     const d = await r.json();
-    if (!d.ok) return;
+    if (!d.ok) {
+      document.getElementById("yl-kw-bars").innerHTML = `<span style="color:#ef4444;font-size:11px">${_ylEsc(d.message || "Statistiques indisponibles")}</span>`;
+      document.getElementById("yl-src-list").innerHTML = "<span style='color:rgba(255,255,255,.3);font-size:11px'>Sources indisponibles</span>";
+      return;
+    }
 
     document.getElementById("yl-total").textContent   = d.total ?? 0;
     document.getElementById("yl-today").textContent   = d.today ?? 0;
@@ -1661,7 +1579,10 @@ async function yaroLoadStats(){
       const b=document.getElementById("badge-yaro-legal");
       if(b){b.textContent=d.today;b.style.display="inline-block";}
     }
-  } catch(e){}
+  } catch(e){
+    document.getElementById("yl-kw-bars").innerHTML = "<span style='color:#ef4444;font-size:11px'>Impossible de charger la veille juridique.</span>";
+    document.getElementById("yl-src-list").innerHTML = "<span style='color:rgba(255,255,255,.3);font-size:11px'>Vérifiez la connexion serveur.</span>";
+  }
 }
 
 async function yaroLoadArticles(page=1){
@@ -1677,7 +1598,11 @@ async function yaroLoadArticles(page=1){
   try {
     const r = await fetch(url,{headers:{"X-Admin-Token":tok}});
     const d = await r.json();
-    if (!d.ok) return;
+    if (!d.ok) {
+      document.getElementById("yl-tbody").innerHTML =
+        `<tr><td colspan="5" style="text-align:center;padding:32px;color:#ef4444;font-size:12px">${_ylEsc(d.message || "Impossible de charger les articles")}</td></tr>`;
+      return;
+    }
 
     document.getElementById("yl-cnt").textContent = d.total;
     document.getElementById("yl-tbl-info").textContent =
@@ -1691,7 +1616,7 @@ async function yaroLoadArticles(page=1){
         const kws=(a.keywords||"").split(",").filter(Boolean);
         const chips=kws.map(k=>`<span style="display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;margin:1px;background:rgba(79,142,247,.12);color:#4f8ef7">${_ylCap(k.trim())}</span>`).join("");
         const orig=(a.lang_orig&&a.lang_orig!=="fr"&&a.titre&&a.titre!==a.titre_fr)
-          ?`<div style="font-size:10px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">🔤 ${_ylEsc(a.titre)}</div>`:"";
+          ?`<div style="font-size:10px;color:rgba(255,255,255,.3);font-style:italic;margin-top:2px">${_ylEsc(a.titre)}</div>`:"";
         return `<tr style="border-bottom:1px solid rgba(255,255,255,.05)">
           <td style="padding:11px 14px;white-space:nowrap">
             <span style="display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;background:rgba(79,142,247,.12);color:#4f8ef7">${_ylEsc(a.source)}</span>
@@ -1708,7 +1633,7 @@ async function yaroLoadArticles(page=1){
             <button onclick="yaroDelArticle(${a.id})"
               style="padding:4px 8px;background:transparent;border:1px solid transparent;border-radius:6px;color:rgba(255,255,255,.25);font-size:11px;cursor:pointer;margin-left:2px"
               onmouseover="this.style.color='#ef4444';this.style.borderColor='rgba(239,68,68,.3)'"
-              onmouseout="this.style.color='rgba(255,255,255,.25)';this.style.borderColor='transparent'">🗑</button>
+              onmouseout="this.style.color='rgba(255,255,255,.25)';this.style.borderColor='transparent'">Supprimer</button>
           </td>
         </tr>`;
       }).join("");
@@ -1723,15 +1648,23 @@ async function yaroLoadArticles(page=1){
     pag+=`<button onclick="yaroLoadArticles(${page+1})" ${page>=d.pages?"disabled":""} style="padding:4px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:${page>=d.pages?"rgba(255,255,255,.2)":"#fff"};font-size:11px;cursor:pointer">›</button>`;
     document.getElementById("yl-pag-btns").innerHTML=pag;
     document.getElementById("yl-pag-info").textContent=`Page ${d.page} sur ${d.pages}`;
-  } catch(e){}
+  } catch(e){
+    document.getElementById("yl-tbody").innerHTML =
+      `<tr><td colspan="5" style="text-align:center;padding:32px;color:#ef4444;font-size:12px">Erreur réseau pendant le chargement.</td></tr>`;
+  }
 }
 
 async function yaroDelArticle(id){
   if(!confirm("Supprimer cet article ?")) return;
   const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
-  const r = await fetch("/api/yaro/article",{method:"DELETE",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:JSON.stringify({id})});
-  const d = await r.json();
-  if(d.ok){yaroLoadArticles(_ylPage);yaroLoadStats();}
+  try {
+    const r = await fetch("/api/yaro/article",{method:"DELETE",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:JSON.stringify({id})});
+    const d = await r.json();
+    if(d.ok){yaroLoadArticles(_ylPage);yaroLoadStats();showToast("Article supprimé");}
+    else showToast(d.message || "Suppression impossible", true);
+  } catch(e) {
+    showToast("Erreur réseau", true);
+  }
 }
 
 async function yaroRunScraper(){
@@ -1741,9 +1674,17 @@ async function yaroRunScraper(){
   try {
     const r = await fetch("/api/yaro/run",{method:"POST",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:"{}"});
     const d = await r.json();
-    if(d.ok) setTimeout(()=>{yaroLoadStats();yaroLoadArticles(1);},9000);
-  } catch(e){}
-  setTimeout(()=>{btn.disabled=false;btn.textContent="Lancer la veille";},3000);
+    if(d.ok) {
+      showToast(d.message || "Veille lancée");
+      setTimeout(()=>{yaroLoadStats();yaroLoadArticles(1);},1800);
+    } else {
+      showToast(d.message || "Veille indisponible", true);
+    }
+  } catch(e){
+    showToast("Erreur réseau pendant la veille", true);
+  } finally {
+    setTimeout(()=>{btn.disabled=false;btn.textContent="Lancer la veille";},1200);
+  }
 }
 
 // Déclenche le chargement quand le panel s'ouvre
