@@ -245,6 +245,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
   .activity-strip{grid-template-columns:1fr}
   .kpi-hero-val{font-size:60px}
 }
+
+/* Professional refresh */
+:root{--surface:#101521;--surface-2:#151c2b;--line:rgba(226,232,240,.10);--muted:#94a3b8;--accent:#22c55e}
+body{background:#020617;color:#f8fafc}
+.app-header,.login-box,.kpi-hero,.strip-card,.msg-card{background:var(--surface);border-color:var(--line);border-radius:8px}
+.kpi-section{background:#020617}
+.deputy-seal,.login-seal{background:linear-gradient(135deg,#c8102e,#8b0a1e)}
+.kpi-hero{box-shadow:none}
+.kpi-hero-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:rgba(148,163,184,.10);border:1px solid rgba(148,163,184,.14);color:#cbd5e1;font-size:10px;font-weight:800;letter-spacing:.4px;margin-bottom:16px}
+.kpi-hero-val{letter-spacing:0}
+.nav-tabs{gap:6px;overflow-x:auto}
+.nav-tab{border-radius:7px 7px 0 0;white-space:nowrap}
+.nav-tab.active{background:rgba(34,197,94,.10);border-color:rgba(34,197,94,.24)}
+.filter-btn,.sbtn,.header-btn,.login-btn{border-radius:7px;min-height:34px;white-space:nowrap}
+.header-btn.gold,.login-btn,.btn-send{background:rgba(34,197,94,.14);color:#86efac;border:1px solid rgba(34,197,94,.28)}
+.login-field,.reply-textarea,.note-form textarea{background:var(--surface-2);border-color:var(--line)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid rgba(56,189,248,.85);outline-offset:2px}
+@media(max-width:520px){.kpi-grid{grid-template-columns:1fr}.filter-btn,.sbtn,.header-btn{width:100%}}
 </style>
 </head>
 <body>
@@ -277,7 +295,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     </div>
     <div class="header-right">
       <div class="header-date" id="hdr-date"></div>
-      <a href="index.html" target="_blank" class="header-btn">🌐 Voir le site</a>
+      <a href="index.html" target="_blank" class="header-btn">Voir le site</a>
       <a href="__ADMIN_PATH__" class="header-btn">⚙️ Administration</a>
       <button class="header-btn" onclick="logout()">↩ Déconnexion</button>
     </div>
@@ -289,7 +307,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
       <div class="kpi-hero gold">
         <span class="kpi-hero-badge">PEUPLE</span>
-        <div class="kpi-hero-icon">👥</div>
+        <div class="kpi-hero-icon">CT</div>
         <div class="kpi-hero-val" id="k-total">0</div>
         <div class="kpi-hero-label">Citoyens ayant sollicité le Député</div>
         <div class="kpi-hero-sub">Audiences · Réclamations · Messages</div>
@@ -297,7 +315,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
       <div class="kpi-hero green">
         <span class="kpi-hero-badge">RÉSOLUTION</span>
-        <div class="kpi-hero-icon">✅</div>
+        <div class="kpi-hero-icon">OK</div>
         <div class="kpi-hero-val" id="k-taux">0%</div>
         <div class="kpi-hero-label">Taux de traitement</div>
         <div class="kpi-hero-sub" id="k-taux-detail">dossiers traités / total soumis</div>
@@ -305,7 +323,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
       <div class="kpi-hero red">
         <span class="kpi-hero-badge">URGENT</span>
-        <div class="kpi-hero-icon">⚠️</div>
+        <div class="kpi-hero-icon">UR</div>
         <div class="kpi-hero-val" id="k-urgent">0</div>
         <div class="kpi-hero-label">Dossiers urgents à traiter</div>
         <div class="kpi-hero-sub">Réclamations ouvertes + en attente de réponse</div>
@@ -346,11 +364,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
   <!-- ACTIVITY STRIP -->
   <div class="activity-strip">
     <div class="strip-card">
-      <div class="strip-title">⚡ Priorités immédiates</div>
+      <div class="strip-title">Priorités immédiates</div>
       <div id="priority-list"><div class="empty" style="padding:20px 0;font-size:12px">Aucune urgence</div></div>
     </div>
     <div class="strip-card">
-      <div class="strip-title">📊 Répartition des dossiers</div>
+      <div class="strip-title">Répartition des dossiers</div>
       <div id="breakdown"></div>
     </div>
   </div>
@@ -359,19 +377,19 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
   <div class="nav-section">
     <div class="nav-tabs">
       <button class="nav-tab active" onclick="showTab('audiences',this)">
-        📋 Audiences <span class="nav-count" id="nt-aud">0</span>
+        Audiences <span class="nav-count" id="nt-aud">0</span>
       </button>
       <button class="nav-tab" onclick="showTab('reclamations',this)">
-        ⚠️ Réclamations <span class="nav-count red" id="nt-recl">0</span>
+        Réclamations <span class="nav-count red" id="nt-recl">0</span>
       </button>
       <button class="nav-tab" onclick="showTab('contacts',this)">
-        ✉️ Messages <span class="nav-count" id="nt-ct">0</span>
+        Messages <span class="nav-count" id="nt-ct">0</span>
       </button>
       <button class="nav-tab" onclick="showTab('reponses',this)">
-        💬 Réponses envoyées <span class="nav-count" id="nt-rep">0</span>
+        Réponses envoyées <span class="nav-count" id="nt-rep">0</span>
       </button>
       <button class="nav-tab" onclick="showTab('veille',this); loadNews()">
-        🤖 Veille YARO IA <span class="nav-count blue" id="nt-veille"></span>
+        Veille YARO IA <span class="nav-count blue" id="nt-veille"></span>
       </button>
     </div>
   </div>
@@ -383,11 +401,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="tab-panel active" id="panel-audiences">
       <div class="filter-bar">
         <button class="filter-btn active" onclick="filterAud('all',this)">Toutes</button>
-        <button class="filter-btn" onclick="filterAud('en_attente',this)">⏳ En attente</button>
-        <button class="filter-btn" onclick="filterAud('en_cours',this)">🔄 En cours</button>
-        <button class="filter-btn" onclick="filterAud('traite',this)">✅ Traitées</button>
+        <button class="filter-btn" onclick="filterAud('en_attente',this)">En attente</button>
+        <button class="filter-btn" onclick="filterAud('en_cours',this)">En cours</button>
+        <button class="filter-btn" onclick="filterAud('traite',this)">Traitées</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','audiences')">CSV</button>
         <span class="msg-count" id="aud-count"></span>
       </div>
       <div class="msg-list" id="list-audiences"></div>
@@ -397,11 +415,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="tab-panel" id="panel-reclamations">
       <div class="filter-bar">
         <button class="filter-btn active" onclick="filterRecl('all',this)">Toutes</button>
-        <button class="filter-btn" onclick="filterRecl('en_attente',this)">⏳ En attente</button>
-        <button class="filter-btn" onclick="filterRecl('en_cours',this)">🔄 En cours</button>
-        <button class="filter-btn" onclick="filterRecl('traite',this)">✅ Traitées</button>
+        <button class="filter-btn" onclick="filterRecl('en_attente',this)">En attente</button>
+        <button class="filter-btn" onclick="filterRecl('en_cours',this)">En cours</button>
+        <button class="filter-btn" onclick="filterRecl('traite',this)">Traitées</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_audiences','reclamations')">CSV</button>
         <span class="msg-count" id="recl-count"></span>
       </div>
       <div class="msg-list" id="list-reclamations"></div>
@@ -411,10 +429,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
     <div class="tab-panel" id="panel-contacts">
       <div class="filter-bar">
         <button class="filter-btn active" onclick="filterCt('all',this)">Tous</button>
-        <button class="filter-btn" onclick="filterCt('non_lu',this)">🔵 Non lus</button>
+        <button class="filter-btn" onclick="filterCt('non_lu',this)">Non lus</button>
         <button class="filter-btn" onclick="filterCt('lu',this)">✓ Lus</button>
         <span class="filter-spacer"></span>
-        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">📥 CSV</button>
+        <button class="filter-btn" style="margin-left:auto;color:var(--r);border-color:rgba(255,255,255,.1)" onclick="exportCSV('bininga_contacts','contacts')">CSV</button>
         <span class="msg-count" id="ct-count"></span>
       </div>
       <div class="msg-list" id="list-contacts"></div>
@@ -433,17 +451,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
         <span id="v-dot" style="width:9px;height:9px;border-radius:50%;background:#555;flex-shrink:0"></span>
         <span id="v-status-txt">Chargement…</span>
         <span style="margin-left:auto;font-size:11px" id="v-last-run"></span>
-        <button onclick="loadNews()" style="margin-left:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;transition:all .2s">🔄 Actualiser</button>
+        <button onclick="loadNews()" style="margin-left:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.55);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:11px;transition:all .2s">Actualiser</button>
       </div>
 
       <!-- Lancer une recherche rapide -->
       <div style="background:rgba(52,152,219,.05);border:1px solid rgba(52,152,219,.13);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">🔍 Lancer une veille maintenant</div>
+        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.5);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Lancer une veille maintenant</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button onclick="vRunVeille('Bininga Congo justice 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(200,16,46,.1);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;transition:all .2s">🧑‍⚖️ Sur moi</button>
-          <button onclick="vRunVeille('nouvelles lois justice Afrique 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer;transition:all .2s">📜 Lois & Justice</button>
-          <button onclick="vRunVeille('droits humains populations autochtones Congo 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(155,89,182,.08);color:#bb8fce;border:1px solid rgba(155,89,182,.2);cursor:pointer;transition:all .2s">🌿 Droits humains</button>
-          <button onclick="vRunVeille()" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:all .2s">⚡ Cycle complet</button>
+          <button onclick="vRunVeille('Bininga Congo justice 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(200,16,46,.1);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);cursor:pointer;transition:all .2s">Sur moi</button>
+          <button onclick="vRunVeille('nouvelles lois justice Afrique 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer;transition:all .2s">Lois & Justice</button>
+          <button onclick="vRunVeille('droits humains populations autochtones Congo 2026')" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(155,89,182,.08);color:#bb8fce;border:1px solid rgba(155,89,182,.2);cursor:pointer;transition:all .2s">Droits humains</button>
+          <button onclick="vRunVeille()" style="padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;background:rgba(255,255,255,.05);color:rgba(255,255,255,.45);border:1px solid rgba(255,255,255,.1);cursor:pointer;transition:all .2s">Cycle complet</button>
         </div>
         <div id="v-run-feedback" style="display:none;margin-top:10px;font-size:12px;color:#2ecc71;padding:8px 12px;background:rgba(46,204,113,.07);border-radius:7px;border:1px solid rgba(46,204,113,.15)"></div>
       </div>
@@ -452,17 +470,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       <div style="display:flex;gap:0;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08)">
         <button id="v-tab-bininga" onclick="vSetFilter('bininga')"
           style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px;transition:all .2s">
-          🧑‍⚖️ Sur Bininga
+          Sur Bininga
           <span id="v-tab-bininga-count" style="margin-left:6px;background:var(--r);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px"></span>
         </button>
         <button id="v-tab-loi" onclick="vSetFilter('loi_justice')"
           style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s">
-          📜 Lois & Justice
+          Lois & Justice
           <span id="v-tab-loi-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
         </button>
         <button id="v-tab-all" onclick="vSetFilter('all')"
           style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s">
-          🌍 Toutes les infos
+          Toutes les infos
           <span id="v-tab-all-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
         </button>
       </div>
@@ -470,11 +488,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
       <!-- Tri -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
         <span style="font-size:11px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Trier :</span>
-        <button id="v-sort-date-desc" onclick="vSetSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">⬇ Plus récent</button>
-        <button id="v-sort-date-asc" onclick="vSetSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⬆ Plus ancien</button>
-        <button id="v-sort-pertinence" onclick="vSetSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⭐ Pertinence</button>
+        <button id="v-sort-date-desc" onclick="vSetSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">Plus récent</button>
+        <button id="v-sort-date-asc" onclick="vSetSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">Plus ancien</button>
+        <button id="v-sort-pertinence" onclick="vSetSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">Pertinence</button>
         <span style="margin-left:auto;font-size:11px;color:rgba(255,255,255,.25)" id="v-count-label"></span>
-        <button onclick="vMarkAllRead()" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer">✅ Tout lire</button>
+        <button onclick="vMarkAllRead()" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);cursor:pointer">Tout lire</button>
       </div>
 
       <!-- Liste articles -->

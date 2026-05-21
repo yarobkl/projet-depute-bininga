@@ -23,7 +23,7 @@ function authHeaders(extra) {
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, opts);
   if (res.status === 401) {
-    showToast("⚠️ Session expirée — reconnexion…", true);
+    showToast("Session expirée — reconnexion…", true);
     setTimeout(() => {
       SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
       document.getElementById("app").classList.remove("visible");
@@ -66,7 +66,7 @@ async function doLogin() {
       document.getElementById("login").classList.add("hidden");
       document.getElementById("app").classList.add("visible");
       document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
-      const durLabel = data.trusted_ip ? "🔒 Session active 7 jours (IP de confiance)" : "";
+      const durLabel = data.trusted_ip ? "Session active 7 jours (IP de confiance)" : "";
       document.getElementById("topbar-user").textContent = data.nom + " · " + data.role + (durLabel ? "  |  " + durLabel : "");
       applyRoleUI(data.role);
       init();
@@ -126,7 +126,7 @@ function applyRoleUI(role) {
   });
   // .role-admin = visible pour admin seulement
   document.querySelectorAll(".role-admin").forEach(el => {
-    el.style.display = role === "admin" ? "" : "none";
+    el.style.display = SESSION_IS_MAIN_ADMIN ? "" : "none";
   });
   // .role-superadmin = réservé UNIQUEMENT à l'admin principal (Hero, À propos, Parcours)
   document.querySelectorAll(".role-superadmin").forEach(el => {
@@ -846,12 +846,12 @@ async function forceSyncData() {
   const ok = prompt("Action dangereuse : cela remplace la base actuelle par data.json.\nTapez RESTAURER pour confirmer.");
   if (ok !== "RESTAURER") return;
   const btn = document.getElementById("btn-force-sync");
-  if (btn) { btn.textContent = "⏳ Restauration…"; btn.disabled = true; }
+  if (btn) { btn.textContent = "Restauration…"; btn.disabled = true; }
   try {
     const res  = await apiFetch("/api/admin/force-sync", { method: "POST", headers: authHeaders() });
     const data = await res.json();
     if (data.ok) {
-      showToast("✅ Contenu restauré — galerie, articles et parcours rechargés !");
+      showToast("Contenu restauré — galerie, articles et parcours rechargés");
       setTimeout(() => { loadSiteData(); }, 800);
     } else {
       showToast(data.message || "Erreur lors de la restauration", true);
@@ -859,7 +859,7 @@ async function forceSyncData() {
   } catch (e) {
     showToast("Erreur : " + e.message, true);
   } finally {
-    if (btn) { btn.textContent = "⚠️ Restaurer data.json"; btn.disabled = false; }
+    if (btn) { btn.textContent = "Restaurer data.json"; btn.disabled = false; }
   }
 }
 
@@ -870,7 +870,13 @@ function saveData(silent = false) {
   collectActus();
   collectProgramme();
   const ind = document.getElementById("autosave-indicator");
+  const saveBtn = document.getElementById("btn-save");
   if (ind) { ind.textContent = "Sauvegarde…"; ind.className = "autosave-saving"; }
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.classList.add("is-saving");
+    saveBtn.textContent = "Sauvegarde en cours…";
+  }
   apiFetch("/api/save", {
     method: "POST",
     headers: authHeaders(),
@@ -880,7 +886,13 @@ function saveData(silent = false) {
   .then(res => {
     if (res.ok) {
       if (!silent) showToast("Contenu sauvegardé !");
-      if (ind) { ind.textContent = "Sauvegardé ✓"; ind.className = "autosave-ok"; setTimeout(() => { if(ind) ind.textContent = ""; ind.className = ""; }, 3000); }
+      if (saveBtn) {
+        saveBtn.classList.remove("is-saving");
+        saveBtn.classList.add("is-saved");
+        saveBtn.textContent = "Sauvegardé";
+        setTimeout(() => saveBtn.classList.remove("is-saved"), 1400);
+      }
+      if (ind) { ind.textContent = "Sauvegardé"; ind.className = "autosave-ok"; setTimeout(() => { if(ind) ind.textContent = ""; ind.className = ""; }, 3000); }
     } else {
       showToast(res.message, true);
       if (ind) { ind.textContent = "Erreur sauvegarde"; ind.className = "autosave-err"; }
@@ -890,7 +902,15 @@ function saveData(silent = false) {
     showToast("Serveur non disponible (mode GitHub Pages)", true);
     if (ind) { ind.textContent = "Hors ligne"; ind.className = "autosave-err"; }
   })
-  .finally(() => { _autoSaving = false; });
+  .finally(() => {
+    _autoSaving = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.classList.remove("is-saving");
+      if (!saveBtn.classList.contains("is-saved")) saveBtn.textContent = "Enregistrer le contenu";
+      else setTimeout(() => { saveBtn.textContent = "Enregistrer le contenu"; }, 900);
+    }
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1610,7 +1630,7 @@ async function runVeille(preset) {
   const query = preset !== undefined ? preset : (input ? input.value.trim() : "");
   const btn   = document.getElementById("btn-run-veille");
   const fb    = document.getElementById("veille-run-feedback");
-  if (btn) { btn.disabled = true; btn.textContent = "⏳ En cours…"; }
+  if (btn) { btn.disabled = true; btn.textContent = "Recherche en cours…"; }
   try {
     const res  = await apiFetch("/api/news/run", {
       method: "POST",
@@ -1621,14 +1641,14 @@ async function runVeille(preset) {
     if (fb) {
       fb.style.display = "block";
       fb.style.color   = data.ok ? "#2ecc71" : "#ff6b6b";
-      fb.textContent   = data.ok ? "✅ " + data.message + " — résultats dans ~30 secondes" : "❌ " + data.message;
+      fb.textContent   = data.ok ? data.message + " — résultats dans environ 30 secondes" : data.message;
       setTimeout(() => { if (fb) fb.style.display = "none"; }, 8000);
     }
     if (data.ok) setTimeout(loadNews, 10000);
   } catch(e) {
-    if (fb) { fb.style.display = "block"; fb.style.color = "#ff6b6b"; fb.textContent = "❌ Erreur réseau"; }
+    if (fb) { fb.style.display = "block"; fb.style.color = "#ff6b6b"; fb.textContent = "Erreur réseau"; }
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = "⚡ Lancer maintenant"; }
+    if (btn) { btn.disabled = false; btn.textContent = "Lancer maintenant"; }
   }
 }
 
@@ -1927,13 +1947,14 @@ async function runBackupNow() {
 const PANEL_TITLES = {
   dashboard:"Tableau de bord", audiences:"Demandes d'audience",
   reclamations:"Réclamations", contacts:"Messages de contact",
-  crm:"👥 CRM — Base de contacts",
+  crm:"CRM — Base de contacts",
   hero:"Section Hero", about:"À propos", stats:"Statistiques", galerie:"Galerie photos",
   actus:"Actualités", parcours:"Parcours — Timeline", programme:"Programme 2027–2032", seo:"SEO",
-  monitoring:"📡 Monitoring — Surveillance temps réel", backups:"💾 Sauvegardes",
-  logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"🛡️ Sécurité — Anti-Intrusion",
-  veille:"🤖 YARO IA — Actualités Bininga",
-  editorial:"✍️ Éditorial IA — Contenus"
+  monitoring:"Monitoring — Surveillance temps réel", backups:"Sauvegardes",
+  logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"Sécurité — Anti-Intrusion",
+  veille:"YARO IA — Actualités Bininga",
+  editorial:"Éditorial IA — Contenus",
+  "yaro-legal":"Veille juridique — YARO IA"
 };
 
 let _currentPanel = "dashboard";
@@ -1941,7 +1962,13 @@ function showPanel(name, el) {
   _currentPanel = name;
   document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
   document.querySelectorAll(".sb-item").forEach(i => i.classList.remove("active"));
-  document.getElementById("panel-"+name).classList.add("active");
+  const panel = document.getElementById("panel-"+name);
+  if (!panel) {
+    showToast("Module indisponible", true);
+    showPanel("dashboard");
+    return;
+  }
+  panel.classList.add("active");
   if (el) el.classList.add("active");
   document.getElementById("topbar-title").textContent = PANEL_TITLES[name] || name;
   if (name === "dashboard")    syncMessages().then(() => refreshDashboard());
@@ -1960,7 +1987,6 @@ function showPanel(name, el) {
   if (name === "security")     { loadSecurity(); loadBouclier(); }
   if (name === "veille")       loadNews();
   if (name === "editorial")    loadEditorial();
-  if (name === "youtube")      loadYoutube();
   if (name === "crm")          loadCrm();
   const formPanels = ["hero","about","seo","engagement","cta","contact-info","footer"];
   if (formPanels.includes(name)) populateForm();
@@ -3134,7 +3160,7 @@ async function generateEditorial(newsItem) {
   const newsId = newsItem ? newsItem.id       : "";
 
   if (!titre || !resume) { showToast("Titre et résumé requis", true); return; }
-  if (btn) { btn.textContent = "⏳ Génération en cours…"; btn.disabled = true; }
+  if (btn) { btn.textContent = "Génération en cours…"; btn.disabled = true; }
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 55000); // 55s timeout
@@ -3149,7 +3175,7 @@ async function generateEditorial(newsItem) {
       _editorialData.unshift(data.article);
       const cnt = document.getElementById("badge-editorial-count");
       if (cnt) cnt.textContent = _editorialData.length;
-      showToast("Article généré ✅");
+      showToast("Article généré");
       // Passer sur l'onglet articles et ouvrir
       editorialTab("articles", document.getElementById("etab-articles"));
       renderEditorialList();
@@ -3158,10 +3184,10 @@ async function generateEditorial(newsItem) {
       ["ed-titre","ed-resume","ed-source","ed-url"].forEach(id => { const el = document.getElementById(id); if(el) el.value=""; });
     } else showToast(data.message || "Erreur génération", true);
   } catch (e) {
-    if (e.name === "AbortError") showToast("⏱️ Délai dépassé — réessayez", true);
+    if (e.name === "AbortError") showToast("Délai dépassé — réessayez", true);
     else showToast("Erreur : " + e.message, true);
   }
-  finally { if (btn) { btn.textContent = "⚡ Générer l'article éditorial"; btn.disabled = false; } }
+  finally { if (btn) { btn.textContent = "Générer l'article éditorial"; btn.disabled = false; } }
 }
 
 let _edNewsPicker = [];

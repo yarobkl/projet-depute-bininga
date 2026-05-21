@@ -234,6 +234,89 @@ EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
 # Fichier YouTube IA
 YOUTUBE_FILE = os.path.join(DATA_DIR, "youtube.json")
 
+YARO_DB_FILE = os.path.join(DATA_DIR, "news.db")
+
+YARO_THEMES = [
+    {"source": "OHADA Info", "sujet": "droit OHADA et droit des affaires en Afrique centrale", "keywords": ["contrat", "OHADA"]},
+    {"source": "JO Congo", "sujet": "textes législatifs et réglementaires récents au Congo-Brazzaville", "keywords": ["loi", "décret", "réforme"]},
+    {"source": "Justice Congo", "sujet": "réforme judiciaire et système de justice au Congo-Brazzaville", "keywords": ["justice", "tribunal", "réforme"]},
+    {"source": "Énergie Congo", "sujet": "réglementation pétrolière, minière et énergétique au Congo-Brazzaville", "keywords": ["pétrole", "contrat"]},
+    {"source": "Environnement Congo", "sujet": "droit forestier, environnemental et foncier au Congo-Brazzaville", "keywords": ["forêt", "contrat"]},
+    {"source": "Diplomatie Congo", "sujet": "coopération judiciaire internationale et accords bilatéraux du Congo-Brazzaville", "keywords": ["diplomatie", "contrat"]},
+]
+
+def _build_editorial_fallback(titre_src: str, resume_src: str, source_nm: str, url_src: str) -> dict:
+    """Produit un brouillon éditorial fiable quand l'API IA externe est absente."""
+    titre = (titre_src or "Note éditoriale").strip()
+    resume = (resume_src or "").strip()
+    source = (source_nm or "Source non précisée").strip()
+    src_line = f"{source} — {url_src}" if url_src else source
+    points = [p.strip(" -•\t") for p in re.split(r"[\n.;]", resume) if p.strip()]
+    points = points[:4] or ["Information source à compléter", "Vérification éditoriale recommandée", "Publication après validation"]
+    article = "\n\n".join([
+        titre,
+        resume or "Le contenu source ne contient pas encore de résumé exploitable. Le brouillon est créé pour permettre une relecture humaine avant publication.",
+        f"Source mentionnée : {src_line}.",
+        "Ce texte est volontairement neutre et factuel. Il doit être relu avant toute publication publique.",
+    ])
+    return {
+        "titre": titre[:140],
+        "resume": resume[:600] if resume else "Brouillon éditorial généré à partir des éléments disponibles.",
+        "article": article,
+        "points_cles": points,
+        "sources": [src_line],
+        "mode_generation": "local_fallback",
+    }
+
+def _yaro_init_db(conn):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS articles (
+            id        INTEGER PRIMARY KEY AUTOINCREMENT,
+            source    TEXT NOT NULL,
+            titre     TEXT NOT NULL,
+            titre_fr  TEXT,
+            url       TEXT UNIQUE,
+            keywords  TEXT,
+            lang_orig TEXT DEFAULT 'fr',
+            ts        TEXT DEFAULT (datetime('now'))
+        )""")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ts  ON articles(ts)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_src ON articles(source)")
+    conn.commit()
+
+def _yaro_save(conn, source, titre, url, kws):
+    try:
+        cur = conn.execute(
+            "INSERT OR IGNORE INTO articles (source, titre, titre_fr, url, keywords, lang_orig) VALUES (?,?,?,?,?,?)",
+            (source, titre[:300], titre[:300], url, ",".join(kws), "fr")
+        )
+        conn.commit()
+        return cur.rowcount > 0
+    except Exception:
+        return False
+
+def _yaro_local_bulletins(theme: dict, count: int = 4) -> list:
+    today = datetime.now().strftime("%d/%m/%Y")
+    sujet = theme["sujet"]
+    return [
+        {
+            "titre": f"Veille juridique du {today} : point de suivi sur {sujet}",
+            "url": f"https://yaro-ref.cg/local-{secrets.token_hex(8)}",
+        },
+        {
+            "titre": f"Analyse à vérifier : évolution récente concernant {sujet}",
+            "url": f"https://yaro-ref.cg/local-{secrets.token_hex(8)}",
+        },
+        {
+            "titre": f"Note de surveillance : impacts institutionnels liés à {sujet}",
+            "url": f"https://yaro-ref.cg/local-{secrets.token_hex(8)}",
+        },
+        {
+            "titre": f"Point documentaire : sources et textes à contrôler sur {sujet}",
+            "url": f"https://yaro-ref.cg/local-{secrets.token_hex(8)}",
+        },
+    ][:count]
+
 # Fichier CRM — rétention 10 ans
 CRM_FILE             = os.path.join(DATA_DIR, "crm.json")
 CRM_RETENTION_YEARS  = 10
@@ -2784,11 +2867,10 @@ DA:"""
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
 
-            _YARO_DB = "news.db"
-
             def _yaro_conn():
                 import sqlite3 as _sq
-                c = _sq.connect(_YARO_DB)
+                c = _sq.connect(YARO_DB_FILE)
+                _yaro_init_db(c)
                 c.row_factory = _sq.Row
                 return c
 
@@ -2796,7 +2878,7 @@ DA:"""
             if path == "/api/yaro/stats":
                 try:
                     c = _yaro_conn()
-                    today = datetime.datetime.utcnow().date().isoformat()
+                    today = datetime.utcnow().date().isoformat()
                     total      = c.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
                     today_cnt  = c.execute("SELECT COUNT(*) FROM articles WHERE ts >= ?", (today,)).fetchone()[0]
                     sources    = [dict(r) for r in c.execute("SELECT source, COUNT(*) as cnt FROM articles GROUP BY source ORDER BY cnt DESC").fetchall()]
@@ -2868,52 +2950,16 @@ DA:"""
                     import sqlite3 as _sq3
 
                     gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
-                    if not gemini_key:
-                        self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
-                        return
-
-                    YARO_THEMES = [
-                        {"source": "OHADA Info",        "sujet": "droit OHADA et droit des affaires en Afrique centrale",                        "keywords": ["contrat", "OHADA"]},
-                        {"source": "JO Congo",           "sujet": "Journal Officiel du Congo-Brazzaville — textes législatifs et réglementaires récents", "keywords": ["loi", "décret", "réforme"]},
-                        {"source": "Justice Congo",      "sujet": "réforme judiciaire et système de justice au Congo-Brazzaville",                 "keywords": ["justice", "tribunal", "réforme"]},
-                        {"source": "Énergie Congo",      "sujet": "réglementation pétrolière, minière et énergétique au Congo-Brazzaville",        "keywords": ["pétrole", "contrat"]},
-                        {"source": "Environnement Congo","sujet": "droit forestier, environnemental et foncier au Congo-Brazzaville",              "keywords": ["forêt", "contrat"]},
-                        {"source": "Diplomatie Congo",   "sujet": "coopération judiciaire internationale et accords bilatéraux du Congo-Brazzaville","keywords": ["diplomatie", "contrat"]},
-                    ]
-
-                    def _yaro_init_db(conn):
-                        conn.execute("""
-                            CREATE TABLE IF NOT EXISTS articles (
-                                id        INTEGER PRIMARY KEY AUTOINCREMENT,
-                                source    TEXT NOT NULL,
-                                titre     TEXT NOT NULL,
-                                titre_fr  TEXT,
-                                url       TEXT UNIQUE,
-                                keywords  TEXT,
-                                lang_orig TEXT DEFAULT 'fr',
-                                ts        TEXT DEFAULT (datetime('now'))
-                            )""")
-                        conn.execute("CREATE INDEX IF NOT EXISTS idx_ts  ON articles(ts)")
-                        conn.execute("CREATE INDEX IF NOT EXISTS idx_src ON articles(source)")
-                        conn.commit()
-
-                    def _yaro_save(conn, source, titre, url, kws):
-                        try:
-                            conn.execute(
-                                "INSERT OR IGNORE INTO articles (source, titre, titre_fr, url, keywords, lang_orig) VALUES (?,?,?,?,?,?)",
-                                (source, titre[:300], titre[:300], url, ",".join(kws), "fr")
-                            )
-                            conn.commit()
-                        except Exception:
-                            pass
-
-                    yaro_db = _sq3.connect(_YARO_DB)
+                    yaro_db = _sq3.connect(YARO_DB_FILE)
                     _yaro_init_db(yaro_db)
                     total = 0
+                    mode = "ia" if gemini_key else "local"
 
                     for theme in YARO_THEMES:
                         today_str = datetime.now().strftime("%d %B %Y")
-                        prompt = f"""Tu es un expert en veille juridique spécialisé dans le droit africain.
+                        items = []
+                        if gemini_key:
+                            prompt = f"""Tu es un expert en veille juridique spécialisé dans le droit africain.
 
 Génère 4 bulletins de veille juridique portant sur : {theme['sujet']}
 Date de référence : {today_str}
@@ -2927,26 +2973,30 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
     "url": "https://yaro-ref.cg/{secrets.token_hex(6)}"
   }}
 ]"""
-                        try:
-                            raw = _gemini_call(prompt, max_tokens=600)
-                            if raw.startswith("```"):
-                                raw = "\n".join(raw.split("\n")[1:])
-                            if raw.endswith("```"):
-                                raw = "\n".join(raw.split("\n")[:-1])
-                            items = json.loads(raw.strip())
-                            if isinstance(items, list):
-                                for it in items:
-                                    titre = (it.get("titre") or "").strip()
-                                    url_b = (it.get("url") or f"https://yaro-ref.cg/{secrets.token_hex(8)}").strip()
-                                    if titre:
-                                        _yaro_save(yaro_db, theme["source"], titre, url_b, theme["keywords"])
-                                        total += 1
-                        except Exception as ge:
-                            print(f"[YARO] Erreur thème {theme['source']} : {ge}")
+                            try:
+                                raw = _gemini_call(prompt, max_tokens=600)
+                                if raw.startswith("```"):
+                                    raw = "\n".join(raw.split("\n")[1:])
+                                if raw.endswith("```"):
+                                    raw = "\n".join(raw.split("\n")[:-1])
+                                parsed = json.loads(raw.strip())
+                                if isinstance(parsed, list):
+                                    items = parsed
+                            except Exception as ge:
+                                print(f"[YARO] Erreur IA thème {theme['source']} : {ge}")
+                        if not items:
+                            mode = "local" if not gemini_key else "mixte"
+                            items = _yaro_local_bulletins(theme)
+                        for it in items:
+                            titre = (it.get("titre") or "").strip()
+                            url_b = (it.get("url") or f"https://yaro-ref.cg/{secrets.token_hex(8)}").strip()
+                            if titre and _yaro_save(yaro_db, theme["source"], titre, url_b, theme["keywords"]):
+                                total += 1
 
                     yaro_db.close()
                     audit_log("YARO_IA", ip, f"Veille juridique IA lancée — {total} bulletins générés")
-                    self._json({"ok": True, "message": f"{total} bulletins générés via IA."})
+                    suffix = "via IA" if mode == "ia" else "en mode local sécurisé"
+                    self._json({"ok": True, "message": f"{total} bulletins générés {suffix}."})
                 except Exception as e:
                     self._json({"ok": False, "message": str(e)}, 500)
                 return
@@ -3577,15 +3627,13 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 date_src  = payload.get("date", "")
 
                 key = os.environ.get("GEMINI_API_KEY", "").strip()
-                if not key:
-                    self._json({"ok": False, "message": "GEMINI_API_KEY non configuré — ajoutez la variable sur Railway"}, 400)
-                    return
-
-                prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
+                editorial = None
+                if key:
+                    prompt = f"""Tu es un assistant éditorial intégré au système de veille YARO IA du site du Député Ange Aimé Wilfrid BININGA (Congo-Brazzaville).
 
 Transforme cet article de presse en contenu éditorial structuré pour le site du Député.
 
-⚠️ RÈGLES STRICTES :
+RÈGLES STRICTES :
 - Ne jamais inventer d'informations
 - Uniquement reformuler et structurer les faits fournis
 - Neutralité totale, ton journalistique professionnel
@@ -3609,23 +3657,23 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
   "sources": ["{source_nm} — {url_src}"]
 }}"""
 
-                try:
-                    raw = _gemini_call(prompt, max_tokens=1200)
-                except Exception as api_err:
-                    err_body = ""
                     try:
-                        if hasattr(api_err, 'read'): err_body = api_err.read().decode()
-                    except Exception: pass
-                    print(f"[EDITORIAL] Erreur Gemini : {api_err} — {err_body}")
-                    self._json({"ok": False, "message": f"Erreur API Gemini : {api_err}"}, 500)
-                    return
+                        raw = _gemini_call(prompt, max_tokens=1200)
+                        if raw.startswith("```"):
+                            raw = "\n".join(raw.split("\n")[1:])
+                        if raw.endswith("```"):
+                            raw = "\n".join(raw.split("\n")[:-1])
+                        editorial = json.loads(raw.strip())
+                    except Exception as api_err:
+                        err_body = ""
+                        try:
+                            if hasattr(api_err, 'read'): err_body = api_err.read().decode()
+                        except Exception:
+                            pass
+                        print(f"[EDITORIAL] Fallback local après erreur Gemini : {api_err} — {err_body}")
 
-                # Nettoyer le JSON (enlever éventuels blocs markdown)
-                if raw.startswith("```"):
-                    raw = "\n".join(raw.split("\n")[1:])
-                if raw.endswith("```"):
-                    raw = "\n".join(raw.split("\n")[:-1])
-                editorial = json.loads(raw.strip())
+                if not isinstance(editorial, dict):
+                    editorial = _build_editorial_fallback(titre_src, resume_src, source_nm, url_src)
 
                 # Sauvegarder le brouillon
                 now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

@@ -20,7 +20,7 @@
   <div class="login-box">
     <div class="login-logo">B</div>
     <h1>Espace Administration</h1>
-    <p>RODRIN BAKALA — Full-steak DEV· Accès sécurisé</p>
+    <p>Administration du site BININGA · Accès sécurisé</p>
     <label for="u" class="sr-only">Identifiant</label>
     <input class="login-field" type="text" id="u" placeholder="Identifiant" autocomplete="username" aria-label="Identifiant">
     <label for="p" class="sr-only">Mot de passe</label>
@@ -52,7 +52,7 @@
         <img src="yaro.jpg.jpg" alt="Rodrin"style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center 15%;border:2px solid rgba(200,16,46,.5);flex-shrink:0;-webkit-touch-callout:none;pointer-events:none;">
         <div>
           <div style="font-size:12px;font-weight:600;color:#fff;">Rodrin Bakala</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.4);">Full-steack Développeur</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);">Administrateur principal</div>
         </div>
       </div>
     </div>
@@ -60,111 +60,107 @@
     <nav class="sb-nav">
       <div class="sb-section">Vue d'ensemble</div>
       <div class="sb-item active" onclick="showPanel('dashboard',this)">
-        <span class="icon">📊</span> Tableau de bord
+        <span class="icon">TB</span> Tableau de bord
       </div>
 
       <div class="sb-section">Gestion</div>
       <div class="sb-item" onclick="showPanel('audiences',this)">
-        <span class="icon">📋</span> Demandes d'audience
+        <span class="icon">DA</span> Demandes d'audience
         <span class="sb-badge" id="badge-aud" style="display:none"></span>
       </div>
       <div class="sb-item" onclick="showPanel('reclamations',this)">
-        <span class="icon">⚠️</span> Réclamations
+        <span class="icon">RC</span> Réclamations
         <span class="sb-badge warn" id="badge-recl" style="display:none"></span>
       </div>
       <div class="sb-item" onclick="showPanel('contacts',this)">
-        <span class="icon">✉️</span> Messages
+        <span class="icon">ME</span> Messages
         <span class="sb-badge" id="badge-ct" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('crm',this)">
-        <span class="icon">👥</span> CRM Contacts
+        <span class="icon">CRM</span> CRM Contacts
         <span class="sb-badge" id="badge-crm" style="display:none"></span>
       </div>
 
       <div class="sb-section role-editeur" style="display:none">Contenu du site</div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('hero',this)">
-        <span class="icon">🏠</span> Hero
+        <span class="icon">HE</span> Hero
       </div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('about',this)">
-        <span class="icon">👤</span> À propos
+        <span class="icon">AP</span> À propos
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('stats',this)">
-        <span class="icon">📈</span> Statistiques
+        <span class="icon">KP</span> Statistiques
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('galerie',this)">
-        <span class="icon">🖼️</span> Galerie
+        <span class="icon">GA</span> Galerie
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('actus',this)">
-        <span class="icon">📰</span> Actualités
+        <span class="icon">AC</span> Actualités
       </div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('parcours',this)">
-        <span class="icon">⏳</span> Parcours
+        <span class="icon">PR</span> Parcours
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('programme',this)">
-        <span class="icon">📋</span> Programme
+        <span class="icon">PG</span> Programme
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('seo',this)">
-        <span class="icon">🔍</span> SEO
+        <span class="icon">SE</span> SEO
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('engagement',this)">
-        <span class="icon">📋</span> Engagement
+        <span class="icon">EN</span> Engagement
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('cta',this)">
-        <span class="icon">📣</span> Bandeau CTA
+        <span class="icon">CT</span> Bandeau CTA
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('contact-info',this)">
-        <span class="icon">📍</span> Contact
+        <span class="icon">CO</span> Contact
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('footer',this)">
-        <span class="icon">🦶</span> Footer
+        <span class="icon">FO</span> Footer
       </div>
 
       <div class="sb-section role-ministre" style="display:none">Intelligence</div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('veille',this)">
-        <span class="icon">🤖</span> YARO IA
+        <span class="icon">YA</span> YARO IA
         <span class="sb-badge" id="badge-veille" style="display:none"></span>
       </div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('editorial',this)">
-        <span class="icon">✍️</span> Éditorial IA
+        <span class="icon">ED</span> Éditorial IA
         <span class="sb-badge" id="badge-editorial" style="display:none"></span>
       </div>
-      <div class="sb-item role-ministre" style="display:none" onclick="showPanel('youtube',this)">
-        <span class="icon">▶️</span> YouTube IA
-        <span class="sb-badge" id="badge-youtube" style="display:none"></span>
-      </div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('yaro-legal',this)">
-        <span class="icon">⚖️</span> Veille Juridique
+        <span class="icon">VJ</span> Veille Juridique
         <span class="sb-badge" id="badge-yaro-legal" style="display:none"></span>
       </div>
 
       <div class="sb-section role-admin" style="display:none">Système</div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('monitoring',this)">
-        <span class="icon">📡</span> Monitoring
+        <span class="icon">MO</span> Monitoring
         <span class="sb-badge warn" id="badge-mon" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('backups',this)">
-        <span class="icon">💾</span> Sauvegardes
+        <span class="icon">BK</span> Sauvegardes
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
-        <span class="icon">📜</span> Journaux d'audit
+        <span class="icon">JA</span> Journaux d'audit
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('users',this)">
-        <span class="icon">👥</span> Utilisateurs
+        <span class="icon">UT</span> Utilisateurs
         <span class="sb-badge" id="badge-users" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('security',this)">
-        <span class="icon">🛡️</span> Sécurité
+        <span class="icon">SC</span> Sécurité
         <span class="sb-badge warn" id="badge-sec" style="display:none"></span>
       </div>
     </nav>
 
     <div class="sb-footer">
-      <button class="sb-btn sb-btn-primary role-editeur" id="btn-save" style="display:none" onclick="saveData()">💾 Enregistrer le contenu</button>
-      <button class="sb-btn role-editeur" style="display:none;background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);margin-bottom:4px" onclick="loadSiteData();showToast('Données rechargées !')">🔄 Recharger les données</button>
-      <button class="sb-btn role-admin" id="btn-force-sync" style="display:none;background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25);margin-bottom:4px" onclick="forceSyncData()">⚠️ Restaurer data.json</button>
-      <a href="ministre.html" class="sb-btn role-admin" id="btn-ministre" style="display:none;background:rgba(184,151,58,.12);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;margin-bottom:8px">🏛️ Espace du Député</a>
-      <a href="index.html" target="_blank" class="sb-btn sb-btn-ghost" style="text-decoration:none;margin-bottom:4px">🌐 Voir le site</a>
-      <button class="sb-btn sb-btn-ghost" onclick="logout()">↩ Déconnexion</button>
+      <button class="sb-btn sb-btn-primary role-editeur" id="btn-save" style="display:none" onclick="saveData()">Enregistrer le contenu</button>
+      <button class="sb-btn role-editeur" style="display:none;background:rgba(255,255,255,.04);color:rgba(255,255,255,.5);margin-bottom:4px" onclick="loadSiteData();showToast('Données rechargées')">Recharger les données</button>
+      <button class="sb-btn role-admin" id="btn-force-sync" style="display:none;background:rgba(200,16,46,.12);color:#ff6b6b;border:1px solid rgba(200,16,46,.25);margin-bottom:4px" onclick="forceSyncData()">Restaurer data.json</button>
+      <a href="ministre.html" class="sb-btn role-admin" id="btn-ministre" style="display:none;background:rgba(184,151,58,.12);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;margin-bottom:8px">Espace du Député</a>
+      <a href="index.html" target="_blank" class="sb-btn sb-btn-ghost" style="text-decoration:none;margin-bottom:4px">Voir le site</a>
+      <button class="sb-btn sb-btn-ghost" onclick="logout()">Déconnexion</button>
     </div>
   </div>
 
@@ -183,7 +179,7 @@
       <!-- Cloche de notifications — extrême droite -->
       <div class="notif-bell-wrap" id="notif-bell-wrap" style="margin-left:12px">
         <button class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">
-          🔔
+          N
           <span class="notif-badge" id="notif-badge" style="display:none">0</span>
         </button>
         <!-- Panel dropdown -->
@@ -191,7 +187,7 @@
           <div class="notif-panel-header">
             <span>Notifications</span>
             <div style="display:flex;gap:6px">
-              <button class="notif-clear" onclick="_addNotif('visit',{ip:'test***',page:'/'})">🔔 Test</button>
+              <button class="notif-clear" onclick="_addNotif('visit',{ip:'test***',page:'/'})">Test</button>
               <button class="notif-clear" onclick="clearNotifs()">Tout effacer</button>
             </div>
           </div>
@@ -897,11 +893,11 @@
       <div class="panel" id="panel-veille">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">🤖 YARO IA — Actualités &amp; Lois</div>
+            <div class="card-title">YARO IA — Actualités &amp; Lois</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="loadNews()">🔄 Actualiser</button>
+              <button class="sbtn sbtn-progress" onclick="loadNews()">Actualiser</button>
               <button class="sbtn" onclick="restartMonitor()" style="background:rgba(231,76,60,.08);color:#e74c3c;border:1px solid rgba(231,76,60,.2)">🔁 Redémarrer l'IA</button>
-              <button class="sbtn" onclick="markAllNewsRead()" style="background:rgba(46,204,113,.1);color:#2ecc71;border:1px solid rgba(46,204,113,.2)">✅ Tout marquer lu</button>
+              <button class="sbtn" onclick="markAllNewsRead()" style="background:rgba(46,204,113,.1);color:#2ecc71;border:1px solid rgba(46,204,113,.2)">Tout marquer lu</button>
             </div>
           </div>
 
@@ -912,7 +908,7 @@
             <span style="margin-left:auto" id="veille-last-run"></span>
           </div>
           <div id="veille-start-hint" style="display:none;padding:12px 16px;background:rgba(243,156,18,.06);border:1px solid rgba(243,156,18,.15);border-radius:8px;font-size:12px;color:#f39c12;margin-bottom:12px">
-            ⚠️ YARO IA n'est pas actif. Lancez-le avec :<br>
+            YARO IA n'est pas actif. Lancez-le avec :<br>
             <code style="display:block;margin-top:6px;color:#fff;font-size:11px">python3 monitor.py &amp;</code>
             <small style="color:rgba(255,255,255,.35);margin-top:4px;display:block">Configurez SMTP_HOST/SMTP_USER/SMTP_PASS/NOTIF_EMAIL pour les alertes email.<br>
               <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" style="color:#3498db;text-decoration:underline">→ Créer un mot de passe d'application Gmail</a>
@@ -921,10 +917,10 @@
 
           <!-- Déclenchement manuel -->
           <div style="background:rgba(52,152,219,.05);border:1px solid rgba(52,152,219,.15);border-radius:10px;padding:14px 16px;margin-bottom:14px">
-            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">🔍 Commander une recherche</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:10px;text-transform:uppercase;letter-spacing:1px">Commander une recherche</div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <input type="text" id="veille-custom-query" placeholder="Sujet à rechercher (laisser vide = cycle complet)" style="flex:1;min-width:200px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 12px;color:#fff;font-size:12px">
-              <button class="sbtn sbtn-progress" id="btn-run-veille" onclick="runVeille()" style="white-space:nowrap">⚡ Lancer maintenant</button>
+              <button class="sbtn sbtn-progress" id="btn-run-veille" onclick="runVeille()" style="white-space:nowrap">Lancer maintenant</button>
               <button class="sbtn" onclick="runVeille('Bininga Congo justice 2026')" style="background:rgba(200,16,46,.1);color:#ff6b6b;border:1px solid rgba(200,16,46,.2);white-space:nowrap;font-size:11px">Bininga</button>
               <button class="sbtn" onclick="runVeille('nouvelles lois justice Afrique 2026')" style="background:rgba(46,204,113,.08);color:#2ecc71;border:1px solid rgba(46,204,113,.2);white-space:nowrap;font-size:11px">Lois & Justice</button>
               <button class="sbtn" onclick="runVeille('droits humains populations autochtones Congo 2026')" style="background:rgba(155,89,182,.1);color:#bb8fce;border:1px solid rgba(155,89,182,.2);white-space:nowrap;font-size:11px">Droits humains</button>
@@ -934,7 +930,7 @@
 
           <!-- Logs YARO IA -->
           <div style="margin-bottom:16px">
-            <button class="sbtn" onclick="toggleMonitorLog()" style="font-size:11px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08)">🪵 Voir les logs de l'agent</button>
+            <button class="sbtn" onclick="toggleMonitorLog()" style="font-size:11px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08)">Voir les logs de l'agent</button>
             <pre id="monitor-log-box" style="display:none;margin-top:8px;background:#0d0d0d;border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:12px;font-size:10px;color:#aaa;max-height:220px;overflow-y:auto;white-space:pre-wrap;word-break:break-all"></pre>
           </div>
 
@@ -942,12 +938,12 @@
           <div style="display:flex;gap:0;margin-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08)">
             <button id="tab-bininga" data-filter="filter-bininga" onclick="setNewsFilter('bininga')"
               style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:#fff;border-bottom:2px solid var(--r);margin-bottom:-1px">
-              🧑‍⚖️ Sur Bininga
+              Sur Bininga
               <span id="tab-bininga-count" style="margin-left:6px;background:var(--r);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px"></span>
             </button>
             <button id="tab-all" onclick="setNewsFilter('all')"
               style="padding:9px 20px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px">
-              🌍 Toutes les infos
+              Toutes les infos
               <span id="tab-all-count" style="margin-left:6px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.5);border-radius:10px;padding:1px 7px;font-size:10px"></span>
             </button>
             <button id="filter-bininga" onclick="setNewsFilter('bininga')" style="display:none"></button>
@@ -958,9 +954,9 @@
           <!-- Contrôle de tri -->
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap">
             <span style="font-size:11px;color:rgba(255,255,255,.3);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Trier :</span>
-            <button id="sort-pertinence" onclick="setNewsSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⭐ Pertinence</button>
-            <button id="sort-date-desc" onclick="setNewsSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">⬇ Plus récent</button>
-            <button id="sort-date-asc" onclick="setNewsSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">⬆ Plus ancien</button>
+            <button id="sort-pertinence" onclick="setNewsSort('pertinence')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">Pertinence</button>
+            <button id="sort-date-desc" onclick="setNewsSort('date_desc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.15);color:#3498db;border:1px solid rgba(52,152,219,.3);cursor:pointer">Plus récent</button>
+            <button id="sort-date-asc" onclick="setNewsSort('date_asc')" style="padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);border:1px solid rgba(255,255,255,.08);cursor:pointer">Plus ancien</button>
           </div>
 
           <div id="veille-list" style="display:flex;flex-direction:column;gap:10px">
@@ -973,15 +969,15 @@
       <div class="panel" id="panel-editorial">
         <div class="card">
           <div class="card-header">
-            <div class="card-title">✍️ Éditorial IA</div>
+            <div class="card-title">Éditorial IA</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="loadEditorial()">🔄 Actualiser</button>
+              <button class="sbtn sbtn-progress" onclick="loadEditorial()">Actualiser</button>
             </div>
           </div>
 
           <!-- Infos clés -->
           <div style="padding:10px 14px;background:rgba(52,152,219,.06);border:1px solid rgba(52,152,219,.15);border-radius:8px;font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;line-height:1.6">
-            🤖 Sélectionnez un article de la veille YARO IA et transformez-le en contenu éditorial structuré prêt à publier.<br>
+            Sélectionnez un article de la veille YARO IA et transformez-le en contenu éditorial structuré prêt à publier.<br>
             <span style="color:rgba(255,255,255,.25)">Seuls les articles concernant le Député Bininga sont transformables.</span>
           </div>
 
@@ -994,7 +990,7 @@
             </button>
             <button onclick="editorialTab('generer',this)" id="etab-generer"
               style="flex:1;padding:9px 8px;border:none;cursor:pointer;font-size:12px;font-weight:700;background:transparent;color:rgba(255,255,255,.4);border-bottom:2px solid transparent;margin-bottom:-1px">
-              ⚡ Générer
+              Générer
             </button>
           </div>
 
@@ -1021,7 +1017,7 @@
               <input id="ed-source" type="text" placeholder="Nom du média (ex: Les Dépêches de Brazzaville)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:8px">
               <input id="ed-url" type="url" placeholder="URL de l'article (optionnel)" style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:9px 12px;color:#fff;font-size:12px;margin-bottom:12px">
               <button onclick="generateEditorial()" id="btn-generate-ed" class="sbtn sbtn-progress" style="width:100%;justify-content:center;font-size:13px;padding:11px">
-                ⚡ Générer l'article éditorial
+                Générer l'article éditorial
               </button>
             </div>
 
@@ -1052,7 +1048,7 @@
       </div>
 
       <!-- ══ YOUTUBE IA ══ -->
-      <div class="panel" id="panel-youtube">
+      <div class="panel legacy-panel" id="panel-youtube" hidden aria-hidden="true">
         <div class="card">
           <div class="card-header">
             <div class="card-title">▶️ YouTube IA</div>
@@ -1143,33 +1139,33 @@
         <!-- Header -->
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">
-            <div class="card-title">⚖️ Veille Juridique — YARO IA</div>
+            <div class="card-title">Veille Juridique — YARO IA</div>
             <div class="card-actions">
-              <button class="sbtn sbtn-progress" onclick="yaroRunScraper()" id="yaro-btn-run">⚡ Lancer la veille</button>
-              <button class="sbtn" onclick="yaroLoadStats();yaroLoadArticles(1)" style="background:rgba(255,255,255,.06)">🔄 Actualiser</button>
+              <button class="sbtn sbtn-progress" onclick="yaroRunScraper()" id="yaro-btn-run">Lancer la veille</button>
+              <button class="sbtn" onclick="yaroLoadStats();yaroLoadArticles(1)" style="background:rgba(255,255,255,.06)">Actualiser</button>
             </div>
           </div>
           <div id="yaro-last-run" style="display:none;font-size:11px;color:rgba(255,255,255,.35);margin-top:6px;padding:8px 12px;background:rgba(79,142,247,.06);border:1px solid rgba(79,142,247,.15);border-radius:8px">
-            🕐 Dernière exécution : <strong id="yaro-last-run-ts">—</strong> &nbsp;·&nbsp; Prochaine auto à <strong>02h00</strong>
+            Dernière exécution : <strong id="yaro-last-run-ts">—</strong> &nbsp;·&nbsp; Prochaine auto à <strong>02h00</strong>
           </div>
         </div>
 
         <!-- Stats cards -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
           <div style="background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:1.6rem">📰</span>
+            <span class="metric-mark">AR</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-total">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Articles</div></div>
           </div>
           <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:1.6rem">📅</span>
+            <span class="metric-mark">J</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-today">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Aujourd'hui</div></div>
           </div>
           <div style="background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:1.6rem">🌍</span>
+            <span class="metric-mark">SO</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-sources">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Sources</div></div>
           </div>
           <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
-            <span style="font-size:1.6rem">🔑</span>
+            <span class="metric-mark">MC</span>
             <div><div style="font-size:1.5rem;font-weight:700">4</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Mots-clés</div></div>
           </div>
         </div>
@@ -1179,20 +1175,20 @@
 
           <!-- Keywords bars -->
           <div class="card" style="padding:16px">
-            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">🔑 Mots-clés détectés</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:14px">Mots-clés détectés</div>
             <div id="yl-kw-bars"></div>
           </div>
 
           <!-- Sources -->
           <div class="card" style="padding:16px">
-            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">🌐 Sources</div>
+            <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px">Sources</div>
             <div id="yl-src-list"></div>
           </div>
         </div>
 
         <!-- Filters -->
         <div class="card" style="padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-          <input type="text" id="yl-q" placeholder="🔍 Rechercher…" oninput="_yaroDebounce()"
+          <input type="text" id="yl-q" placeholder="Rechercher…" oninput="_yaroDebounce()"
             style="flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;color:#fff;font-size:12px;outline:none"/>
           <select id="yl-source" onchange="yaroLoadArticles(1)"
             style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:8px 12px;color:#fff;font-size:12px;outline:none">
@@ -1206,13 +1202,13 @@
             <option value="pétrole">Pétrole</option><option value="forêt">Forêt</option>
             <option value="justice">Justice</option><option value="contrat">Contrat</option>
           </select>
-          <button class="sbtn" onclick="yaroResetFilters()" style="font-size:11px">✕ Réinitialiser</button>
+          <button class="sbtn" onclick="yaroResetFilters()" style="font-size:11px">Réinitialiser</button>
         </div>
 
         <!-- Table -->
         <div class="card" style="padding:0;overflow:hidden">
           <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:13px;font-weight:600">📋 Articles <span id="yl-cnt" style="background:var(--r);color:#fff;border-radius:20px;padding:1px 9px;font-size:11px;margin-left:4px">0</span></div>
+            <div style="font-size:13px;font-weight:600">Articles <span id="yl-cnt" style="background:var(--r);color:#fff;border-radius:20px;padding:1px 9px;font-size:11px;margin-left:4px">0</span></div>
             <div style="font-size:11px;color:rgba(255,255,255,.35)" id="yl-tbl-info"></div>
           </div>
           <div style="overflow-x:auto">
@@ -1740,14 +1736,14 @@ async function yaroDelArticle(id){
 
 async function yaroRunScraper(){
   const btn = document.getElementById("yaro-btn-run");
-  btn.disabled=true; btn.textContent="⏳ En cours…";
+  btn.disabled=true; btn.textContent="Veille en cours…";
   const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
   try {
     const r = await fetch("/api/yaro/run",{method:"POST",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:"{}"});
     const d = await r.json();
     if(d.ok) setTimeout(()=>{yaroLoadStats();yaroLoadArticles(1);},9000);
   } catch(e){}
-  setTimeout(()=>{btn.disabled=false;btn.innerHTML="⚡ Lancer la veille";},3000);
+  setTimeout(()=>{btn.disabled=false;btn.textContent="Lancer la veille";},3000);
 }
 
 // Déclenche le chargement quand le panel s'ouvre
