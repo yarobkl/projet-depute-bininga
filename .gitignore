@@ -6,6 +6,7 @@ __pycache__/
 
 # Backups automatiques du serveur
 data_backup_*.json
+backups/
 
 # Certificats SSL
 cert.pem
