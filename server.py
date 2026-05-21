@@ -20,6 +20,27 @@ from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 
+def _load_env_file():
+    """Charge un fichier .env local si présent, sans écraser l'environnement."""
+    env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+    if not os.path.exists(env_path):
+        return
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for raw in f:
+                line = raw.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                key, val = line.split("=", 1)
+                key = key.strip()
+                val = val.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = val
+    except Exception as e:
+        print(f"[ENV] Impossible de charger .env : {e}")
+
+_load_env_file()
+
 # ══════════════════════════════════════════════════════════════════════════════
 # ██  BOUCLIER — OPERATION SÉCURITÉ IA & BOTS (multi-couches)                ██
 # ══════════════════════════════════════════════════════════════════════════════
@@ -853,49 +874,131 @@ def save_news(data: dict):
         print(f"[BININGA] Erreur sauvegarde news: {e}")
 
 # ══════════════════════════════════════════════════════════════════════════
-# ██  COUCHE BASE DE DONNÉES — PostgreSQL + fallback fichiers JSON          ██
+# ██  COUCHE BASE DE DONNÉES — PostgreSQL/MySQL + fallback fichiers JSON     ██
 # ══════════════════════════════════════════════════════════════════════════
-# Utilise PostgreSQL si DATABASE_URL est défini (addon Railway PostgreSQL).
+# Utilise DATABASE_URL si défini. Sur o2switch/cPanel, définir plutôt :
+# MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE, MYSQL_PORT.
 # Écrit aussi dans les fichiers JSON en parallèle (double sécurité).
 # Table unique bininga_store : key TEXT PRIMARY KEY, data TEXT (JSON), updated_at
 
 _PG_LOCK  = threading.Lock()   # verrou global (conservé pour compatibilité)
 _pg_local = threading.local()  # connexion par thread (thread-safe)
 
-def _pg():
-    """Retourne une connexion PostgreSQL par thread, ou None si indisponible.
-    Chaque thread HTTP a sa propre connexion (psycopg2 n'est pas thread-safe)."""
+def _db_config():
+    """Retourne (backend, config) pour PostgreSQL ou MySQL/o2switch."""
     raw_url = os.environ.get("DATABASE_URL", "").strip().strip("\n").strip("\r")
-    if not raw_url:
+    if raw_url:
+        if raw_url.startswith(("mysql://", "mariadb://")):
+            return "mysql", {"url": raw_url}
+        return "postgresql", {"url": raw_url.replace("postgres://", "postgresql://", 1)}
+
+    mysql_db = os.environ.get("MYSQL_DATABASE", "").strip()
+    mysql_user = os.environ.get("MYSQL_USER", "").strip()
+    mysql_pass = os.environ.get("MYSQL_PASSWORD", "").strip()
+    if mysql_db and mysql_user:
+        return "mysql", {
+            "host": os.environ.get("MYSQL_HOST", "localhost").strip() or "localhost",
+            "port": int(os.environ.get("MYSQL_PORT", "3306") or 3306),
+            "user": mysql_user,
+            "password": mysql_pass,
+            "database": mysql_db,
+        }
+    return None, {}
+
+def _db_label():
+    backend, _ = _db_config()
+    return backend or "no_database"
+
+def _pg():
+    """Retourne une connexion DB par thread, ou None si indisponible.
+    Nom conservé pour compatibilité avec le reste du serveur."""
+    backend, cfg = _db_config()
+    if not backend:
         return None
-    url = raw_url.replace("postgres://", "postgresql://", 1) if raw_url.startswith("postgres://") else raw_url
     try:
-        import psycopg2
         conn = getattr(_pg_local, 'conn', None)
-        if conn is None or conn.closed:
-            conn = psycopg2.connect(url, connect_timeout=5)
-            conn.autocommit = True
-            with conn.cursor() as cur:
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS bininga_store (
-                        key         TEXT PRIMARY KEY,
-                        data        TEXT NOT NULL,
-                        updated_at  TIMESTAMPTZ DEFAULT NOW()
+        conn_backend = getattr(_pg_local, 'backend', None)
+        is_closed = conn is None
+        if conn is not None:
+            if backend == "postgresql":
+                is_closed = getattr(conn, "closed", 1) != 0
+            else:
+                try:
+                    conn.ping(reconnect=False)
+                    is_closed = False
+                except Exception:
+                    is_closed = True
+
+        if is_closed or conn_backend != backend:
+            if backend == "postgresql":
+                import psycopg2
+                conn = psycopg2.connect(cfg["url"], connect_timeout=5)
+                conn.autocommit = True
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_store (
+                            key         TEXT PRIMARY KEY,
+                            data        TEXT NOT NULL,
+                            updated_at  TIMESTAMPTZ DEFAULT NOW()
+                        )
+                    """)
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_photos (
+                            id           TEXT PRIMARY KEY,
+                            data         BYTEA NOT NULL,
+                            content_type TEXT NOT NULL DEFAULT 'image/jpeg',
+                            created_at   TIMESTAMPTZ DEFAULT NOW()
+                        )
+                    """)
+            else:
+                import pymysql
+                if "url" in cfg:
+                    parsed = urlparse(cfg["url"])
+                    conn = pymysql.connect(
+                        host=parsed.hostname or "localhost",
+                        port=parsed.port or 3306,
+                        user=unquote(parsed.username or ""),
+                        password=unquote(parsed.password or ""),
+                        database=(parsed.path or "").lstrip("/"),
+                        charset="utf8mb4",
+                        autocommit=True,
+                        connect_timeout=5,
                     )
-                """)
-                cur.execute("""
-                    CREATE TABLE IF NOT EXISTS bininga_photos (
-                        id           TEXT PRIMARY KEY,
-                        data         BYTEA NOT NULL,
-                        content_type TEXT NOT NULL DEFAULT 'image/jpeg',
-                        created_at   TIMESTAMPTZ DEFAULT NOW()
+                else:
+                    conn = pymysql.connect(
+                        host=cfg["host"],
+                        port=cfg["port"],
+                        user=cfg["user"],
+                        password=cfg["password"],
+                        database=cfg["database"],
+                        charset="utf8mb4",
+                        autocommit=True,
+                        connect_timeout=5,
                     )
-                """)
+                with conn.cursor() as cur:
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_store (
+                            `key`      VARCHAR(191) PRIMARY KEY,
+                            data       LONGTEXT NOT NULL,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                                       ON UPDATE CURRENT_TIMESTAMP
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                    """)
+                    cur.execute("""
+                        CREATE TABLE IF NOT EXISTS bininga_photos (
+                            id           VARCHAR(191) PRIMARY KEY,
+                            data         LONGBLOB NOT NULL,
+                            content_type VARCHAR(100) NOT NULL DEFAULT 'image/jpeg',
+                            created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+                    """)
             _pg_local.conn = conn
+            _pg_local.backend = backend
         return conn
     except Exception as e:
-        print(f"[DB] PostgreSQL indisponible : {e}")
+        print(f"[DB] {_db_label()} indisponible : {e}")
         _pg_local.conn = None
+        _pg_local.backend = None
         return None
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
@@ -1003,13 +1106,17 @@ def _gemini_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     raise RuntimeError("Aucune API IA disponible (GEMINI_API_KEY / GROQ_API_KEY / ANTHROPIC_API_KEY non configurés)")
 
 def _pg_load(key: str):
-    """Charge une valeur depuis PostgreSQL. Retourne None si absent ou erreur."""
+    """Charge une valeur depuis la base. Retourne None si absent ou erreur."""
     conn = _pg()
     if not conn:
         return None
     try:
+        backend = getattr(_pg_local, "backend", "postgresql")
         with conn.cursor() as cur:
-            cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
+            if backend == "mysql":
+                cur.execute("SELECT data FROM bininga_store WHERE `key` = %s", (key,))
+            else:
+                cur.execute("SELECT data FROM bininga_store WHERE key = %s", (key,))
             row = cur.fetchone()
             return json.loads(row[0]) if row else None
     except Exception as e:
@@ -1018,18 +1125,26 @@ def _pg_load(key: str):
         return None
 
 def _pg_save(key: str, value) -> bool:
-    """Sauvegarde une valeur dans PostgreSQL. Retourne True si succès."""
+    """Sauvegarde une valeur dans la base. Retourne True si succès."""
     conn = _pg()
     if not conn:
         return False
     try:
+        backend = getattr(_pg_local, "backend", "postgresql")
         with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO bininga_store (key, data, updated_at)
-                VALUES (%s, %s, NOW())
-                ON CONFLICT (key) DO UPDATE
-                SET data = EXCLUDED.data, updated_at = NOW()
-            """, (key, json.dumps(value, ensure_ascii=False)))
+            if backend == "mysql":
+                cur.execute("""
+                    INSERT INTO bininga_store (`key`, data, updated_at)
+                    VALUES (%s, %s, NOW())
+                    ON DUPLICATE KEY UPDATE data = VALUES(data), updated_at = NOW()
+                """, (key, json.dumps(value, ensure_ascii=False)))
+            else:
+                cur.execute("""
+                    INSERT INTO bininga_store (key, data, updated_at)
+                    VALUES (%s, %s, NOW())
+                    ON CONFLICT (key) DO UPDATE
+                    SET data = EXCLUDED.data, updated_at = NOW()
+                """, (key, json.dumps(value, ensure_ascii=False)))
         return True
     except Exception as e:
         print(f"[DB] Erreur écriture '{key}' : {e}")
@@ -1037,19 +1152,27 @@ def _pg_save(key: str, value) -> bool:
         return False
 
 def _pg_save_photo(photo_id: str, data_bytes: bytes, content_type: str = "image/jpeg") -> bool:
-    """Sauvegarde une photo binaire dans PostgreSQL. Retourne True si succès."""
+    """Sauvegarde une photo binaire dans la base. Retourne True si succès."""
     conn = _pg()
     if not conn:
         return False
     try:
-        import psycopg2
+        backend = getattr(_pg_local, "backend", "postgresql")
         with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO bininga_photos (id, data, content_type)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (id) DO UPDATE
-                SET data = EXCLUDED.data, content_type = EXCLUDED.content_type
-            """, (photo_id, psycopg2.Binary(data_bytes), content_type))
+            if backend == "mysql":
+                cur.execute("""
+                    INSERT INTO bininga_photos (id, data, content_type)
+                    VALUES (%s, %s, %s)
+                    ON DUPLICATE KEY UPDATE data = VALUES(data), content_type = VALUES(content_type)
+                """, (photo_id, data_bytes, content_type))
+            else:
+                import psycopg2
+                cur.execute("""
+                    INSERT INTO bininga_photos (id, data, content_type)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (id) DO UPDATE
+                    SET data = EXCLUDED.data, content_type = EXCLUDED.content_type
+                """, (photo_id, psycopg2.Binary(data_bytes), content_type))
         return True
     except Exception as e:
         print(f"[DB] Erreur sauvegarde photo '{photo_id}' : {e}")
@@ -1057,7 +1180,7 @@ def _pg_save_photo(photo_id: str, data_bytes: bytes, content_type: str = "image/
         return False
 
 def _pg_load_photo(photo_id: str):
-    """Charge une photo depuis PostgreSQL. Retourne (bytes, content_type) ou None."""
+    """Charge une photo depuis la base. Retourne (bytes, content_type) ou None."""
     conn = _pg()
     if not conn:
         return None
@@ -1185,9 +1308,11 @@ def _migrate_files_to_db():
                 print(f"[DB] Migration : {len(data.get('contacts', []))} contact(s) CRM importé(s)")
         except Exception:
             pass
-    # Contenu du site (data.json) — TOUJOURS synchroniser depuis le fichier au démarrage
-    # Garantit que les photos et articles du dépôt sont toujours visibles sur le site
-    if os.path.exists(DATA_FILE):
+    # Contenu du site (data.json) — migration initiale uniquement.
+    # La base doit rester la source de vérité, sinon chaque redémarrage peut écraser
+    # les changements faits depuis l'espace admin.
+    force_file_sync = os.environ.get("BININGA_FORCE_FILE_SYNC", "") == "1"
+    if os.path.exists(DATA_FILE) and (force_file_sync or _pg_load("site_data") is None):
         try:
             with open(DATA_FILE, "r", encoding="utf-8") as f:
                 fresh = json.load(f)
@@ -1195,7 +1320,8 @@ def _migrate_files_to_db():
                 _pg_save("site_data", fresh)
                 g = fresh.get("gallery", {})
                 a = fresh.get("actus", {})
-                print(f"[DB] Contenu synchronisé depuis data.json — "
+                mode = "sync forcée" if force_file_sync else "migration initiale"
+                print(f"[DB] Contenu {mode} depuis data.json — "
                       f"galerie: {len(g.get('grid', []))} photos, "
                       f"actus: {len(a.get('slides', []))+len(a.get('cards', []))} articles")
         except Exception as e:
@@ -1211,6 +1337,36 @@ def _migrate_files_to_db():
         except Exception:
             pass
 
+    # Photos existantes du dossier images/ → base, pour que la DB puisse les
+    # restaurer si l'hébergement ou un déploiement efface les fichiers.
+    image_root = os.path.join(BASE_DIR, "images")
+    if os.path.isdir(image_root):
+        IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+        migrated = 0
+        for root, dirs, files in os.walk(image_root):
+            dirs[:] = [d for d in dirs if d != "video"]
+            rel_root = os.path.relpath(root, image_root)
+            if rel_root.startswith("sinistres"):
+                continue
+            for filename in files:
+                ext = os.path.splitext(filename)[1].lower()
+                if ext not in IMAGE_EXTS:
+                    continue
+                path = os.path.join(root, filename)
+                try:
+                    with open(path, "rb") as fh:
+                        data_bytes = fh.read()
+                    if not data_bytes:
+                        continue
+                    mime_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png",
+                                ".webp": "image/webp", ".gif": "image/gif", ".svg": "image/svg+xml"}
+                    if _pg_save_photo("upload_" + filename, data_bytes, mime_map.get(ext, "image/jpeg")):
+                        migrated += 1
+                except Exception as e:
+                    print(f"[DB] Photo non migrée '{filename}' : {e}")
+        if migrated:
+            print(f"[DB] Sauvegarde photos initiales : {migrated} image(s) copiée(s) en base")
+
 # ── Init au chargement du module ───────────────────────────
 # 1. Migrer les fichiers JSON → PostgreSQL (avant init_users pour récupérer le compte existant)
 _migrate_files_to_db()
@@ -1218,10 +1374,10 @@ _migrate_files_to_db()
 init_users()
 load_sessions()
 # Log statut DB
-if os.environ.get("DATABASE_URL"):
-    print("[DB] ✅ PostgreSQL connecté — persistance activée")
+if _db_label() != "no_database":
+    print(f"[DB] ✅ {_db_label()} connecté — persistance activée")
 else:
-    print("[DB] ⚠️  Pas de DATABASE_URL — stockage fichiers uniquement (éphémère sur Railway)")
+    print("[DB] ⚠️  Pas de base configurée — stockage fichiers uniquement")
 
 # ── Handler ────────────────────────────────────────────────
 class BiningaHandler(http.server.SimpleHTTPRequestHandler):
@@ -1337,7 +1493,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "ts":        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "sessions":  len(ACTIVE_SESSIONS),
                 "blocked":   len(BLOCKED_IPS),
-                "database":  "postgresql_ok" if db_ok else "no_database",
+                "database":  f"{_db_label()}_ok" if db_ok else "no_database",
             })
             return
 

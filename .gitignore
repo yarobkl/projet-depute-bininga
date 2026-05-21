@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 *.pyo
+.env
 
 # Backups automatiques du serveur
 data_backup_*.json
