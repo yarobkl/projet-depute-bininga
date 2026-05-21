@@ -1556,27 +1556,46 @@ async function yaroLoadStats(){
       document.getElementById("yaro-last-run").style.display="block";
     }
 
+    const kwBox = document.getElementById("yl-kw-bars");
+    const srcBox = document.getElementById("yl-src-list");
+    const sourceSelect = document.getElementById("yl-source");
+
     // Keywords bars
-    const kw = d.keywords||[];
-    const maxK = Math.max(...kw.map(k=>k.cnt),1);
-    const clrs = ["#4f8ef7","#22c55e","#f59e0b","#ef4444"];
-    document.getElementById("yl-kw-bars").innerHTML = kw.map((k,i)=>`
-      <div style="margin-bottom:10px">
-        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
-          <span style="color:rgba(255,255,255,.5)">${_ylCap(k.keyword)}</span>
-          <span style="font-weight:700;color:#fff">${k.cnt}</span>
-        </div>
-        <div style="background:rgba(255,255,255,.06);border-radius:99px;height:5px;overflow:hidden">
-          <div style="height:5px;border-radius:99px;width:${Math.max(4,k.cnt/maxK*100)}%;background:${clrs[i]};transition:width .6s"></div>
-        </div>
-      </div>`).join("") || "<span style='color:rgba(255,255,255,.3);font-size:11px'>Aucune donnée</span>";
+    const kw = Array.isArray(d.keywords) ? d.keywords : [];
+    const kwCounts = kw.map(k => Number(k.cnt || 0));
+    const maxK = Math.max(1, ...kwCounts);
+    const clrs = ["#4f8ef7","#22c55e","#f59e0b","#ef4444","#8b5cf6","#14b8a6"];
+    if (kwBox) {
+      kwBox.innerHTML = kw.map((k,i)=>{
+        const cnt = Number(k.cnt || 0);
+        const color = clrs[i % clrs.length];
+        return `<div style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px">
+            <span style="color:rgba(255,255,255,.5)">${_ylEsc(_ylCap(k.keyword))}</span>
+            <span style="font-weight:700;color:#fff">${cnt}</span>
+          </div>
+          <div style="background:rgba(255,255,255,.06);border-radius:99px;height:5px;overflow:hidden">
+            <div style="height:5px;border-radius:99px;width:${Math.max(4,cnt/maxK*100)}%;background:${color};transition:width .6s"></div>
+          </div>
+        </div>`;
+      }).join("") || "<span style='color:rgba(255,255,255,.3);font-size:11px'>Aucune donnée</span>";
+    }
 
     // Sources
-    document.getElementById("yl-src-list").innerHTML = (d.sources||[]).map(s=>`
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:6px;font-size:11px">
-        <span style="color:rgba(255,255,255,.7)">${s.source}</span>
-        <span style="color:#4f8ef7;font-weight:700">${s.cnt}</span>
-      </div>`).join("") || "<span style='color:rgba(255,255,255,.3);font-size:11px'>Aucune source</span>";
+    const sources = Array.isArray(d.sources) ? d.sources : [];
+    if (srcBox) {
+      srcBox.innerHTML = sources.map(s=>`
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(255,255,255,.04);border-radius:8px;margin-bottom:6px;font-size:11px">
+          <span style="color:rgba(255,255,255,.7)">${_ylEsc(s.source)}</span>
+          <span style="color:#4f8ef7;font-weight:700">${Number(s.cnt || 0)}</span>
+        </div>`).join("") || "<span style='color:rgba(255,255,255,.3);font-size:11px'>Aucune source</span>";
+    }
+    if (sourceSelect && sources.length) {
+      const current = sourceSelect.value;
+      sourceSelect.innerHTML = `<option value="">Toutes les sources</option>` +
+        sources.map(s => `<option value="${_ylEsc(s.source)}">${_ylEsc(s.source)}</option>`).join("");
+      sourceSelect.value = sources.some(s => s.source === current) ? current : "";
+    }
 
     // Badge sidebar
     if ((d.today||0)>0){
