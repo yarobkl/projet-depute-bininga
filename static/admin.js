@@ -387,7 +387,7 @@ function renderSlides() {
         <input type="text" value="${esc(s.title||'')}" placeholder="Titre de la slide"
           oninput="updSlide(${i},'title',this.value)">
         <label style="margin-top:8px">Emoji (si pas de photo)</label>
-        <input type="text" value="${esc(s.emoji||'')}" placeholder="🏛️"
+        <input type="text" value="${esc(s.emoji||'')}" placeholder="Icône"
           oninput="updSlide(${i},'emoji',this.value)" style="width:80px">
       </div>
       <div class="form-group" style="margin:0">
@@ -634,7 +634,7 @@ function renderActuVedettes() {
           <textarea rows="3" oninput="updActuVedetteTags(${i},this.value)">${esc((v.tags||[]).join('\n'))}</textarea>
         </div>
         <div style="grid-column:span 2;font-size:11px;color:rgba(255,255,255,.25);margin-top:4px">Si pas d'image : renseignez les champs ci-dessous pour le placeholder</div>
-        <div class="form-group" style="margin:0"><label>Emoji placeholder</label><input type="text" value="${esc(v.placeholderEmoji||'')}" placeholder="🏘️" oninput="updActuVedette(${i},'placeholderEmoji',this.value)" style="max-width:80px"></div>
+        <div class="form-group" style="margin:0"><label>Visuel de remplacement</label><input type="text" value="${esc(v.placeholderEmoji||'')}" placeholder="Icône" oninput="updActuVedette(${i},'placeholderEmoji',this.value)" style="max-width:80px"></div>
         <div class="form-group" style="margin:0"><label>Titre placeholder (\\n = saut)</label><input type="text" value="${esc(v.placeholderTitle||'')}" oninput="updActuVedette(${i},'placeholderTitle',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Date placeholder</label><input type="text" value="${esc(v.placeholderDate||'')}" oninput="updActuVedette(${i},'placeholderDate',this.value)"></div>
         <div class="form-group" style="margin:0"><label>Fond placeholder (CSS)</label><input type="text" value="${esc(v.imageBg||'')}" placeholder="linear-gradient(…)" oninput="updActuVedette(${i},'imageBg',this.value)"></div>
@@ -2100,13 +2100,13 @@ function renderParcours() {
           <option value="right" ${p.side==="right"?"selected":""}>→ Droite</option>
         </select>
         <label style="margin-top:8px">Emoji</label>
-        <input type="text" value="${esc(p.emoji||'')}" placeholder="📚" oninput="updParcours(${i},'emoji',this.value)" style="width:60px;text-align:center;font-size:18px">
+        <input type="text" value="${esc(p.emoji||'')}" placeholder="Icône" oninput="updParcours(${i},'emoji',this.value)" style="width:60px;text-align:center;font-size:18px">
       </div>
       <div class="form-group" style="margin:0">
         <label>Année / Période</label>
         <input type="text" value="${esc(p.year||'')}" placeholder="2016" oninput="updParcours(${i},'year',this.value)">
         <label style="margin-top:8px">Tag</label>
-        <input type="text" value="${esc(p.tag||'')}" placeholder="🏛️ Ministre" oninput="updParcours(${i},'tag',this.value)" style="font-size:12px">
+        <input type="text" value="${esc(p.tag||'')}" placeholder="Ministre" oninput="updParcours(${i},'tag',this.value)" style="font-size:12px">
       </div>
       <div class="form-group" style="margin:0">
         <label>Titre</label>
@@ -2132,7 +2132,7 @@ function updParcours(i, field, val) {
 function addParcoursItem() {
   if (!siteData.parcours) siteData.parcours = [];
   const side = siteData.parcours.length % 2 === 0 ? "left" : "right";
-  siteData.parcours.push({ side, emoji: "📌", year: "", title: "", desc: "", tag: "" });
+  siteData.parcours.push({ side, emoji: "", year: "", title: "", desc: "", tag: "" });
   renderParcours();
 }
 function delParcoursItem(i) {
@@ -2213,7 +2213,7 @@ function updAxe(i, field, val) {
 function addAxe() {
   if (!siteData.programme) siteData.programme = { heroTitle: "", heroText: "", axes: [] };
   if (!siteData.programme.axes) siteData.programme.axes = [];
-  siteData.programme.axes.push({ icon: "📌", title: "", text: "", points: [] });
+  siteData.programme.axes.push({ icon: "", title: "", text: "", points: [] });
   renderAxes();
 }
 function delAxe(i) {

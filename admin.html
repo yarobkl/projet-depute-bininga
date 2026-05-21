@@ -60,96 +60,96 @@
     <nav class="sb-nav">
       <div class="sb-section">Vue d'ensemble</div>
       <div class="sb-item active" onclick="showPanel('dashboard',this)">
-        <span class="icon">TB</span> Tableau de bord
+        <span class="icon i-dashboard" aria-hidden="true"></span> Tableau de bord
       </div>
 
       <div class="sb-section">Gestion</div>
       <div class="sb-item" onclick="showPanel('audiences',this)">
-        <span class="icon">DA</span> Demandes d'audience
+        <span class="icon i-calendar" aria-hidden="true"></span> Demandes d'audience
         <span class="sb-badge" id="badge-aud" style="display:none"></span>
       </div>
       <div class="sb-item" onclick="showPanel('reclamations',this)">
-        <span class="icon">RC</span> Réclamations
+        <span class="icon i-alert" aria-hidden="true"></span> Réclamations
         <span class="sb-badge warn" id="badge-recl" style="display:none"></span>
       </div>
       <div class="sb-item" onclick="showPanel('contacts',this)">
-        <span class="icon">ME</span> Messages
+        <span class="icon i-mail" aria-hidden="true"></span> Messages
         <span class="sb-badge" id="badge-ct" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('crm',this)">
-        <span class="icon">CRM</span> CRM Contacts
+        <span class="icon i-users" aria-hidden="true"></span> CRM Contacts
         <span class="sb-badge" id="badge-crm" style="display:none"></span>
       </div>
 
       <div class="sb-section role-editeur" style="display:none">Contenu du site</div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('hero',this)">
-        <span class="icon">HE</span> Hero
+        <span class="icon i-home" aria-hidden="true"></span> Hero
       </div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('about',this)">
-        <span class="icon">AP</span> À propos
+        <span class="icon i-user" aria-hidden="true"></span> À propos
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('stats',this)">
-        <span class="icon">KP</span> Statistiques
+        <span class="icon i-chart" aria-hidden="true"></span> Statistiques
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('galerie',this)">
-        <span class="icon">GA</span> Galerie
+        <span class="icon i-image" aria-hidden="true"></span> Galerie
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('actus',this)">
-        <span class="icon">AC</span> Actualités
+        <span class="icon i-news" aria-hidden="true"></span> Actualités
       </div>
       <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('parcours',this)">
-        <span class="icon">PR</span> Parcours
+        <span class="icon i-route" aria-hidden="true"></span> Parcours
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('programme',this)">
-        <span class="icon">PG</span> Programme
+        <span class="icon i-list" aria-hidden="true"></span> Programme
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('seo',this)">
-        <span class="icon">SE</span> SEO
+        <span class="icon i-search" aria-hidden="true"></span> SEO
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('engagement',this)">
-        <span class="icon">EN</span> Engagement
+        <span class="icon i-handshake" aria-hidden="true"></span> Engagement
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('cta',this)">
-        <span class="icon">CT</span> Bandeau CTA
+        <span class="icon i-target" aria-hidden="true"></span> Bandeau CTA
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('contact-info',this)">
-        <span class="icon">CO</span> Contact
+        <span class="icon i-phone" aria-hidden="true"></span> Contact
       </div>
       <div class="sb-item role-editeur" style="display:none" onclick="showPanel('footer',this)">
-        <span class="icon">FO</span> Footer
+        <span class="icon i-footer" aria-hidden="true"></span> Footer
       </div>
 
       <div class="sb-section role-ministre" style="display:none">Intelligence</div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('veille',this)">
-        <span class="icon">YA</span> YARO IA
+        <span class="icon i-activity" aria-hidden="true"></span> YARO IA
         <span class="sb-badge" id="badge-veille" style="display:none"></span>
       </div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('editorial',this)">
-        <span class="icon">ED</span> Éditorial IA
+        <span class="icon i-edit" aria-hidden="true"></span> Éditorial IA
         <span class="sb-badge" id="badge-editorial" style="display:none"></span>
       </div>
       <div class="sb-item role-ministre" style="display:none" onclick="showPanel('yaro-legal',this)">
-        <span class="icon">VJ</span> Veille Juridique
+        <span class="icon i-scale" aria-hidden="true"></span> Veille Juridique
         <span class="sb-badge" id="badge-yaro-legal" style="display:none"></span>
       </div>
 
       <div class="sb-section role-admin" style="display:none">Système</div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('monitoring',this)">
-        <span class="icon">MO</span> Monitoring
+        <span class="icon i-pulse" aria-hidden="true"></span> Monitoring
         <span class="sb-badge warn" id="badge-mon" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('backups',this)">
-        <span class="icon">BK</span> Sauvegardes
+        <span class="icon i-database" aria-hidden="true"></span> Sauvegardes
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('logs',this)">
-        <span class="icon">JA</span> Journaux d'audit
+        <span class="icon i-clipboard" aria-hidden="true"></span> Journaux d'audit
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('users',this)">
-        <span class="icon">UT</span> Utilisateurs
+        <span class="icon i-user-cog" aria-hidden="true"></span> Utilisateurs
         <span class="sb-badge" id="badge-users" style="display:none"></span>
       </div>
       <div class="sb-item role-admin" style="display:none" onclick="showPanel('security',this)">
-        <span class="icon">SC</span> Sécurité
+        <span class="icon i-shield" aria-hidden="true"></span> Sécurité
         <span class="sb-badge warn" id="badge-sec" style="display:none"></span>
       </div>
     </nav>
@@ -1066,19 +1066,19 @@
 
         <!-- Stats cards -->
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px">
-          <div style="background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
+          <div class="yaro-stat-card" style="background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
             <span class="metric-mark">AR</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-total">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Articles</div></div>
           </div>
-          <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
+          <div class="yaro-stat-card" style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
             <span class="metric-mark">J</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-today">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Aujourd'hui</div></div>
           </div>
-          <div style="background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
+          <div class="yaro-stat-card" style="background:rgba(124,92,252,.08);border:1px solid rgba(124,92,252,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
             <span class="metric-mark">SO</span>
             <div><div style="font-size:1.5rem;font-weight:700" id="yl-sources">—</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Sources</div></div>
           </div>
-          <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
+          <div class="yaro-stat-card" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px">
             <span class="metric-mark">MC</span>
             <div><div style="font-size:1.5rem;font-weight:700">4</div><div style="font-size:11px;color:rgba(255,255,255,.4);margin-top:2px">Mots-clés</div></div>
           </div>
@@ -1126,7 +1126,7 @@
             <div style="font-size:11px;color:rgba(255,255,255,.35)" id="yl-tbl-info"></div>
           </div>
           <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse">
+            <table class="admin-table">
               <thead>
                 <tr style="background:rgba(255,255,255,.03)">
                   <th style="padding:9px 14px;text-align:left;font-size:10px;color:rgba(255,255,255,.35);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Source</th>
@@ -1545,6 +1545,11 @@ async function yaroLoadStats(){
     document.getElementById("yl-total").textContent   = d.total ?? 0;
     document.getElementById("yl-today").textContent   = d.today ?? 0;
     document.getElementById("yl-sources").textContent = (d.sources||[]).length;
+    const runBox = document.getElementById("yaro-last-run");
+    if (runBox && !d.last_run) {
+      runBox.style.display = "block";
+      document.getElementById("yl-last-run-ts").textContent = "Aucune veille lancée";
+    }
 
     if (d.last_run){
       document.getElementById("yl-last-run-ts").textContent = _ylFmtDate(d.last_run);
@@ -1608,7 +1613,12 @@ async function yaroLoadArticles(page=1){
 
     if (!d.articles.length){
       document.getElementById("yl-tbody").innerHTML=
-        `<tr><td colspan="5" style="text-align:center;padding:32px;color:rgba(255,255,255,.3);font-size:12px">Aucun article trouvé</td></tr>`;
+        `<tr><td colspan="5">
+          <div class="yaro-empty">
+            <strong>Aucun bulletin juridique pour le moment</strong>
+            <span>Lancez une veille pour générer des bulletins. Si aucune clé IA n'est disponible, le serveur produira quand même des résultats locaux structurés pour ne pas laisser le module vide.</span>
+          </div>
+        </td></tr>`;
     } else {
       document.getElementById("yl-tbody").innerHTML = d.articles.map(a=>{
         const kws=(a.keywords||"").split(",").filter(Boolean);
