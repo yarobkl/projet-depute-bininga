@@ -1570,7 +1570,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         path_clean = path.strip("/")
         admin_entry_get = method == "GET" and path_clean in (ADMIN_SECRET_PATH, ADMIN_SECRET_PATH + ".html")
         login_post = method == "POST" and path == "/api/login"
-        if _AI_GUARD_ENABLED and not public_get and not admin_entry_get and not login_post:
+        token = self.headers.get("X-Admin-Token", "")
+        authenticated_admin_api = bool(
+            token
+            and path.startswith("/api/")
+            and get_session(token)
+        )
+        if _AI_GUARD_ENABLED and not public_get and not admin_entry_get and not login_post and not authenticated_admin_api:
             headers_dict = dict(self.headers)
             blocked, reason = AI_GUARD.inspect(ip, method, path, headers_dict, body_size)
             if blocked:
@@ -2072,6 +2078,90 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "stats": data.get("stats", {}),
                 "monitor_running": monitor_running,
             })
+            return
+
+        # ── /api/yaro/* — Veille juridique YARO IA (GET) ─────────────────────
+        if path.startswith("/api/yaro/"):
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+
+            def _yaro_conn_get():
+                import sqlite3 as _sq
+                c = _sq.connect(YARO_DB_FILE)
+                _yaro_init_db(c)
+                c.row_factory = _sq.Row
+                return c
+
+            if path == "/api/yaro/stats":
+                try:
+                    c = _yaro_conn_get()
+                    today = datetime.utcnow().date().isoformat()
+                    total = c.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+                    today_cnt = c.execute("SELECT COUNT(*) FROM articles WHERE ts >= ?", (today,)).fetchone()[0]
+                    sources = [dict(r) for r in c.execute(
+                        "SELECT source, COUNT(*) as cnt FROM articles GROUP BY source ORDER BY cnt DESC"
+                    ).fetchall()]
+                    keywords = []
+                    for kw in ["pétrole", "forêt", "justice", "contrat"]:
+                        cnt = c.execute("SELECT COUNT(*) FROM articles WHERE keywords LIKE ?", (f"%{kw}%",)).fetchone()[0]
+                        keywords.append({"keyword": kw, "cnt": cnt})
+                    last_run = c.execute("SELECT ts FROM articles ORDER BY ts DESC LIMIT 1").fetchone()
+                    c.close()
+                    self._json({
+                        "ok": True,
+                        "total": total,
+                        "today": today_cnt,
+                        "sources": sources,
+                        "keywords": keywords,
+                        "last_run": last_run[0] if last_run else None,
+                    })
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            if path == "/api/yaro/articles":
+                try:
+                    qs_y = parse_qs(urlparse(self.path).query)
+                    page = max(1, int(qs_y.get("page", ["1"])[0]))
+                    limit = min(50, max(1, int(qs_y.get("limit", ["20"])[0])))
+                    source = qs_y.get("source", [""])[0].strip()
+                    kw = qs_y.get("keyword", [""])[0].strip()
+                    q_txt = qs_y.get("q", [""])[0].strip()
+                    offset = (page - 1) * limit
+
+                    where, params = [], []
+                    if source:
+                        where.append("source = ?")
+                        params.append(source)
+                    if kw:
+                        where.append("keywords LIKE ?")
+                        params.append(f"%{kw}%")
+                    if q_txt:
+                        where.append("(titre_fr LIKE ? OR titre LIKE ? OR url LIKE ?)")
+                        params += [f"%{q_txt}%", f"%{q_txt}%", f"%{q_txt}%"]
+
+                    where_sql = ("WHERE " + " AND ".join(where)) if where else ""
+                    c = _yaro_conn_get()
+                    total_f = c.execute(f"SELECT COUNT(*) FROM articles {where_sql}", params).fetchone()[0]
+                    rows = c.execute(
+                        f"SELECT id,source,titre_fr,titre,url,keywords,lang_orig,ts FROM articles {where_sql} ORDER BY ts DESC LIMIT ? OFFSET ?",
+                        params + [limit, offset],
+                    ).fetchall()
+                    c.close()
+                    self._json({
+                        "ok": True,
+                        "total": total_f,
+                        "page": page,
+                        "pages": max(1, -(-total_f // limit)),
+                        "articles": [dict(r) for r in rows],
+                    })
+                except Exception as e:
+                    self._json({"ok": False, "message": str(e)}, 500)
+                return
+
+            self._json({"ok": False, "message": "Route YARO inconnue"}, 404)
             return
 
         # ── /api/youtube — liste des contenus YouTube (GET) ──

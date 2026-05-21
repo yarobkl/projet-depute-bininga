@@ -1533,9 +1533,8 @@ function yaroResetFilters(){
 }
 
 async function yaroLoadStats(){
-  const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
   try {
-    const r = await fetch("/api/yaro/stats",{headers:{"X-Admin-Token":tok}});
+    const r = await apiFetch("/api/yaro/stats",{headers:authHeaders()});
     const d = await r.json();
     if (!d.ok) {
       document.getElementById("yl-kw-bars").innerHTML = `<span style="color:#ef4444;font-size:11px">${_ylEsc(d.message || "Statistiques indisponibles")}</span>`;
@@ -1587,7 +1586,6 @@ async function yaroLoadStats(){
 
 async function yaroLoadArticles(page=1){
   _ylPage=page;
-  const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
   const q   = encodeURIComponent((document.getElementById("yl-q")||{}).value||"");
   const src = encodeURIComponent((document.getElementById("yl-source")||{}).value||"");
   const kw  = encodeURIComponent((document.getElementById("yl-kw")||{}).value||"");
@@ -1596,7 +1594,7 @@ async function yaroLoadArticles(page=1){
   document.getElementById("yl-tbody").innerHTML =
     `<tr><td colspan="5" style="text-align:center;padding:24px;color:rgba(255,255,255,.3);font-size:12px">Chargement…</td></tr>`;
   try {
-    const r = await fetch(url,{headers:{"X-Admin-Token":tok}});
+    const r = await apiFetch(url,{headers:authHeaders()});
     const d = await r.json();
     if (!d.ok) {
       document.getElementById("yl-tbody").innerHTML =
@@ -1656,9 +1654,8 @@ async function yaroLoadArticles(page=1){
 
 async function yaroDelArticle(id){
   if(!confirm("Supprimer cet article ?")) return;
-  const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
   try {
-    const r = await fetch("/api/yaro/article",{method:"DELETE",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:JSON.stringify({id})});
+    const r = await apiFetch("/api/yaro/article",{method:"POST",headers:authHeaders(),body:JSON.stringify({id})});
     const d = await r.json();
     if(d.ok){yaroLoadArticles(_ylPage);yaroLoadStats();showToast("Article supprimé");}
     else showToast(d.message || "Suppression impossible", true);
@@ -1670,9 +1667,8 @@ async function yaroDelArticle(id){
 async function yaroRunScraper(){
   const btn = document.getElementById("yaro-btn-run");
   btn.disabled=true; btn.textContent="Veille en cours…";
-  const tok = typeof SESSION_TOKEN!=="undefined" ? SESSION_TOKEN : (localStorage.getItem("bininga_token")||"");
   try {
-    const r = await fetch("/api/yaro/run",{method:"POST",headers:{"X-Admin-Token":tok,"Content-Type":"application/json"},body:"{}"});
+    const r = await apiFetch("/api/yaro/run",{method:"POST",headers:authHeaders(),body:"{}"});
     const d = await r.json();
     if(d.ok) {
       showToast(d.message || "Veille lancée");
