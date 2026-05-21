@@ -148,7 +148,7 @@ function toggleUserForm(show) {
   const btn       = document.getElementById("btn-add-user");
   const visible   = show !== undefined ? show : container.style.display === "none";
   container.style.display = visible ? "" : "none";
-  btn.textContent = visible ? "✕ Fermer" : "+ Ajouter un utilisateur";
+  btn.textContent = visible ? "Fermer le formulaire" : "Ajouter un utilisateur";
   if (visible) container.scrollIntoView({ behavior: "smooth", block: "nearest" });
   if (!visible) resetUserForm();
 }
@@ -2261,6 +2261,8 @@ function showToast(msg, err=false) {
   const t = document.getElementById("toast");
   t.textContent = msg;
   t.className = "show" + (err ? " err" : "");
+  t.setAttribute("role", "status");
+  t.setAttribute("aria-live", err ? "assertive" : "polite");
   setTimeout(() => t.className = "", 3500);
 }
 

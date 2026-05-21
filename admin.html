@@ -1676,20 +1676,27 @@ async function yaroDelArticle(id){
 
 async function yaroRunScraper(){
   const btn = document.getElementById("yaro-btn-run");
-  btn.disabled=true; btn.textContent="Veille en cours…";
+  btn.disabled=true;
+  btn.classList.add("is-saving");
+  btn.textContent="Analyse juridique en cours…";
   try {
     const r = await apiFetch("/api/yaro/run",{method:"POST",headers:authHeaders(),body:"{}"});
     const d = await r.json();
     if(d.ok) {
       showToast(d.message || "Veille lancée");
-      setTimeout(()=>{yaroLoadStats();yaroLoadArticles(1);},1800);
+      await yaroLoadStats();
+      await yaroLoadArticles(1);
     } else {
       showToast(d.message || "Veille indisponible", true);
     }
   } catch(e){
     showToast("Erreur réseau pendant la veille", true);
   } finally {
-    setTimeout(()=>{btn.disabled=false;btn.textContent="Lancer la veille";},1200);
+    setTimeout(()=>{
+      btn.disabled=false;
+      btn.classList.remove("is-saving");
+      btn.textContent="Lancer la veille";
+    },800);
   }
 }
 
