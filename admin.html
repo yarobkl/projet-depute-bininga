@@ -881,22 +881,9 @@
             <button class="btn-danger" onclick="resetSystem(['contacts'])">Vider messages &amp; audiences</button>
             <button class="btn-danger" onclick="resetSystem(['crm'])">Vider le CRM</button>
             <button class="btn-danger" style="background:rgba(231,76,60,.2);font-weight:700" onclick="resetSystem(['contacts','crm'])">Réinitialisation totale</button>
-    </div>
-
-    <div class="admin-actionbar role-editeur" id="admin-actionbar" style="display:none" aria-label="Actions d'administration">
-      <div class="admin-actionbar-status">
-        <strong>Contenu du site</strong>
-        <span>Actions rapides et sauvegarde</span>
+          </div>
+        </div>
       </div>
-      <div class="admin-actionbar-actions">
-        <button class="sb-btn sb-btn-primary" id="btn-save" onclick="saveData()">Enregistrer le contenu</button>
-        <button class="sb-btn sb-btn-soft" id="btn-reload-data" onclick="loadSiteData();showToast('Données rechargées')">Recharger les données</button>
-        <button class="sb-btn sb-btn-danger role-admin" id="btn-force-sync" style="display:none" onclick="forceSyncData()">Restaurer data.json</button>
-      </div>
-    </div>
-  </div>
-
-</div>
 
       <!-- ── LOGS D'AUDIT ── -->
       <!-- ── YARO IA ── -->
@@ -1437,6 +1424,17 @@
 
     </div><!-- /content -->
   </div><!-- /main -->
+  <div class="admin-actionbar role-editeur" id="admin-actionbar" style="display:none" aria-label="Actions d'administration">
+    <div class="admin-actionbar-status">
+      <strong>Contenu du site</strong>
+      <span>Actions rapides et sauvegarde</span>
+    </div>
+    <div class="admin-actionbar-actions">
+      <button class="sb-btn sb-btn-primary" id="btn-save" onclick="saveData()">Enregistrer le contenu</button>
+      <button class="sb-btn sb-btn-soft" id="btn-reload-data" onclick="loadSiteData();showToast('Données rechargées')">Recharger les données</button>
+      <button class="sb-btn sb-btn-danger role-admin" id="btn-force-sync" style="display:none" onclick="forceSyncData()">Restaurer data.json</button>
+    </div>
+  </div>
 </div><!-- /app -->
 
 <div id="toast"></div>
