@@ -7,30 +7,42 @@ existing handler without starting a second HTTP server.
 
 import http
 import io
+import os
 from email.message import Message
 
 import server as bininga_server
 
 
 def _bootstrap() -> None:
-    """Initialise the same runtime services as the direct server entrypoint."""
+    """Initialise only the lightweight state needed to answer web requests.
+
+    Passenger imports this module inside its app worker. Long-running helper
+    processes and background schedulers are intentionally opt-in here: cPanel
+    can otherwise keep the worker busy during boot and leave requests hanging.
+    """
     for name in ("init_users", "load_blocked_ips", "load_attack_scores"):
         fn = getattr(bininga_server, name, None)
         if callable(fn):
             fn()
 
-    for name in ("start_monitor", "_monitor_watchdog"):
-        fn = getattr(bininga_server, name, None)
-        if callable(fn):
-            fn()
+    if os.environ.get("BININGA_PASSENGER_BOOT_SERVICES") != "1":
+        return
 
-    mon = getattr(bininga_server, "_MON", None)
-    if mon and hasattr(mon, "init_db") and hasattr(mon, "start_scheduler"):
-        mon.init_db()
-        mon.start_scheduler(
-            get_sessions_fn=lambda: len(getattr(bininga_server, "ACTIVE_SESSIONS", [])),
-            get_blocked_fn=lambda: len(getattr(bininga_server, "BLOCKED_IPS", [])),
-        )
+    try:
+        for name in ("start_monitor", "_monitor_watchdog"):
+            fn = getattr(bininga_server, name, None)
+            if callable(fn):
+                fn()
+
+        mon = getattr(bininga_server, "_MON", None)
+        if mon and hasattr(mon, "init_db") and hasattr(mon, "start_scheduler"):
+            mon.init_db()
+            mon.start_scheduler(
+                get_sessions_fn=lambda: len(getattr(bininga_server, "ACTIVE_SESSIONS", [])),
+                get_blocked_fn=lambda: len(getattr(bininga_server, "BLOCKED_IPS", [])),
+            )
+    except Exception as exc:
+        print(f"[PASSENGER] Services arrière-plan ignorés: {exc}", flush=True)
 
 
 class _PassengerHandler(bininga_server.BiningaHandler):
