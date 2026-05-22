@@ -5,8 +5,6 @@ Passenger expects a WSGI callable, so this adapter feeds WSGI requests into the
 existing handler without starting a second HTTP server.
 """
 
-from __future__ import annotations
-
 import http
 import io
 from email.message import Message
