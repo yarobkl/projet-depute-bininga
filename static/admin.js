@@ -2371,6 +2371,7 @@ function toggleSidebar() {
   if (btn)  { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
   if (ov)   ov.classList.toggle("open", open);
   if (pull) pull.classList.toggle("visible", open);
+  document.body.classList.toggle("sidebar-open", open);
   document.body.style.overflow = open ? "hidden" : "";
 }
 function closeSidebar() {
@@ -2382,6 +2383,7 @@ function closeSidebar() {
   if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
   if (ov)   ov.classList.remove("open");
   if (pull) pull.classList.remove("visible");
+  document.body.classList.remove("sidebar-open");
   document.body.style.overflow = "";
 }
 
