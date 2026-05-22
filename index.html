@@ -79,21 +79,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="static/index.css">
-<link rel="stylesheet" href="static/mobile.css">
+<link rel="stylesheet" href="static/index.css?v=20260522-public-polish">
+<link rel="stylesheet" href="static/mobile.css?v=20260522-public-polish">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
 .lang-switcher{display:flex;align-items:center;gap:4px;margin-left:10px}
 .lang-btn{
   background:transparent;border:1px solid transparent;border-radius:6px;
-  cursor:pointer;font-size:1.15rem;padding:4px 6px;line-height:1;
+	  cursor:pointer;font-size:.68rem;font-weight:800;letter-spacing:.08em;padding:6px 8px;line-height:1;
   transition:all .18s;opacity:.55;
 }
 .lang-btn:hover{opacity:1;border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.07)}
 .lang-btn.lang-active{opacity:1;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.1);box-shadow:0 0 0 2px rgba(200,16,46,.35)}
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
-<script src="static/i18n.js"></script>
+<script src="static/i18n.js?v=20260522-public-polish"></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -103,7 +103,7 @@
   <div class="loader-logo">AB<span>.</span></div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
   <div class="loader-txt">Ange Aimé Wilfrid BININGA</div>
-  <div class="loader-dev">✦ Développé par <span>Rodrin Bakala Mouengue</span> ✦</div>
+  <div class="loader-dev">Développé par <span>Rodrin Bakala Mouengue</span></div>
 </div>
 
 <!-- CURSOR -->
@@ -128,11 +128,11 @@
   </ul>
   <!-- Sélecteur de langue -->
   <div class="lang-switcher" id="lang-switcher">
-    <button class="lang-btn lang-active" data-lang="fr" onclick="applyI18n('fr')" title="Français">🇫🇷</button>
-    <button class="lang-btn" data-lang="en" onclick="applyI18n('en')" title="English">🇬🇧</button>
-    <button class="lang-btn" data-lang="es" onclick="applyI18n('es')" title="Español">🇪🇸</button>
-    <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh')" title="中文">🇨🇳</button>
-    <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru')" title="Русский">🇷🇺</button>
+    <button class="lang-btn lang-active" data-lang="fr" onclick="applyI18n('fr')" title="Français">FR</button>
+    <button class="lang-btn" data-lang="en" onclick="applyI18n('en')" title="English">EN</button>
+    <button class="lang-btn" data-lang="es" onclick="applyI18n('es')" title="Español">ES</button>
+    <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh')" title="中文">ZH</button>
+    <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru')" title="Русский">RU</button>
   </div>
   <button class="hbg" id="hbg" aria-label="Ouvrir le menu" aria-expanded="false" data-i18n="aria.menu.open" data-i18n-attr="aria-label"><span></span><span></span><span></span></button>
 </nav>
@@ -149,11 +149,11 @@
   <a href="#contact" onclick="cMob()" data-i18n="nav.contact">Contact</a>
   <!-- Langue mobile -->
   <div style="display:flex;gap:8px;padding:12px 16px;border-top:1px solid rgba(255,255,255,.08);margin-top:8px">
-    <button class="lang-btn" data-lang="fr" onclick="applyI18n('fr');cMob()" title="Français">🇫🇷</button>
-    <button class="lang-btn" data-lang="en" onclick="applyI18n('en');cMob()" title="English">🇬🇧</button>
-    <button class="lang-btn" data-lang="es" onclick="applyI18n('es');cMob()" title="Español">🇪🇸</button>
-    <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh');cMob()" title="中文">🇨🇳</button>
-    <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru');cMob()" title="Русский">🇷🇺</button>
+    <button class="lang-btn" data-lang="fr" onclick="applyI18n('fr');cMob()" title="Français">FR</button>
+    <button class="lang-btn" data-lang="en" onclick="applyI18n('en');cMob()" title="English">EN</button>
+    <button class="lang-btn" data-lang="es" onclick="applyI18n('es');cMob()" title="Español">ES</button>
+    <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh');cMob()" title="中文">ZH</button>
+    <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru');cMob()" title="Русский">RU</button>
   </div>
 </div>
 
@@ -185,7 +185,7 @@
     </h2>
     <p class="hero-sub" id="dyn-sub">Un homme de terrain, de conviction et de résultats. Une vie au service du peuple congolais et de la Cuvette-Ouest.</p>
     <div class="hero-btns">
-      <a href="#engagement" class="btn btn-r" id="dyn-hero-btn1" data-i18n="hero.btn1"><span aria-hidden="true">🤝</span> Rejoindre la campagne</a>
+      <a href="#engagement" class="btn btn-r" id="dyn-hero-btn1" data-i18n="hero.btn1">Rejoindre la campagne</a>
       <a href="#programme" class="btn btn-o" id="dyn-hero-btn2" data-i18n="hero.btn2">Notre programme</a>
     </div>
   </div>
@@ -216,12 +216,12 @@
       <p class="about-intro" id="dyn-about-intro">Ange Aimé Wilfrid BININGA est l'une des personnalités les plus emblématiques de la vie politique et judiciaire du Congo-Brazzaville. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux, son parcours est celui d'un homme d'État forgé par l'exigence, le service public et l'amour de son pays.</p>
       <div id="dyn-about-body"></div>
       <div class="about-pills" id="dyn-about-pills">
-        <span class="pill">⚖️ Docteur en droit</span>
-        <span class="pill">💰 Inspecteur principal du Trésor</span>
-        <span class="pill">🏛️ Ministre de la Fonction publique</span>
-        <span class="pill">⚖️ Garde des Sceaux</span>
-        <span class="pill">🗳️ Député d'Ewo depuis 2017</span>
-        <span class="pill">🌍 Cuvette-Ouest</span>
+        <span class="pill">Docteur en droit</span>
+        <span class="pill">Inspecteur principal du Trésor</span>
+        <span class="pill">Ministre de la Fonction publique</span>
+        <span class="pill">Garde des Sceaux</span>
+        <span class="pill">Député d'Ewo depuis 2017</span>
+        <span class="pill">Cuvette-Ouest</span>
       </div>
     </div>
   </div>
@@ -283,7 +283,7 @@
         <div class="pub-buy-price">40 € <span data-i18n="pub.buy.shipping">port en sus selon destination</span></div>
         <div class="pub-buy-note" data-i18n="pub.buy.note">Disponible en librairie et en ligne · Paiement sécurisé</div>
         <div class="pub-buy-btns">
-          <button class="pub-btn-primary" onclick="openAchat()" data-i18n="pub.buy.btn"><span aria-hidden="true">🛒</span> Acheter ce livre</button>
+          <button class="pub-btn-primary" onclick="openAchat()" data-i18n="pub.buy.btn">Acheter ce livre</button>
         </div>
       </div>
 
@@ -390,7 +390,7 @@
       <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(21,101,192,.6) 0%,transparent 70%)"></div>
       <!-- Logo ONU -->
       <div style="position:absolute;top:18px;left:18px;display:flex;align-items:center;gap:8px">
-        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)" data-i18n="video.un.badge">🌍 Nations Unies · UN WebTV</span>
+        <span style="background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:.6px;border:1px solid rgba(255,255,255,.2)" data-i18n="video.un.badge">Nations Unies · UN WebTV</span>
       </div>
       <!-- Bouton play central -->
       <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px">
@@ -419,9 +419,9 @@
       <div class="sline"></div>
       <p class="eng-desc" id="dyn-eng-desc" data-i18n="eng.desc">Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.</p>
       <div class="eng-cards" id="dyn-eng-cards">
-        <div class="eng-card"><div class="eng-ci">📋</div><div><div class="eng-ct" data-i18n="eng.card1.title">Demande d'audience</div><div class="eng-cd" data-i18n="eng.card1.desc">Rencontrez le Député pour exposer votre situation</div></div></div>
-        <div class="eng-card"><div class="eng-ci">📣</div><div><div class="eng-ct" data-i18n="eng.card2.title">Réclamation officielle</div><div class="eng-cd" data-i18n="eng.card2.desc">Signalez un problème auprès de votre représentant</div></div></div>
-        <div class="eng-card"><div class="eng-ci">🤝</div><div><div class="eng-ct" data-i18n="eng.card3.title">Prise de contact</div><div class="eng-cd" data-i18n="eng.card3.desc">Entrez en relation avec l'équipe du Député d'Ewo</div></div></div>
+        <div class="eng-card"><div class="eng-ci">AUD</div><div><div class="eng-ct" data-i18n="eng.card1.title">Demande d'audience</div><div class="eng-cd" data-i18n="eng.card1.desc">Rencontrez le Député pour exposer votre situation</div></div></div>
+        <div class="eng-card"><div class="eng-ci">REC</div><div><div class="eng-ct" data-i18n="eng.card2.title">Réclamation officielle</div><div class="eng-cd" data-i18n="eng.card2.desc">Signalez un problème auprès de votre représentant</div></div></div>
+        <div class="eng-card"><div class="eng-ci">REL</div><div><div class="eng-ct" data-i18n="eng.card3.title">Prise de contact</div><div class="eng-cd" data-i18n="eng.card3.desc">Entrez en relation avec l'équipe du Député d'Ewo</div></div></div>
       </div>
     </div>
     <div class="eng-form rev">
@@ -456,7 +456,7 @@
 
         <!-- CHAMPS RÉCLAMATION (cachés par défaut) -->
         <div id="geo-extras" style="display:none">
-          <div class="recl-badge" data-i18n="form.recl.badge">⚠️ Signalement officiel</div>
+          <div class="recl-badge" data-i18n="form.recl.badge">Signalement officiel</div>
           <div class="fgrp">
             <label data-i18n="form.recl.desc">Description du sinistre / problème *</label>
             <textarea name="description" id="desc-sinistre" rows="3" placeholder="Décrivez précisément le problème, le sinistre ou la situation à signaler au Député…" data-i18n-ph="form.recl.desc.ph"></textarea>
@@ -464,10 +464,10 @@
 
           <!-- GÉOLOCALISATION -->
           <div class="geo-box">
-            <div class="geo-box-title" data-i18n="form.geo.title">📍 Localisation du sinistre</div>
+            <div class="geo-box-title" data-i18n="form.geo.title">Localisation du sinistre</div>
             <div class="geo-status" id="geo-status"><span class="dot"></span> <span data-i18n="form.geo.status">Non localisé, cliquez pour géolocaliser</span></div>
             <button type="button" class="btn-geo" id="btn-geo" onclick="localizeSinistre()">
-              <span aria-hidden="true">📍</span> <span data-i18n="form.geo.btn">Géolocaliser ma position</span>
+              <span data-i18n="form.geo.btn">Géolocaliser ma position</span>
             </button>
             <div class="geo-addr" id="geo-addr" style="display:none"></div>
             <div class="geo-map-preview" id="geo-map" style="display:none"></div>
@@ -479,14 +479,14 @@
 
           <!-- PHOTO -->
           <div class="fgrp">
-            <label><span data-i18n="form.photo.lbl">📷 Photo du sinistre</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#999" data-i18n="form.photo.opt">(optionnel, jpg/png, max 3 Mo)</span></label>
+            <label><span data-i18n="form.photo.lbl">Photo du sinistre</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#999" data-i18n="form.photo.opt">(optionnel, jpg/png, max 3 Mo)</span></label>
             <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="handleSinistrePhoto(this)" style="padding:8px">
             <div class="photo-preview" id="photo-preview"></div>
             <input type="hidden" name="photo_url" id="photo-url">
           </div>
         </div>
 
-        <button type="submit" class="btn-form" id="btn-form-aud" data-i18n="form.submit.aud">📨 Soumettre ma demande</button>
+        <button type="submit" class="btn-form" id="btn-form-aud" data-i18n="form.submit.aud">Soumettre ma demande</button>
       </form>
     </div>
   </div>
@@ -499,9 +499,9 @@
   <h2 id="dyn-cta-title" data-i18n="cta.title">Votez BININGA :<br>le choix de l'expérience et du terrain</h2>
   <p id="dyn-cta-sub" data-i18n="cta.sub">Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.</p>
   <div class="cta-btns">
-    <a href="#engagement" class="btn btn-r" id="dyn-cta-btn1" data-i18n="cta.btn1">📋 Demande d'audience</a>
-    <a href="#contact" class="btn btn-g" id="dyn-cta-btn2" data-i18n="cta.btn2">✉️ Nous contacter</a>
-    <a href="#programme" class="btn btn-o" id="dyn-cta-btn3" data-i18n="cta.btn3">📋 Lire le programme</a>
+    <a href="#engagement" class="btn btn-r" id="dyn-cta-btn1" data-i18n="cta.btn1">Demande d'audience</a>
+    <a href="#contact" class="btn btn-g" id="dyn-cta-btn2" data-i18n="cta.btn2">Nous contacter</a>
+    <a href="#programme" class="btn btn-o" id="dyn-cta-btn3" data-i18n="cta.btn3">Lire le programme</a>
   </div>
 </div>
 
@@ -518,10 +518,10 @@
         <h3 class="ct-title" id="dyn-ct-sidebar-title" data-i18n-html="ct.sidebar.title">Quartier Général<br>de Campagne</h3>
         <p class="ct-txt" id="dyn-ct-sidebar-desc" data-i18n="ct.sidebar.desc">Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.</p>
         <div class="ct-items">
-          <div class="ct-item"><div class="ct-ic">📍</div><div><span class="ct-lbl" data-i18n="ct.lbl.address">Adresse</span><span class="ct-val" id="dyn-ct-address">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
-          <div class="ct-item"><div class="ct-ic">📞</div><div><span class="ct-lbl" data-i18n="ct.lbl.phone">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
-          <div class="ct-item"><div class="ct-ic">✉️</div><div><span class="ct-lbl" data-i18n="ct.lbl.email">Email</span><span class="ct-val" id="dyn-ct-email">contact@bininga.cg</span></div></div>
-          <div class="ct-item"><div class="ct-ic">📱</div><div><span class="ct-lbl" data-i18n="ct.lbl.social">Réseaux sociaux</span><span class="ct-val" id="dyn-ct-social">@AimeBingingaOfficiel</span></div></div>
+          <div class="ct-item"><div class="ct-ic">AD</div><div><span class="ct-lbl" data-i18n="ct.lbl.address">Adresse</span><span class="ct-val" id="dyn-ct-address">Ewo, Cuvette-Ouest, République du Congo</span></div></div>
+          <div class="ct-item"><div class="ct-ic">TEL</div><div><span class="ct-lbl" data-i18n="ct.lbl.phone">Téléphone</span><span class="ct-val" id="dyn-phone">+242 06 XXX XXXX</span></div></div>
+          <div class="ct-item"><div class="ct-ic">MAIL</div><div><span class="ct-lbl" data-i18n="ct.lbl.email">Email</span><span class="ct-val" id="dyn-ct-email">contact@bininga.cg</span></div></div>
+          <div class="ct-item"><div class="ct-ic">SOC</div><div><span class="ct-lbl" data-i18n="ct.lbl.social">Réseaux sociaux</span><span class="ct-val" id="dyn-ct-social">@AimeBingingaOfficiel</span></div></div>
         </div>
       </div>
       <div class="ct-form rev-r">
@@ -542,7 +542,7 @@
             </select>
           </div>
           <div class="fgrp"><label data-i18n="ct.form.message">Message</label><textarea name="message" rows="4" placeholder="Votre message..." data-i18n-ph="ct.form.msg.ph" required style="background:var(--n2);border-color:rgba(255,255,255,.08);color:var(--w)"></textarea></div>
-          <button type="submit" class="btn-form" data-i18n="ct.form.send">📨 Envoyer le message</button>
+          <button type="submit" class="btn-form" data-i18n="ct.form.send">Envoyer le message</button>
         </form>
       </div>
     </div>
@@ -556,10 +556,10 @@
     <p data-i18n="nl.desc">Recevez les actualités, les initiatives et les avancées du Député directement dans votre boîte mail. Pas de spam, une lettre mensuelle.</p>
     <form class="nl-form" onsubmit="subNewsletter(event,this)">
       <input type="email" name="email" placeholder="votre@email.com" required autocomplete="email">
-      <button type="submit" id="nl-btn" data-i18n="nl.btn">📩 S'inscrire</button>
+      <button type="submit" id="nl-btn" data-i18n="nl.btn">S'inscrire</button>
     </form>
     <div class="nl-sub"><span data-i18n="nl.legal">En vous inscrivant, vous acceptez notre</span> <a href="#" onclick="event.preventDefault();openLegal('confidentialite')" style="color:rgba(255,255,255,.35);text-decoration:underline" data-i18n="nl.legal.link">politique de confidentialité</a>.</div>
-    <div class="nl-ok" id="nl-ok" data-i18n="nl.ok">✅ Inscription confirmée, merci pour votre soutien !</div>
+    <div class="nl-ok" id="nl-ok" data-i18n="nl.ok">Inscription confirmée, merci pour votre soutien !</div>
   </div>
 </section>
 
@@ -575,9 +575,9 @@
       <div class="social-row">
         <a href="#" class="soc">f</a>
         <a href="#" class="soc">𝕏</a>
-        <a href="#" class="soc">📷</a>
+        <a href="#" class="soc">IG</a>
         <a href="#" class="soc">▶</a>
-        <a href="#" class="soc">💬</a>
+        <a href="#" class="soc">WA</a>
       </div>
     </div>
     <div class="ft-col"><div class="ft-col-t" data-i18n="ft.nav">Navigation</div><ul><li><a href="#about" data-i18n="nav.biography">Biographie</a></li><li><a href="#parcours" data-i18n="nav.parcours">Parcours</a></li><li><a href="#publication" data-i18n="nav.publication">Publication</a></li><li><a href="#programme" data-i18n="nav.programme">Programme</a></li><li><a href="#galerie" data-i18n="nav.gallery">Galerie</a></li><li><a href="#actu" data-i18n="nav.news">Actualités</a></li></ul></div>
@@ -593,33 +593,33 @@
 <!-- BARRE DE NAVIGATION MOBILE (bottom tabbar) -->
 <nav class="mob-tabbar" id="mobTabbar" aria-label="Navigation rapide">
   <a href="#hero" class="mob-tab-item active" data-tab="accueil">
-    <span class="mob-tab-icon">🏠</span>
+    <span class="mob-tab-icon">AB</span>
     <span class="mob-tab-lbl" data-i18n="mob.tab.home">Accueil</span>
   </a>
   <a href="#about" class="mob-tab-item" data-tab="profil">
-    <span class="mob-tab-icon">👤</span>
+    <span class="mob-tab-icon">BIO</span>
     <span class="mob-tab-lbl" data-i18n="mob.tab.bio">Biographie</span>
   </a>
   <a href="#actu" class="mob-tab-item" data-tab="actu">
-    <span class="mob-tab-icon">📰</span>
+    <span class="mob-tab-icon">ACT</span>
     <span class="mob-tab-lbl" data-i18n="mob.tab.news">Actualités</span>
   </a>
   <a href="#engagement" class="mob-tab-item" data-tab="audience">
-    <span class="mob-tab-icon">🤝</span>
+    <span class="mob-tab-icon">AUD</span>
     <span class="mob-tab-lbl" data-i18n="mob.tab.audience">Audience</span>
   </a>
   <a href="#contact" class="mob-tab-item" data-tab="contact">
-    <span class="mob-tab-icon">✉️</span>
+    <span class="mob-tab-icon">MSG</span>
     <span class="mob-tab-lbl" data-i18n="mob.tab.contact">Contact</span>
   </a>
 </nav>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-<script src="static/i18n-data.en.js"></script>
-<script src="static/i18n-data.es.js"></script>
-<script src="static/i18n-data.zh.js"></script>
-<script src="static/i18n-data.ru.js"></script>
-<script src="static/index.js" defer></script>
+<script src="static/i18n-data.en.js?v=20260522-public-polish"></script>
+<script src="static/i18n-data.es.js?v=20260522-public-polish"></script>
+<script src="static/i18n-data.zh.js?v=20260522-public-polish"></script>
+<script src="static/i18n-data.ru.js?v=20260522-public-polish"></script>
+<script src="static/index.js?v=20260522-public-polish" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 
@@ -683,7 +683,7 @@
         <a class="buy-platform" href="https://www.fnac.com/ia9160666/Aime-Ange-Wilfrid-Bininga"
            target="_blank" rel="noopener" onclick="trackBuy('fnac')">
           <div class="buy-platform-left">
-            <div class="buy-platform-logo">🟡</div>
+            <div class="buy-platform-logo">FN</div>
             <div>
               <div class="buy-platform-name" data-i18n="pub.modal.fnac.name">Fnac</div>
               <div class="buy-platform-desc" data-i18n="pub.modal.fnac.desc">Disponible en ligne · Livraison rapide · Retrait en magasin</div>
@@ -696,7 +696,7 @@
         <a class="buy-platform" href="https://www.editions-harmattan.fr/catalogue/livre/les-mutations-constitutionnelles-en-afrique-noire-francophone/13871"
            target="_blank" rel="noopener" onclick="trackBuy('harmattan')">
           <div class="buy-platform-left">
-            <div class="buy-platform-logo">📚</div>
+            <div class="buy-platform-logo">LH</div>
             <div>
               <div class="buy-platform-name" data-i18n="pub.modal.harmattan.name">L'Harmattan (éditeur officiel)</div>
               <div class="buy-platform-desc" data-i18n="pub.modal.harmattan.desc">Paiement sécurisé · Livraison mondiale · Broché ou numérique</div>
@@ -709,7 +709,7 @@
         <a class="buy-platform" href="https://www.amazon.fr/mutations-constitutionnelles-Afrique-noire-francophone/dp/2343184100"
            target="_blank" rel="noopener" onclick="trackBuy('amazon')">
           <div class="buy-platform-left">
-            <div class="buy-platform-logo">📦</div>
+            <div class="buy-platform-logo">AM</div>
             <div>
               <div class="buy-platform-name">Amazon.fr</div>
               <div class="buy-platform-desc" data-i18n="pub.modal.amazon.desc">Livraison rapide · Prime disponible</div>
@@ -756,10 +756,10 @@
           </select>
         </div>
         <div class="fgrp"><label data-i18n="pub.order.notes.lbl">Note (dédicace, précision…)</label><textarea name="note" rows="2" placeholder="Ex : dédicace souhaitée, heure de disponibilité…" data-i18n-ph="pub.order.notes.ph"></textarea></div>
-        <div class="order-note" data-i18n="pub.order.payment">💳 Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.</div>
-        <button type="submit" class="pub-btn-primary" id="order-btn" data-i18n="pub.order.submit" style="width:100%;margin-top:16px;justify-content:center"><span aria-hidden="true">📦</span> Envoyer ma commande</button>
+        <div class="order-note" data-i18n="pub.order.payment">Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.</div>
+        <button type="submit" class="pub-btn-primary" id="order-btn" data-i18n="pub.order.submit" style="width:100%;margin-top:16px;justify-content:center">Envoyer ma commande</button>
       </form>
-      <div id="order-ok" data-i18n="pub.order.success" style="display:none;text-align:center;padding:20px 0;color:#2ecc71;font-size:15px;font-weight:600">✅ Commande enregistrée ! Notre équipe vous contacte sous 48h.</div>
+      <div id="order-ok" data-i18n="pub.order.success" style="display:none;text-align:center;padding:20px 0;color:#2ecc71;font-size:15px;font-weight:600">Commande enregistrée. Notre équipe vous contacte sous 48h.</div>
     </div>
   </div>
 </div>
@@ -812,10 +812,10 @@
 </div>
 
 <!-- ── CHATBOT WIDGET ────────────────────────────────────── -->
-<link rel="stylesheet" href="static/chat.css">
+<link rel="stylesheet" href="static/chat.css?v=20260522-public-polish">
 
 <div class="chat-bubble" id="chatBubble" onclick="document.getElementById('chatBubble').classList.remove('visible');toggleChat()">
-  💬 Bonjour ! Je suis là pour vous aider.<span class="bubble-dots"><span></span><span></span><span></span></span>
+  Bonjour, je suis là pour vous aider.<span class="bubble-dots"><span></span><span></span><span></span></span>
   <button class="chat-bubble-close" onclick="event.stopPropagation();document.getElementById('chatBubble').classList.remove('visible')" aria-label="Fermer">✕</button>
   <div class="chat-bubble-arrow"></div>
 </div>

@@ -1,6 +1,12 @@
 
 const IMG = "images/bininga.jpg";
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function cleanLabel(s){
+  return String(s || "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 /**
  * sanitizeHtml — Autorise UNIQUEMENT les balises sûres de mise en forme.
@@ -83,7 +89,7 @@ function loadContent() {
       const aboutPillsEl = document.getElementById("dyn-about-pills");
       if (aboutPillsEl && Array.isArray(a.badges) && a.badges.length) {
         aboutPillsEl.innerHTML = a.badges
-          .map(b => `<span class="pill">${b.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}</span>`)
+          .map(b => `<span class="pill">${escHtml(cleanLabel(b))}</span>`)
           .join("");
       }
 
@@ -145,13 +151,13 @@ function loadContent() {
 
       // Parcours (timeline)
       const PARCOURS_DEFAULT = [
-        { side:"left",  emoji:"📚", year:"Formation",        title:"Doctorat en droit & Inspecteur principal du Trésor",                                tag:"📚 Juriste",                            desc:"Docteur en droit, Ange Aimé Wilfrid BININGA bâtit une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre celle de la Santé comme conseiller stratégique du ministre." },
-        { side:"right", emoji:"🌱", year:"Engagement politique", title:"Adhésion au PCT & premières actions",                                          tag:"🔴 PCT",                                desc:"Militant du Parti Congolais du Travail, il s'engage activement dans la vie politique d'Ewo et de la Cuvette-Ouest, portant les aspirations de sa communauté." },
-        { side:"left",  emoji:"👷", year:"2016",               title:"Ministre de la Fonction publique et de la Réforme de l'État",                    tag:"🏛️ Ministère de la Fonction publique",  desc:"Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale." },
-        { side:"right", emoji:"🗳️", year:"19 août 2017",      title:"Élu Député de la 1re circonscription d'Ewo",                                    tag:"🗳️ Assemblée Nationale",               desc:"Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo." },
-        { side:"left",  emoji:"📈", year:"2018",               title:"Ministre de la Justice & Haute Autorité anti-corruption",                        tag:"📈 Confiance renouvelée",               desc:"En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires." },
-        { side:"right", emoji:"⚖️", year:"Aujourd'hui",        title:"Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones", tag:"⚖️ Ministère de la Justice", desc:"À ce poste clé du gouvernement, il incarne la diplomatie judiciaire du Congo, notamment avec la renégociation en février 2026 à Paris de la convention de coopération judiciaire Congo-France — accord vieux de plus de 50 ans, renouvelé sur de nouvelles bases modernes." },
-        { side:"left",  emoji:"🚀", year:"Législatives 2027",  title:"Candidat pour Ewo · Campagne 2027",                                             tag:"🚀 Campagne en cours",                  desc:"Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo." }
+        { side:"left",  emoji:"01", year:"Formation",        title:"Doctorat en droit & Inspecteur principal du Trésor",                                tag:"Juriste",                            desc:"Docteur en droit, Ange Aimé Wilfrid BININGA bâtit une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre celle de la Santé comme conseiller stratégique du ministre." },
+        { side:"right", emoji:"02", year:"Engagement politique", title:"Adhésion au PCT & premières actions",                                          tag:"PCT",                                desc:"Militant du Parti Congolais du Travail, il s'engage activement dans la vie politique d'Ewo et de la Cuvette-Ouest, portant les aspirations de sa communauté." },
+        { side:"left",  emoji:"03", year:"2016",               title:"Ministre de la Fonction publique et de la Réforme de l'État",                    tag:"Ministère de la Fonction publique",  desc:"Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, il porte la modernisation de l'administration publique et l'emploi des jeunes, piliers de la diversification économique nationale." },
+        { side:"right", emoji:"04", year:"19 août 2017",      title:"Élu Député de la 1re circonscription d'Ewo",                                    tag:"Assemblée Nationale",               desc:"Il est élu Député de la 1re circonscription électorale d'Ewo (département de la Cuvette-Ouest) le 19 août 2017, représentant sa communauté à l'Assemblée Nationale de la République du Congo." },
+        { side:"left",  emoji:"05", year:"2018",               title:"Ministre de la Justice & Haute Autorité anti-corruption",                        tag:"Confiance renouvelée",               desc:"En tant que Ministre de la Justice, il pilote l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption (2018), institution indépendante dotée du droit de saisine directe des instances judiciaires." },
+        { side:"right", emoji:"06", year:"Aujourd'hui",        title:"Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones", tag:"Ministère de la Justice", desc:"À ce poste clé du gouvernement, il incarne la diplomatie judiciaire du Congo, notamment avec la renégociation en février 2026 à Paris de la convention de coopération judiciaire Congo-France — accord vieux de plus de 50 ans, renouvelé sur de nouvelles bases modernes." },
+        { side:"left",  emoji:"07", year:"Législatives 2027",  title:"Candidat pour Ewo · Campagne 2027",                                             tag:"Campagne en cours",                  desc:"Plus motivé que jamais, fort de son expérience gouvernementale, il se présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo." }
       ];
       const parcours = (d.parcours && d.parcours.length) ? d.parcours : PARCOURS_DEFAULT;
       const parcoursWrap = document.getElementById("dyn-parcours");
@@ -163,9 +169,9 @@ function loadContent() {
             <div class="tl-year">${escHtml(p.year||"")}</div>
             <div class="tl-title">${escHtml(p.title||"")}</div>
             <div class="tl-desc">${escHtml(p.desc||"")}</div>
-            <span class="tl-tag">${escHtml(p.tag||"")}</span>
+            <span class="tl-tag">${escHtml(cleanLabel(p.tag||""))}</span>
           </div>`;
-          const dot  = `<div class="tl-dot">${escHtml(p.emoji||"•")}</div>`;
+          const dot  = `<div class="tl-dot">${escHtml(cleanLabel(p.emoji)||String(i+1).padStart(2,"0"))}</div>`;
           const empty = `<div class="tl-empty"></div>`;
           return `<div class="tl-item rev ${delays[i%6]}">
             ${isLeft ? card : empty}
@@ -199,7 +205,7 @@ function loadContent() {
             ${axes.map((ax, i) => `
               <div class="prog-card rev ${delays2[i]}">
                 <div class="prog-num">${String(i+1).padStart(2,"0")}</div>
-                <span class="prog-icon">${escHtml(ax.icon||"")}</span>
+                <span class="prog-icon">${escHtml(cleanLabel(ax.icon)||String(i+1).padStart(2,"0"))}</span>
                 <h3 class="prog-title">${escHtml(ax.title||"")}</h3>
                 <p class="prog-txt">${escHtml(ax.text||"")}</p>
                 <ul class="prog-pts">
@@ -221,7 +227,7 @@ function loadContent() {
           <div class="gal-slide">
             ${s.image
               ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}" loading="lazy">`
-              : `<div class="gal-slide-placeholder"><div style="font-size:50px">${escHtml(s.emoji||'🖼️')}</div></div>`}
+              : `<div class="gal-slide-placeholder"><div class="placeholder-mark">Image</div></div>`}
             <div class="gal-cap">
               <h3>${escHtml(s.title||'')}</h3>
               <p>${escHtml(s.subtitle||'')}</p>
@@ -236,8 +242,8 @@ function loadContent() {
         const gridHtml = grid.map((g, i) =>
           `<div class="gi" data-gi="${i}">${g.image
             ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}" loading="lazy">`
-            : `<div class="gi-ph">${escHtml(g.emoji||'🖼️')}</div>`
-          }<div class="gi-ov">🔍</div></div>`
+            : `<div class="gi-ph">Image</div>`
+          }<div class="gi-ov">Voir</div></div>`
         ).join("");
 
         galWrap.innerHTML = `
@@ -269,8 +275,8 @@ function loadContent() {
 
       // ── Hero — éléments supplémentaires ──────────────────────────────
       if (h.eyebrow) { const el=document.getElementById("dyn-hero-eyebrow"); if(el) el.textContent=h.eyebrow; }
-      if (h.btn1)    { const el=document.getElementById("dyn-hero-btn1");    if(el) el.textContent=h.btn1; }
-      if (h.btn2)    { const el=document.getElementById("dyn-hero-btn2");    if(el) el.textContent=h.btn2; }
+      if (h.btn1)    { const el=document.getElementById("dyn-hero-btn1");    if(el) el.textContent=cleanLabel(h.btn1); }
+      if (h.btn2)    { const el=document.getElementById("dyn-hero-btn2");    if(el) el.textContent=cleanLabel(h.btn2); }
 
       // ── À propos — tag + badge ────────────────────────────────────────
       if (a.sectionTag) { const el=document.getElementById("dyn-about-tag");       if(el) el.textContent=a.sectionTag; }
@@ -319,16 +325,16 @@ function loadContent() {
       if (eng.formSub)   { const el=document.getElementById("form-sub-aud");      if(el) el.textContent=eng.formSub; }
       if (Array.isArray(eng.cards) && eng.cards.length) {
         const el=document.getElementById("dyn-eng-cards");
-        if(el) el.innerHTML=eng.cards.map(c=>`<div class="eng-card"><div class="eng-ci">${escHtml(c.icon||"")}</div><div><div class="eng-ct">${escHtml(c.title||"")}</div><div class="eng-cd">${escHtml(c.desc||"")}</div></div></div>`).join("");
+        if(el) el.innerHTML=eng.cards.map((c,i)=>`<div class="eng-card"><div class="eng-ci">${escHtml(cleanLabel(c.icon)||["AUD","REC","INFO"][i%3])}</div><div><div class="eng-ct">${escHtml(c.title||"")}</div><div class="eng-cd">${escHtml(c.desc||"")}</div></div></div>`).join("");
       }
 
       // ── CTA ──────────────────────────────────────────────────────────
       const cta = d.cta || {};
       if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
       if (cta.subtitle) { const el=document.getElementById("dyn-cta-sub");   if(el) el.textContent=cta.subtitle; }
-      if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cta.btn1.text||cta.btn1; const h1=safeCta(cta.btn1.href); if(h1) el.href=h1; } }
-      if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cta.btn2.text||cta.btn2; const h2=safeCta(cta.btn2.href); if(h2) el.href=h2; } }
-      if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cta.btn3.text||cta.btn3; const h3=safeCta(cta.btn3.href); if(h3) el.href=h3; } }
+      if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cleanLabel(cta.btn1.text||cta.btn1); const h1=safeCta(cta.btn1.href); if(h1) el.href=h1; } }
+      if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cleanLabel(cta.btn2.text||cta.btn2); const h2=safeCta(cta.btn2.href); if(h2) el.href=h2; } }
+      if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el){ el.textContent=cleanLabel(cta.btn3.text||cta.btn3); const h3=safeCta(cta.btn3.href); if(h3) el.href=h3; } }
 
       // ── Contact — en-tête + coordonnées ──────────────────────────────
       if (ct.sectionTag)    { const el=document.getElementById("dyn-ct-tag");          if(el) el.textContent=ct.sectionTag; }
@@ -367,8 +373,8 @@ function loadContent() {
             <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
             <div class="actu-hero-overlay"></div>
             <div class="actu-hero-content">
-              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(s.chip||'')}</span>
-              <div class="actu-hero-date">${escHtml(s.date||'')}</div>
+              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(cleanLabel(s.chip||''))}</span>
+              <div class="actu-hero-date">${escHtml(cleanLabel(s.date||''))}</div>
               <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
               <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
             </div>
@@ -384,19 +390,19 @@ function loadContent() {
         vedettesWrap.innerHTML = ac.vedettes.map((v,i) => {
           const imgSide = v.image
             ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
-               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`
             : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
-                 <div style="font-size:56px">${escHtml(v.placeholderEmoji||'📰')}</div>
+                 <div class="placeholder-mark">Actu</div>
                  <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
                  <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
                </div>
-               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`;
-          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(t)}</span>`).join('');
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`;
+          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(cleanLabel(t))}</span>`).join('');
           return `<div class="actu-vedette rev"${i<ac.vedettes.length-1?' style="margin-bottom:32px"':''}>
             <div class="actu-vedette-img"${v.imageBg&&!v.image?` style="background:${v.imageBg}"`:''}">${imgSide}</div>
             <div class="actu-vedette-body">
-              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.tag||'')}</div>
-              <div class="actu-vedette-date">${escHtml(v.date||'')}</div>
+              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(cleanLabel(v.tag||''))}</div>
+              <div class="actu-vedette-date">${escHtml(cleanLabel(v.date||''))}</div>
               <h3 class="actu-vedette-title">${escHtml(v.title||'')}</h3>
               ${v.text1?`<p class="actu-vedette-txt">${escHtml(v.text1)}</p>`:''}
               ${v.quote?`<div class="actu-vedette-quote"${v.tagColor?` style="border-color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.quote)}</div>`:''}
@@ -415,7 +421,7 @@ function loadContent() {
           <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
             ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
             <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
-            <div class="actu-card-ic">${escHtml(c.icon||'')}</div>
+            <div class="actu-card-ic">${escHtml(cleanLabel(c.icon)||"AB")}</div>
             <div class="actu-card-dt">
               <span class="actu-card-day">${escHtml(c.day||'')}</span>
               <span class="actu-card-mon">${escHtml(c.month||'')}<br>${escHtml(c.year||'')}</span>
@@ -449,8 +455,8 @@ function applyDynLang(lang) {
   if (h.role)    setTxt("dyn-role", h.role);
   if (h.slogan)  setHtml("dyn-slogan", h.slogan);
   if (h.subtitle) setTxt("dyn-sub", h.subtitle);
-  if (h.btn1)    setTxt("dyn-hero-btn1", h.btn1);
-  if (h.btn2)    setTxt("dyn-hero-btn2", h.btn2);
+  if (h.btn1)    setTxt("dyn-hero-btn1", cleanLabel(h.btn1));
+  if (h.btn2)    setTxt("dyn-hero-btn2", cleanLabel(h.btn2));
 
   // À propos
   if (a.sectionTag) setTxt("dyn-about-tag", a.sectionTag);
@@ -463,7 +469,7 @@ function applyDynLang(lang) {
   }
   if (Array.isArray(a.badges) && a.badges.length) {
     const el = document.getElementById("dyn-about-pills");
-    if (el) el.innerHTML = a.badges.map(b => `<span class="pill">${escHtml(b)}</span>`).join("");
+    if (el) el.innerHTML = a.badges.map(b => `<span class="pill">${escHtml(cleanLabel(b))}</span>`).join("");
   }
 
   // Stats — labels uniquement (les chiffres restent de data.json)
@@ -494,9 +500,9 @@ function applyDynLang(lang) {
           <div class="tl-year">${escHtml(p.year||"")}</div>
           <div class="tl-title">${escHtml(p.title||"")}</div>
           <div class="tl-desc">${escHtml(p.desc||"")}</div>
-          <span class="tl-tag">${escHtml(p.tag||"")}</span>
+          <span class="tl-tag">${escHtml(cleanLabel(p.tag||""))}</span>
         </div>`;
-        const dot   = `<div class="tl-dot">${escHtml(p.emoji||"•")}</div>`;
+        const dot   = `<div class="tl-dot">${escHtml(cleanLabel(p.emoji)||String(i+1).padStart(2,"0"))}</div>`;
         const empty = `<div class="tl-empty"></div>`;
         return `<div class="tl-item rev ${delays[i%6]}">
           ${isLeft ? card : empty}
@@ -601,8 +607,8 @@ function applyDynLang(lang) {
             <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
             <div class="actu-hero-overlay"></div>
             <div class="actu-hero-content">
-              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(s.chip||'')}</span>
-              <div class="actu-hero-date">${escHtml(s.date||'')}</div>
+              <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(cleanLabel(s.chip||''))}</span>
+              <div class="actu-hero-date">${escHtml(cleanLabel(s.date||''))}</div>
               <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
               <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
             </div>
@@ -621,19 +627,19 @@ function applyDynLang(lang) {
         vedettesWrap2.innerHTML = merged.map((v,i) => {
           const imgSide = v.image
             ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
-               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`
             : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
-                 <div style="font-size:56px">${escHtml(v.placeholderEmoji||'📰')}</div>
+                 <div class="placeholder-mark">Actu</div>
                  <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
                  <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
                </div>
-               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(v.badge||'')}</span>`;
-          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(t)}</span>`).join('');
+               <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`;
+          const tagsHtml = (v.tags||[]).map(t=>`<span class="actu-tag">${escHtml(cleanLabel(t))}</span>`).join('');
           return `<div class="actu-vedette rev"${i<merged.length-1?' style="margin-bottom:32px"':''}>
             <div class="actu-vedette-img"${v.imageBg&&!v.image?` style="background:${v.imageBg}"`:''}">${imgSide}</div>
             <div class="actu-vedette-body">
-              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.tag||'')}</div>
-              <div class="actu-vedette-date">${escHtml(v.date||'')}</div>
+              <div class="actu-vedette-tag"${v.tagColor?` style="color:${escHtml(v.tagColor)}"`:''}">${escHtml(cleanLabel(v.tag||''))}</div>
+              <div class="actu-vedette-date">${escHtml(cleanLabel(v.date||''))}</div>
               <h3 class="actu-vedette-title">${escHtml(v.title||'')}</h3>
               ${v.text1?`<p class="actu-vedette-txt">${escHtml(v.text1)}</p>`:''}
               ${v.quote?`<div class="actu-vedette-quote"${v.tagColor?` style="border-color:${escHtml(v.tagColor)}"`:''}">${escHtml(v.quote)}</div>`:''}
@@ -655,7 +661,7 @@ function applyDynLang(lang) {
           <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
             ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
             <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
-            <div class="actu-card-ic">${escHtml(c.icon||'')}</div>
+            <div class="actu-card-ic">${escHtml(cleanLabel(c.icon)||"AB")}</div>
             <div class="actu-card-dt">
               <span class="actu-card-day">${escHtml(c.day||'')}</span>
               <span class="actu-card-mon">${escHtml(c.month||'')}<br>${escHtml(c.year||'')}</span>
@@ -680,7 +686,7 @@ function applyDynLang(lang) {
           <div class="gal-slide">
             ${s.image
               ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}">`
-              : `<div class="gal-slide-placeholder"><div style="font-size:50px">${escHtml(s.emoji||'🖼️')}</div></div>`}
+              : `<div class="gal-slide-placeholder"><div class="placeholder-mark">Image</div></div>`}
             <div class="gal-cap">
               <h3>${escHtml(s.title||'')}</h3>
               <p>${escHtml(s.subtitle||'')}</p>
@@ -695,9 +701,9 @@ function applyDynLang(lang) {
   const cta = d.cta || {};
   if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
   if (cta.subtitle) setTxt("dyn-cta-sub", cta.subtitle);
-  if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el) el.textContent=cta.btn1.text||cta.btn1; }
-  if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el) el.textContent=cta.btn2.text||cta.btn2; }
-  if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el) el.textContent=cta.btn3.text||cta.btn3; }
+  if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el) el.textContent=cleanLabel(cta.btn1.text||cta.btn1); }
+  if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el) el.textContent=cleanLabel(cta.btn2.text||cta.btn2); }
+  if (cta.btn3)     { const el=document.getElementById("dyn-cta-btn3"); if(el) el.textContent=cleanLabel(cta.btn3.text||cta.btn3); }
 
   // Contact — en-tête
   const ct = d.contact || {};
@@ -823,14 +829,14 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   } catch (_) {}
 
   if (!serverOk) {
-    btn.textContent = "⚠️ Envoyé (mode hors-ligne)";
+    btn.textContent = "Envoyé en mode hors ligne";
     btn.style.background = "#f39c12";
   } else {
     btn.textContent = successMsg;
     btn.style.background = "#2ecc71";
   }
   // Réinitialiser le formulaire après 3 secondes
-  const originalText = btn.dataset.originalText || "📨 Soumettre";
+  const originalText = btn.dataset.originalText || "Soumettre";
   setTimeout(() => {
     const form = btn.closest("form");
     if (form) form.reset();
@@ -855,8 +861,8 @@ function fSub(e, f) {
 
   const fd = new FormData(f);
   const successMsg = isRecl
-    ? "✅ Signalement enregistré — Le Député et son équipe ont été alertés"
-    : "✅ Demande enregistrée — Réponse sous 48h";
+    ? "Signalement enregistré — Le Député et son équipe ont été alertés"
+    : "Demande enregistrée — Réponse sous 48h";
 
   sendForm("bininga_audiences", FORMSPREE.audience, fd,
     f.querySelector("[type=submit]"),
@@ -891,7 +897,7 @@ function toggleGeoFields(sel) {
   if (raison) raison.placeholder = placeholders[sel.value] || placeholders["Demande d'audience"];
 
   document.getElementById("btn-form-aud").textContent = isRecl
-    ? "⚠️ Envoyer le signalement" : "📨 Soumettre ma demande";
+    ? "Envoyer le signalement" : "Soumettre ma demande";
 }
 
 function localizeSinistre() {
@@ -902,7 +908,7 @@ function localizeSinistre() {
   const btn    = document.getElementById("btn-geo");
   const status = document.getElementById("geo-status");
   btn.disabled = true;
-  btn.textContent = "⏳ Localisation en cours…";
+  btn.textContent = "Localisation en cours…";
   status.className = "geo-status";
   status.innerHTML = '<span class="dot"></span> Demande de localisation GPS…';
 
@@ -934,7 +940,7 @@ function localizeSinistre() {
       status.innerHTML = `<span class="dot"></span> Position capturée (précision ±${acc}m)`;
 
       const addrEl = document.getElementById("geo-addr");
-      addrEl.textContent = "📍 " + label;
+      addrEl.textContent = label;
       addrEl.style.display = "block";
 
       // Carte OpenStreetMap embarquée
@@ -945,14 +951,14 @@ function localizeSinistre() {
         src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
         allowfullscreen loading="lazy"></iframe>`;
 
-      btn.textContent = "✅ Position enregistrée";
+      btn.textContent = "Position enregistrée";
     },
     err => {
       status.className = "geo-status err";
       const msgs = {1:"Accès refusé — autorisez la géolocalisation dans votre navigateur",2:"Position introuvable",3:"Délai dépassé"};
       status.innerHTML = `<span class="dot"></span> ${msgs[err.code]||"Erreur"}`;
       btn.disabled = false;
-      btn.textContent = "🔄 Réessayer";
+      btn.textContent = "Réessayer";
     },
     { enableHighAccuracy: true, timeout: 12000 }
   );
@@ -962,7 +968,7 @@ async function handleSinistrePhoto(input) {
   const file = input.files[0];
   if (!file) return;
   const preview = document.getElementById("photo-preview");
-  preview.innerHTML = '<div class="photo-loader">⏳ Compression et envoi de la photo…</div>';
+  preview.innerHTML = '<div class="photo-loader">Compression et envoi de la photo…</div>';
 
   // Compression canvas → max 900px, JPEG 0.7
   const img = new Image();
@@ -975,7 +981,7 @@ async function handleSinistrePhoto(input) {
     canvas.getContext("2d").drawImage(img, 0, 0, w, h);
     canvas.toBlob(async blob => {
       if (blob.size > 3 * 1024 * 1024) {
-        preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">❌ Image trop lourde même après compression. Réduisez la taille.</div>';
+        preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">Image trop lourde même après compression. Réduisez la taille.</div>';
         return;
       }
       const fd = new FormData();
@@ -986,16 +992,16 @@ async function handleSinistrePhoto(input) {
         if (data.ok) {
           document.getElementById("photo-url").value = data.path;
           preview.innerHTML = `<img src="${data.path}" alt="Photo du sinistre">
-            <div style="font-size:11px;color:#2ecc71;margin-top:4px;font-weight:600">✅ Photo enregistrée</div>`;
+            <div style="font-size:11px;color:#2ecc71;margin-top:4px;font-weight:600">Photo enregistrée</div>`;
         } else {
-          preview.innerHTML = `<div class="photo-loader" style="color:#e74c3c">❌ ${data.message}</div>`;
+          preview.innerHTML = `<div class="photo-loader" style="color:#e74c3c">${escHtml(data.message || "Erreur d'envoi")}</div>`;
         }
       } catch (_) {
-        preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">❌ Erreur réseau. Réessayez.</div>';
+        preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">Erreur réseau. Réessayez.</div>';
       }
     }, "image/jpeg", 0.7);
   };
-  img.onerror = () => { preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">❌ Fichier image invalide.</div>'; };
+  img.onerror = () => { preview.innerHTML = '<div class="photo-loader" style="color:#e74c3c">Fichier image invalide.</div>'; };
   img.src = URL.createObjectURL(file);
 }
 
@@ -1003,7 +1009,7 @@ function fCt(e, f) {
   e.preventDefault();
   sendForm("bininga_contacts", FORMSPREE.contact, new FormData(f),
     f.querySelector("button"),
-    "✅ Message envoyé — Réponse sous 24h");
+    "Message envoyé — Réponse sous 24h");
 }
 
 // ── SMOOTH SCROLL ANCRES ─────────────────────────────────
@@ -1283,5 +1289,3 @@ function initActuSlider() {
     hero.addEventListener("mouseleave", startTimer);
   }
 }
-
-

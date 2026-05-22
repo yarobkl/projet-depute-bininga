@@ -429,6 +429,12 @@
   pointer-events: auto;
   animation: bubble-shake 4s ease-in-out 1s infinite;
 }
+@media (max-width: 600px) {
+  .chat-bubble,
+  .chat-bubble.visible {
+    display: none;
+  }
+}
 .chat-bubble .bubble-dots {
   display: inline-flex;
   gap: 3px;

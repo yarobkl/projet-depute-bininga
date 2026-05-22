@@ -17,7 +17,7 @@ const I18N = {
     "nav.audience":     "Audience",
 
     // ── Hero ────────────────────────────────────────────────────
-    "hero.btn1":        "🤝 Rejoindre la campagne",
+    "hero.btn1":        " Rejoindre la campagne",
     "hero.btn2":        "Notre programme",
     "hero.scroll":      "Découvrir",
     "hero.eyebrow":      "Campagne législative · République du Congo",
@@ -67,22 +67,22 @@ const I18N = {
     "form.obj.other":   "Autre",
     "form.reason":      "Raison de la demande *",
     "form.reason.ph":   "Rédigez ici votre requête. Expliquez l'objet de votre demande, votre situation, et ce que vous attendez du Député…",
-    "form.submit.aud":  "📨 Soumettre ma demande",
-    "form.recl.badge":  "⚠️ Signalement officiel",
+    "form.submit.aud":  " Soumettre ma demande",
+    "form.recl.badge":  " Signalement officiel",
     "form.recl.desc":   "Description du sinistre / problème *",
     "form.recl.desc.ph":"Décrivez précisément le problème, le sinistre ou la situation à signaler au Député…",
-    "form.geo.title":   "📍 Localisation du sinistre",
+    "form.geo.title":   " Localisation du sinistre",
     "form.geo.status":  "Non localisé, cliquez pour géolocaliser",
-    "form.geo.btn":     "📍 Géolocaliser ma position",
-    "form.photo.lbl":   "📷 Photo du sinistre",
+    "form.geo.btn":     " Géolocaliser ma position",
+    "form.photo.lbl":   " Photo du sinistre",
     "form.photo.opt":   "(optionnel, jpg/png, max 3 Mo)",
 
     // ── CTA ─────────────────────────────────────────────────────
     "cta.title":        "Votez BININGA :\nle choix de l'expérience et du terrain",
     "cta.sub":          "Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.",
-    "cta.btn1":         "📋 Demande d'audience",
-    "cta.btn2":         "✉️ Nous contacter",
-    "cta.btn3":         "📋 Lire le programme",
+    "cta.btn1":         " Demande d'audience",
+    "cta.btn2":         " Nous contacter",
+    "cta.btn3":         " Lire le programme",
 
     // ── Contact ─────────────────────────────────────────────────
     "ct.tag":           "Nous écrire",
@@ -106,15 +106,15 @@ const I18N = {
     "ct.subj.partner":  "Partenariat",
     "ct.form.message":  "Message",
     "ct.form.msg.ph":   "Votre message...",
-    "ct.form.send":     "📨 Envoyer le message",
+    "ct.form.send":     " Envoyer le message",
 
     // ── Newsletter ───────────────────────────────────────────────
     "nl.title":         "Restez informé",
     "nl.desc":          "Recevez les actualités, les initiatives et les avancées du Député directement dans votre boîte mail. Pas de spam, une lettre mensuelle.",
-    "nl.btn":           "📩 S'inscrire",
+    "nl.btn":           " S'inscrire",
     "nl.legal":         "En vous inscrivant, vous acceptez notre",
     "nl.legal.link":    "politique de confidentialité",
-    "nl.ok":            "✅ Inscription confirmée, merci pour votre soutien !",
+    "nl.ok":            " Inscription confirmée, merci pour votre soutien !",
 
     // ── Footer ──────────────────────────────────────────────────
     "ft.nav":           "Navigation",
@@ -132,7 +132,7 @@ const I18N = {
     "chat.send":        "Envoyer",
     "chat.title":       "Assistant DA",
     "chat.greeting":    "Bonjour ! Je suis DA, l'assistant virtuel du site. Posez-moi vos questions sur Ange Aimé Wilfrid BININGA.",
-    "chat.bubble":      "👋 Salut ! Je suis <strong>DA</strong>, l'assistant virtuel du Ministre BININGA. Posez-moi vos questions !",
+    "chat.bubble":      " Salut ! Je suis <strong>DA</strong>, l'assistant virtuel du Ministre BININGA. Posez-moi vos questions !",
     "chat.name":        "DA — Assistant virtuel",
     "chat.status":      "En ligne",
     "chat.fab.label":   "Ouvrir l'assistant DA",
@@ -150,7 +150,7 @@ const I18N = {
     "pub.meta.format":  "<strong>Format</strong> 24 × 16 cm",
     "pub.buy.shipping": "port en sus selon destination",
     "pub.buy.note":     "Disponible en librairie et en ligne · Paiement sécurisé",
-    "pub.buy.btn":      "🛒 Acheter ce livre",
+    "pub.buy.btn":      " Acheter ce livre",
     "pub.cover.badge":  "En vente",
     "pub.preface":      "Préface du Professeur Frédéric Joël Aïvo · Avant-propos du Professeur Babacar Gueye<br>Docteur en droit public, Université Cheikh Anta Diop de Dakar · Enseignant-chercheur, Université Marien Ngouabi",
     "pub.modal.title":  "Acheter le livre, 40 €",
@@ -173,16 +173,16 @@ const I18N = {
     "pub.order.qty.other":      "Autre (préciser en note)",
     "pub.order.notes.lbl":      "Note (dédicace, précision…)",
     "pub.order.notes.ph":       "Ex : dédicace souhaitée, heure de disponibilité…",
-    "pub.order.payment":        "💳 Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.",
-    "pub.order.submit":         "📦 Envoyer ma commande",
-    "pub.order.success":        "✅ Commande enregistrée ! Notre équipe vous contacte sous 48h.",
+    "pub.order.payment":        " Paiement à la livraison ou par virement Mobile Money / bancaire. Nos équipes vous confirmeront les détails.",
+    "pub.order.submit":         " Envoyer ma commande",
+    "pub.order.success":        " Commande enregistrée ! Notre équipe vous contacte sous 48h.",
 
     // ── Vidéo ────────────────────────────────────────────────────
     "video.tag":        "Le Député en action",
     "video.title":      "Discours &amp; terrain",
     "video.title.accent":"terrain",
     "video.desc":       "Suivez les interventions, discours et actions de terrain d'Ange Aimé Wilfrid BININGA, Garde des Sceaux et Député de la circonscription d'Ewo.",
-    "video.un.badge":   "🌍 Nations Unies · UN WebTV",
+    "video.un.badge":   " Nations Unies · UN WebTV",
     "video.un.title":   "BININGA devant le Conseil des droits de l'homme — ONU",
     "video.un.date":    "Examen Périodique Universel · Genève, 30 janvier 2024",
     "video.un.open":    "Ouvrir sur UN WebTV",
@@ -258,7 +258,7 @@ const I18N = {
     "nav.contact":      "Contact",
     "nav.audience":     "Audience",
 
-    "hero.btn1":        "🤝 Join the campaign",
+    "hero.btn1":        " Join the campaign",
     "hero.btn2":        "Our programme",
     "hero.scroll":      "Discover",
     "hero.eyebrow":      "Legislative campaign · Republic of Congo",
@@ -304,21 +304,21 @@ const I18N = {
     "form.obj.other":   "Other",
     "form.reason":      "Reason for request *",
     "form.reason.ph":   "Write your request here. Explain the purpose, your situation, and what you expect from the Deputy…",
-    "form.submit.aud":  "📨 Submit my request",
-    "form.recl.badge":  "⚠️ Official report",
+    "form.submit.aud":  " Submit my request",
+    "form.recl.badge":  " Official report",
     "form.recl.desc":   "Description of the issue / problem *",
     "form.recl.desc.ph":"Describe precisely the problem or situation to report to the Deputy…",
-    "form.geo.title":   "📍 Incident location",
+    "form.geo.title":   " Incident location",
     "form.geo.status":  "Not located, click to geolocate",
-    "form.geo.btn":     "📍 Geolocate my position",
-    "form.photo.lbl":   "📷 Photo of the incident",
+    "form.geo.btn":     " Geolocate my position",
+    "form.photo.lbl":   " Photo of the incident",
     "form.photo.opt":   "(optional, jpg/png, max 3 MB)",
 
     "cta.title":        "Vote BININGA:\nthe choice of experience and fieldwork",
     "cta.sub":          "Because Ewo deserves a man who knows the State from the inside and the field from the heart.",
-    "cta.btn1":         "📋 Audience request",
-    "cta.btn2":         "✉️ Contact us",
-    "cta.btn3":         "📋 Read the programme",
+    "cta.btn1":         " Audience request",
+    "cta.btn2":         " Contact us",
+    "cta.btn3":         " Read the programme",
 
     "ct.tag":           "Write to us",
     "ct.title":         "Get in",
@@ -341,14 +341,14 @@ const I18N = {
     "ct.subj.partner":  "Partnership",
     "ct.form.message":  "Message",
     "ct.form.msg.ph":   "Your message...",
-    "ct.form.send":     "📨 Send message",
+    "ct.form.send":     " Send message",
 
     "nl.title":         "Stay informed",
     "nl.desc":          "Receive news, initiatives and updates from the Deputy directly in your inbox. No spam, one monthly letter.",
-    "nl.btn":           "📩 Subscribe",
+    "nl.btn":           " Subscribe",
     "nl.legal":         "By subscribing, you agree to our",
     "nl.legal.link":    "privacy policy",
-    "nl.ok":            "✅ Subscription confirmed, thank you for your support!",
+    "nl.ok":            " Subscription confirmed, thank you for your support!",
 
     "ft.nav":           "Navigation",
     "ft.engage":        "Get involved",
@@ -364,7 +364,7 @@ const I18N = {
     "chat.send":        "Send",
     "chat.title":       "DA Assistant",
     "chat.greeting":    "Hello! I am DA, the virtual assistant. Ask me anything about Ange Aimé Wilfrid BININGA.",
-    "chat.bubble":      "👋 Hi! I am <strong>DA</strong>, the virtual assistant of Minister BININGA. Ask me your questions!",
+    "chat.bubble":      " Hi! I am <strong>DA</strong>, the virtual assistant of Minister BININGA. Ask me your questions!",
     "chat.name":        "DA — Virtual assistant",
     "chat.status":      "Online",
     "chat.fab.label":   "Open DA assistant",
@@ -381,7 +381,7 @@ const I18N = {
     "pub.meta.format":  "<strong>Format</strong> 24 × 16 cm",
     "pub.buy.shipping": "shipping costs extra depending on destination",
     "pub.buy.note":     "Available in bookshops and online · Secure payment",
-    "pub.buy.btn":      "🛒 Buy this book",
+    "pub.buy.btn":      " Buy this book",
     "pub.cover.badge":  "On sale",
     "pub.preface":      "Preface by Professor Frédéric Joël Aïvo · Foreword by Professor Babacar Gueye<br>Doctor of Public Law, Cheikh Anta Diop University of Dakar · Researcher, Marien Ngouabi University",
     "pub.modal.title":  "Buy the book, €40",
@@ -404,15 +404,15 @@ const I18N = {
     "pub.order.qty.other":      "Other (specify in notes)",
     "pub.order.notes.lbl":      "Notes (dedication, details…)",
     "pub.order.notes.ph":       "E.g.: dedication requested, availability time…",
-    "pub.order.payment":        "💳 Payment on delivery or by Mobile Money / bank transfer. Our teams will confirm the details.",
-    "pub.order.submit":         "📦 Send my order",
-    "pub.order.success":        "✅ Order registered! Our team will contact you within 48h.",
+    "pub.order.payment":        " Payment on delivery or by Mobile Money / bank transfer. Our teams will confirm the details.",
+    "pub.order.submit":         " Send my order",
+    "pub.order.success":        " Order registered! Our team will contact you within 48h.",
 
     "video.tag":        "The Deputy in action",
     "video.title":      "Speeches &amp; fieldwork",
     "video.title.accent":"fieldwork",
     "video.desc":       "Follow the interventions, speeches and fieldwork of Ange Aimé Wilfrid BININGA, Keeper of the Seals and Member of Parliament for the Ewo constituency.",
-    "video.un.badge":   "🌍 United Nations · UN WebTV",
+    "video.un.badge":   " United Nations · UN WebTV",
     "video.un.title":   "BININGA before the Human Rights Council — UN",
     "video.un.date":    "Universal Periodic Review · Geneva, 30 January 2024",
     "video.un.open":    "Open on UN WebTV",
@@ -484,7 +484,7 @@ const I18N = {
     "nav.contact":      "Contacto",
     "nav.audience":     "Audiencia",
 
-    "hero.btn1":        "🤝 Unirse a la campaña",
+    "hero.btn1":        " Unirse a la campaña",
     "hero.btn2":        "Nuestro programa",
     "hero.scroll":      "Descubrir",
     "hero.eyebrow":      "Campaña legislativa · República del Congo",
@@ -530,21 +530,21 @@ const I18N = {
     "form.obj.other":   "Otro",
     "form.reason":      "Motivo de la solicitud *",
     "form.reason.ph":   "Escriba su solicitud aquí. Explique el motivo, su situación y lo que espera del Diputado…",
-    "form.submit.aud":  "📨 Enviar mi solicitud",
-    "form.recl.badge":  "⚠️ Denuncia oficial",
+    "form.submit.aud":  " Enviar mi solicitud",
+    "form.recl.badge":  " Denuncia oficial",
     "form.recl.desc":   "Descripción del problema *",
     "form.recl.desc.ph":"Describa con precisión el problema a denunciar al Diputado…",
-    "form.geo.title":   "📍 Localización del incidente",
+    "form.geo.title":   " Localización del incidente",
     "form.geo.status":  "No localizado, haga clic para geolocalizar",
-    "form.geo.btn":     "📍 Geolocalizar mi posición",
-    "form.photo.lbl":   "📷 Foto del incidente",
+    "form.geo.btn":     " Geolocalizar mi posición",
+    "form.photo.lbl":   " Foto del incidente",
     "form.photo.opt":   "(opcional, jpg/png, máx 3 MB)",
 
     "cta.title":        "Vote BININGA:\nla elección de la experiencia y el terreno",
     "cta.sub":          "Porque Ewo merece un hombre que conoce el Estado por dentro y el terreno de corazón.",
-    "cta.btn1":         "📋 Solicitar audiencia",
-    "cta.btn2":         "✉️ Contáctenos",
-    "cta.btn3":         "📋 Leer el programa",
+    "cta.btn1":         " Solicitar audiencia",
+    "cta.btn2":         " Contáctenos",
+    "cta.btn3":         " Leer el programa",
 
     "ct.tag":           "Escríbanos",
     "ct.title":         "Tome",
@@ -567,14 +567,14 @@ const I18N = {
     "ct.subj.partner":  "Alianza",
     "ct.form.message":  "Mensaje",
     "ct.form.msg.ph":   "Su mensaje...",
-    "ct.form.send":     "📨 Enviar mensaje",
+    "ct.form.send":     " Enviar mensaje",
 
     "nl.title":         "Manténgase informado",
     "nl.desc":          "Reciba noticias e iniciativas del Diputado directamente en su correo. Sin spam, una carta mensual.",
-    "nl.btn":           "📩 Suscribirse",
+    "nl.btn":           " Suscribirse",
     "nl.legal":         "Al suscribirse, acepta nuestra",
     "nl.legal.link":    "política de privacidad",
-    "nl.ok":            "✅ Suscripción confirmada, ¡gracias por su apoyo!",
+    "nl.ok":            " Suscripción confirmada, ¡gracias por su apoyo!",
 
     "ft.nav":           "Navegación",
     "ft.engage":        "Participar",
@@ -590,7 +590,7 @@ const I18N = {
     "chat.send":        "Enviar",
     "chat.title":       "Asistente DA",
     "chat.greeting":    "¡Hola! Soy DA, el asistente virtual del sitio. Hágame preguntas sobre Ange Aimé Wilfrid BININGA.",
-    "chat.bubble":      "👋 ¡Hola! Soy <strong>DA</strong>, el asistente virtual del Ministro BININGA. ¡Hágame sus preguntas!",
+    "chat.bubble":      " ¡Hola! Soy <strong>DA</strong>, el asistente virtual del Ministro BININGA. ¡Hágame sus preguntas!",
     "chat.name":        "DA — Asistente virtual",
     "chat.status":      "En línea",
     "chat.fab.label":   "Abrir asistente DA",
@@ -607,7 +607,7 @@ const I18N = {
     "pub.meta.format":  "<strong>Formato</strong> 24 × 16 cm",
     "pub.buy.shipping": "gastos de envío según destino",
     "pub.buy.note":     "Disponible en librerías y en línea · Pago seguro",
-    "pub.buy.btn":      "🛒 Comprar este libro",
+    "pub.buy.btn":      " Comprar este libro",
     "pub.cover.badge":  "A la venta",
     "pub.preface":      "Prólogo del Profesor Frédéric Joël Aïvo · Presentación del Profesor Babacar Gueye<br>Doctor en Derecho Público, Universidad Cheikh Anta Diop de Dakar · Investigador, Universidad Marien Ngouabi",
     "pub.modal.title":  "Comprar el libro, 40 €",
@@ -630,15 +630,15 @@ const I18N = {
     "pub.order.qty.other":      "Otro (especificar en notas)",
     "pub.order.notes.lbl":      "Nota (dedicatoria, detalles…)",
     "pub.order.notes.ph":       "Ej.: dedicatoria deseada, hora de disponibilidad…",
-    "pub.order.payment":        "💳 Pago contra reembolso o por transferencia Mobile Money / bancaria. Nuestros equipos confirmarán los detalles.",
-    "pub.order.submit":         "📦 Enviar mi pedido",
-    "pub.order.success":        "✅ ¡Pedido registrado! Nuestro equipo le contactará en 48h.",
+    "pub.order.payment":        " Pago contra reembolso o por transferencia Mobile Money / bancaria. Nuestros equipos confirmarán los detalles.",
+    "pub.order.submit":         " Enviar mi pedido",
+    "pub.order.success":        " ¡Pedido registrado! Nuestro equipo le contactará en 48h.",
 
     "video.tag":        "El Diputado en acción",
     "video.title":      "Discursos &amp; terreno",
     "video.title.accent":"terreno",
     "video.desc":       "Siga las intervenciones, discursos y acciones de campo de Ange Aimé Wilfrid BININGA, Ministro de Justicia y Diputado de la circunscripción de Ewo.",
-    "video.un.badge":   "🌍 Naciones Unidas · UN WebTV",
+    "video.un.badge":   " Naciones Unidas · UN WebTV",
     "video.un.title":   "BININGA ante el Consejo de Derechos Humanos — ONU",
     "video.un.date":    "Examen Periódico Universal · Ginebra, 30 enero 2024",
     "video.un.open":    "Abrir en UN WebTV",
@@ -710,7 +710,7 @@ const I18N = {
     "nav.contact":      "联系我们",
     "nav.audience":     "申请会见",
 
-    "hero.btn1":        "🤝 加入竞选",
+    "hero.btn1":        " 加入竞选",
     "hero.btn2":        "查看纲领",
     "hero.scroll":      "了解更多",
     "hero.eyebrow":      "立法竞选 · 刚果共和国",
@@ -756,21 +756,21 @@ const I18N = {
     "form.obj.other":   "其他",
     "form.reason":      "申请原因 *",
     "form.reason.ph":   "请在此填写您的申请。说明申请目的、您的情况以及对议员的期望…",
-    "form.submit.aud":  "📨 提交申请",
-    "form.recl.badge":  "⚠️ 正式举报",
+    "form.submit.aud":  " 提交申请",
+    "form.recl.badge":  " 正式举报",
     "form.recl.desc":   "问题描述 *",
     "form.recl.desc.ph":"请详细描述需要向议员反映的问题…",
-    "form.geo.title":   "📍 事件位置",
+    "form.geo.title":   " 事件位置",
     "form.geo.status":  "未定位，点击进行定位",
-    "form.geo.btn":     "📍 定位我的位置",
-    "form.photo.lbl":   "📷 事件照片",
+    "form.geo.btn":     " 定位我的位置",
+    "form.photo.lbl":   " 事件照片",
     "form.photo.opt":   "（可选，jpg/png，最大3MB）",
 
     "cta.title":        "投票支持BININGA：\n经验与实干的选择",
     "cta.sub":          "因为埃沃值得一位了解国家内部运作、心系基层的人。",
-    "cta.btn1":         "📋 申请会见",
-    "cta.btn2":         "✉️ 联系我们",
-    "cta.btn3":         "📋 阅读纲领",
+    "cta.btn1":         " 申请会见",
+    "cta.btn2":         " 联系我们",
+    "cta.btn3":         " 阅读纲领",
 
     "ct.tag":           "给我们写信",
     "ct.title":         "取得",
@@ -793,14 +793,14 @@ const I18N = {
     "ct.subj.partner":  "合作",
     "ct.form.message":  "消息内容",
     "ct.form.msg.ph":   "您的消息...",
-    "ct.form.send":     "📨 发送消息",
+    "ct.form.send":     " 发送消息",
 
     "nl.title":         "保持关注",
     "nl.desc":          "直接在您的收件箱中接收议员的最新动态和举措。无垃圾邮件，每月一封简报。",
-    "nl.btn":           "📩 订阅",
+    "nl.btn":           " 订阅",
     "nl.legal":         "订阅即表示您同意我们的",
     "nl.legal.link":    "隐私政策",
-    "nl.ok":            "✅ 订阅已确认，感谢您的支持！",
+    "nl.ok":            " 订阅已确认，感谢您的支持！",
 
     "ft.nav":           "导航",
     "ft.engage":        "参与行动",
@@ -816,7 +816,7 @@ const I18N = {
     "chat.send":        "发送",
     "chat.title":       "DA助手",
     "chat.greeting":    "您好！我是DA，网站虚拟助手。请向我提问有关安热·艾梅·威尔弗里德·BININGA的问题。",
-    "chat.bubble":      "👋 您好！我是BININGA部长的虚拟助理<strong>DA</strong>。请向我提问！",
+    "chat.bubble":      " 您好！我是BININGA部长的虚拟助理<strong>DA</strong>。请向我提问！",
     "chat.name":        "DA — 虚拟助理",
     "chat.status":      "在线",
     "chat.fab.label":   "打开DA助理",
@@ -833,7 +833,7 @@ const I18N = {
     "pub.meta.format":  "<strong>开本</strong> 24 × 16 厘米",
     "pub.buy.shipping": "运费按目的地另计",
     "pub.buy.note":     "可在书店及网上购买 · 安全支付",
-    "pub.buy.btn":      "🛒 购买此书",
+    "pub.buy.btn":      " 购买此书",
     "pub.cover.badge":  "有售",
     "pub.preface":      "弗雷德里克·乔尔·艾沃教授作序 · 巴巴卡尔·格耶教授题词<br>达喀尔谢赫·安塔·迪奥普大学公法博士 · 马连·恩戈瓦比大学研究员",
     "pub.modal.title":  "购买此书，40 €",
@@ -856,15 +856,15 @@ const I18N = {
     "pub.order.qty.other":      "其他（请在备注中说明）",
     "pub.order.notes.lbl":      "备注（题词、说明…）",
     "pub.order.notes.ph":       "例如：所需题词、方便接听时间…",
-    "pub.order.payment":        "💳 货到付款或Mobile Money/银行转账。我们的团队将确认详情。",
-    "pub.order.submit":         "📦 提交订单",
-    "pub.order.success":        "✅ 订单已登记！我们的团队将在48小时内与您联系。",
+    "pub.order.payment":        " 货到付款或Mobile Money/银行转账。我们的团队将确认详情。",
+    "pub.order.submit":         " 提交订单",
+    "pub.order.success":        " 订单已登记！我们的团队将在48小时内与您联系。",
 
     "video.tag":        "议员的行动",
     "video.title":      "演讲 &amp; 实地工作",
     "video.title.accent":"实地工作",
     "video.desc":       "关注安热·艾梅·威尔弗里德·BININGA的发言、演讲和实地行动——他既是印玺保管人、司法部长，也是埃沃选区议员。",
-    "video.un.badge":   "🌍 联合国 · UN WebTV",
+    "video.un.badge":   " 联合国 · UN WebTV",
     "video.un.title":   "BININGA在联合国人权理事会上发言",
     "video.un.date":    "普遍定期审议 · 日内瓦，2024年1月30日",
     "video.un.open":    "在UN WebTV上观看",
@@ -936,7 +936,7 @@ const I18N = {
     "nav.contact":      "Контакт",
     "nav.audience":     "Аудиенция",
 
-    "hero.btn1":        "🤝 Присоединиться к кампании",
+    "hero.btn1":        " Присоединиться к кампании",
     "hero.btn2":        "Наша программа",
     "hero.scroll":      "Узнать больше",
     "hero.eyebrow":      "Законодательная кампания · Республика Конго",
@@ -982,21 +982,21 @@ const I18N = {
     "form.obj.other":   "Другое",
     "form.reason":      "Причина запроса *",
     "form.reason.ph":   "Напишите ваш запрос здесь. Объясните цель, вашу ситуацию и ожидания от Депутата…",
-    "form.submit.aud":  "📨 Отправить запрос",
-    "form.recl.badge":  "⚠️ Официальное сообщение",
+    "form.submit.aud":  " Отправить запрос",
+    "form.recl.badge":  " Официальное сообщение",
     "form.recl.desc":   "Описание проблемы *",
     "form.recl.desc.ph":"Точно опишите проблему, которую нужно сообщить Депутату…",
-    "form.geo.title":   "📍 Место происшествия",
+    "form.geo.title":   " Место происшествия",
     "form.geo.status":  "Не определено, нажмите для геолокации",
-    "form.geo.btn":     "📍 Определить моё местоположение",
-    "form.photo.lbl":   "📷 Фото происшествия",
+    "form.geo.btn":     " Определить моё местоположение",
+    "form.photo.lbl":   " Фото происшествия",
     "form.photo.opt":   "(необязательно, jpg/png, макс 3 МБ)",
 
     "cta.title":        "Голосуйте за BININGA:\nвыбор опыта и полевой работы",
     "cta.sub":          "Потому что Эво заслуживает человека, который знает государство изнутри и территорию от сердца.",
-    "cta.btn1":         "📋 Запрос на аудиенцию",
-    "cta.btn2":         "✉️ Связаться с нами",
-    "cta.btn3":         "📋 Читать программу",
+    "cta.btn1":         " Запрос на аудиенцию",
+    "cta.btn2":         " Связаться с нами",
+    "cta.btn3":         " Читать программу",
 
     "ct.tag":           "Написать нам",
     "ct.title":         "Установите",
@@ -1019,14 +1019,14 @@ const I18N = {
     "ct.subj.partner":  "Партнёрство",
     "ct.form.message":  "Сообщение",
     "ct.form.msg.ph":   "Ваше сообщение...",
-    "ct.form.send":     "📨 Отправить сообщение",
+    "ct.form.send":     " Отправить сообщение",
 
     "nl.title":         "Будьте в курсе",
     "nl.desc":          "Получайте новости и инициативы Депутата прямо на почту. Никакого спама, одно письмо в месяц.",
-    "nl.btn":           "📩 Подписаться",
+    "nl.btn":           " Подписаться",
     "nl.legal":         "Подписываясь, вы соглашаетесь с нашей",
     "nl.legal.link":    "политикой конфиденциальности",
-    "nl.ok":            "✅ Подписка подтверждена, спасибо за вашу поддержку!",
+    "nl.ok":            " Подписка подтверждена, спасибо за вашу поддержку!",
 
     "ft.nav":           "Навигация",
     "ft.engage":        "Участвовать",
@@ -1042,7 +1042,7 @@ const I18N = {
     "chat.send":        "Отправить",
     "chat.title":       "Ассистент DA",
     "chat.greeting":    "Здравствуйте! Я DA, виртуальный помощник сайта. Задайте мне вопросы об Анж Эме Вильфрид BININGA.",
-    "chat.bubble":      "👋 Привет! Я <strong>DA</strong>, виртуальный помощник Министра BININGA. Задайте мне ваши вопросы!",
+    "chat.bubble":      " Привет! Я <strong>DA</strong>, виртуальный помощник Министра BININGA. Задайте мне ваши вопросы!",
     "chat.name":        "DA — Виртуальный помощник",
     "chat.status":      "В сети",
     "chat.fab.label":   "Открыть помощника DA",
@@ -1059,7 +1059,7 @@ const I18N = {
     "pub.meta.format":  "<strong>Формат</strong> 24 × 16 см",
     "pub.buy.shipping": "стоимость доставки зависит от пункта назначения",
     "pub.buy.note":     "Доступно в книжных магазинах и онлайн · Безопасная оплата",
-    "pub.buy.btn":      "🛒 Купить книгу",
+    "pub.buy.btn":      " Купить книгу",
     "pub.cover.badge":  "В продаже",
     "pub.preface":      "Предисловие профессора Фредерика Жоэля Айво · Вступительное слово профессора Бабакара Гей<br>Доктор публичного права, Университет Шейха Анта Диопа, Дакар · Исследователь, Университет Мариена Нгуаби",
     "pub.modal.title":  "Купить книгу, 40 €",
@@ -1082,15 +1082,15 @@ const I18N = {
     "pub.order.qty.other":      "Другое (указать в примечании)",
     "pub.order.notes.lbl":      "Примечание (подпись, уточнение…)",
     "pub.order.notes.ph":       "Например: желаемая подпись, удобное время…",
-    "pub.order.payment":        "💳 Оплата при получении или банковским переводом / Mobile Money. Наша команда уточнит детали.",
-    "pub.order.submit":         "📦 Отправить заказ",
-    "pub.order.success":        "✅ Заказ зарегистрирован! Наша команда свяжется с вами в течение 48 часов.",
+    "pub.order.payment":        " Оплата при получении или банковским переводом / Mobile Money. Наша команда уточнит детали.",
+    "pub.order.submit":         " Отправить заказ",
+    "pub.order.success":        " Заказ зарегистрирован! Наша команда свяжется с вами в течение 48 часов.",
 
     "video.tag":        "Депутат в действии",
     "video.title":      "Речи &amp; полевая работа",
     "video.title.accent":"полевая работа",
     "video.desc":       "Следите за выступлениями, речами и полевой деятельностью Анж Эме Вильфрид BININGA — хранителя печатей, министра юстиции и депутата округа Эво.",
-    "video.un.badge":   "🌍 Организация Объединённых Наций · UN WebTV",
+    "video.un.badge":   " Организация Объединённых Наций · UN WebTV",
     "video.un.title":   "BININGA перед Советом ООН по правам человека",
     "video.un.date":    "Универсальный периодический обзор · Женева, 30 января 2024",
     "video.un.open":    "Открыть на UN WebTV",
@@ -1161,6 +1161,13 @@ function t(key) {
          (I18N["fr"] && I18N["fr"][key]) || key;
 }
 
+function cleanI18nLabel(value) {
+  return String(value || "")
+    .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
+
 // ── Appliquer toutes les traductions ──────────────────────────────────────────
 function applyI18n(lang) {
   _currentLang = lang;
@@ -1171,7 +1178,7 @@ function applyI18n(lang) {
   document.querySelectorAll("[data-i18n]").forEach(el => {
     const key = el.getAttribute("data-i18n");
     const attr = el.getAttribute("data-i18n-attr");
-    const val = t(key);
+    const val = cleanI18nLabel(t(key));
     if (attr) {
       el.setAttribute(attr, val);
     } else {
@@ -1181,12 +1188,12 @@ function applyI18n(lang) {
 
   // Éléments avec HTML (data-i18n-html)
   document.querySelectorAll("[data-i18n-html]").forEach(el => {
-    el.innerHTML = t(el.getAttribute("data-i18n-html"));
+    el.innerHTML = cleanI18nLabel(t(el.getAttribute("data-i18n-html")));
   });
 
   // Placeholders (data-i18n-ph)
   document.querySelectorAll("[data-i18n-ph]").forEach(el => {
-    el.placeholder = t(el.getAttribute("data-i18n-ph"));
+    el.placeholder = cleanI18nLabel(t(el.getAttribute("data-i18n-ph")));
   });
 
   // Mettre à jour le sélecteur de langue visuel
@@ -1196,13 +1203,13 @@ function applyI18n(lang) {
 
   // Chat greeting si la fenêtre chat est ouverte
   const chatGreeting = document.getElementById("chat-greeting");
-  if (chatGreeting) chatGreeting.textContent = t("chat.greeting");
+  if (chatGreeting) chatGreeting.textContent = cleanI18nLabel(t("chat.greeting"));
   const chatInput = document.getElementById("chat-input");
-  if (chatInput) chatInput.placeholder = t("chat.placeholder");
+  if (chatInput) chatInput.placeholder = cleanI18nLabel(t("chat.placeholder"));
   const chatSendBtn = document.getElementById("chat-send-btn");
-  if (chatSendBtn) chatSendBtn.textContent = t("chat.send");
+  if (chatSendBtn) chatSendBtn.textContent = cleanI18nLabel(t("chat.send"));
   const chatTitle = document.getElementById("chat-title");
-  if (chatTitle) chatTitle.textContent = t("chat.title");
+  if (chatTitle) chatTitle.textContent = cleanI18nLabel(t("chat.title"));
 
   // Traduction du contenu dynamique (injecté par index.js depuis data.json)
   if (typeof applyDynLang === "function") applyDynLang(lang);
