@@ -183,6 +183,15 @@ def _get_build_version():
 
 BUILD_VERSION = _get_build_version()
 
+def _version_static_assets(text: str) -> str:
+    for asset in ("admin.js", "admin.css", "mobile.css", "index.js", "index.css"):
+        text = re.sub(
+            rf"static/{re.escape(asset)}(?:\?v=[^\"'<\s]*)?",
+            f"static/{asset}?v={BUILD_VERSION}",
+            text,
+        )
+    return text
+
 # ── Configuration ──────────────────────────────────────────
 # DATA_DIR : répertoire persistant (ex: volume Railway /data).
 # Si non défini, utilise le répertoire courant (éphémère sur Railway free tier).
@@ -2210,8 +2219,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 with open(safe_admin, "rb") as f:
                     content = f.read()
                 text = content.decode("utf-8", errors="replace")
-                text = text.replace("static/admin.js",  f"static/admin.js?v={BUILD_VERSION}")
-                text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
+                text = _version_static_assets(text)
                 self.send_response(200)
                 self.send_header("Content-Type", "text/html; charset=utf-8")
                 self.send_header("Content-Length", len(text.encode("utf-8")))
@@ -2268,10 +2276,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 # Injection version build dans les HTML pour cache-busting automatique
                 if mime.startswith("text/html"):
                     text = content.decode("utf-8", errors="replace")
-                    text = text.replace("static/admin.js", f"static/admin.js?v={BUILD_VERSION}")
-                    text = text.replace("static/admin.css", f"static/admin.css?v={BUILD_VERSION}")
-                    text = text.replace("static/index.js", f"static/index.js?v={BUILD_VERSION}")
-                    text = text.replace("static/index.css", f"static/index.css?v={BUILD_VERSION}")
+                    text = _version_static_assets(text)
                     # Injecter l'URL secrète de l'admin (gestion.html, ministre.html…)
                     text = text.replace("__ADMIN_PATH__", f"/{ADMIN_SECRET_PATH}")
                     content = text.encode("utf-8")

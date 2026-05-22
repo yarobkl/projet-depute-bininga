@@ -867,6 +867,30 @@ img {
   backface-visibility: hidden;
 }
 
+/* ── ADMIN — DERNIERS GARDE-FOUS MOBILES ─────────────────────
+   mobile.css est chargé après admin.css: ces règles gardent la
+   barre d'actions en bas sans masquer le contenu des écrans admin. */
+@media (max-width: 768px) {
+  #app.visible .content {
+    padding: 16px 16px calc(196px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #app.visible .main {
+    min-height: 100svh;
+  }
+
+  #app.visible .admin-actionbar {
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  #app.visible .content {
+    padding: 14px 12px calc(214px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
 /* Évite les animations sur les éléments réduits en mouvements */
 @media (prefers-reduced-motion: reduce) {
   *,
