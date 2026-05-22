@@ -133,6 +133,12 @@ async function doLogin() {
   const p    = document.getElementById("p").value;
   const totp = (document.getElementById("totp")?.value || "").trim();
   const btn  = document.querySelector(".login-btn");
+  const errEl = document.getElementById("err");
+  if (window.location.protocol === "file:") {
+    errEl.textContent = "Ouvrez l'espace admin depuis l'adresse du site, pas depuis le fichier local.";
+    setTimeout(() => errEl.textContent = "", 6000);
+    return;
+  }
   btn.disabled = true;
   btn.textContent = "Connexion…";
   try {
@@ -161,17 +167,14 @@ async function doLogin() {
       // Afficher le champ 2FA
       const totpRow = document.getElementById("totp-row");
       if (totpRow) { totpRow.style.display = ""; document.getElementById("totp")?.focus(); }
-      const errEl = document.getElementById("err");
       errEl.textContent = "Entrez votre code 2FA (application d'authentification).";
       setTimeout(() => errEl.textContent = "", 5000);
     } else {
-      const errEl = document.getElementById("err");
       errEl.textContent = data.message || "Identifiant ou mot de passe incorrect.";
       setTimeout(() => errEl.textContent = "", 3500);
     }
   } catch(e) {
-    const errEl = document.getElementById("err");
-    errEl.textContent = "Erreur de connexion au serveur.";
+    errEl.textContent = "Connexion serveur impossible. Ouvrez l'admin depuis l'URL du site et vérifiez que le serveur est lancé.";
     setTimeout(() => errEl.textContent = "", 3500);
   } finally {
     btn.disabled = false;
