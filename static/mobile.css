@@ -875,17 +875,23 @@ img {
     flex-direction: column;
   }
 
+  .content,
   #app.visible .content {
     padding: 16px !important;
   }
 
+  .main,
   #app.visible .main {
     min-height: 100svh;
     width: 100%;
   }
 
+  .admin-actionbar,
   #app.visible .admin-actionbar {
-    position: static;
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
     width: 100%;
     padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
     background: #080d18;
@@ -894,6 +900,7 @@ img {
 }
 
 @media (max-width: 480px) {
+  .content,
   #app.visible .content {
     padding: 14px 12px !important;
   }
