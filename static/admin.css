@@ -38,8 +38,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .sb-logo-txt{font-weight:700;font-size:14px;line-height:1.2}
 .sb-logo-sub{font-size:10px;color:rgba(255,255,255,.25);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
 .sb-admin-card{display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07)}
-.sb-admin-card img,.sb-admin-avatar{width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center 15%;border:2px solid rgba(200,16,46,.5);flex-shrink:0;-webkit-touch-callout:none;pointer-events:none}
-.sb-admin-avatar{display:flex;align-items:center;justify-content:center;background:rgba(200,16,46,.18);color:#fecaca;font-size:11px;font-weight:800;letter-spacing:.06em}
+.sb-admin-avatar{width:36px;height:36px;border-radius:50%;border:2px solid rgba(34,197,94,.32);flex-shrink:0;display:flex;align-items:center;justify-content:center;background:rgba(34,197,94,.14);color:#bbf7d0;font-size:11px;font-weight:900;letter-spacing:.06em}
+.sb-admin-meta{min-width:0}
+.sb-admin-name{font-size:12px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:136px}
+.sb-admin-role{font-size:10px;color:#94a3b8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:136px}
 .sb-nav{flex:1;padding:14px 10px;overflow-y:auto;min-height:0}
 .sb-section{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.18);padding:14px 8px 6px;font-weight:600}
 .sb-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:2px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);transition:var(--t);position:relative;border:1px solid transparent}

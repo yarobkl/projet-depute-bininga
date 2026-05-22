@@ -12,6 +12,39 @@ let SESSION_NOM          = "";
 let SESSION_USERNAME     = "";
 let SESSION_IS_MAIN_ADMIN = false;
 
+function roleLabel(role, isMainAdmin = SESSION_IS_MAIN_ADMIN) {
+  if (role === "admin" && isMainAdmin) return "Admin principal";
+  if (role === "admin") return "Administrateur";
+  if (role === "editeur") return "Secrétaire";
+  if (role === "ministre") return "Député";
+  if (role === "lecteur") return "Consultation";
+  return role || "Utilisateur";
+}
+
+function initialsFromName(name, username = "") {
+  const source = String(name || username || "Utilisateur").trim();
+  const words = source.split(/\s+/).filter(Boolean);
+  if (!words.length) return "--";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+function updateProfileUI() {
+  const displayName = SESSION_NOM || SESSION_USERNAME || "Utilisateur";
+  const label = roleLabel(SESSION_ROLE, SESSION_IS_MAIN_ADMIN);
+  const avatar = document.getElementById("profile-avatar");
+  const nameEl = document.getElementById("profile-name");
+  const roleEl = document.getElementById("profile-role");
+  const topbarUser = document.getElementById("topbar-user");
+  if (avatar) {
+    avatar.textContent = initialsFromName(displayName, SESSION_USERNAME);
+    avatar.setAttribute("title", `${displayName} — ${label}`);
+  }
+  if (nameEl) nameEl.textContent = displayName;
+  if (roleEl) roleEl.textContent = label;
+  if (topbarUser) topbarUser.textContent = `${displayName} · ${label}`;
+}
+
 function _clearStoredSession() {
   localStorage.removeItem(SESSION_STORAGE_KEY);
   sessionStorage.removeItem(SESSION_STORAGE_KEY);
@@ -46,8 +79,7 @@ function _applySession(saved, restored = false) {
   document.getElementById("login").classList.add("hidden");
   document.getElementById("app").classList.add("visible");
   document.getElementById("last-login").textContent = restored ? "Session restaurée" : new Date().toLocaleString("fr-FR");
-  const duration = saved.session_duration || "72 heures";
-  document.getElementById("topbar-user").textContent = `${saved.nom || saved.username} · ${saved.role} | session ${duration}`;
+  updateProfileUI();
   applyRoleUI(saved.role);
   init();
   initNotifications();
@@ -177,6 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
 //  RÔLES — Affichage selon les permissions
 // ══════════════════════════════════════════════════════════════════════════
 function applyRoleUI(role) {
+  updateProfileUI();
   // .role-editeur = visible pour editeur ET admin
   const canEdit = role === "admin" || role === "editeur";
   document.querySelectorAll(".role-editeur").forEach(el => {
@@ -242,7 +275,7 @@ async function loadUsers() {
       el.innerHTML = '<div class="msg-empty">Aucun utilisateur.</div>';
       return;
     }
-    const roleLabels = { admin: "Admin", editeur: "Éditeur", lecteur: "Lecteur" };
+    const roleLabels = { admin: "Administrateur", editeur: "Secrétaire", lecteur: "Consultation", ministre: "Député" };
     const initials   = u => (u.nom || u.username).charAt(0).toUpperCase();
     el.innerHTML = data.users.map(u => `
       <div class="user-item" data-username="${esc(u.username)}" data-nom="${esc(u.nom||u.username)}" data-role="${esc(u.role)}">
