@@ -2,13 +2,73 @@
 //  SÉCURITÉ — Authentification par hachage SHA-256 (WebCrypto)
 //  Les identifiants ne sont jamais stockés en clair dans le code.
 // ══════════════════════════════════════════════════════════════════════════
-// Session — jamais codée en dur ici, jamais dans sessionStorage
+// Session — jamais codée en dur ici. Le navigateur conserve l'accès 72h.
+const SESSION_STORAGE_KEY = "bininga_session";
+const SESSION_CLIENT_TTL_MS = 72 * 60 * 60 * 1000;
 let SESSION_TOKEN        = "";
 let SESSION_CSRF         = "";
 let SESSION_ROLE         = "";
 let SESSION_NOM          = "";
 let SESSION_USERNAME     = "";
 let SESSION_IS_MAIN_ADMIN = false;
+
+function _clearStoredSession() {
+  localStorage.removeItem(SESSION_STORAGE_KEY);
+  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+}
+
+function _storeSession(data) {
+  const ttlMs = Number(data.session_ttl || 72 * 3600) * 1000;
+  const payload = {
+    token: data.token,
+    csrf: data.csrf_token || data.csrf || "",
+    role: data.role,
+    nom: data.nom,
+    username: data.username || "",
+    is_main_admin: data.is_main_admin || false,
+    has_2fa: data.has_2fa || false,
+    trusted_ip: data.trusted_ip || false,
+    session_duration: data.session_duration || "72 heures",
+    expires_at: Date.now() + Math.max(ttlMs, SESSION_CLIENT_TTL_MS),
+  };
+  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  return payload;
+}
+
+function _applySession(saved, restored = false) {
+  SESSION_TOKEN         = saved.token;
+  SESSION_CSRF          = saved.csrf || "";
+  SESSION_ROLE          = saved.role;
+  SESSION_NOM           = saved.nom;
+  SESSION_USERNAME      = saved.username || "";
+  SESSION_IS_MAIN_ADMIN = saved.is_main_admin || false;
+  window._sessionHas2fa = saved.has_2fa || false;
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("app").classList.add("visible");
+  document.getElementById("last-login").textContent = restored ? "Session restaurée" : new Date().toLocaleString("fr-FR");
+  const duration = saved.session_duration || "72 heures";
+  document.getElementById("topbar-user").textContent = `${saved.nom || saved.username} · ${saved.role} | session ${duration}`;
+  applyRoleUI(saved.role);
+  init();
+  initNotifications();
+}
+
+function restoreStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_STORAGE_KEY) || sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return false;
+    const saved = JSON.parse(raw);
+    if (!saved.token || Date.now() > Number(saved.expires_at || 0)) {
+      _clearStoredSession();
+      return false;
+    }
+    _applySession(saved, true);
+    return true;
+  } catch {
+    _clearStoredSession();
+    return false;
+  }
+}
 
 // Helper : headers authentifiés avec CSRF
 function authHeaders(extra) {
@@ -26,6 +86,7 @@ async function apiFetch(url, opts = {}) {
     showToast("Session expirée — reconnexion…", true);
     setTimeout(() => {
       SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
+      _clearStoredSession();
       document.getElementById("app").classList.remove("visible");
       document.getElementById("login").classList.remove("hidden");
       document.getElementById("u").value = "";
@@ -59,18 +120,11 @@ async function doLogin() {
       SESSION_USERNAME      = data.username || "";
       SESSION_IS_MAIN_ADMIN = data.is_main_admin || false;
       window._sessionHas2fa = data.has_2fa || false;
-      sessionStorage.setItem("bininga_session", JSON.stringify({ token: data.token, csrf: data.csrf_token || "", role: data.role, nom: data.nom, username: data.username || "", is_main_admin: data.is_main_admin || false, has_2fa: data.has_2fa || false }));
+      const savedSession = _storeSession(data);
       // Masquer le champ 2FA après connexion
       const totpRow = document.getElementById("totp-row");
       if (totpRow) totpRow.style.display = "none";
-      document.getElementById("login").classList.add("hidden");
-      document.getElementById("app").classList.add("visible");
-      document.getElementById("last-login").textContent = new Date().toLocaleString("fr-FR");
-      const durLabel = data.trusted_ip ? "Session active 7 jours (IP de confiance)" : "";
-      document.getElementById("topbar-user").textContent = data.nom + " · " + data.role + (durLabel ? "  |  " + durLabel : "");
-      applyRoleUI(data.role);
-      init();
-      initNotifications();
+      _applySession(savedSession, false);
     } else if (data.require_2fa) {
       // Afficher le champ 2FA
       const totpRow = document.getElementById("totp-row");
@@ -104,7 +158,7 @@ async function logout() {
   // Couper la connexion SSE proprement
   if (_sseRetryTimer) { clearTimeout(_sseRetryTimer); _sseRetryTimer = null; }
   if (_sseSource) { try { _sseSource.close(); } catch {} _sseSource = null; }
-  sessionStorage.removeItem("bininga_session");
+  _clearStoredSession();
   document.getElementById("login").classList.remove("hidden");
   document.getElementById("app").classList.remove("visible");
   document.getElementById("u").value = "";
@@ -113,6 +167,10 @@ async function logout() {
 
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  restoreStoredSession();
 });
 
 // ══════════════════════════════════════════════════════════════════════════

@@ -214,8 +214,8 @@ BASE_DIR        = os.path.realpath(os.getcwd())
 
 # Sessions actives : token → {username, role, nom, created_at, csrf_token, ttl}
 ACTIVE_SESSIONS    = {}
-SESSION_TTL        = 86400           # 24 heures  (session normale)
-SESSION_TTL_LONG   = 7 * 86400       # 7 jours    (IP de confiance)
+SESSION_TTL        = 72 * 3600       # 72 heures (session admin navigateur)
+SESSION_TTL_LONG   = 72 * 3600       # 72 heures aussi pour les IP de confiance
 
 # IPs de confiance : session longue durée (7 jours) pour l'admin
 # Format Railway env : ADMIN_TRUSTED_IPS=1.2.3.4,5.6.7.8
@@ -2462,15 +2462,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         "trusted_ip": is_trusted,
                     }
                     save_sessions()
-                    duration_label = "7 jours" if is_trusted else "24 heures"
-                    print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')} {'[IP de confiance — session 7j]' if is_trusted else ''}")
-                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']}){' [2FA]' if totp_secret else ''}{' [IP fiable — 7j]' if is_trusted else ''}")
+                    duration_label = "72 heures"
+                    print(f"[BININGA] 🔓 Connexion : {username} ({user['role']}) — {datetime.now().strftime('%H:%M:%S')} {'[IP de confiance]' if is_trusted else ''}")
+                    audit_log("LOGIN_OK", ip, f"Connexion de {username} ({user['role']}){' [2FA]' if totp_secret else ''}{' [IP fiable]' if is_trusted else ''}")
                     self._json({"ok": True, "token": token, "csrf_token": csrf_token,
                                 "role": user["role"], "nom": user.get("nom", username),
                                 "username": user["username"],
                                 "is_main_admin": username == ADMIN_USER,
                                 "has_2fa": bool(totp_secret),
                                 "session_duration": duration_label,
+                                "session_ttl": sess_ttl,
                                 "trusted_ip": is_trusted})
                 else:
                     _record_failed_login(ip)
