@@ -871,23 +871,31 @@ img {
    mobile.css est chargé après admin.css: ces règles gardent la
    barre d'actions en bas sans masquer le contenu des écrans admin. */
 @media (max-width: 768px) {
+  #app.visible {
+    flex-direction: column;
+  }
+
   #app.visible .content {
-    padding: 16px 16px calc(196px + env(safe-area-inset-bottom)) !important;
+    padding: 16px !important;
   }
 
   #app.visible .main {
     min-height: 100svh;
+    width: 100%;
   }
 
   #app.visible .admin-actionbar {
-    left: 0;
-    right: 0;
+    position: static;
+    width: 100%;
+    padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
+    background: #080d18;
+    border-top: 1px solid rgba(226,232,240,.12);
   }
 }
 
 @media (max-width: 480px) {
   #app.visible .content {
-    padding: 14px 12px calc(214px + env(safe-area-inset-bottom)) !important;
+    padding: 14px 12px !important;
   }
 }
 
