@@ -48,8 +48,8 @@
           <div class="sb-logo-sub">Espace sécurisé</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:16px;padding:10px 12px;background:rgba(255,255,255,.04);border-radius:8px;border:1px solid rgba(255,255,255,.07);">
-        <img src="yaro.jpg.jpg" alt="Rodrin"style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center 15%;border:2px solid rgba(200,16,46,.5);flex-shrink:0;-webkit-touch-callout:none;pointer-events:none;">
+      <div class="sb-admin-card">
+        <img src="images/yaro.jpg.jpg" alt="Rodrin Bakala" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'sb-admin-avatar',textContent:'RB'}))">
         <div>
           <div style="font-size:12px;font-weight:600;color:#fff;">Rodrin Bakala</div>
           <div style="font-size:10px;color:rgba(255,255,255,.4);">Administrateur principal</div>
@@ -152,11 +152,17 @@
         <span class="icon i-shield" aria-hidden="true"></span> Sécurité
         <span class="sb-badge warn" id="badge-sec" style="display:none"></span>
       </div>
+
+      <div class="sb-section">Liens rapides</div>
+      <a href="ministre.html" class="sb-item sb-link-item role-admin" id="btn-ministre" style="display:none;text-decoration:none">
+        <span class="icon i-deputy" aria-hidden="true"></span> Espace du Député
+      </a>
+      <a href="index.html" target="_blank" class="sb-item sb-link-item" style="text-decoration:none">
+        <span class="icon i-external" aria-hidden="true"></span> Voir le site
+      </a>
     </nav>
 
     <div class="sb-footer">
-      <a href="ministre.html" class="sb-btn role-admin" id="btn-ministre" style="display:none;background:rgba(184,151,58,.12);color:#d4b96a;border:1px solid rgba(184,151,58,.2);text-decoration:none;margin-bottom:8px">Espace du Député</a>
-      <a href="index.html" target="_blank" class="sb-btn sb-btn-ghost" style="text-decoration:none;margin-bottom:4px">Voir le site</a>
       <button class="sb-btn sb-btn-logout" onclick="logout()">Déconnexion</button>
     </div>
   </div>
