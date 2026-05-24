@@ -603,7 +603,7 @@ select.form-input:focus{border-color:var(--r)}
 .notif-item.notif-reclamation { border-left: 3px solid #e74c3c; }
 .notif-item.notif-prog_view { border-left: 3px solid #9b59b6; }
 
-/* ── Professional hardening pass ── */
+/* ── Améliorations visuelles Rodrin (21-22 mai 2026) ── */
 :root{
   --surface:#101521;
   --surface-2:#151c2b;
@@ -776,11 +776,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .topbar-logout{margin-left:auto;min-height:34px;padding:0 10px;font-size:11px}
   .card-actions{justify-content:flex-start;flex-wrap:wrap}
   .kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sbtn,.tab{width:100%}
+  .sb-footer .sb-btn{width:100%}
 }
 @media(max-width:480px){
   .kpi-grid{grid-template-columns:1fr}
-  .sbtn,.tab{width:100%}
-  .sb-footer .sb-btn{width:100%}
   .admin-actionbar-actions{grid-template-columns:1fr}
   .admin-actionbar .sb-btn-primary{grid-column:auto}
 }
