@@ -1,0 +1,20 @@
+{
+  "client_slug": "client-demo",
+  "project_name": "Site Institutionnel Client Demo",
+  "public_domain": "https://client-demo.cg",
+  "public_domain_www": "https://www.client-demo.cg",
+  "admin_secret_path": "espace-prive-client-demo-2026",
+  "admin_user": "admin",
+  "admin_password_placeholder": "A_REMPLACER_PAR_UN_MOT_DE_PASSE_FORT",
+  "mysql_database": "cpaneluser_client_demo",
+  "mysql_user": "cpaneluser_client_demo",
+  "mysql_password_placeholder": "A_REMPLACER_PAR_LE_MOT_DE_PASSE_MYSQL",
+  "notification_email_to": "contact@client-demo.cg",
+  "brand": {
+    "old_name": "BININGA",
+    "new_name": "CLIENT DEMO",
+    "old_full_name": "Ange Aimé Wilfrid BININGA",
+    "new_full_name": "Nom Complet du Client",
+    "assistant_name": "Assistant"
+  }
+}
