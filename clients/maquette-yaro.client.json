@@ -1,0 +1,20 @@
+{
+  "client_slug": "maquette-yaro",
+  "project_name": "Maquette YARO",
+  "public_domain": "https://maquette-yaro.fr",
+  "public_domain_www": "https://www.maquette-yaro.fr",
+  "admin_secret_path": "espace-prive-maquette-yaro-2026",
+  "admin_user": "admin",
+  "admin_password_placeholder": "maquette2026",
+  "mysql_database": "cpaneluser_maquette_yaro",
+  "mysql_user": "cpaneluser_maquette_yaro",
+  "mysql_password_placeholder": "A_REMPLACER_PAR_LE_MOT_DE_PASSE_MYSQL",
+  "notification_email_to": "contact@yaro-agency.fr",
+  "brand": {
+    "old_name": "BININGA",
+    "new_name": "YARO",
+    "old_full_name": "Ange Aimé Wilfrid BININGA",
+    "new_full_name": "YARO Maquette",
+    "assistant_name": "YARO IA"
+  }
+}
