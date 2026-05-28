@@ -31,6 +31,8 @@ EXCLUDED_DIRS = {
 
 EXCLUDED_FILES = {
     ".env",
+    ".DS_Store",
+    "attacks.log",
     "users.json",
     "sessions.json",
     "contacts.json",
@@ -41,6 +43,13 @@ EXCLUDED_FILES = {
     "editorial.json",
     "crm.json",
     "news.db",
+}
+
+EXCLUDED_SUFFIXES = {
+    ".db",
+    ".db-shm",
+    ".db-wal",
+    ".log",
 }
 
 TEXT_EXTENSIONS = {
@@ -67,7 +76,11 @@ def should_skip(path: Path) -> bool:
     parts = set(path.relative_to(ROOT).parts)
     if parts & EXCLUDED_DIRS:
         return True
-    return path.name in EXCLUDED_FILES or path.name.endswith("_backup.json")
+    return (
+        path.name in EXCLUDED_FILES
+        or path.name.endswith("_backup.json")
+        or any(path.name.endswith(suffix) for suffix in EXCLUDED_SUFFIXES)
+    )
 
 
 def copy_project(target: Path) -> None:
