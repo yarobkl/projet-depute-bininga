@@ -21,7 +21,7 @@ Variables d'environnement :
 
 from __future__ import annotations
 import os, json, time, hashlib, signal, sys, smtplib, re
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from urllib.request import urlopen, Request, build_opener, ProxyHandler
 from urllib.parse import quote_plus, urlencode
 from urllib.error import URLError, HTTPError
@@ -367,6 +367,74 @@ def fetch_extra_rss(rss_url: str) -> list[dict]:
     keywords = ["bininga", "ange aimé", "garde des sceaux"]
     return [a for a in articles if any(k in (a["title"] + a["summary"]).lower() for k in keywords)]
 
+# ── YouTube Data API v3 ────────────────────────────────────────────────────────
+
+def fetch_youtube_api() -> list[dict]:
+    """Appel direct YouTube Data API v3 — vidéos récentes mentionnant BININGA."""
+    key = os.environ.get("YOUTUBE_API_KEY", "").strip()
+    if not key:
+        return []
+    published_after = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    params = urlencode({
+        "part": "snippet",
+        "q": "BININGA Congo Brazzaville",
+        "type": "video",
+        "order": "date",
+        "maxResults": "15",
+        "publishedAfter": published_after,
+        "key": key,
+    })
+    raw = _fetch(f"https://www.googleapis.com/youtube/v3/search?{params}")
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw.decode())
+    except Exception:
+        return []
+    items = data.get("items", [])
+    if not items:
+        return []
+    # Récupérer les statistiques (vues)
+    video_ids = ",".join(it["id"]["videoId"] for it in items if it.get("id", {}).get("videoId"))
+    stats_map: dict = {}
+    if video_ids:
+        sp = urlencode({"part": "statistics", "id": video_ids, "key": key})
+        sr = _fetch(f"https://www.googleapis.com/youtube/v3/videos?{sp}")
+        if sr:
+            try:
+                for v in json.loads(sr.decode()).get("items", []):
+                    stats_map[v["id"]] = v.get("statistics", {})
+            except Exception:
+                pass
+    articles = []
+    for it in items:
+        vid_id = it.get("id", {}).get("videoId", "")
+        if not vid_id:
+            continue
+        snip = it.get("snippet", {})
+        stats = stats_map.get(vid_id, {})
+        published = snip.get("publishedAt", "")
+        url = f"https://www.youtube.com/watch?v={vid_id}"
+        views = stats.get("viewCount", "0")
+        articles.append({
+            "id":         _item_id(url),
+            "title":      snip.get("title", ""),
+            "url":        url,
+            "source":     f"YouTube — {snip.get('channelTitle', '')}",
+            "published":  published,
+            "found_at":   datetime.now(timezone.utc).isoformat(),
+            "summary":    f"{views} vues · " + snip.get("description", "")[:150],
+            "thumbnail":  snip.get("thumbnails", {}).get("medium", {}).get("url", ""),
+            "views":      int(views) if str(views).isdigit() else 0,
+            "channel":    snip.get("channelTitle", ""),
+            "is_youtube": True,
+            "ai_summary": "",
+            "read":       False,
+        })
+    _log(f"[YouTube API] {len(articles)} vidéo(s) trouvée(s)")
+    return articles
+
+
 # ── IA — Résumé Claude ─────────────────────────────────────────────────────────
 
 def ai_summarize(article: dict) -> str:
@@ -514,11 +582,15 @@ def run_cycle(data: dict, custom_query: str = "") -> list[dict]:
         _add(fetch_google_news(query), "bininga")
         time.sleep(2)
 
-    # YouTube — via Google News
-    for query in YOUTUBE_GOOGLE_QUERIES:
-        _log(f"[YouTube] {query}")
-        _add(fetch_google_news(query), "bininga")
-        time.sleep(2)
+    # YouTube — via API directe (si clé disponible), sinon via Google News
+    yt_api = fetch_youtube_api()
+    if yt_api:
+        _add(yt_api, "bininga")
+    else:
+        for query in YOUTUBE_GOOGLE_QUERIES:
+            _log(f"[YouTube] {query}")
+            _add(fetch_google_news(query), "bininga")
+            time.sleep(2)
 
     # Résumés IA (si configuré)
     if os.environ.get("ANTHROPIC_API_KEY") and new_articles:

@@ -241,6 +241,7 @@ NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
 OPINION_CACHE_FILE = os.path.join(DATA_DIR, "opinion_cache.json")
 OPINION_CACHE_TTL  = 6 * 3600   # 6 heures
 _OPINION_LOCK      = threading.Lock()
+YOUTUBE_API_KEY    = os.environ.get("YOUTUBE_API_KEY", "").strip()
 
 # Fichier éditorial IA
 EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
@@ -1010,10 +1011,68 @@ def _opinion_recent_articles(days: int) -> list:
         })
     return recent
 
+def _fetch_youtube_videos(days: int) -> list[dict]:
+    """Appel YouTube Data API v3 — vidéos récentes sur BININGA (avec vues)."""
+    if not YOUTUBE_API_KEY:
+        return []
+    from urllib.parse import urlencode as _ue
+    from urllib.request import urlopen as _uo, Request as _Req
+    from datetime import timedelta, timezone
+    published_after = (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    search_url = ("https://www.googleapis.com/youtube/v3/search?" + _ue({
+        "part": "snippet", "q": "BININGA Congo Brazzaville",
+        "type": "video", "order": "date", "maxResults": "10",
+        "publishedAfter": published_after, "key": YOUTUBE_API_KEY,
+    }))
+    try:
+        with _uo(_Req(search_url, headers={"User-Agent": "BiningaMonitor/1.0"}), timeout=10) as r:
+            data = json.loads(r.read().decode())
+    except Exception as e:
+        print(f"[YouTube] Erreur recherche: {e}")
+        return []
+    items = data.get("items", [])
+    if not items:
+        return []
+    # Statistiques (vues, likes)
+    vid_ids = ",".join(it["id"]["videoId"] for it in items if it.get("id", {}).get("videoId"))
+    stats_map: dict = {}
+    if vid_ids:
+        stats_url = ("https://www.googleapis.com/youtube/v3/videos?" + _ue({
+            "part": "statistics", "id": vid_ids, "key": YOUTUBE_API_KEY,
+        }))
+        try:
+            with _uo(stats_url, timeout=10) as r:
+                for v in json.loads(r.read().decode()).get("items", []):
+                    stats_map[v["id"]] = v.get("statistics", {})
+        except Exception:
+            pass
+    videos = []
+    for it in items:
+        vid_id = it.get("id", {}).get("videoId", "")
+        if not vid_id:
+            continue
+        snip = it.get("snippet", {})
+        stats = stats_map.get(vid_id, {})
+        published = snip.get("publishedAt", "")
+        views_raw = stats.get("viewCount", "0")
+        videos.append({
+            "id":        vid_id,
+            "title":     snip.get("title", ""),
+            "channel":   snip.get("channelTitle", ""),
+            "date":      published[:10] if published else "",
+            "thumbnail": snip.get("thumbnails", {}).get("medium", {}).get("url", ""),
+            "url":       f"https://www.youtube.com/watch?v={vid_id}",
+            "views":     int(views_raw) if str(views_raw).isdigit() else 0,
+        })
+    return videos
+
+
 def _build_opinion_payload(days: int) -> dict:
     """Analyse les articles BININGA récents avec l'IA → sentiment + recommandations."""
     articles = _opinion_recent_articles(days)
-    if not articles:
+    youtube_videos = _fetch_youtube_videos(days)
+
+    if not articles and not youtube_videos:
         return {"ok": False, "message":
                 "Aucun article disponible pour cette période. Lancez d'abord la veille YARO IA."}
 
@@ -1023,12 +1082,17 @@ def _build_opinion_payload(days: int) -> dict:
         lines.append(f"{i}. [{a['source']}] {a['title']} — {snip}")
     corpus = "\n".join(lines)
 
+    yt_section = ""
+    if youtube_videos:
+        yt_lines = [f"- [{v['channel']}] {v['title']} ({v['views']:,} vues)" for v in youtube_videos[:10]]
+        yt_section = f"\n\nVidéos YouTube récentes ({len(youtube_videos)}) :\n" + "\n".join(yt_lines)
+
     prompt = (
         "Tu es un analyste politique spécialisé en communication pour personnalités "
         "publiques africaines.\n\n"
         f"{len(articles)} articles de presse sur Ange Aimé Wilfrid BININGA "
         "(Garde des Sceaux, Député, Congo-Brazzaville) sur les "
-        f"{days} derniers jours :\n\n{corpus}\n\n"
+        f"{days} derniers jours :\n\n{corpus}{yt_section}\n\n"
         "Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) :\n"
         "{\n"
         '  "sentiment_positif": <entier 0-100>,\n'
@@ -1060,6 +1124,7 @@ def _build_opinion_payload(days: int) -> dict:
         "ok": True, "days": days,
         "generated_at": datetime.now().isoformat(),
         "article_count": len(articles),
+        "youtube_videos": youtube_videos,
     }
     for k in ("sentiment_positif", "sentiment_negatif", "sentiment_neutre",
               "resume", "recommandations", "sujets", "articles"):

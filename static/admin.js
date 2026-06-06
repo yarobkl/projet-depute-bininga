@@ -3861,7 +3861,7 @@ async function loadOpinion(days, force) {
   });
 
   const hide = id => { const el = document.getElementById(id); if (el) el.style.display = "none"; };
-  ["op-gauge-row","op-summary-card","op-reco-card","op-topics-card","op-articles-card","op-error"].forEach(hide);
+  ["op-gauge-row","op-summary-card","op-reco-card","op-topics-card","op-articles-card","op-youtube-card","op-error"].forEach(hide);
 
   const loading = document.getElementById("op-loading");
   const btn = document.getElementById("op-btn-refresh");
@@ -3977,6 +3977,31 @@ function renderOpinion(d) {
       </div>`;
     }).join("") || '<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px 0">Aucun article pour cette période.</div>';
   }
+
+  // Vidéos YouTube
+  _renderYoutube(d.youtube_videos);
+}
+
+function _renderYoutube(videos) {
+  const yc = document.getElementById("op-youtube-card");
+  const yl = document.getElementById("op-youtube-list");
+  const ycount = document.getElementById("op-yt-count");
+  if (!yc || !yl || !videos || !videos.length) return;
+  yc.style.display = "block";
+  if (ycount) ycount.textContent = videos.length;
+  yl.innerHTML = videos.map(v => {
+    const views = v.views ? v.views.toLocaleString("fr-FR") + " vues" : "";
+    const date = v.date ? (() => { try { return new Date(v.date).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}); } catch(e){ return v.date; } })() : "";
+    const url = _opEsc(v.url || "#");
+    const thumb = v.thumbnail ? `<img src="${_opEsc(v.thumbnail)}" style="width:100%;height:100%;object-fit:cover;border-radius:6px 6px 0 0" loading="lazy" alt="">` : `<div style="width:100%;height:100%;background:rgba(255,255,255,.05);border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:center;font-size:28px;color:rgba(255,255,255,.15)">&#9654;</div>`;
+    return `<a href="${url}" target="_blank" rel="noopener" style="display:block;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;text-decoration:none;overflow:hidden">
+      <div style="height:140px;overflow:hidden">${thumb}</div>
+      <div style="padding:10px 12px">
+        <div style="font-size:12px;font-weight:600;color:#fff;line-height:1.4;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${_opEsc(v.title || "")}</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.35)">${_opEsc(v.channel || "")}${date ? " · " + date : ""}${views ? " · " + views : ""}</div>
+      </div>
+    </a>`;
+  }).join("");
 }
 
 function _opEsc(s) {
