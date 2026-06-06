@@ -2906,9 +2906,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 nom  = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip() or "Ange Aimé Wilfrid BININGA"
                 role = hero.get("role", "Garde des Sceaux, Ministre de la Justice, Député d'Ewo")
                 reply = None
+                history_ctx = payload.get("history", [])
+
+                # ── Détection question de suivi conversationnel ───────────────
+                # Si l'historique existe et que la question est une suite logique,
+                # on route directement vers l'IA sans passer par les branches fixes
+                _followup_starters = ["du coup", "donc", "alors", "c'est", "et donc", "et alors",
+                                      "mais", "pourquoi", "comment ça", "c'est-à-dire", "tu veux dire",
+                                      "c'est quoi", "qu'est-ce", "et lui", "et elle", "et ça", "genre",
+                                      "ok mais", "oui mais", "non mais", "ah bon", "vraiment",
+                                      "tu peux", "peux-tu", "est-ce que tu", "est-ce qu'il"]
+                _is_followup = (
+                    len(history_ctx) >= 2
+                    and (
+                        len(question.split()) <= 8
+                        or any(q.startswith(s) for s in _followup_starters)
+                    )
+                )
 
                 # ── Salutations ───────────────────────────────────────────────
-                if any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
+                if not _is_followup and any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
                     reply = random.choice([
                         f"Bonjour ! Bienvenue sur le site officiel de {nom}. Je suis DA, son assistant virtuel. Je peux vous renseigner sur son parcours, ses fonctions, son programme, ses actualités ou la façon de le contacter. Que souhaitez-vous savoir ?",
                         f"Bonjour et bienvenue ! Je suis DA, l'assistant virtuel du Ministre {nom.split()[-1]}. Posez-moi vos questions sur sa biographie, son action ou son programme. Comment puis-je vous aider ?",
@@ -2916,19 +2933,19 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     ])
 
                 # ── Qui est DA ────────────────────────────────────────────────
-                elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "c'est quoi da", "présente-toi", "tu t'appelles", "tu es quoi"]):
+                elif not _is_followup and any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "c'est quoi da", "présente-toi", "tu t'appelles", "tu es quoi"]):
                     reply = f"Je suis DA, l'assistant virtuel du site officiel de {nom}. Je suis là pour répondre à vos questions sur son parcours, ses fonctions, son programme, ses actualités et ses engagements. Je ne suis pas une intelligence artificielle — je me base uniquement sur les informations publiées sur ce site."
 
                 # ── Âge / naissance ───────────────────────────────────────────
-                elif any(w in q for w in ["âge", "age", "né", "naissance", "date de naissance", "quel age", "quel âge", "né quand", "né où", "né a", "né à"]):
+                elif not _is_followup and any(w in q for w in ["âge", "age", "né", "naissance", "date de naissance", "quel age", "quel âge", "né quand", "né où", "né a", "né à"]):
                     reply = f"{nom} est né à Brazzaville, en République du Congo. Pour toute précision complémentaire, je vous invite à consulter la section biographie du site ou à contacter directement l'équipe."
 
                 # ── Développeur / site ────────────────────────────────────────
-                elif any(w in q for w in ["développé", "developpé", "créé", "crée", "site web", "développeur", "developpeur", "qui a fait", "conception", "webmaster", "fait le site", "créé le site"]):
+                elif not _is_followup and any(w in q for w in ["développé", "developpé", "créé", "crée", "site web", "développeur", "developpeur", "qui a fait", "conception", "webmaster", "fait le site", "créé le site"]):
                     reply = "Ce site officiel a été développé par Rodrin Bakala."
 
                 # ── Présentation / biographie ─────────────────────────────────
-                elif any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "biographie", "bio"]):
+                elif not _is_followup and any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "biographie", "bio"]):
                     intro = about.get("intro", "")
                     paras = about.get("paragraphs", [])
                     if intro:
@@ -2939,7 +2956,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor public, il représente la 1re circonscription d'Ewo à l'Assemblée Nationale depuis 2017."
 
                 # ── Parcours / formation / carrière ───────────────────────────
-                elif any(w in q for w in ["parcours", "carrière", "formation", "études", "doctorat", "trésor", "inspecteur", "diplôme", "université", "étudié"]):
+                elif not _is_followup and any(w in q for w in ["parcours", "carrière", "formation", "études", "doctorat", "trésor", "inspecteur", "diplôme", "université", "étudié"]):
                     paras = about.get("paragraphs", [])
                     if len(paras) > 1:
                         reply = paras[1][:500] + ("..." if len(paras[1]) > 500 else "")
@@ -2949,7 +2966,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"{nom} est Docteur en droit et Inspecteur principal du Trésor public. Il a exercé plusieurs fonctions ministérielles importantes au Congo avant d'être élu Député d'Ewo."
 
                 # ── Gouvernement / Journal Officiel / autres ministres ────────
-                elif any(w in q for w in ["journal officiel", "composition du gouvernement", "gouvernement congolais", "liste des ministres", "conseil des ministres", "cabinet ministériel", "qui est ministre", "quel ministre", "ministre de la", "ministre du", "ministre des", "premier ministre", "chef du gouvernement", "qui dirige", "gouvernement de"]):
+                elif not _is_followup and any(w in q for w in ["journal officiel", "composition du gouvernement", "gouvernement congolais", "liste des ministres", "conseil des ministres", "cabinet ministériel", "qui est ministre", "quel ministre", "ministre de la", "ministre du", "ministre des", "premier ministre", "chef du gouvernement", "qui dirige", "gouvernement de"]):
                     ai_gov_prompt = (
                         f"Tu es DA, assistant virtuel du site de {nom}, {role}.\n"
                         f"Réponds en français, en 3-4 phrases. Tu peux répondre sur le gouvernement congolais "
@@ -2970,31 +2987,31 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         )
 
                 # ── Fonctions / titre / ministre (BININGA spécifiquement) ─────
-                elif any(w in q for w in ["fonction", "rôle", "titre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]) or ("ministre" in q and any(w in q for w in ["bininga", "il", "son", "quel est son", "quel est le"])):
+                elif not _is_followup and (any(w in q for w in ["fonction", "rôle", "titre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]) or ("ministre" in q and any(w in q for w in ["bininga", "il", "son", "quel est son", "quel est le"]))):
                     reply = f"{nom} est actuellement {role}. Il est Député de la 1re circonscription d'Ewo depuis 2017, et a exercé les fonctions de Ministre des Finances avant de prendre en charge la Justice."
 
                 # ── Justice / réformes ────────────────────────────────────────
-                elif any(w in q for w in ["justice", "loi", "droit", "réforme", "tribunal", "judiciaire", "juridique", "législation", "code", "pénal", "civil"]):
+                elif not _is_followup and any(w in q for w in ["justice", "loi", "droit", "réforme", "tribunal", "judiciaire", "juridique", "législation", "code", "pénal", "civil"]):
                     reply = f"En tant que Garde des Sceaux et Ministre de la Justice, {nom} pilote les grandes réformes judiciaires du Congo. Il a notamment porté la modernisation du système judiciaire congolais et renforcé l'accès à la justice pour les citoyens."
 
                 # ── Corruption / HALC ─────────────────────────────────────────
-                elif any(w in q for w in ["corruption", "halc", "anti-corruption", "anticorruption", "intégrité", "transparence", "haute autorité"]):
+                elif not _is_followup and any(w in q for w in ["corruption", "halc", "anti-corruption", "anticorruption", "intégrité", "transparence", "haute autorité"]):
                     reply = f"Sous l'impulsion de {nom}, la loi instituant la Haute Autorité de Lutte contre la Corruption (HALC) a été adoptée en 2018 à 107 voix pour à l'Assemblée Nationale. C'est l'une des réformes majeures de son action ministérielle pour la transparence et l'intégrité publique."
 
                 # ── Droits humains / peuples autochtones ──────────────────────
-                elif any(w in q for w in ["droits humains", "droits de l'homme", "autochtone", "peuples autochtones", "pygmée", "droits fondamentaux", "libertés"]):
+                elif not _is_followup and any(w in q for w in ["droits humains", "droits de l'homme", "autochtone", "peuples autochtones", "pygmée", "droits fondamentaux", "libertés"]):
                     reply = f"{nom} s'engage activement pour la promotion des droits humains et la protection des peuples autochtones au Congo. Cette mission fait partie intégrante de ses attributions au Ministère de la Justice."
 
                 # ── Coopération internationale ────────────────────────────────
-                elif any(w in q for w in ["coopération", "international", "france", "darmanin", "étranger", "diplomatique", "partenaire", "accord", "traité"]):
+                elif not _is_followup and any(w in q for w in ["coopération", "international", "france", "darmanin", "étranger", "diplomatique", "partenaire", "accord", "traité"]):
                     reply = f"{nom} est actif sur le plan de la coopération judiciaire internationale. Il a notamment reçu son homologue français Gérald Darmanin à Paris dans le cadre du renforcement de la coopération judiciaire entre la France et la République du Congo."
 
                 # ── Finances / économie (ancienne fonction) ────────────────────
-                elif any(w in q for w in ["finance", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
+                elif not _is_followup and any(w in q for w in ["finance", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
                     reply = f"Avant de prendre en charge le Ministère de la Justice, {nom} a exercé les fonctions de Ministre chargé des Finances. Son expertise en droit et en finances publiques est l'un de ses atouts majeurs."
 
                 # ── Programme ─────────────────────────────────────────────────
-                elif any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif", "vision", "axe", "priorité"]):
+                elif not _is_followup and any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif", "vision", "axe", "priorité"]):
                     axes = programme.get("axes", [])
                     if axes:
                         titres = [ax.get("title","") for ax in axes[:5] if isinstance(ax,dict) and ax.get("title")]
@@ -3003,7 +3020,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"Le programme électoral de {nom} couvre des axes forts pour la justice, le développement local d'Ewo, la lutte contre la corruption et la représentation des citoyens. Consultez la section Programme pour le détail complet."
 
                 # ── Actualités ────────────────────────────────────────────────
-                elif any(w in q for w in ["actuali", "nouvelle", "récent", "dernière", "info", "événement", "agenda", "quoi de neuf", "news"]):
+                elif not _is_followup and any(w in q for w in ["actuali", "nouvelle", "récent", "dernière", "info", "événement", "agenda", "quoi de neuf", "news"]):
                     slides = actus.get("slides", [])
                     items  = [s.get("title","").replace("\n"," ") for s in slides[:3] if isinstance(s,dict) and s.get("title")]
                     if items:
@@ -3012,15 +3029,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"Retrouvez toutes les actualités de {nom} dans la section Actualités du site, régulièrement mise à jour avec ses interventions, déplacements et actions."
 
                 # ── Ewo / circonscription / Cuvette ──────────────────────────
-                elif any(w in q for w in ["ewo", "cuvette", "circonscription", "territoire", "région", "villageois", "population", "congo", "brazzaville", "lokomo"]):
+                elif not _is_followup and any(w in q for w in ["ewo", "cuvette", "circonscription", "territoire", "région", "villageois", "population", "congo", "brazzaville", "lokomo"]):
                     reply = f"{nom} est le Député de la 1re circonscription d'Ewo, dans la Cuvette-Ouest (République du Congo). Il s'engage personnellement auprès des populations locales, défend leurs intérêts à l'Assemblée Nationale et œuvre pour le développement de cette région."
 
                 # ── Audience / demande d'audience ────────────────────────────
-                elif any(w in q for w in ["audience", "rendez-vous", "rencontrer", "rencontrez", "voir le ministre", "solliciter", "demande d'audience", "rdv"]):
+                elif not _is_followup and any(w in q for w in ["audience", "rendez-vous", "rencontrer", "rencontrez", "voir le ministre", "solliciter", "demande d'audience", "rdv"]):
                     reply = f"Pour solliciter une audience auprès de {nom}, soumettez votre demande via le formulaire disponible sur ce site. Il n'y a pas de rendez-vous direct — chaque demande est examinée et traitée selon les disponibilités du cabinet. Remplissez bien vos coordonnées et l'objet de votre demande."
 
                 # ── Contact / email ───────────────────────────────────────────
-                elif any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "écrire", "formulaire", "message", "téléphone", "adresse"]):
+                elif not _is_followup and any(w in q for w in ["contact", "contacter", "joindre", "email", "mail", "écrire", "formulaire", "message", "téléphone", "adresse"]):
                     email = contact.get("email", "")
                     tel   = contact.get("phone", "")
                     if email or tel:
@@ -3032,27 +3049,27 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"Pour contacter l'équipe de {nom}, utilisez le formulaire de contact disponible en bas de ce site. L'équipe vous répondra dans les meilleurs délais."
 
                 # ── Réclamation / sinistre ────────────────────────────────────
-                elif any(w in q for w in ["réclamation", "reclamation", "plainte", "sinistre", "problème", "signaler", "signalement", "soumettre", "déposer"]):
+                elif not _is_followup and any(w in q for w in ["réclamation", "reclamation", "plainte", "sinistre", "problème", "signaler", "signalement", "soumettre", "déposer"]):
                     reply = f"Vous pouvez soumettre une réclamation ou signaler un sinistre directement via le formulaire prévu à cet effet sur ce site. Votre dossier sera transmis à l'équipe de {nom} pour traitement."
 
                 # ── Newsletter / inscription ──────────────────────────────────
-                elif any(w in q for w in ["newsletter", "inscription", "s'abonner", "abonnement", "suivre", "email actualité", "recevoir"]):
+                elif not _is_followup and any(w in q for w in ["newsletter", "inscription", "s'abonner", "abonnement", "suivre", "email actualité", "recevoir"]):
                     reply = f"Pour rester informé des actualités et actions de {nom}, vous pouvez vous inscrire à la newsletter via le formulaire disponible sur ce site. Vous recevrez régulièrement les dernières informations."
 
                 # ── Galerie / photos / vidéos ─────────────────────────────────
-                elif any(w in q for w in ["galerie", "photo", "image", "vidéo", "album", "photos", "voir"]):
+                elif not _is_followup and any(w in q for w in ["galerie", "photo", "image", "vidéo", "album", "photos", "voir"]):
                     reply = f"La galerie du site regroupe des photos et vidéos des activités, déplacements et événements de {nom}. Consultez la section Galerie pour découvrir l'ensemble des contenus visuels disponibles."
 
                 # ── Livre / publication ───────────────────────────────────────
-                elif any(w in q for w in ["livre", "publication", "ouvrage", "écrit", "commande", "commander", "bouquin"]):
+                elif not _is_followup and any(w in q for w in ["livre", "publication", "ouvrage", "écrit", "commande", "commander", "bouquin"]):
                     reply = f"{nom} a publié des ouvrages dans le domaine du droit. Vous pouvez commander ses livres via le formulaire disponible sur ce site."
 
                 # ── Réseaux sociaux ───────────────────────────────────────────
-                elif any(w in q for w in ["facebook", "twitter", "instagram", "linkedin", "réseau", "réseaux sociaux", "social media", "tiktok", "youtube"]):
+                elif not _is_followup and any(w in q for w in ["facebook", "twitter", "instagram", "linkedin", "réseau", "réseaux sociaux", "social media", "tiktok", "youtube"]):
                     reply = f"Pour suivre l'actualité de {nom} sur les réseaux sociaux, consultez la section contact ou le pied de page de ce site où figurent les liens vers ses profils officiels."
 
                 # ── Chiffres / bilan / statistiques ──────────────────────────
-                elif any(w in q for w in ["chiffre", "bilan", "résultat", "combien", "statistique", "réalisation", "bilan", "nombre"]):
+                elif not _is_followup and any(w in q for w in ["chiffre", "bilan", "résultat", "combien", "statistique", "réalisation", "bilan", "nombre"]):
                     if stats:
                         txt = " | ".join(f"{s.get('num','')} {s.get('label','')}" for s in stats if isinstance(s,dict))
                         reply = f"Quelques chiffres clés sur l'action de {nom} : {txt}."
@@ -3060,15 +3077,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"{nom} cumule plusieurs mandats parlementaires et fonctions ministérielles au service de la République du Congo. Consultez la section Statistiques du site pour les chiffres détaillés."
 
                 # ── Assemblée nationale / parlement ───────────────────────────
-                elif any(w in q for w in ["assemblée", "parlement", "parlementaire", "vote", "loi votée", "séance"]):
+                elif not _is_followup and any(w in q for w in ["assemblée", "parlement", "parlementaire", "vote", "loi votée", "séance"]):
                     reply = f"{nom} siège à l'Assemblée Nationale en tant que Député de la 1re circonscription d'Ewo depuis 2017. Il y défend activement les intérêts de sa circonscription et porte des textes de loi importants, notamment dans le domaine judiciaire."
 
                 # ── Valeurs / engagement personnel ────────────────────────────
-                elif any(w in q for w in ["valeur", "engagement", "conviction", "humain", "citoyen", "peuple", "sert", "servir", "dévouement"]):
+                elif not _is_followup and any(w in q for w in ["valeur", "engagement", "conviction", "humain", "citoyen", "peuple", "sert", "servir", "dévouement"]):
                     reply = f"{nom} fonde son action sur des valeurs d'intégrité, de service public et de proximité avec les citoyens. Son engagement au service de la République du Congo et des populations d'Ewo guide l'ensemble de ses décisions."
 
                 # ── Merci / au revoir ─────────────────────────────────────────
-                elif any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt", "bonne journée", "bonne soirée", "ciao"]):
+                elif not _is_followup and any(w in q for w in ["merci", "thank", "au revoir", "bye", "à bientôt", "bonne journée", "bonne soirée", "ciao"]):
                     reply = random.choice([
                         f"Merci pour votre intérêt ! N'hésitez pas à revenir si vous avez d'autres questions sur {nom}. — DA",
                         f"Avec plaisir ! Je reste disponible pour toute autre question. Bonne journée ! — DA",
@@ -3076,37 +3093,37 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     ])
 
                 # ── Langues étrangères / lingala / kituba / anglais ──────────
-                elif any(w in q for w in ["hello", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]) or q.strip() in ["hi"] or q.startswith("hi ") or " hi " in q:
+                elif not _is_followup and any(w in q for w in ["hello", "how are you", "i want", "i need", "can i", "please", "speak english", "english"]) or q.strip() in ["hi"] or q.startswith("hi ") or " hi " in q:
                     reply = "I'm DA, the virtual assistant of Minister BININGA's official website. I mainly respond in French. Please write your question in French and I'll be happy to help you. — DA"
 
-                elif any(w in q for w in ["mbote", "bonjour na lingala", "ndeko", "biso", "moto", "malamu", "nakosala"]):
+                elif not _is_followup and any(w in q for w in ["mbote", "bonjour na lingala", "ndeko", "biso", "moto", "malamu", "nakosala"]):
                     reply = f"Mbote ! DA azali assistant virtuel ya site ya {nom}. Tika koloba na français pona nasalisa yo malamu. Merci !"
 
-                elif any(w in q for w in ["ki ndimu", "bonjour kituba", "beto", "yandi", "mono", "ngeye"]):
+                elif not _is_followup and any(w in q for w in ["ki ndimu", "bonjour kituba", "beto", "yandi", "mono", "ngeye"]):
                     reply = f"DA i assistant virtuel ya site ya {nom}. Souka koloba na français, DA i salisa nge. Merci !"
 
-                elif any(w in q for w in ["nki", "nki ko", "wana", "yala teke", "téké", "teke", "bonjour teke", "bonjour téké"]):
+                elif not _is_followup and any(w in q for w in ["nki", "nki ko", "wana", "yala teke", "téké", "teke", "bonjour teke", "bonjour téké"]):
                     reply = f"Nki ko ! DA kɛ assistant virtuel ya site ya {nom}. Loba na français pona DA salisa nge. Merci !"
 
-                elif any(w in q for w in ["mbochi", "mbosi", "nde ko", "nde mbochi", "bonjour mbochi", "awe", "ebe mbochi", "okele", "mbochi ya"]):
+                elif not _is_followup and any(w in q for w in ["mbochi", "mbosi", "nde ko", "nde mbochi", "bonjour mbochi", "awe", "ebe mbochi", "okele", "mbochi ya"]):
                     reply = f"Nde ko ! DA ɔ assistant virtuel ya site ya {nom}. Lɔbɔ na français pona DA salisa yo. Merci !"
 
-                elif any(w in q for w in ["bembé", "bembe", "bonjour bembé", "bonjour bembe", "wumela bembe", "wumela bembé"]):
+                elif not _is_followup and any(w in q for w in ["bembé", "bembe", "bonjour bembé", "bonjour bembe", "wumela bembe", "wumela bembé"]):
                     reply = f"Wumela ! DA i assistant virtuel ya site ya {nom}. Yamba na français pona DA salisa nge. Merci !"
 
-                elif any(w in q for w in ["vili", "mavuba", "bonjour vili", "lumbu", "nge vili", "wumela vili"]):
+                elif not _is_followup and any(w in q for w in ["vili", "mavuba", "bonjour vili", "lumbu", "nge vili", "wumela vili"]):
                     reply = f"Mavuba ! DA i assistant virtuel ya site ya {nom}. Yamba na français pona DA salisa nge. Merci !"
 
                 # ── Urgence / SOS ─────────────────────────────────────────────
-                elif any(w in q for w in ["urgent", "urgence", "sos", "emergency", "immédiatement", "tout de suite", "critique", "grave"]):
+                elif not _is_followup and any(w in q for w in ["urgent", "urgence", "sos", "emergency", "immédiatement", "tout de suite", "critique", "grave"]):
                     reply = f"⚠️ Pour toute situation urgente, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site en précisant le caractère urgent de votre demande. Vous pouvez aussi appeler les services compétents selon la nature de votre urgence."
 
                 # ── Messages irrespectueux ────────────────────────────────────
-                elif any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con"]):
+                elif not _is_followup and any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con"]):
                     reply = "Je vous invite à formuler votre question de façon respectueuse. Je suis ici pour vous informer et vous aider. Si vous avez une préoccupation sérieuse, le formulaire de contact est à votre disposition."
 
                 # ── Questions fréquentes — Comment faire ─────────────────────
-                elif any(w in q for w in ["comment faire", "comment puis-je", "comment je peux", "est-ce que je peux", "c'est possible", "comment ça marche", "procédure", "démarche"]):
+                elif not _is_followup and any(w in q for w in ["comment faire", "comment puis-je", "comment je peux", "est-ce que je peux", "c'est possible", "comment ça marche", "procédure", "démarche"]):
                     reply = (
                         f"Voici les principales démarches disponibles sur ce site :\n"
                         f"• 📋 Demander une audience → section Audience du site\n"
@@ -3118,7 +3135,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Localisation / bureau / adresse ──────────────────────────
-                elif any(w in q for w in ["localisation", "adresse", "bureau", "où se trouve", "où est", "office", "siège", "ministère", "bâtiment", "lieu", "venir", "bp", "fax"]):
+                elif not _is_followup and any(w in q for w in ["localisation", "adresse", "bureau", "où se trouve", "où est", "office", "siège", "ministère", "bâtiment", "lieu", "venir", "bp", "fax"]):
                     addr    = contact.get("address", "Av. Charles de Gaulle, Brazzaville")
                     bp      = contact.get("bp", "BP : 1375")
                     fax     = contact.get("fax", "04 002 90 90")
@@ -3132,7 +3149,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Horaires ──────────────────────────────────────────────────
-                elif any(w in q for w in ["horaire", "heure", "ouvert", "ouverture", "fermé", "fermeture", "disponible", "quand", "à quelle heure"]):
+                elif not _is_followup and any(w in q for w in ["horaire", "heure", "ouvert", "ouverture", "fermé", "fermeture", "disponible", "quand", "à quelle heure"]):
                     reply = (
                         f"Les services de {nom} sont généralement accessibles du lundi au vendredi, "
                         f"aux heures ouvrables (8h–16h, heure de Brazzaville). "
@@ -3141,7 +3158,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Délais de réponse / suivi ─────────────────────────────────
-                elif any(w in q for w in ["délai", "combien de temps", "quand", "réponse", "répondre", "attente", "suivi", "dossier", "traitement", "accepté", "refusé", "statut", "état"]):
+                elif not _is_followup and any(w in q for w in ["délai", "combien de temps", "quand", "réponse", "répondre", "attente", "suivi", "dossier", "traitement", "accepté", "refusé", "statut", "état"]):
                     reply = (
                         f"Les délais de traitement varient selon la nature de votre demande :\n"
                         f"• ✉️ Message de contact → réponse sous 48h à 72h ouvrées\n"
@@ -3151,11 +3168,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Robot / humain ? ──────────────────────────────────────────
-                elif any(w in q for w in ["robot", "humain", "intelligence artificielle", "ia ", "chatbot", "bot", "machine", "programme", "automatique", "réel"]):
+                elif not _is_followup and any(w in q for w in ["robot", "humain", "intelligence artificielle", "ia ", "chatbot", "bot", "machine", "programme", "automatique", "réel"]):
                     reply = f"Je suis DA, un assistant virtuel — ni humain, ni intelligence artificielle. Je fonctionne à partir des informations publiées sur ce site officiel de {nom}. Je ne peux donc répondre qu'aux questions liées à son parcours, ses fonctions et ses engagements."
 
                 # ── Compliments / félicitations ───────────────────────────────
-                elif any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "top da", "tu es bien", "bonne réponse"]):
+                elif not _is_followup and any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "top da", "tu es bien", "bonne réponse"]):
                     reply = random.choice([
                         "Merci pour votre retour ! Je fais de mon mieux pour vous informer. N'hésitez pas si vous avez d'autres questions. — DA",
                         "C'est très gentil ! Je suis là pour vous aider. Posez-moi toutes vos questions sur Ange Aimé Wilfrid BININGA. — DA",
@@ -3163,7 +3180,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     ])
 
                 # ── Vote / élections / inscription électorale ─────────────────
-                elif any(w in q for w in ["voter", "vote", "élection", "liste électorale", "inscription électorale", "bureau de vote", "bulletin", "scrutin", "candidat", "campagne électorale"]):
+                elif not _is_followup and any(w in q for w in ["voter", "vote", "élection", "liste électorale", "inscription électorale", "bureau de vote", "bulletin", "scrutin", "candidat", "campagne électorale"]):
                     reply = (
                         f"{nom} est candidat à la députation pour la 1re circonscription d'Ewo.\n\n"
                         f"Pour voter, vous devez :\n"
@@ -3174,7 +3191,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Bénévolat / rejoindre la campagne ────────────────────────
-                elif any(w in q for w in ["bénévole", "bénévolat", "rejoindre", "volontaire", "équipe campagne", "s'engager", "engager", "militant", "soutien", "supporter", "aide campagne"]):
+                elif not _is_followup and any(w in q for w in ["bénévole", "bénévolat", "rejoindre", "volontaire", "équipe campagne", "s'engager", "engager", "militant", "soutien", "supporter", "aide campagne"]):
                     reply = (
                         f"Vous souhaitez rejoindre l'équipe de campagne de {nom} ? C'est avec plaisir !\n\n"
                         f"📩 Envoyez votre candidature via le formulaire de contact sur ce site en précisant :\n"
@@ -3185,7 +3202,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Réalisations concrètes ────────────────────────────────────
-                elif any(w in q for w in ["réalisation", "accompli", "construit", "école", "hôpital", "actions concrètes", "résultat concret", "ce qu'il a fait", "bilan concret"]):
+                elif not _is_followup and any(w in q for w in ["réalisation", "accompli", "construit", "école", "hôpital", "actions concrètes", "résultat concret", "ce qu'il a fait", "bilan concret"]):
                     reply = (
                         f"Parmi les réalisations concrètes de {nom} :\n"
                         f"• ⚖️ Adoption de la loi HALC (Haute Autorité de Lutte contre la Corruption) — 107 voix pour\n"
@@ -3197,11 +3214,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Distinctions / prix / décorations ────────────────────────
-                elif any(w in q for w in ["distinction", "prix", "médaille", "décoration", "récompense", "honorifique", "ordre", "insigne", "titre honorifique"]):
+                elif not _is_followup and any(w in q for w in ["distinction", "prix", "médaille", "décoration", "récompense", "honorifique", "ordre", "insigne", "titre honorifique"]):
                     reply = f"Pour les distinctions et décorations officielles de {nom}, je vous invite à consulter la section Biographie du site ou à contacter directement l'équipe pour obtenir ces informations précises."
 
                 # ── Citations / devise / slogan ───────────────────────────────
-                elif any(w in q for w in ["citation", "phrase", "devise", "slogan", "maxime", "il dit", "il a dit", "parole", "discours", "quote"]):
+                elif not _is_followup and any(w in q for w in ["citation", "phrase", "devise", "slogan", "maxime", "il dit", "il a dit", "parole", "discours", "quote"]):
                     slogan = hero.get("slogan", "").replace("<em>","").replace("</em>","").replace("<br>", " ")
                     reply = (
                         f"La devise de {nom} :\n"
@@ -3210,7 +3227,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Document officiel / attestation ──────────────────────────
-                elif any(w in q for w in ["attestation", "certificat", "document officiel", "acte", "légalisation", "apostille", "casier judiciaire", "extrait"]):
+                elif not _is_followup and any(w in q for w in ["attestation", "certificat", "document officiel", "acte", "légalisation", "apostille", "casier judiciaire", "extrait"]):
                     reply = (
                         f"Pour les demandes de documents officiels (attestations, casier judiciaire, actes légalisés…), "
                         f"ces démarches relèvent des services du Ministère de la Justice ou des greffes des tribunaux compétents.\n\n"
@@ -3219,7 +3236,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Problème local / infrastructure ───────────────────────────
-                elif any(w in q for w in ["route abîmée", "eau courante", "électricité coupée", "problème local", "infrastructure locale", "panne eau", "panne électricité", "route dégradée", "pont", "forage"]):
+                elif not _is_followup and any(w in q for w in ["route abîmée", "eau courante", "électricité coupée", "problème local", "infrastructure locale", "panne eau", "panne électricité", "route dégradée", "pont", "forage"]):
                     reply = (
                         f"Pour signaler un problème d'infrastructure dans votre localité (route, eau, électricité, pont…), "
                         f"vous pouvez :\n"
@@ -3229,7 +3246,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
 
                 # ── Quiz ──────────────────────────────────────────────────────
-                elif any(w in q for w in ["quiz", "jeu", "devinette", "question sur bininga", "tester", "test sur", "je sais tout"]):
+                elif not _is_followup and any(w in q for w in ["quiz", "jeu", "devinette", "question sur bininga", "tester", "test sur", "je sais tout"]):
                     reply = random.choice([
                         f"🎯 Question 1 : Dans quelle circonscription {nom} est-il élu Député ? Répondez et je vous donne la suite !",
                         f"🎯 Question 1 : Quel ministère {nom} dirige-t-il actuellement ? Répondez et je valide !",
@@ -3250,13 +3267,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             ax.get("title","") for ax in programme.get("axes",[])[:4]
                             if isinstance(ax, dict) and ax.get("title")
                         )
+                        is_conv_followup = len(history_ctx) >= 2
+                        followup_note = (
+                            "IMPORTANT : C'est une question de suivi dans une conversation en cours. "
+                            "Lis attentivement l'historique ci-dessus et réponds EN LIEN DIRECT avec ce qui vient d'être dit. "
+                            "Ne répète jamais une réponse déjà donnée. Rebondis sur le propos du visiteur.\n"
+                            if is_conv_followup else ""
+                        )
                         ai_prompt = f"""Tu es DA, assistante virtuelle du site officiel de {nom}, {role} (République du Congo, Brazzaville).
-Réponds en français, chaleureusement, en 3-4 phrases max.
-Tu peux répondre sur {nom}, son action politique, le gouvernement congolais, l'Assemblée Nationale et la politique congolaise en général.
-Pour les questions très éloignées du contexte congolais ou de {nom}, oriente vers le formulaire de contact.
-Contexte sur {nom} : {about_intro}
-Programme : {prog_axes}
-{hist_txt}Visiteur: {question}
+{followup_note}Réponds en français, chaleureusement, en 2-3 phrases max.
+Tu peux répondre sur {nom}, le gouvernement congolais, l'Assemblée Nationale et la politique congolaise.
+Pour les sujets sans rapport avec le Congo ou {nom}, oriente vers le formulaire de contact.
+Contexte : {about_intro} Programme : {prog_axes}
+
+Historique de la conversation :
+{hist_txt}
+Visiteur: {question}
 DA:"""
                         ai_reply = _gemini_call(ai_prompt, max_tokens=300, timeout=15)
                         # Nettoyer si le modèle répète "DA:"
