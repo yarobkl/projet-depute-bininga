@@ -1849,6 +1849,44 @@ def _extract_tracking_code(text: str) -> str | None:
         return None
     return f"BIN-{m.group(1)}-{m.group(2).upper()}"
 
+def _chat_smalltalk_reply(question: str, nom: str) -> str | None:
+    """Réponses de politesse / conversation courante, sans dépendre de l'IA."""
+    import random as _r
+    qn = _normalize(question)
+    qn = re.sub(r"[^\w\s]", " ", qn)           # retire ponctuation
+    qn = re.sub(r"\s+", " ", qn).strip()
+    if not qn or len(qn.split()) > 5:
+        return None
+
+    prenom = nom.split()[-1] if nom else "BININGA"
+
+    groups = [
+        # (ensemble de phrases déclencheuses, liste de réponses)
+        ({"ca va", "ca va bien", "comment ca va", "tu vas bien", "comment vas tu",
+          "vous allez bien", "comment allez vous", "ca roule", "ca gaze"},
+         [f"Je vais très bien, merci ! 😊 Comment puis-je vous aider au sujet de {nom} ?",
+          "Tout va bien, merci de demander ! Que souhaitez-vous savoir ?"]),
+        ({"merci", "merci beaucoup", "merci bien", "mille mercis", "je te remercie",
+          "je vous remercie", "merci da", "thanks", "thank you"},
+         ["Avec plaisir ! 🙏 N'hésitez pas si vous avez d'autres questions.",
+          "Je vous en prie ! Je reste à votre disposition."]),
+        ({"ok", "okay", "oki", "d accord", "daccord", "ca marche", "c est note",
+          "cest note", "note", "cool", "super", "genial", "parfait", "top", "nickel",
+          "tres bien", "bien", "entendu"},
+         ["👍 Parfait. Que puis-je faire d'autre pour vous ?",
+          "Très bien ! Posez-moi votre prochaine question quand vous voulez."]),
+        ({"au revoir", "bonne journee", "bonne soiree", "a bientot", "bye", "ciao",
+          "a plus", "bonne continuation", "adieu"},
+         [f"Au revoir ! 👋 À bientôt sur le site de {nom}.",
+          "Merci de votre visite, à très bientôt !"]),
+        ({"bravo", "felicitations", "bien joue", "excellent", "tu es fort", "bien repondu"},
+         ["Merci beaucoup ! 😊 Je suis là pour vous aider au mieux."]),
+    ]
+    for triggers, answers in groups:
+        if qn in triggers or any(qn.startswith(t + " ") or qn == t for t in triggers):
+            return _r.choice(answers)
+    return None
+
 def _chat_tracking_reply(question: str) -> str | None:
     """Si la question contient un numéro de suivi, renvoie l'état du dossier
     sous forme de message conversationnel. Sinon None."""
@@ -3160,6 +3198,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 _track = _chat_tracking_reply(question)
                 if _track:
                     self._json({"ok": True, "reply": _track})
+                    return
+
+                # ════════ POLITESSE / SMALL TALK (sans IA) ════════
+                _small = _chat_smalltalk_reply(question, nom)
+                if _small:
+                    self._json({"ok": True, "reply": _small})
                     return
 
                 # Noms de famille des ministres (hors BININGA) pour la détection
