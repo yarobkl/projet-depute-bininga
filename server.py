@@ -985,6 +985,12 @@ def save_opinion_cache(data: dict):
     except Exception as e:
         print(f"[Opinion] Erreur écriture cache: {e}")
 
+def _strip_html_entities(text: str) -> str:
+    import re, html
+    text = html.unescape(text or "")
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
 def _opinion_recent_articles(days: int) -> list:
     """Filtre les articles de NEWS_FILE sur la période demandée (sans appel réseau)."""
     cutoff = datetime.now().timestamp() - days * 86400
@@ -1002,12 +1008,13 @@ def _opinion_recent_articles(days: int) -> list:
         if uid in seen:
             continue
         seen.add(uid)
+        raw_snip = a.get("summary") or a.get("ai_summary") or ""
         recent.append({
-            "title":   a.get("title", ""),
+            "title":   _strip_html_entities(a.get("title", "")),
             "source":  a.get("source", ""),
             "url":     a.get("url", ""),
             "date":    (pub[:10] if pub else ""),
-            "snippet": (a.get("summary") or a.get("ai_summary") or "")[:300],
+            "snippet": _strip_html_entities(raw_snip)[:300],
         })
     return recent
 
@@ -1105,30 +1112,49 @@ def _build_opinion_payload(days: int) -> dict:
 
     try:
         raw = _gemini_call(prompt, max_tokens=600, timeout=30).strip()
+        print(f"[Opinion] Réponse IA brute:\n{raw[:400]}")
         # Parser le format texte ligne par ligne
-        analysis = {"recommandations": [], "sujets": []}
+        analysis: dict = {"recommandations": [], "sujets": []}
+        resume_lines: list = []
+        in_resume = False
         for line in raw.splitlines():
             line = line.strip()
-            if line.startswith("POSITIF:"):
-                try: analysis["sentiment_positif"] = int(line.split(":",1)[1].strip())
+            if not line:
+                continue
+            key = line.split(":",1)[0].upper().strip()
+            val = line.split(":",1)[1].strip() if ":" in line else ""
+            if key == "POSITIF":
+                in_resume = False
+                try: analysis["sentiment_positif"] = int("".join(c for c in val if c.isdigit()))
                 except: pass
-            elif line.startswith("NEGATIF:"):
-                try: analysis["sentiment_negatif"] = int(line.split(":",1)[1].strip())
+            elif key == "NEGATIF":
+                in_resume = False
+                try: analysis["sentiment_negatif"] = int("".join(c for c in val if c.isdigit()))
                 except: pass
-            elif line.startswith("NEUTRE:"):
-                try: analysis["sentiment_neutre"] = int(line.split(":",1)[1].strip())
+            elif key == "NEUTRE":
+                in_resume = False
+                try: analysis["sentiment_neutre"] = int("".join(c for c in val if c.isdigit()))
                 except: pass
-            elif line.startswith("RESUME:"):
-                analysis["resume"] = line.split(":",1)[1].strip()
-            elif line.startswith("REC") and ":" in line:
-                analysis["recommandations"].append(line.split(":",1)[1].strip())
-            elif line.startswith("SUJETS:"):
-                analysis["sujets"] = [s.strip() for s in line.split(":",1)[1].split(",") if s.strip()]
+            elif key == "RESUME":
+                in_resume = True
+                if val:
+                    resume_lines.append(val)
+            elif key.startswith("REC"):
+                in_resume = False
+                if val:
+                    analysis["recommandations"].append(val)
+            elif key == "SUJETS":
+                in_resume = False
+                analysis["sujets"] = [s.strip() for s in val.split(",") if s.strip()]
+            elif in_resume:
+                resume_lines.append(line)
+        if resume_lines:
+            analysis["resume"] = " ".join(resume_lines)
         # Valeurs par défaut si parsing incomplet
         analysis.setdefault("sentiment_positif", 33)
         analysis.setdefault("sentiment_negatif", 33)
         analysis.setdefault("sentiment_neutre", 34)
-        analysis.setdefault("resume", "Analyse de la perception publique de BININGA sur la période.")
+        analysis.setdefault("resume", "Période sans événements majeurs — couverture médiatique neutre.")
     except Exception as e:
         print(f"[Opinion] Erreur IA: {e}")
         return {"ok": False, "message": f"Analyse IA indisponible : {e}"}
