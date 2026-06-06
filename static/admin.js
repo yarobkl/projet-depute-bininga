@@ -437,7 +437,14 @@ async function syncMessages() {
         return Object.assign({}, m, {
           _status: local._status || m._status,
           _notes:  local._notes  || m._notes,
-          _pinged: local._pinged || m._pinged
+          _pinged: local._pinged || m._pinged,
+          _opened: local._opened || m._opened,
+          _opened_date: local._opened_date || m._opened_date,
+          _decision: local._decision || m._decision,
+          _decision_note: local._decision_note || m._decision_note,
+          _decision_date: local._decision_date || m._decision_date,
+          _appointment: local._appointment || m._appointment,
+          tracking_code: m.tracking_code || local.tracking_code
         });
       });
 
@@ -1180,7 +1187,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
       : allData.findIndex(x => x._date === m._date && x.prenom === m.prenom && x.nom === m.nom);
     const status  = m._status || (mode === "status2" ? "non_lu" : "en_attente");
     const badge   = buildBadge(status, m.objet);
-    const geoSkip = new Set(["_date","_status","_reply","_reply_date","_pinged","_pinged_date","_notes","_id","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison"]);
+    const geoSkip = new Set(["_date","_status","_reply","_reply_date","_pinged","_pinged_date","_notes","_id","geo_lat","geo_lng","geo_label","geo_maps_url","photo_url","description","raison","_opened","_opened_date","_decision","_decision_note","_decision_date","_appointment","_history"]);
     const fields  = Object.entries(m)
       .filter(([k]) => !geoSkip.has(k))
       .map(([k,v]) => `<div class="msg-field"><strong>${esc(k)} :</strong>${esc(v)}</div>`)
@@ -1231,6 +1238,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
     let actions = "";
     if (mode === "status3") {
       actions = `
+        ${m._opened ? `<span class="sbtn" style="background:rgba(59,130,246,.1);color:#60a5fa;border:1px solid rgba(96,165,250,.25);cursor:default">Ouvert ${esc(m._opened_date||"")}</span>` : `<button class="sbtn sbtn-progress" onclick="openDossier('${storageKey}','${btnId}')">Ouvrir dossier</button>`}
         <button class="sbtn sbtn-wait"     onclick="setStatus('${storageKey}','${btnId}','en_attente')">En attente</button>
         <button class="sbtn sbtn-progress" onclick="setStatus('${storageKey}','${btnId}','en_cours')">En cours</button>
         <button class="sbtn sbtn-done"     onclick="setStatus('${storageKey}','${btnId}','traite')">Traité</button>
@@ -1257,6 +1265,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
       ${descHtml}
       ${geoHtml}
       ${photoHtml}
+      ${mode === "status3" ? buildDossierWorkflow(m, storageKey, btnId) : ""}
       ${buildNotesSection(m, storageKey, btnId)}
       <div class="msg-footer">${actions}</div>
     </div>`;
@@ -1267,6 +1276,7 @@ function buildBadge(status, objet) {
   if (objet === "Réclamation") return `<span class="badge badge-recl">Réclamation</span>`;
   const map = {
     en_attente: `<span class="badge badge-wait">En attente</span>`,
+    ouvert:     `<span class="badge badge-progress">Ouvert</span>`,
     en_cours:   `<span class="badge badge-progress">En cours</span>`,
     traite:     `<span class="badge badge-done">Traité</span>`,
     non_lu:     `<span class="badge badge-unread">Non lu</span>`,
@@ -1275,12 +1285,19 @@ function buildBadge(status, objet) {
   return map[status] || map.en_attente;
 }
 
+function findMsgIndex(all, idOrIdx) {
+  const decoded = decodeURIComponent(String(idOrIdx));
+  let idx = all.findIndex(x => x._id === decoded);
+  if (idx === -1) {
+    const n = parseInt(idOrIdx, 10);
+    if (!isNaN(n) && all[n]) idx = n;
+  }
+  return idx;
+}
+
 function setStatus(storageKey, idOrIdx, status) {
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
-  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  const idx = findMsgIndex(all, idOrIdx);
   if (idx !== -1) {
     all[idx]._status = status;
     saveAll(storageKey, all);
@@ -1298,6 +1315,140 @@ function setStatus(storageKey, idOrIdx, status) {
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
   showToast("Statut mis à jour");
+}
+
+function buildDossierWorkflow(m, storageKey, btnId) {
+  const code = m.tracking_code || "Non généré";
+  const decision = m._decision || "";
+  const ap = m._appointment || {};
+  return `
+    <div class="dossier-workflow">
+      <div class="dw-head">
+        <div>
+          <span>Numéro de suivi</span>
+          <strong>${esc(code)}</strong>
+        </div>
+        <div>
+          <span>Décision</span>
+          <strong>${decision ? (decision === "favorable" ? "Favorable" : "Non favorable") : "En attente"}</strong>
+        </div>
+      </div>
+      <div class="dw-actions">
+        <button class="sbtn sbtn-done" onclick="setDecision('${storageKey}','${btnId}','favorable')">Décision favorable</button>
+        <button class="sbtn sbtn-wait" onclick="setDecision('${storageKey}','${btnId}','non_favorable')">Non favorable</button>
+      </div>
+      <textarea id="decision-note-${btnId}" class="dw-note" rows="2" placeholder="Motif ou note de décision finale...">${esc(m._decision_note || "")}</textarea>
+      ${decision === "favorable" ? `
+        <div class="dw-rdv">
+          <div class="fg2">
+            <div class="form-group">
+              <label>Type de rendez-vous</label>
+              <select id="rdv-type-${btnId}">
+                <option value="telephone" ${ap.type === "telephone" ? "selected" : ""}>Téléphonique</option>
+                <option value="presentiel" ${ap.type === "presentiel" ? "selected" : ""}>Présentiel</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date et heure</label>
+              <input id="rdv-date-${btnId}" type="text" placeholder="Ex: 18/06/2026 à 10h30" value="${esc(ap.date || "")}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Lieu ou numéro à appeler</label>
+            <input id="rdv-place-${btnId}" type="text" placeholder="Cabinet, permanence, téléphone..." value="${esc(ap.place || "")}">
+          </div>
+          <div class="form-group">
+            <label>Instruction pour le demandeur</label>
+            <textarea id="rdv-note-${btnId}" rows="2" placeholder="Documents à apporter, personne à contacter...">${esc(ap.note || "")}</textarea>
+          </div>
+          <button class="sbtn sbtn-done" onclick="saveAppointment('${storageKey}','${btnId}')">Programmer le rendez-vous</button>
+        </div>` : ""}
+    </div>`;
+}
+
+function openDossier(storageKey, idOrIdx) {
+  const all = getAll(storageKey);
+  const idx = findMsgIndex(all, idOrIdx);
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+  const now = new Date().toLocaleString("fr-FR");
+  all[idx]._opened = true;
+  all[idx]._opened_date = now;
+  if (!all[idx]._status || all[idx]._status === "en_attente") all[idx]._status = "ouvert";
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, opened: true, opened_date: now })
+    }).catch(() => {});
+  }
+  refreshDashboard();
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Dossier marqué comme ouvert");
+}
+
+function setDecision(storageKey, idOrIdx, decision) {
+  const all = getAll(storageKey);
+  const idx = findMsgIndex(all, idOrIdx);
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+  const now = new Date().toLocaleString("fr-FR");
+  const noteEl = document.getElementById("decision-note-" + idOrIdx);
+  all[idx]._opened = true;
+  all[idx]._opened_date = all[idx]._opened_date || now;
+  all[idx]._decision = decision;
+  all[idx]._decision_note = noteEl ? noteEl.value.trim() : "";
+  all[idx]._decision_date = now;
+  all[idx]._status = decision === "non_favorable" ? "traite" : "en_cours";
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        id: cid,
+        opened: true,
+        opened_date: all[idx]._opened_date,
+        decision,
+        decision_note: all[idx]._decision_note,
+        decision_date: now
+      })
+    }).catch(() => {});
+  }
+  refreshDashboard();
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast(decision === "favorable" ? "Décision favorable enregistrée" : "Décision non favorable enregistrée");
+}
+
+function saveAppointment(storageKey, idOrIdx) {
+  const all = getAll(storageKey);
+  const idx = findMsgIndex(all, idOrIdx);
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+  const ap = {
+    type:  document.getElementById("rdv-type-" + idOrIdx)?.value || "telephone",
+    date:  document.getElementById("rdv-date-" + idOrIdx)?.value.trim() || "",
+    place: document.getElementById("rdv-place-" + idOrIdx)?.value.trim() || "",
+    note:  document.getElementById("rdv-note-" + idOrIdx)?.value.trim() || "",
+  };
+  if (!ap.date) { showToast("Indiquez la date du rendez-vous.", true); return; }
+  all[idx]._appointment = ap;
+  all[idx]._status = "traite";
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, appointment: ap })
+    }).catch(() => {});
+  }
+  refreshDashboard();
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Rendez-vous programmé");
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1327,10 +1478,7 @@ function addNote(storageKey, idOrIdx) {
   if (!texte) { showToast("Note vide.", true); return; }
 
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
-  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  const idx = findMsgIndex(all, idOrIdx);
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
 
   if (!all[idx]._notes) all[idx]._notes = [];
@@ -1354,15 +1502,7 @@ function addNote(storageKey, idOrIdx) {
 // ══════════════════════════════════════════════════════════════════════════
 function pingDepute(storageKey, idOrIdx) {
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) {
-    idx = all.findIndex(x => x._id === decoded);
-  }
-  if (idx === -1) {
-    const n = parseInt(idOrIdx, 10);
-    if (!isNaN(n) && all[n]) idx = n;
-  }
+  const idx = findMsgIndex(all, idOrIdx);
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
   all[idx]._pinged      = true;
   all[idx]._pinged_date = new Date().toLocaleString("fr-FR");

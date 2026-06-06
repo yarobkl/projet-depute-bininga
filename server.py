@@ -1366,6 +1366,64 @@ def append_contact(entry: dict):
         contacts.append(entry)
         save_contacts(contacts)
 
+def _tracking_code_exists(code: str, contacts=None) -> bool:
+    contacts = contacts if contacts is not None else load_contacts()
+    return any(str(c.get("tracking_code", "")).upper() == code.upper() for c in contacts)
+
+def generate_tracking_code(contacts=None) -> str:
+    """Génère un numéro lisible pour le suivi public des dossiers."""
+    year = datetime.now().strftime("%Y")
+    for _ in range(20):
+        code = f"BIN-{year}-{secrets.token_hex(3).upper()}"
+        if not _tracking_code_exists(code, contacts):
+            return code
+    return f"BIN-{year}-{secrets.token_hex(5).upper()}"
+
+def _audience_status_label(entry: dict) -> str:
+    status = entry.get("_status") or "en_attente"
+    labels = {
+        "en_attente": "Dossier reçu",
+        "ouvert": "Dossier ouvert par l'administration",
+        "en_cours": "Instruction en cours",
+        "traite": "Dossier traité",
+        "lu": "Message lu",
+        "non_lu": "Reçu",
+    }
+    return labels.get(status, status)
+
+def _public_tracking_payload(entry: dict) -> dict:
+    rdv = entry.get("_appointment") or {}
+    decision = entry.get("_decision") or ""
+    steps = [
+        {"label": "Demande envoyée", "date": entry.get("ts") or entry.get("_date") or "", "done": True},
+        {"label": "Dossier ouvert", "date": entry.get("_opened_date", ""), "done": bool(entry.get("_opened"))},
+        {"label": "Décision finale", "date": entry.get("_decision_date", ""), "done": bool(decision)},
+        {"label": "Rendez-vous programmé", "date": rdv.get("date", ""), "done": bool(rdv.get("date"))},
+    ]
+    return {
+        "ok": True,
+        "tracking_code": entry.get("tracking_code", ""),
+        "objet": entry.get("objet", "Demande"),
+        "status": entry.get("_status") or "en_attente",
+        "status_label": _audience_status_label(entry),
+        "submitted_at": entry.get("ts") or entry.get("_date") or "",
+        "opened_at": entry.get("_opened_date", ""),
+        "decision": decision,
+        "decision_label": {
+            "favorable": "Favorable",
+            "non_favorable": "Non favorable",
+        }.get(decision, ""),
+        "decision_note": entry.get("_decision_note", ""),
+        "decision_at": entry.get("_decision_date", ""),
+        "appointment": {
+            "type": rdv.get("type", ""),
+            "date": rdv.get("date", ""),
+            "place": rdv.get("place", ""),
+            "note": rdv.get("note", ""),
+        } if rdv else {},
+        "steps": steps,
+    }
+
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
@@ -1646,6 +1704,20 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path in ("/api/load", "/data.json"):
             self._json(load_data())
+            return
+
+        if path == "/api/dossier":
+            qs = parse_qs(urlparse(self.path).query)
+            code = (qs.get("code", [""])[0] or "").strip().upper()
+            if not re.fullmatch(r"BIN-\d{4}-[A-F0-9]{6,10}", code):
+                self._json({"ok": False, "message": "Numéro de suivi invalide"}, 400)
+                return
+            found = next((c for c in load_contacts()
+                          if str(c.get("tracking_code", "")).upper() == code), None)
+            if not found:
+                self._json({"ok": False, "message": "Aucun dossier trouvé avec ce numéro"}, 404)
+                return
+            self._json(_public_tracking_payload(found))
             return
 
         # ── /api/debug-ai (diagnostic clé IA — admin uniquement) ──
@@ -3131,6 +3203,15 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 raw_src = entry.get("source") or entry.get("type", "contact")
                 entry["source"] = raw_src
                 entry["type"]   = raw_src
+                if raw_src == "bininga_audiences":
+                    contacts_snapshot = load_contacts()
+                    entry["tracking_code"] = generate_tracking_code(contacts_snapshot)
+                    entry["_status"] = "en_attente"
+                    entry["_history"] = [{
+                        "date": entry["ts"],
+                        "label": "Demande reçue",
+                        "detail": "Votre dossier a été enregistré par le site officiel.",
+                    }]
                 append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
@@ -3210,7 +3291,11 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                             save_crm(crm)
                     except Exception:
                         pass  # CRM non bloquant
-                self._json({"ok": True, "message": "Message reçu"})
+                response = {"ok": True, "message": "Message reçu", "id": entry.get("_id")}
+                if entry.get("tracking_code"):
+                    response["tracking_code"] = entry["tracking_code"]
+                    response["tracking_url"] = f"/#suivi-dossier?code={entry['tracking_code']}"
+                self._json(response)
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
@@ -3292,6 +3377,31 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                         if "notes"      in data: c["_notes"]      = data["notes"]
                         if "pinged"     in data: c["_pinged"]     = data["pinged"]
                         if "pinged_date" in data: c["_pinged_date"] = data["pinged_date"]
+                        if "opened" in data:
+                            c["_opened"] = bool(data["opened"])
+                            c["_opened_date"] = data.get("opened_date") or c.get("_opened_date") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            if c.get("_status") in (None, "", "en_attente"):
+                                c["_status"] = "ouvert"
+                        if "decision" in data:
+                            decision = str(data.get("decision") or "").strip()
+                            if decision in ("favorable", "non_favorable", ""):
+                                c["_decision"] = decision
+                                c["_decision_note"] = str(data.get("decision_note") or "")[:1000]
+                                c["_decision_date"] = data.get("decision_date") or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                if decision == "non_favorable":
+                                    c["_status"] = "traite"
+                                elif decision == "favorable" and not c.get("_status") == "traite":
+                                    c["_status"] = "en_cours"
+                        if "appointment" in data:
+                            ap = data.get("appointment") or {}
+                            c["_appointment"] = {
+                                "type": str(ap.get("type") or "")[:40],
+                                "date": str(ap.get("date") or "")[:80],
+                                "place": str(ap.get("place") or "")[:240],
+                                "note": str(ap.get("note") or "")[:1000],
+                            }
+                            if c["_appointment"].get("date"):
+                                c["_status"] = "traite"
                         updated = True
                         break
                 if updated:

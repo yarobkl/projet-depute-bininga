@@ -73,12 +73,6 @@
 }
 </script>
 
-<!-- Analytics, Plausible (sans cookies, conforme RGPD) -->
-<script defer data-domain="bininga.cg" src="https://plausible.io/js/script.js"></script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="static/index.css?v=20260522-public-polish">
 <link rel="stylesheet" href="static/mobile.css?v=20260522-public-polish">
 <style>
@@ -124,6 +118,7 @@
     <li><a href="#galerie" data-i18n="nav.gallery">Galerie</a></li>
     <li><a href="#actu" data-i18n="nav.news">Actualités</a></li>
     <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
+    <li><a href="#suivi-dossier">Suivi</a></li>
     <li><a href="#engagement" class="ncta" data-i18n="nav.audience">Audience</a></li>
   </ul>
   <!-- Sélecteur de langue -->
@@ -145,6 +140,7 @@
   <a href="#programme" onclick="cMob()" data-i18n="nav.programme">Programme</a>
   <a href="#galerie" onclick="cMob()" data-i18n="nav.gallery">Galerie</a>
   <a href="#actu" onclick="cMob()" data-i18n="nav.news">Actualités</a>
+  <a href="#suivi-dossier" onclick="cMob()">Suivi</a>
   <a href="#engagement" onclick="cMob()" data-i18n="nav.audience">Audience</a>
   <a href="#contact" onclick="cMob()" data-i18n="nav.contact">Contact</a>
   <!-- Langue mobile -->
@@ -374,9 +370,10 @@
       <video
         id="main-video"
         controls
+        preload="none"
+        poster="images/bininga.jpg"
         muted
         playsinline
-        loop
         style="width:100%;aspect-ratio:16/9;border-radius:12px;display:block;background:#000">
         <source src="/images/video/COOPERATION JUDICIAIRE_ GERALD DARMANIN RECOIT SON HOMOLOGUE CONGOLAIS A. A.WILFRID BININGA A PARIS.mp4" type="video/mp4">
       </video>
@@ -488,7 +485,28 @@
 
         <button type="submit" class="btn-form" id="btn-form-aud" data-i18n="form.submit.aud">Soumettre ma demande</button>
       </form>
+      <div class="tracking-result" id="tracking-result" hidden aria-live="polite"></div>
     </div>
+  </div>
+</section>
+
+<!-- SUIVI DE DOSSIER -->
+<section id="suivi-dossier" class="tracking-section" data-mob-tab="audience">
+  <div class="tracking-wrap">
+    <div class="tracking-copy">
+      <span class="stag">Suivi de dossier</span>
+      <h2 class="stitle">Consulter l'avancement <span class="g">en toute simplicité</span></h2>
+      <p class="tracking-lead">Après une demande d'audience, un numéro de suivi est généré automatiquement. Conservez-le pour vérifier si le dossier est reçu, ouvert, décidé puis programmé en rendez-vous.</p>
+    </div>
+    <form class="tracking-card" onsubmit="trackDossier(event,this)">
+      <label for="tracking-code">Numéro de suivi</label>
+      <div class="tracking-input-row">
+        <input id="tracking-code" name="code" type="text" inputmode="latin" autocomplete="off" placeholder="BIN-2026-ABC123" required>
+        <button type="submit">Consulter</button>
+      </div>
+      <div class="tracking-help">Aucune connexion, aucun compte et aucune pièce jointe ne sont nécessaires.</div>
+      <div class="tracking-status" id="tracking-status" aria-live="polite"></div>
+    </form>
   </div>
 </section>
 
@@ -987,9 +1005,10 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
 
 <script>
 (function(){
+  const lowData = !!(navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || "")));
   // ── Braises flottantes dans le fond hero ──────────────
   const hero = document.getElementById("hero");
-  if (hero) {
+  if (hero && !lowData && window.matchMedia("(min-width: 769px)").matches) {
     hero.style.position = "relative";
     hero.style.overflow = "hidden";
     for (let i = 0; i < 18; i++) {

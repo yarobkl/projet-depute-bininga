@@ -659,7 +659,7 @@
   },
   "engagement": {
     "tag": "Contactez-nous",
-    "title": "Une réclamation\nou une",
+    "title": "Une réclamationou une",
     "titleAccent": "demande",
     "desc": "Vous avez une réclamation, une préoccupation ou souhaitez prendre contact avec l'équipe du Député ? Soumettez votre demande d'audience et nous vous reviendrons dans les meilleurs délais.",
     "cards": [
@@ -683,7 +683,7 @@
     "formSub": "Expliquez l'objet de votre demande, notre équipe vous contactera sous 48h"
   },
   "cta": {
-    "title": "Votez BININGA :\nle choix de l'expérience et du terrain",
+    "title": "Votez BININGA :le choix de l'expérience et du terrain",
     "subtitle": "Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.",
     "btn1": {
       "text": "📋 Demande d'audience",
@@ -835,7 +835,7 @@
     "sectionTag": "Nous écrire",
     "sectionTitle": "Prenez",
     "sectionAccent": "contact",
-    "sidebarTitle": "Quartier Général\nde Campagne",
+    "sidebarTitle": "Quartier Généralde Campagne",
     "sidebarDesc": "Notre équipe répond à vos questions, traite vos demandes de rencontre et organise vos échanges avec le candidat Aimé BININGA.",
     "phone": "+242 06 XXX XXXX",
     "email": "contact@bininga.cg",

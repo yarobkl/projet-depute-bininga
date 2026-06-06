@@ -1,5 +1,6 @@
 
 const IMG = "images/bininga.jpg";
+const LOW_DATA_MODE = !!(navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || "")));
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function cleanLabel(s){
   return String(s || "")
@@ -800,7 +801,7 @@ document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
 // ── Envoi des formulaires vers le serveur ────────────────────────────
 const FORMSPREE = {};
 async function sendForm(storageKey, _unused, formData, btn, successMsg) {
-  btn.textContent = "⏳ Envoi en cours…";
+  btn.textContent = "Envoi en cours...";
   btn.disabled = true;
 
   // Construire l'objet à envoyer
@@ -812,6 +813,7 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
 
   // 1. Envoi au serveur (persistance)
   let serverOk = false;
+  let serverData = {};
   try {
     const res = await fetch("/api/contact", {
       method: "POST",
@@ -819,6 +821,9 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
       body: JSON.stringify(entry)
     });
     serverOk = res.ok;
+    serverData = await res.json().catch(() => ({}));
+    if (serverData.id) entry._id = serverData.id;
+    if (serverData.tracking_code) entry.tracking_code = serverData.tracking_code;
   } catch (_) { /* serveur non disponible — continuer */ }
 
   // 2. Copie locale (pour affichage admin en mode hors-ligne)
@@ -834,6 +839,7 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   } else {
     btn.textContent = successMsg;
     btn.style.background = "#2ecc71";
+    if (serverData.tracking_code) showTrackingReceipt(serverData.tracking_code);
   }
   // Réinitialiser le formulaire après 3 secondes
   const originalText = btn.dataset.originalText || "Soumettre";
@@ -844,6 +850,70 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
     btn.textContent = originalText;
     btn.disabled = false;
   }, 3000);
+}
+
+function showTrackingReceipt(code) {
+  const box = document.getElementById("tracking-result");
+  if (!box) return;
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="tracking-result-title">Demande envoyée</div>
+    <p>Votre numéro de suivi est <strong>${escHtml(code)}</strong>.</p>
+    <div class="tracking-result-actions">
+      <button type="button" onclick="copyTrackingCode('${escHtml(code)}')">Copier le numéro</button>
+      <a href="#suivi-dossier" onclick="prefillTracking('${escHtml(code)}')">Suivre mon dossier</a>
+    </div>`;
+}
+
+function copyTrackingCode(code) {
+  if (navigator.clipboard) navigator.clipboard.writeText(code).catch(() => {});
+  prefillTracking(code);
+}
+
+function prefillTracking(code) {
+  const input = document.getElementById("tracking-code");
+  if (input) input.value = code;
+}
+
+async function trackDossier(e, form) {
+  e.preventDefault();
+  const out = document.getElementById("tracking-status");
+  const input = form.querySelector("[name=code]");
+  const code = (input.value || "").trim().toUpperCase();
+  if (!out) return;
+  out.className = "tracking-status loading";
+  out.innerHTML = "Recherche du dossier...";
+  try {
+    const res = await fetch("/api/dossier?code=" + encodeURIComponent(code));
+    const data = await res.json();
+    if (!res.ok || !data.ok) throw new Error(data.message || "Dossier introuvable");
+    const ap = data.appointment || {};
+    out.className = "tracking-status ready";
+    out.innerHTML = `
+      <div class="tracking-file-head">
+        <div><span>Dossier</span><strong>${escHtml(data.tracking_code)}</strong></div>
+        <mark>${escHtml(data.status_label)}</mark>
+      </div>
+      <div class="tracking-steps">
+        ${(data.steps || []).map(s => `
+          <div class="tracking-step ${s.done ? "done" : ""}">
+            <span></span><div><strong>${escHtml(s.label)}</strong>${s.date ? `<small>${escHtml(s.date)}</small>` : ""}</div>
+          </div>`).join("")}
+      </div>
+      ${data.decision_label ? `<div class="tracking-decision ${data.decision === "favorable" ? "ok" : "no"}">
+        Décision finale : <strong>${escHtml(data.decision_label)}</strong>
+        ${data.decision_note ? `<p>${escHtml(data.decision_note)}</p>` : ""}
+      </div>` : ""}
+      ${ap.date ? `<div class="tracking-appointment">
+        <strong>Rendez-vous programmé</strong>
+        <p>${escHtml(ap.type === "telephone" ? "Téléphonique" : "Présentiel")} · ${escHtml(ap.date)}</p>
+        ${ap.place ? `<p>${escHtml(ap.place)}</p>` : ""}
+        ${ap.note ? `<small>${escHtml(ap.note)}</small>` : ""}
+      </div>` : ""}`;
+  } catch (err) {
+    out.className = "tracking-status error";
+    out.innerHTML = escHtml(err.message || "Impossible de consulter ce dossier.");
+  }
 }
 
 function fSub(e, f) {
@@ -1083,6 +1153,15 @@ const _lbStyle = document.createElement("style");
 _lbStyle.textContent = "@keyframes lb-in{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}";
 document.head.appendChild(_lbStyle);
 
+document.addEventListener("DOMContentLoaded", () => {
+  const m = location.hash.match(/code=(BIN-\d{4}-[A-Fa-f0-9]+)/);
+  if (m) {
+    prefillTracking(m[1].toUpperCase());
+    const form = document.querySelector(".tracking-card");
+    if (form) trackDossier(new Event("submit"), form);
+  }
+});
+
 // ── STAGGER TIMELINE ─────────────────────────────────────
 document.querySelectorAll(".tl-item").forEach((el, i) => {
   el.style.transitionDelay = `${i * 0.13}s`;
@@ -1149,37 +1228,6 @@ async function subNewsletter(e, f) {
   f.style.display = "none";
   ok.style.display = "block";
 }
-
-// ── AUTOPLAY VIDÉO ──────────────────────────────────────────
-(function(){
-  const vid = document.querySelector("#video-section video");
-  if(!vid) return;
-
-  function tryPlay(){ vid.muted = true; vid.play().catch(()=>{}); }
-
-  // Démarre uniquement quand la vidéo est visible à l'écran
-  if("IntersectionObserver" in window){
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(e => {
-        if(e.isIntersecting) tryPlay();
-        else vid.pause();
-      });
-    }, { threshold: 0.5 });
-    obs.observe(vid);
-  }
-
-  // 3. Fallback : premier scroll ou touch utilisateur (lève la restriction navigateur)
-  function onInteract(){
-    tryPlay();
-    window.removeEventListener("scroll", onInteract);
-    window.removeEventListener("touchstart", onInteract);
-    window.removeEventListener("click", onInteract);
-  }
-  window.addEventListener("scroll",     onInteract, { passive: true });
-  window.addEventListener("touchstart", onInteract, { passive: true });
-  window.addEventListener("click",      onInteract, { once: true });
-})();
-
 
 // ── VIDÉO YOUTUBE ──────────────────────────────────────────
 function loadVideo(placeholder) {
