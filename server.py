@@ -986,7 +986,7 @@ def save_opinion_cache(data: dict):
         print(f"[Opinion] Erreur écriture cache: {e}")
 
 # ── Journal Officiel — base de connaissances gouvernement ───────────────────
-GOUVERNEMENT_FILE = "gouvernement.json"
+GOUVERNEMENT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "gouvernement.json")
 
 def _load_gouvernement() -> dict:
     try:
@@ -3001,6 +3001,28 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     )
                 )
 
+                # ── PRIORITÉ ABSOLUE : questions gouvernement → base JO ───────
+                # Toute question sur un membre du gouvernement consulte d'abord
+                # gouvernement.json. Si une réponse exacte existe, on la renvoie
+                # IMMÉDIATEMENT (pas d'IA, pas de logique de suivi → 0 hallucination).
+                _gov_trigger = any(w in q for w in [
+                    "journal officiel", "gouvernement", "ministre", "ministère", "ministere",
+                    "conseil des ministres", "cabinet ministériel", "premier ministre",
+                    "chef du gouvernement", "garde des sceaux", "vice-premier",
+                    "makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo",
+                    "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua",
+                    "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault",
+                    "matondo", "ebouka", "ngouonimba", "mikolo", "sayi",
+                    "maboundou", "pongault", "onanga", "djombo", "emmanuel adouki", "mouthou",
+                    "kimbatsa", "okio", "ingani", "moundele", "malanda", "adicolle",
+                    "bahamboula", "mboko", "ntsiba", "pea ondongo",
+                ])
+                if _gov_trigger:
+                    gov_reply = _search_gouvernement(question)
+                    if gov_reply:
+                        self._json({"ok": True, "reply": gov_reply})
+                        return
+
                 # ── Salutations ───────────────────────────────────────────────
                 if not _is_followup and any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
                     reply = random.choice([
@@ -3021,19 +3043,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 elif not _is_followup and any(w in q for w in ["développé", "developpé", "créé", "crée", "site web", "développeur", "developpeur", "qui a fait", "conception", "webmaster", "fait le site", "créé le site"]):
                     reply = "Ce site officiel a été développé par Rodrin Bakala."
 
-                # ── Présentation / biographie ─────────────────────────────────
+                # ── Présentation / biographie (BININGA) ───────────────────────
+                # Les questions sur les autres membres du gouvernement sont déjà
+                # traitées en amont (court-circuit base JO). Ici = bio de BININGA.
                 elif not _is_followup and any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "biographie", "bio"]):
-                    # Si la question concerne un autre membre du gouvernement, utiliser la base JO
-                    bininga_keywords = ["bininga", "lui", "il", "son rôle", "son titre", "ce ministre"]
-                    is_about_bininga = (
-                        any(w in q for w in bininga_keywords)
-                        or not any(w in q for w in ["qui est", "c'est qui", "c est qui"])
-                        or all(w not in q for w in ["makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo", "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua", "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault", "matondo", "ebouka", "ngouonimba", "mikolo", "sassou", "sayi", "maboundou", "pongault", "onanga", "djombo", "mouthou", "kimbatsa", "okio", "ingani", "moundele", "malanda", "nze", "adicolle", "bahamboula", "mboko", "ntsiba", "pea ondongo"])
-                    )
-                    if not is_about_bininga:
-                        gov_reply = _search_gouvernement(question)
-                        if gov_reply:
-                            reply = gov_reply
                     if reply is None:
                         intro = about.get("intro", "")
                         paras = about.get("paragraphs", [])
@@ -3378,7 +3391,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         )
                         ai_prompt = f"""Tu es DA, assistante virtuelle du site officiel de {nom}, {role} (République du Congo, Brazzaville).
 {followup_note}Réponds en français, chaleureusement, en 2-3 phrases max.
-Tu peux répondre sur {nom}, le gouvernement congolais, l'Assemblée Nationale et la politique congolaise.
+Tu peux répondre sur {nom}, l'Assemblée Nationale et la politique congolaise.
+RÈGLE ABSOLUE : n'invente JAMAIS de noms de personnes, de ministres ou de fonctions. Si tu ne connais pas avec certitude le nom d'un membre du gouvernement, dis simplement que l'information n'est pas disponible et oriente vers le formulaire de contact. Ne donne jamais un nom approximatif.
 Pour les sujets sans rapport avec le Congo ou {nom}, oriente vers le formulaire de contact.
 Contexte : {about_intro} Programme : {prog_axes}
 
