@@ -1001,79 +1001,95 @@ def _normalize(s: str) -> str:
     return "".join(c for c in s if unicodedata.category(c) != "Mn")
 
 def _search_gouvernement(question: str) -> str | None:
-    """Cherche dans gouvernement.json le membre correspondant à la question.
+    """Cherche dans gouvernement.json la réponse à une question gouvernement.
+    Gère : comptage, listes/catégories (pluriel) et correspondance unique.
     Retourne une phrase de réponse ou None si rien trouvé."""
     gov = _load_gouvernement()
     if not gov:
         return None
     membres = gov.get("membres", []) + gov.get("autres_nominations", [])
-    qn = _normalize(question)
+    qn      = _normalize(question)
+    total   = len(gov.get("membres", []))
+    src     = gov.get("source", "Journal Officiel de la République du Congo N° 18-2026 du 30 avril 2026")
 
-    # Cas prioritaire : "combien / nombre de ministres" (avant tout scoring)
+    # 1) Comptage : "combien / nombre de ministres"
     if any(w in qn for w in ["combien", "nombre"]) and any(w in qn for w in ["ministre", "membre", "gouvernement"]):
-        total = len(gov.get("membres", []))
         return (
             f"Le gouvernement de la République du Congo nommé le 24 avril 2026 "
             f"(JO n° 18-2026) compte {total} membres, du Premier ministre aux ministres délégués."
         )
 
-    # Mots trop génériques à ignorer dans le score des titres
-    _generics = {"ministre", "ministere", "etat", "charge", "charge", "de", "du", "la", "le", "les", "des", "et", "au"}
+    # Intention « liste / pluriel »
+    plural_intent = any(p in qn for p in [
+        "quels sont", "quelles sont", "liste", "lister", "tous les", "toutes les",
+        "cite", "énumère", "enumere", "donne moi les", "donne-moi les", "ministres d",
+    ])
 
-    # Score chaque membre
-    best_score = 0
-    best = None
+    # 2) Catégorie « ministres d'État » (plusieurs membres)
+    if "etat" in qn and "ministre" in qn:
+        cat = [m for m in membres if "d'etat" in _normalize(m.get("titre", "")) or "d etat" in _normalize(m.get("titre", ""))]
+        if cat:
+            lst = " ; ".join(f"{m['nom']} ({m['titre']})" for m in cat)
+            return f"Selon le {src}, les ministres d'État sont : {lst}."
+
+    # 3) Catégorie « ministres délégués »
+    if "delegue" in qn:
+        cat = [m for m in membres if "delegue" in _normalize(m.get("titre", ""))]
+        if cat:
+            lst = " ; ".join(f"{m['nom']} ({m['titre']})" for m in cat)
+            return f"Selon le {src}, les ministres délégués sont : {lst}."
+
+    # 4) Recherche par mots-clés (nom fort, titre spécifique) — multi-correspondance
+    _generics = {
+        "ministre", "ministre", "ministere", "etat", "charge", "quel", "quels", "quelle",
+        "quelles", "sont", "est", "qui", "liste", "gouvernement", "membre", "membres",
+        "actuel", "actuelle", "ministres", "nomme", "nommee", "pour", "dans", "avec", "sous",
+        "republique", "congo", "monsieur", "madame", "leur", "cette", "notre",
+    }
+    q_words = [w for w in re.split(r"[^a-z0-9]+", qn) if len(w) > 3 and w not in _generics]
+
+    # Mots de la question en MOTS ENTIERS (évite que "Ange" matche dans "étrangères")
+    qn_words = set(re.split(r"[^a-z0-9]+", qn))
+    scored = []
     for m in membres:
-        score = 0
-        nom_n = _normalize(m.get("nom", ""))
+        nom_n   = _normalize(m.get("nom", ""))
         titre_n = _normalize(m.get("titre", ""))
-        # Correspondance NOM (fort : chaque mot du nom trouvé dans la question = +10)
-        nom_words = [w for w in nom_n.split() if len(w) > 2]
-        matches = sum(1 for w in nom_words if w in qn)
-        if matches:
-            score += matches * 10
-        # Correspondance TITRE (mots spécifiques du portefeuille, hors générics)
-        # On remplace les apostrophes par des espaces avant de découper
-        titre_tokens = re.split(r"[\s''’]+", titre_n)
-        titre_words = [re.sub(r"[^a-z0-9]", "", w) for w in titre_tokens]
-        titre_words = [w for w in titre_words if len(w) > 4 and w not in _generics]
-        t_matches = sum(1 for w in titre_words if w in qn)
-        if t_matches:
-            score += t_matches * 4
-        if score > best_score:
-            best_score = score
-            best = m
+        name_score  = sum(1 for w in nom_n.split() if len(w) > 2 and w in qn_words) * 10
+        title_tokens = [re.sub(r"[^a-z0-9]", "", t) for t in re.split(r"[\s''’]+", titre_n)]
+        title_hits  = sum(1 for w in q_words if w in title_tokens)
+        score = name_score + title_hits * 4
+        if score > 0:
+            scored.append((score, title_hits, m))
 
-    # Seuil minimum : au moins 8 points (nom partiel) ou 4 points (deux mots de titre spécifiques)
-    if not best or best_score < 4:
-        total = len(gov.get("membres", []))
-        # Cas "combien / nombre de ministres"
-        if any(w in qn for w in ["combien", "nombre"]):
-            return (
-                f"Le gouvernement de la République du Congo nommé le 24 avril 2026 "
-                f"(JO n° 18-2026) compte {total} membres, du Premier ministre aux ministres délégués."
-            )
-        # Cas "liste" ou "gouvernement entier"
-        if any(w in qn for w in ["liste", "gouvernement", "membres", "composition", "cabinet"]):
+    if not scored:
+        # Rien de précis : liste globale si on demande la composition
+        if plural_intent or any(w in qn for w in ["liste", "composition", "gouvernement", "cabinet"]):
             pm = next((m for m in membres if "premier ministre" in _normalize(m.get("titre", ""))), None)
             pm_txt = f"Premier ministre : {pm['nom']}. " if pm else ""
             return (
                 f"Le gouvernement de la République du Congo (JO n° 18-2026 du 30 avril 2026) "
                 f"compte {total} membres. {pm_txt}"
                 f"Posez-moi une question précise, par exemple : "
-                f"'Qui est ministre de la santé ?' ou 'Quel est le titre de BININGA ?'"
+                f"'Qui est ministre de la santé ?' ou 'Quels sont les ministres d'État ?'"
             )
         return None
 
-    titre = best.get("titre", "")
-    nom = best.get("nom", "")
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+
+    # Question plurielle → lister tous les membres dont le titre correspond
+    if plural_intent:
+        cat = [m for (s, th, m) in scored if th > 0]
+        if len(cat) > 1:
+            lst = " ; ".join(f"{m['nom']} ({m['titre']})" for m in cat)
+            return f"Selon le {src} : {lst}."
+
+    # Correspondance unique (seuil minimum 4)
+    best_score, _, best = scored[0]
+    if best_score < 4:
+        return None
     decret = best.get("decret", "")
     decret_txt = f" ({decret})" if decret else ""
-    source = gov.get("source", "Journal Officiel de la République du Congo N° 18-2026 du 30 avril 2026")
-    return (
-        f"Selon le {source}{decret_txt}, "
-        f"{nom} est {titre}."
-    )
+    return f"Selon le {src}{decret_txt}, {best['nom']} est {best['titre']}."
 
 
 def _build_chat_knowledge(data: dict) -> str:
@@ -3088,9 +3104,65 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 reply = None
                 history_ctx = payload.get("history", [])
 
+                # Noms de famille des ministres (hors BININGA) pour la détection
+                _MINISTER_KEYS = [
+                    "makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo",
+                    "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua",
+                    "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault",
+                    "matondo", "ebouka", "ngouonimba", "mikolo", "sayi", "maboundou", "pongault",
+                    "onanga", "djombo", "adicolle", "mouthou", "kimbatsa", "okio", "ingani",
+                    "moundele", "malanda", "bahamboula", "mboko", "ntsiba", "pea ondongo",
+                ]
+
+                # ════════ COURT-CIRCUIT DÉTERMINISTE (avant toute logique IA) ════════
+                # Réponses 100 % fiables, jamais dépendantes de l'IA ni du suivi.
+
+                # A) Identité / biographie de BININGA → toujours sa biographie
+                _asks_bio = any(w in q for w in [
+                    "qui est", "présente", "presente", "biographie", "bio",
+                    "parle moi de lui", "parle-moi de lui", "parle moi de bininga",
+                    "parle-moi de bininga", "son parcours",
+                ])
+                _about_da = any(w in q for w in [
+                    "qui es-tu", "qui es tu", "tu es qui", "c'est quoi da",
+                    "présente-toi", "presente-toi", "présente toi", "qui est da",
+                ])
+                if _asks_bio and not _about_da:
+                    _other_named = any(n in q for n in _MINISTER_KEYS)
+                    _generic_gov = any(w in q for w in [
+                        "ministre de", "ministre du", "ministre des", "ministre à",
+                        "ministre a ", "ministre d'", "premier ministre", "ministres", "gouvernement",
+                    ])
+                    if "bininga" in q or (not _other_named and not _generic_gov):
+                        bio = about.get("intro", "") or (about.get("paragraphs") or [""])[0]
+                        if bio:
+                            self._json({"ok": True, "reply": bio[:600] + ("..." if len(bio) > 600 else "")})
+                            return
+
+                # A') Titre / fonction actuelle de BININGA
+                if "bininga" in q and any(w in q for w in ["titre", "fonction", "poste", "rôle", "role", "actuel", "actuellement", "ministre de quoi", "il fait quoi", "occupe"]):
+                    self._json({"ok": True, "reply": (
+                        f"{nom} est actuellement {role}. Il est Député de la 1re circonscription d'Ewo "
+                        f"depuis 2017, et a exercé les fonctions de Ministre des Finances avant de prendre "
+                        f"en charge la Justice."
+                    )})
+                    return
+
+                # B) Questions gouvernement / Journal Officiel → base JO
+                _gov_trigger = any(w in q for w in [
+                    "journal officiel", "gouvernement", "ministre", "ministère", "ministere",
+                    "conseil des ministres", "cabinet ministériel", "premier ministre",
+                    "chef du gouvernement", "garde des sceaux", "vice-premier", "délégué", "delegue",
+                ] + _MINISTER_KEYS)
+                if _gov_trigger:
+                    gov_reply = _search_gouvernement(question)
+                    if gov_reply:
+                        self._json({"ok": True, "reply": gov_reply})
+                        return
+
                 # ── Détection question de suivi conversationnel ───────────────
                 # Si l'historique existe et que la question est une suite logique,
-                # on route directement vers l'IA sans passer par les branches fixes
+                # on route directement vers l'IA (avec dossier complet) sans branches fixes.
                 _followup_starters = ["du coup", "donc", "alors", "c'est", "et donc", "et alors",
                                       "mais", "pourquoi", "comment ça", "c'est-à-dire", "tu veux dire",
                                       "c'est quoi", "qu'est-ce", "et lui", "et elle", "et ça", "genre",
@@ -3103,39 +3175,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         or any(q.startswith(s) for s in _followup_starters)
                     )
                 )
-
-                # ── PRIORITÉ ABSOLUE : questions gouvernement → base JO ───────
-                # Toute question sur un membre du gouvernement consulte d'abord
-                # gouvernement.json. Si une réponse exacte existe, on la renvoie
-                # IMMÉDIATEMENT (pas d'IA, pas de logique de suivi → 0 hallucination).
-                _gov_trigger = any(w in q for w in [
-                    "journal officiel", "gouvernement", "ministre", "ministère", "ministere",
-                    "conseil des ministres", "cabinet ministériel", "premier ministre",
-                    "chef du gouvernement", "garde des sceaux", "vice-premier",
-                    "makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo",
-                    "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua",
-                    "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault",
-                    "matondo", "ebouka", "ngouonimba", "mikolo", "sayi",
-                    "maboundou", "pongault", "onanga", "djombo", "emmanuel adouki", "mouthou",
-                    "kimbatsa", "okio", "ingani", "moundele", "malanda", "adicolle",
-                    "bahamboula", "mboko", "ntsiba", "pea ondongo",
-                ])
-                if _gov_trigger:
-                    gov_reply = _search_gouvernement(question)
-                    if gov_reply:
-                        # Exception : si on demande QUI EST BININGA (sa personne), on
-                        # privilégie sa biographie complète plutôt que le titre JO.
-                        _bio_words = ["qui est", "qui est-il", "c'est qui", "c est qui",
-                                      "présente", "presente", "biographie", "bio", "parle"]
-                        if "bininga" in q and any(w in q for w in _bio_words):
-                            intro = about.get("intro", "")
-                            paras = about.get("paragraphs", [])
-                            bio = intro or (paras[0] if paras else "")
-                            if bio:
-                                self._json({"ok": True, "reply": bio[:500] + ("..." if len(bio) > 500 else "")})
-                                return
-                        self._json({"ok": True, "reply": gov_reply})
-                        return
 
                 # ── Salutations ───────────────────────────────────────────────
                 if not _is_followup and any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
