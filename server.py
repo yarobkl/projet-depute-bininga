@@ -1076,48 +1076,54 @@ def _build_opinion_payload(days: int) -> dict:
         return {"ok": False, "message":
                 "Aucun article disponible pour cette période. Lancez d'abord la veille YARO IA."}
 
+    # Limiter le corpus pour laisser de la place à la réponse JSON
     lines = []
-    for i, a in enumerate(articles[:40], 1):
-        snip = (a.get("snippet") or "")[:150].replace("\n", " ")
-        lines.append(f"{i}. [{a['source']}] {a['title']} — {snip}")
+    for i, a in enumerate(articles[:20], 1):
+        snip = (a.get("snippet") or "")[:100].replace("\n", " ")
+        lines.append(f"{i}. [{a['source']}] {a['title'][:120]} — {snip}")
     corpus = "\n".join(lines)
 
     yt_section = ""
     if youtube_videos:
-        yt_lines = [f"- [{v['channel']}] {v['title']} ({v['views']:,} vues)" for v in youtube_videos[:10]]
-        yt_section = f"\n\nVidéos YouTube récentes ({len(youtube_videos)}) :\n" + "\n".join(yt_lines)
+        yt_lines = [f"- [{v['channel']}] {v['title'][:80]} ({v['views']:,} vues)" for v in youtube_videos[:8]]
+        yt_section = f"\n\nVidéos YouTube ({len(youtube_videos)}) :\n" + "\n".join(yt_lines)
 
     prompt = (
         "Tu es un analyste politique spécialisé en communication pour personnalités "
         "publiques africaines.\n\n"
-        f"{len(articles)} articles de presse sur Ange Aimé Wilfrid BININGA "
-        "(Garde des Sceaux, Député, Congo-Brazzaville) sur les "
-        f"{days} derniers jours :\n\n{corpus}{yt_section}\n\n"
-        "Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) :\n"
-        "{\n"
-        '  "sentiment_positif": <entier 0-100>,\n'
-        '  "sentiment_negatif": <entier 0-100>,\n'
-        '  "sentiment_neutre": <entier 0-100>,\n'
-        '  "resume": "<2-3 phrases sur la perception publique de BININGA sur cette période>",\n'
-        '  "recommandations": ["<action concrète #1>", "<action #2>", "<action #3>", "<action #4>"],\n'
-        '  "sujets": ["<thème 1>", "<thème 2>", "<thème 3>", "<thème 4>", "<thème 5>"],\n'
-        '  "articles": [\n'
-        '    {"titre":"<titre>","source":"<source>","date":"<date>",'
-        '"sentiment":"positif|negatif|neutre","extrait":"<1-2 phrases>","url":"<url>"}\n'
-        "  ]\n"
-        "}\n"
-        "Les 3 sentiments doivent sommer à 100. Maximum 15 articles dans la liste."
+        f"Articles sur BININGA (Garde des Sceaux, Congo-Brazzaville), {days} derniers jours :\n\n"
+        f"{corpus}{yt_section}\n\n"
+        "Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) avec ces clés exactes :\n"
+        '{"sentiment_positif":0,"sentiment_negatif":0,"sentiment_neutre":100,'
+        '"resume":"texte","recommandations":["r1","r2","r3","r4"],'
+        '"sujets":["s1","s2","s3","s4","s5"],'
+        '"articles":[{"titre":"t","source":"s","date":"d","sentiment":"neutre","extrait":"e","url":"u"}]}\n'
+        "Règles : les 3 sentiments somment à 100. Maximum 10 articles. "
+        "Extraits courts (1 phrase max). Pas de caractères spéciaux dans les chaînes JSON."
     )
 
     try:
-        raw = _gemini_call(prompt, max_tokens=2000, timeout=25).strip()
+        raw = _gemini_call(prompt, max_tokens=4000, timeout=30).strip()
         if raw.startswith("```"):
             raw = raw.split("```")[1]
             if raw.startswith("json"):
                 raw = raw[4:]
-        analysis = json.loads(raw.strip())
+        raw = raw.strip()
+        # Tentative de réparation si le JSON est tronqué
+        if not raw.endswith("}"):
+            last_brace = raw.rfind("}")
+            if last_brace > 0:
+                raw = raw[:last_brace + 1]
+                # Fermer les tableaux/objets ouverts
+                for close in ("}", "]", "}"):
+                    try:
+                        json.loads(raw)
+                        break
+                    except Exception:
+                        raw = raw + close
+        analysis = json.loads(raw)
     except Exception as e:
-        print(f"[Opinion] Erreur IA/parse: {e}")
+        print(f"[Opinion] Erreur IA/parse: {e}\nRaw: {raw[:200] if 'raw' in dir() else 'N/A'}")
         return {"ok": False, "message": f"Analyse IA indisponible : {e}"}
 
     result = {
