@@ -1086,39 +1086,51 @@ def _build_opinion_payload(days: int) -> dict:
     if youtube_videos:
         yt_section = "\nYouTube : " + " | ".join(v['title'][:60] for v in youtube_videos[:4])
 
-    # Prompt minimal — pas d'articles dans la réponse (évite la troncature)
+    # Format texte brut — jamais de JSON cassé
     prompt = (
-        f"Analyse {len(articles)} titres presse sur BININGA (ministre Congo-Brazzaville), {days}j :\n"
+        f"Analyse ces titres de presse sur BININGA (ministre Justice, Congo-Brazzaville), {days} derniers jours :\n"
         f"{corpus}{yt_section}\n\n"
-        "Réponds en JSON UNIQUEMENT (pas de markdown, pas d'explication) :\n"
-        '{"sentiment_positif":50,"sentiment_negatif":20,"sentiment_neutre":30,'
-        '"resume":"2 phrases courtes","recommandations":["action1","action2","action3","action4"],'
-        '"sujets":["theme1","theme2","theme3","theme4","theme5"]}\n'
-        "Règle unique : sentiment_positif + sentiment_negatif + sentiment_neutre = 100."
+        "Réponds EXACTEMENT dans ce format (une valeur par ligne, rien d'autre) :\n"
+        "POSITIF: <nombre 0-100>\n"
+        "NEGATIF: <nombre 0-100>\n"
+        "NEUTRE: <nombre 0-100>\n"
+        "RESUME: <2 phrases sur la perception publique de BININGA>\n"
+        "REC1: <action concrète pour améliorer son image>\n"
+        "REC2: <action concrète>\n"
+        "REC3: <action concrète>\n"
+        "REC4: <action concrète>\n"
+        "SUJETS: <theme1>, <theme2>, <theme3>, <theme4>, <theme5>\n"
+        "Règle : POSITIF + NEGATIF + NEUTRE = 100"
     )
 
     try:
-        raw = _gemini_call(prompt, max_tokens=4000, timeout=30).strip()
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        raw = raw.strip()
-        # Tentative de réparation si le JSON est tronqué
-        if not raw.endswith("}"):
-            last_brace = raw.rfind("}")
-            if last_brace > 0:
-                raw = raw[:last_brace + 1]
-                # Fermer les tableaux/objets ouverts
-                for close in ("}", "]", "}"):
-                    try:
-                        json.loads(raw)
-                        break
-                    except Exception:
-                        raw = raw + close
-        analysis = json.loads(raw)
+        raw = _gemini_call(prompt, max_tokens=600, timeout=30).strip()
+        # Parser le format texte ligne par ligne
+        analysis = {"recommandations": [], "sujets": []}
+        for line in raw.splitlines():
+            line = line.strip()
+            if line.startswith("POSITIF:"):
+                try: analysis["sentiment_positif"] = int(line.split(":",1)[1].strip())
+                except: pass
+            elif line.startswith("NEGATIF:"):
+                try: analysis["sentiment_negatif"] = int(line.split(":",1)[1].strip())
+                except: pass
+            elif line.startswith("NEUTRE:"):
+                try: analysis["sentiment_neutre"] = int(line.split(":",1)[1].strip())
+                except: pass
+            elif line.startswith("RESUME:"):
+                analysis["resume"] = line.split(":",1)[1].strip()
+            elif line.startswith("REC") and ":" in line:
+                analysis["recommandations"].append(line.split(":",1)[1].strip())
+            elif line.startswith("SUJETS:"):
+                analysis["sujets"] = [s.strip() for s in line.split(":",1)[1].split(",") if s.strip()]
+        # Valeurs par défaut si parsing incomplet
+        analysis.setdefault("sentiment_positif", 33)
+        analysis.setdefault("sentiment_negatif", 33)
+        analysis.setdefault("sentiment_neutre", 34)
+        analysis.setdefault("resume", "Analyse de la perception publique de BININGA sur la période.")
     except Exception as e:
-        print(f"[Opinion] Erreur IA/parse: {e}\nRaw: {raw[:200] if 'raw' in dir() else 'N/A'}")
+        print(f"[Opinion] Erreur IA: {e}")
         return {"ok": False, "message": f"Analyse IA indisponible : {e}"}
 
     # Construire la liste d'articles depuis les données brutes (sans labellisation IA)
