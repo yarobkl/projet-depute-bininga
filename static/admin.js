@@ -2188,7 +2188,8 @@ const PANEL_TITLES = {
   logs:"Journaux d'audit", users:"Gestion des utilisateurs", security:"Sécurité — Anti-Intrusion",
   veille:"YARO IA — Actualités Bininga",
   editorial:"Éditorial IA — Contenus",
-  "yaro-legal":"Veille juridique — YARO IA"
+  "yaro-legal":"Veille juridique — YARO IA",
+  opinion:"Opinion Publique — Image dans la presse"
 };
 
 let _currentPanel = "dashboard";
@@ -2221,6 +2222,7 @@ function showPanel(name, el) {
   if (name === "security")     { loadSecurity(); loadBouclier(); }
   if (name === "veille")       loadNews();
   if (name === "editorial")    loadEditorial();
+  if (name === "opinion")      loadOpinion();
   if (name === "crm")          loadCrm();
   const formPanels = ["hero","about","seo","engagement","cta","contact-info","footer"];
   if (formPanels.includes(name)) populateForm();
@@ -3835,4 +3837,150 @@ function clearNotifs() {
   _notifCount = 0;
   _renderNotifBadge();
   _renderNotifList();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  OPINION PUBLIQUE — sentiment + recommandations (depuis YARO IA)
+// ══════════════════════════════════════════════════════════════════════════
+let _opDays = 7;
+
+async function loadOpinion(days, force) {
+  // Appel sans argument (ouverture du panneau) = peek : on lit le cache, pas de recalcul.
+  const peek = (days === undefined);
+  days = days || _opDays;
+  _opDays = days;
+
+  // Onglets actifs
+  ["7", "30"].forEach(d => {
+    const btn = document.getElementById("op-btn-" + d);
+    if (!btn) return;
+    const on = String(days) === d;
+    btn.style.background  = on ? "rgba(52,152,219,.15)" : "rgba(255,255,255,.04)";
+    btn.style.color       = on ? "#3498db" : "rgba(255,255,255,.4)";
+    btn.style.borderColor = on ? "rgba(52,152,219,.3)" : "rgba(255,255,255,.08)";
+  });
+
+  const hide = id => { const el = document.getElementById(id); if (el) el.style.display = "none"; };
+  ["op-gauge-row","op-summary-card","op-reco-card","op-topics-card","op-articles-card","op-error"].forEach(hide);
+
+  const loading = document.getElementById("op-loading");
+  const btn = document.getElementById("op-btn-refresh");
+  if (!peek) {
+    if (loading) loading.style.display = "block";
+    if (btn) { btn.disabled = true; btn.textContent = "En cours…"; }
+  }
+
+  try {
+    const params = `?days=${days}` + (force ? "&force=1" : "") + (peek ? "&peek=1" : "");
+    const res  = await apiFetch("/api/opinion" + params, { headers: { "X-Admin-Token": SESSION_TOKEN } });
+    const data = await res.json();
+    if (loading) loading.style.display = "none";
+
+    if (data.empty) {  // peek sans cache → invite à lancer l'analyse
+      const el = document.getElementById("op-error");
+      if (el) { el.style.display = "block"; el.innerHTML = "Cliquez sur <strong>Actualiser</strong> pour lancer l'analyse de l'opinion publique."; }
+      return;
+    }
+    if (!data.ok) {
+      const el = document.getElementById("op-error");
+      if (el) { el.style.display = "block"; el.textContent = (data.message || "Erreur inconnue"); }
+      return;
+    }
+    renderOpinion(data);
+  } catch (e) {
+    if (loading) loading.style.display = "none";
+    const el = document.getElementById("op-error");
+    if (el) { el.style.display = "block"; el.textContent = "Erreur réseau — serveur non disponible"; }
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Actualiser"; }
+  }
+}
+
+function renderOpinion(d) {
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+
+  // Méta
+  if (d.generated_at) {
+    try { set("op-last-updated", "Mis à jour : " + new Date(d.generated_at).toLocaleString("fr-FR")); }
+    catch (e) {}
+  }
+  set("op-article-count", (d.article_count || 0) + " article(s) analysé(s)");
+  const sw = document.getElementById("op-stale-warn");
+  if (sw) sw.style.display = d._stale ? "inline" : "none";
+
+  // Jauges
+  const gr = document.getElementById("op-gauge-row");
+  if (gr) gr.style.display = "flex";
+  set("op-pct-pos", (d.sentiment_positif ?? "—") + "%");
+  set("op-pct-neg", (d.sentiment_negatif ?? "—") + "%");
+  set("op-pct-neu", (d.sentiment_neutre  ?? "—") + "%");
+
+  // Résumé
+  const sc = document.getElementById("op-summary-card");
+  if (sc && d.resume) { sc.style.display = "block"; set("op-summary-text", d.resume); }
+
+  // Recommandations
+  const rc = document.getElementById("op-reco-card");
+  const rl = document.getElementById("op-reco-list");
+  if (rc && rl && d.recommandations && d.recommandations.length) {
+    rc.style.display = "block";
+    rl.innerHTML = d.recommandations.map(r => `<li style="margin-bottom:4px">${_opEsc(r)}</li>`).join("");
+  }
+
+  // Thèmes
+  const tc = document.getElementById("op-topics-card");
+  const tl = document.getElementById("op-topics-cloud");
+  if (tc && tl && d.sujets && d.sujets.length) {
+    tc.style.display = "block";
+    const cols = [
+      ["rgba(52,152,219,.15)","#3498db","rgba(52,152,219,.3)"],
+      ["rgba(46,204,113,.12)","#2ecc71","rgba(46,204,113,.25)"],
+      ["rgba(155,89,182,.12)","#bb8fce","rgba(155,89,182,.25)"],
+      ["rgba(243,156,18,.1)","#f39c12","rgba(243,156,18,.2)"],
+      ["rgba(231,76,60,.1)","#e74c3c","rgba(231,76,60,.2)"],
+    ];
+    tl.innerHTML = d.sujets.map((s, i) => {
+      const [bg, c, b] = cols[i % cols.length];
+      return `<span style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;background:${bg};color:${c};border:1px solid ${b}">${_opEsc(s)}</span>`;
+    }).join("");
+  }
+
+  // Articles
+  const ac = document.getElementById("op-articles-card");
+  const al = document.getElementById("op-articles-list");
+  const arts = d.articles || [];
+  if (ac && al) {
+    ac.style.display = "block";
+    set("op-arts-count", arts.length);
+    const S = {
+      positif: { bg:"rgba(46,204,113,.12)", c:"#2ecc71", label:"Positif" },
+      negatif: { bg:"rgba(231,76,60,.1)",   c:"#e74c3c", label:"Négatif" },
+      neutre:  { bg:"rgba(255,255,255,.06)", c:"rgba(255,255,255,.5)", label:"Neutre" },
+    };
+    al.innerHTML = arts.map(a => {
+      const s = S[a.sentiment] || S.neutre;
+      let date = a.date || "";
+      try { if (a.date) date = new Date(a.date).toLocaleDateString("fr-FR", {day:"2-digit",month:"short",year:"numeric"}); } catch (e) {}
+      const url = _opEsc(a.url || "#");
+      return `<div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:14px 16px">
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap">
+              <span style="padding:2px 9px;border-radius:10px;font-size:10px;font-weight:700;background:${s.bg};color:${s.c}">${s.label}</span>
+              <a href="${url}" target="_blank" rel="noopener" style="font-size:13px;font-weight:600;color:#fff;text-decoration:none;line-height:1.4">${_opEsc(a.titre || "")}</a>
+            </div>
+            <div style="font-size:11px;color:rgba(255,255,255,.3);margin-bottom:6px">${_opEsc(a.source || "")}${date ? " · " + date : ""}</div>
+            ${a.extrait ? `<div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.5;font-style:italic">${_opEsc(a.extrait)}</div>` : ""}
+          </div>
+          <a href="${url}" target="_blank" rel="noopener" style="flex-shrink:0;padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,152,219,.1);color:#3498db;border:1px solid rgba(52,152,219,.2);text-decoration:none">Lire</a>
+        </div>
+      </div>`;
+    }).join("") || '<div style="text-align:center;color:rgba(255,255,255,.3);padding:30px 0">Aucun article pour cette période.</div>';
+  }
+}
+
+function _opEsc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }

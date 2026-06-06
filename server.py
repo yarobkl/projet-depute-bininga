@@ -237,6 +237,11 @@ CONTACT_FILE = os.path.join(DATA_DIR, "contacts.json")
 # Fichier de veille IA
 NEWS_FILE = os.path.join(DATA_DIR, "news_monitor.json")
 
+# Opinion publique — cache d'analyse de sentiment (généré depuis NEWS_FILE)
+OPINION_CACHE_FILE = os.path.join(DATA_DIR, "opinion_cache.json")
+OPINION_CACHE_TTL  = 6 * 3600   # 6 heures
+_OPINION_LOCK      = threading.Lock()
+
 # Fichier éditorial IA
 EDITORIAL_FILE = os.path.join(DATA_DIR, "editorial.json")
 
@@ -961,6 +966,106 @@ def save_news(data: dict):
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
         print(f"[BININGA] Erreur sauvegarde news: {e}")
+
+# ── Opinion publique ──────────────────────────────────────────────────────
+def load_opinion_cache() -> dict | None:
+    try:
+        if os.path.exists(OPINION_CACHE_FILE):
+            with open(OPINION_CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return None
+
+def save_opinion_cache(data: dict):
+    try:
+        with open(OPINION_CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception as e:
+        print(f"[Opinion] Erreur écriture cache: {e}")
+
+def _opinion_recent_articles(days: int) -> list:
+    """Filtre les articles de NEWS_FILE sur la période demandée (sans appel réseau)."""
+    cutoff = datetime.now().timestamp() - days * 86400
+    items = load_news().get("items", [])
+    recent, seen = [], set()
+    for a in items:
+        pub = a.get("published") or a.get("found_at") or ""
+        try:
+            ts = datetime.fromisoformat(pub.replace("Z", "+00:00")).timestamp()
+            if ts < cutoff:
+                continue
+        except Exception:
+            pass  # date illisible → on garde l'article
+        uid = a.get("id") or a.get("url", "")
+        if uid in seen:
+            continue
+        seen.add(uid)
+        recent.append({
+            "title":   a.get("title", ""),
+            "source":  a.get("source", ""),
+            "url":     a.get("url", ""),
+            "date":    (pub[:10] if pub else ""),
+            "snippet": (a.get("summary") or a.get("ai_summary") or "")[:300],
+        })
+    return recent
+
+def _build_opinion_payload(days: int) -> dict:
+    """Analyse les articles BININGA récents avec l'IA → sentiment + recommandations."""
+    articles = _opinion_recent_articles(days)
+    if not articles:
+        return {"ok": False, "message":
+                "Aucun article disponible pour cette période. Lancez d'abord la veille YARO IA."}
+
+    lines = []
+    for i, a in enumerate(articles[:40], 1):
+        snip = (a.get("snippet") or "")[:150].replace("\n", " ")
+        lines.append(f"{i}. [{a['source']}] {a['title']} — {snip}")
+    corpus = "\n".join(lines)
+
+    prompt = (
+        "Tu es un analyste politique spécialisé en communication pour personnalités "
+        "publiques africaines.\n\n"
+        f"{len(articles)} articles de presse sur Ange Aimé Wilfrid BININGA "
+        "(Garde des Sceaux, Député, Congo-Brazzaville) sur les "
+        f"{days} derniers jours :\n\n{corpus}\n\n"
+        "Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) :\n"
+        "{\n"
+        '  "sentiment_positif": <entier 0-100>,\n'
+        '  "sentiment_negatif": <entier 0-100>,\n'
+        '  "sentiment_neutre": <entier 0-100>,\n'
+        '  "resume": "<2-3 phrases sur la perception publique de BININGA sur cette période>",\n'
+        '  "recommandations": ["<action concrète #1>", "<action #2>", "<action #3>", "<action #4>"],\n'
+        '  "sujets": ["<thème 1>", "<thème 2>", "<thème 3>", "<thème 4>", "<thème 5>"],\n'
+        '  "articles": [\n'
+        '    {"titre":"<titre>","source":"<source>","date":"<date>",'
+        '"sentiment":"positif|negatif|neutre","extrait":"<1-2 phrases>","url":"<url>"}\n'
+        "  ]\n"
+        "}\n"
+        "Les 3 sentiments doivent sommer à 100. Maximum 15 articles dans la liste."
+    )
+
+    try:
+        raw = _gemini_call(prompt, max_tokens=2000, timeout=25).strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        analysis = json.loads(raw.strip())
+    except Exception as e:
+        print(f"[Opinion] Erreur IA/parse: {e}")
+        return {"ok": False, "message": f"Analyse IA indisponible : {e}"}
+
+    result = {
+        "ok": True, "days": days,
+        "generated_at": datetime.now().isoformat(),
+        "article_count": len(articles),
+    }
+    for k in ("sentiment_positif", "sentiment_negatif", "sentiment_neutre",
+              "resume", "recommandations", "sujets", "articles"):
+        result[k] = analysis.get(k)
+    save_opinion_cache(result)
+    return result
 
 # ══════════════════════════════════════════════════════════════════════════
 # ██  COUCHE BASE DE DONNÉES — PostgreSQL/MySQL + fallback fichiers JSON     ██
@@ -2266,6 +2371,42 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     except Exception:
                         data = []
             self._json({"ok": True, "articles": data, "total": len(data)})
+            return
+
+        # ── /api/opinion — Opinion publique : sentiment + recommandations (GET) ──
+        if path == "/api/opinion":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin", "ministre"):
+                self._json({"ok": False, "message": "Non autorisé"}, 403)
+                return
+            qs_op = parse_qs(urlparse(self.path).query)
+            days  = int(qs_op.get("days", ["7"])[0])
+            if days not in (7, 30):
+                days = 7
+            force = qs_op.get("force", ["0"])[0] == "1"
+            peek  = qs_op.get("peek",  ["0"])[0] == "1"  # lecture cache seule, sans recalcul
+            with _OPINION_LOCK:
+                cached = load_opinion_cache()
+                if not force and cached and cached.get("days") == days:
+                    try:
+                        age = (datetime.now() -
+                               datetime.fromisoformat(cached["generated_at"])).total_seconds()
+                        if age < OPINION_CACHE_TTL:
+                            self._json(cached)
+                            return
+                    except Exception:
+                        pass
+                if peek:
+                    self._json({"ok": True, "empty": True})
+                    return
+                try:
+                    self._json(_build_opinion_payload(days))
+                except Exception as e:
+                    if cached:
+                        cached["_stale"] = True
+                        self._json(cached)
+                    else:
+                        self._json({"ok": False, "message": str(e)}, 500)
             return
 
         # ── Protection URL admin ────────────────────────────────────────────────
