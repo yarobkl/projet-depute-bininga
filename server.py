@@ -1009,6 +1009,14 @@ def _search_gouvernement(question: str) -> str | None:
     membres = gov.get("membres", []) + gov.get("autres_nominations", [])
     qn = _normalize(question)
 
+    # Cas prioritaire : "combien / nombre de ministres" (avant tout scoring)
+    if any(w in qn for w in ["combien", "nombre"]) and any(w in qn for w in ["ministre", "membre", "gouvernement"]):
+        total = len(gov.get("membres", []))
+        return (
+            f"Le gouvernement de la République du Congo nommé le 24 avril 2026 "
+            f"(JO n° 18-2026) compte {total} membres, du Premier ministre aux ministres délégués."
+        )
+
     # Mots trop génériques à ignorer dans le score des titres
     _generics = {"ministre", "ministere", "etat", "charge", "charge", "de", "du", "la", "le", "les", "des", "et", "au"}
 
@@ -1038,10 +1046,16 @@ def _search_gouvernement(question: str) -> str | None:
 
     # Seuil minimum : au moins 8 points (nom partiel) ou 4 points (deux mots de titre spécifiques)
     if not best or best_score < 4:
+        total = len(gov.get("membres", []))
+        # Cas "combien / nombre de ministres"
+        if any(w in qn for w in ["combien", "nombre"]):
+            return (
+                f"Le gouvernement de la République du Congo nommé le 24 avril 2026 "
+                f"(JO n° 18-2026) compte {total} membres, du Premier ministre aux ministres délégués."
+            )
         # Cas "liste" ou "gouvernement entier"
         if any(w in qn for w in ["liste", "gouvernement", "membres", "composition", "cabinet"]):
             pm = next((m for m in membres if "premier ministre" in _normalize(m.get("titre", ""))), None)
-            total = len(gov.get("membres", []))
             pm_txt = f"Premier ministre : {pm['nom']}. " if pm else ""
             return (
                 f"Le gouvernement de la République du Congo (JO n° 18-2026 du 30 avril 2026) "
@@ -3020,6 +3034,17 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if _gov_trigger:
                     gov_reply = _search_gouvernement(question)
                     if gov_reply:
+                        # Exception : si on demande QUI EST BININGA (sa personne), on
+                        # privilégie sa biographie complète plutôt que le titre JO.
+                        _bio_words = ["qui est", "qui est-il", "c'est qui", "c est qui",
+                                      "présente", "presente", "biographie", "bio", "parle"]
+                        if "bininga" in q and any(w in q for w in _bio_words):
+                            intro = about.get("intro", "")
+                            paras = about.get("paragraphs", [])
+                            bio = intro or (paras[0] if paras else "")
+                            if bio:
+                                self._json({"ok": True, "reply": bio[:500] + ("..." if len(bio) > 500 else "")})
+                                return
                         self._json({"ok": True, "reply": gov_reply})
                         return
 
