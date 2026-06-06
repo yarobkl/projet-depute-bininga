@@ -25,6 +25,14 @@ def _bootstrap() -> None:
         if callable(fn):
             fn()
 
+    # Toujours initialiser la base monitoring (crée les tables si absentes)
+    try:
+        mon = getattr(bininga_server, "_MON", None)
+        if mon and hasattr(mon, "init_db"):
+            mon.init_db()
+    except Exception as exc:
+        print(f"[PASSENGER] init_db monitoring ignoré: {exc}", flush=True)
+
     if os.environ.get("BININGA_PASSENGER_BOOT_SERVICES") != "1":
         return
 
@@ -35,8 +43,7 @@ def _bootstrap() -> None:
                 fn()
 
         mon = getattr(bininga_server, "_MON", None)
-        if mon and hasattr(mon, "init_db") and hasattr(mon, "start_scheduler"):
-            mon.init_db()
+        if mon and hasattr(mon, "start_scheduler"):
             mon.start_scheduler(
                 get_sessions_fn=lambda: len(getattr(bininga_server, "ACTIVE_SESSIONS", [])),
                 get_blocked_fn=lambda: len(getattr(bininga_server, "BLOCKED_IPS", [])),
