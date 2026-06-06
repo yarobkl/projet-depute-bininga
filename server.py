@@ -1076,7 +1076,7 @@ def _build_opinion_payload(days: int) -> dict:
         return {"ok": False, "message":
                 "Aucun article disponible pour cette période. Lancez d'abord la veille YARO IA."}
 
-    # Corpus court pour laisser de la place à la réponse JSON
+    # Corpus court — titres seulement
     lines = []
     for i, a in enumerate(articles[:15], 1):
         lines.append(f"{i}. [{a['source']}] {a['title'][:100]}")
@@ -1084,18 +1084,17 @@ def _build_opinion_payload(days: int) -> dict:
 
     yt_section = ""
     if youtube_videos:
-        yt_lines = [f"- {v['title'][:70]} ({v['views']:,} vues)" for v in youtube_videos[:5]]
-        yt_section = "\nYouTube : " + " | ".join(yt_lines)
+        yt_section = "\nYouTube : " + " | ".join(v['title'][:60] for v in youtube_videos[:4])
 
+    # Prompt minimal — pas d'articles dans la réponse (évite la troncature)
     prompt = (
-        f"Analyse {len(articles)} articles sur BININGA (ministre Congo-Brazzaville), {days}j :\n"
+        f"Analyse {len(articles)} titres presse sur BININGA (ministre Congo-Brazzaville), {days}j :\n"
         f"{corpus}{yt_section}\n\n"
-        "JSON UNIQUEMENT (pas de markdown) :\n"
+        "Réponds en JSON UNIQUEMENT (pas de markdown, pas d'explication) :\n"
         '{"sentiment_positif":50,"sentiment_negatif":20,"sentiment_neutre":30,'
-        '"resume":"2 phrases max","recommandations":["action1","action2","action3","action4"],'
-        '"sujets":["theme1","theme2","theme3","theme4","theme5"],'
-        '"articles":[{"titre":"titre","source":"src","date":"2025-01-01","sentiment":"positif","url":"https://..."}]}\n'
-        "Règles : somme sentiments=100. Max 8 articles. Titres/sources sans apostrophes ni guillemets."
+        '"resume":"2 phrases courtes","recommandations":["action1","action2","action3","action4"],'
+        '"sujets":["theme1","theme2","theme3","theme4","theme5"]}\n'
+        "Règle unique : sentiment_positif + sentiment_negatif + sentiment_neutre = 100."
     )
 
     try:
@@ -1122,14 +1121,22 @@ def _build_opinion_payload(days: int) -> dict:
         print(f"[Opinion] Erreur IA/parse: {e}\nRaw: {raw[:200] if 'raw' in dir() else 'N/A'}")
         return {"ok": False, "message": f"Analyse IA indisponible : {e}"}
 
+    # Construire la liste d'articles depuis les données brutes (sans labellisation IA)
+    raw_articles = [
+        {"titre": a["title"], "source": a["source"], "date": a["date"],
+         "sentiment": "neutre", "extrait": (a.get("snippet") or "")[:120], "url": a["url"]}
+        for a in articles[:12]
+    ]
+
     result = {
         "ok": True, "days": days,
         "generated_at": datetime.now().isoformat(),
         "article_count": len(articles),
         "youtube_videos": youtube_videos,
+        "articles": raw_articles,
     }
     for k in ("sentiment_positif", "sentiment_negatif", "sentiment_neutre",
-              "resume", "recommandations", "sujets", "articles"):
+              "resume", "recommandations", "sujets"):
         result[k] = analysis.get(k)
     save_opinion_cache(result)
     return result
