@@ -1,0 +1,372 @@
+{
+  "source": "Journal Officiel de la République du Congo N° 18-2026 du Jeudi 30 avril 2026",
+  "decret_principal": "Décret n° 2026-176 du 24 avril 2026 portant nomination des membres du Gouvernement",
+  "date_signature": "24 avril 2026",
+  "president": "Denis SASSOU-NGUESSO",
+  "membres": [
+    {
+      "ordre": 0,
+      "titre": "Premier ministre, chef du Gouvernement",
+      "nom": "Anatole Collinet MAKOSSO",
+      "prenom": "Anatole Collinet",
+      "nom_famille": "MAKOSSO",
+      "genre": "M",
+      "decret": "Décret n° 2026-175 du 23 avril 2026"
+    },
+    {
+      "ordre": 1,
+      "titre": "Vice-Premier ministre chargé de la coordination des infrastructures de développement et de l'aménagement du territoire",
+      "nom": "Jean-Jacques BOUYA",
+      "prenom": "Jean-Jacques",
+      "nom_famille": "BOUYA",
+      "genre": "M"
+    },
+    {
+      "ordre": 2,
+      "titre": "Ministre d'État, ministre à la présidence chargé des affaires politiques",
+      "nom": "Pierre OBA",
+      "prenom": "Pierre",
+      "nom_famille": "OBA",
+      "genre": "M"
+    },
+    {
+      "ordre": 3,
+      "titre": "Ministre d'État, ministre de la construction, de l'urbanisme et de l'habitat",
+      "nom": "Alphonse Claude NSILOU",
+      "prenom": "Alphonse Claude",
+      "nom_famille": "NSILOU",
+      "genre": "M"
+    },
+    {
+      "ordre": 4,
+      "titre": "Ministre d'État, ministre de la fonction publique, du travail et du dialogue social",
+      "nom": "Pierre MABIALA",
+      "prenom": "Pierre",
+      "nom_famille": "MABIALA",
+      "genre": "M"
+    },
+    {
+      "ordre": 5,
+      "titre": "Ministre de la défense nationale",
+      "nom": "Raymond Zéphirin MBOULOU",
+      "prenom": "Raymond Zéphirin",
+      "nom_famille": "MBOULOU",
+      "genre": "M"
+    },
+    {
+      "ordre": 6,
+      "titre": "Ministre de l'intérieur et de la décentralisation",
+      "nom": "Jean OLESSONGO ONDAYE",
+      "prenom": "Jean",
+      "nom_famille": "OLESSONGO ONDAYE",
+      "genre": "M"
+    },
+    {
+      "ordre": 7,
+      "titre": "Ministre de la culture, des arts, du patrimoine national et de l'industrie touristique",
+      "nom": "Jean-Claude GAKOSSO",
+      "prenom": "Jean-Claude",
+      "nom_famille": "GAKOSSO",
+      "genre": "M"
+    },
+    {
+      "ordre": 8,
+      "titre": "Ministre des sports, de la jeunesse et de l'éducation civique",
+      "nom": "Hugues GOUELONDELE",
+      "prenom": "Hugues",
+      "nom_famille": "GOUELONDELE",
+      "genre": "M"
+    },
+    {
+      "ordre": 9,
+      "titre": "Ministre des affaires étrangères, de la francophonie et des Congolais de l'étranger",
+      "nom": "Constant Serges BOUNDA",
+      "prenom": "Constant Serges",
+      "nom_famille": "BOUNDA",
+      "genre": "M"
+    },
+    {
+      "ordre": 10,
+      "titre": "Ministre du contrôle d'État, de la qualité du service public et de la lutte contre les antivaleurs",
+      "nom": "Noël Léonard ESSONGO",
+      "prenom": "Noël Léonard",
+      "nom_famille": "ESSONGO",
+      "genre": "M"
+    },
+    {
+      "ordre": 11,
+      "titre": "Ministre de l'agriculture et de l'élevage",
+      "nom": "Paul Valentin NGOBO",
+      "prenom": "Paul Valentin",
+      "nom_famille": "NGOBO",
+      "genre": "M"
+    },
+    {
+      "ordre": 12,
+      "titre": "Ministre des finances, du budget et du portefeuille public",
+      "nom": "Christian YOKA",
+      "prenom": "Christian",
+      "nom_famille": "YOKA",
+      "genre": "M"
+    },
+    {
+      "ordre": 13,
+      "titre": "Ministre de l'énergie et de l'hydraulique",
+      "nom": "Jean Richard ITOUA",
+      "prenom": "Jean Richard",
+      "nom_famille": "ITOUA",
+      "genre": "M"
+    },
+    {
+      "ordre": 14,
+      "titre": "Ministre de la communication et des médias, porte-parole du Gouvernement",
+      "nom": "Thierry Lézin MOUNGALLA",
+      "prenom": "Thierry Lézin",
+      "nom_famille": "MOUNGALLA",
+      "genre": "M"
+    },
+    {
+      "ordre": 15,
+      "titre": "Ministre des affaires foncières et du domaine public",
+      "nom": "Jean-Marc THYSTERE TCHIKAYA",
+      "prenom": "Jean-Marc",
+      "nom_famille": "THYSTERE TCHIKAYA",
+      "genre": "M"
+    },
+    {
+      "ordre": 16,
+      "titre": "Ministre de la santé et de la population",
+      "nom": "Jean Rosaire IBARA",
+      "prenom": "Jean Rosaire",
+      "nom_famille": "IBARA",
+      "genre": "M"
+    },
+    {
+      "ordre": 17,
+      "titre": "Ministre de l'économie, du plan, de la statistique et de la prospective",
+      "nom": "Ludovic NGATSE",
+      "prenom": "Ludovic",
+      "nom_famille": "NGATSE",
+      "genre": "M"
+    },
+    {
+      "ordre": 18,
+      "titre": "Ministre de l'environnement, du bassin du Congo et du développement durable",
+      "nom": "NONAULT",
+      "prenom": "",
+      "nom_famille": "NONAULT",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 19,
+      "titre": "Ministre de l'économie forestière",
+      "nom": "Rosalie MATONDO",
+      "prenom": "Rosalie",
+      "nom_famille": "MATONDO",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 20,
+      "titre": "Ministre de la sécurité sociale, de la prévoyance sociale et de la solidarité nationale",
+      "nom": "Ghislaine Ingrid Olga EBOUKA BABAKAS",
+      "prenom": "Ghislaine Ingrid Olga",
+      "nom_famille": "EBOUKA BABAKAS",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 21,
+      "titre": "Ministre des transports, de l'aviation civile et de la marine marchande",
+      "nom": "Josué Rodrigue NGOUONIMBA",
+      "prenom": "Josué Rodrigue",
+      "nom_famille": "NGOUONIMBA",
+      "genre": "M"
+    },
+    {
+      "ordre": 22,
+      "titre": "Garde des Sceaux, Ministre de la Justice, des droits humains et de la promotion des peuples autochtones",
+      "nom": "Aimé Ange Wilfrid BININGA",
+      "prenom": "Aimé Ange Wilfrid",
+      "nom_famille": "BININGA",
+      "genre": "M",
+      "note": "Personnalité principale de ce site"
+    },
+    {
+      "ordre": 23,
+      "titre": "Ministre du commerce, des approvisionnements et de la consommation, chargé de la ZLECAF",
+      "nom": "Jacqueline Lydia MIKOLO",
+      "prenom": "Jacqueline Lydia",
+      "nom_famille": "MIKOLO",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 24,
+      "titre": "Ministre de la coopération et de la promotion du partenariat public-privé",
+      "nom": "Denis Christel SASSOU NGUESSO",
+      "prenom": "Denis Christel",
+      "nom_famille": "SASSOU NGUESSO",
+      "genre": "M"
+    },
+    {
+      "ordre": 25,
+      "titre": "Ministre de la pêche, de l'économie fluviale et des voies navigables",
+      "nom": "Honoré SAYI",
+      "prenom": "Honoré",
+      "nom_famille": "SAYI",
+      "genre": "M"
+    },
+    {
+      "ordre": 26,
+      "titre": "Ministre de la recherche scientifique et de l'innovation technologique",
+      "nom": "Rigobert MABOUNDOU",
+      "prenom": "Rigobert",
+      "nom_famille": "MABOUNDOU",
+      "genre": "M"
+    },
+    {
+      "ordre": 27,
+      "titre": "Ministre des affaires sociales et de l'action humanitaire",
+      "nom": "Marie-France Lydie Hélène PONGAULT",
+      "prenom": "Marie-France Lydie Hélène",
+      "nom_famille": "PONGAULT",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 28,
+      "titre": "Ministre des hydrocarbures",
+      "nom": "Stev Simplice ONANGA",
+      "prenom": "Stev Simplice",
+      "nom_famille": "ONANGA",
+      "genre": "M"
+    },
+    {
+      "ordre": 29,
+      "titre": "Ministre des industries minières et de la géologie",
+      "nom": "Urbain Fiacre OPO",
+      "prenom": "Urbain Fiacre",
+      "nom_famille": "OPO",
+      "genre": "M"
+    },
+    {
+      "ordre": 30,
+      "titre": "Ministre du développement industriel, des zones économiques spéciales et de la promotion du secteur privé",
+      "nom": "Michel DJOMBO",
+      "prenom": "Michel",
+      "nom_famille": "DJOMBO",
+      "genre": "M"
+    },
+    {
+      "ordre": 31,
+      "titre": "Ministre de l'enseignement supérieur",
+      "nom": "Delphine Edith EMMANUEL ADOUKI",
+      "prenom": "Delphine Edith",
+      "nom_famille": "EMMANUEL ADOUKI",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 32,
+      "titre": "Ministre de l'enseignement préscolaire, primaire, secondaire et de l'alphabétisation",
+      "nom": "Jean Luc MOUTHOU",
+      "prenom": "Jean Luc",
+      "nom_famille": "MOUTHOU",
+      "genre": "M"
+    },
+    {
+      "ordre": 33,
+      "titre": "Ministre des petites, moyennes entreprises et de l'artisanat",
+      "nom": "KIMBATSA née GOMA",
+      "prenom": "",
+      "nom_famille": "KIMBATSA",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 34,
+      "titre": "Ministre de la réforme de l'État et des relations avec le Parlement",
+      "nom": "Luc Joseph OKIO",
+      "prenom": "Luc Joseph",
+      "nom_famille": "OKIO",
+      "genre": "M"
+    },
+    {
+      "ordre": 35,
+      "titre": "Ministre de la promotion de la femme, de l'intégration de la femme au développement, du pacte social et de l'économie informelle",
+      "nom": "Inès Nefer Bertille INGANI épouse VOUMBO YALO",
+      "prenom": "Inès Nefer Bertille",
+      "nom_famille": "INGANI VOUMBO YALO",
+      "genre": "Mme"
+    },
+    {
+      "ordre": 36,
+      "titre": "Ministre de l'assainissement urbain, du développement local et de l'entretien routier",
+      "nom": "Juste Désiré MOUNDELE",
+      "prenom": "Juste Désiré",
+      "nom_famille": "MOUNDELE",
+      "genre": "M"
+    },
+    {
+      "ordre": 37,
+      "titre": "Ministre de l'emploi, de l'entrepreneuriat et de la formation qualifiante",
+      "nom": "Rodrigue Charles MALANDA SAMBA",
+      "prenom": "Rodrigue Charles",
+      "nom_famille": "MALANDA SAMBA",
+      "genre": "M"
+    },
+    {
+      "ordre": 38,
+      "titre": "Ministre des postes, des télécommunications et de l'économie numérique",
+      "nom": "Serges NZE",
+      "prenom": "Serges",
+      "nom_famille": "NZE",
+      "genre": "M"
+    },
+    {
+      "ordre": 39,
+      "titre": "Ministre de l'enseignement technique et professionnel",
+      "nom": "Gustave Fulgence René ADICOLLE GOUM",
+      "prenom": "Gustave Fulgence René",
+      "nom_famille": "ADICOLLE GOUM",
+      "genre": "M"
+    },
+    {
+      "ordre": 40,
+      "titre": "Ministre délégué auprès du ministre de la culture, des arts, de l'industrie touristique et du patrimoine national, chargé de l'industrie touristique",
+      "nom": "Prince BAHAMBOULA",
+      "prenom": "Prince",
+      "nom_famille": "BAHAMBOULA",
+      "genre": "M"
+    },
+    {
+      "ordre": 41,
+      "titre": "Ministre délégué auprès du ministre des sports, de la jeunesse et de l'éducation civique, chargé de la jeunesse et de l'éducation civique",
+      "nom": "MBOKO",
+      "prenom": "",
+      "nom_famille": "MBOKO",
+      "genre": "M"
+    }
+  ],
+  "autres_nominations": [
+    {
+      "titre": "Ministre d'État, directeur de cabinet du Président de la République",
+      "nom": "Florent NTSIBA",
+      "prenom": "Florent",
+      "nom_famille": "NTSIBA",
+      "genre": "M",
+      "decret": "Décret n° 2026-172 du 22 avril 2026"
+    },
+    {
+      "titre": "Ministre, secrétaire général de la Présidence de la République",
+      "nom": "Stevie PEA ONDONGO",
+      "prenom": "Stevie",
+      "nom_famille": "PEA ONDONGO",
+      "genre": "M",
+      "decret": "Décret n° 2026-173 du 22 avril 2026"
+    }
+  ],
+  "avancements_militaires": {
+    "decret": "Décret n° 2026-125 du 14 avril 2026",
+    "note": "Avancement au grade de Lieutenant, Armée de Terre, spécialité Médecine, titre définitif pour compter du 1er janvier 2024",
+    "officiers": [
+      {"nom": "AMPION ONGOUBA MOKE", "prenom": "Clinsmann", "grade": "Lieutenant", "corps": "Médecine militaire"},
+      {"nom": "BOKATOLA KONDA", "prenom": "Camille Osée", "grade": "Lieutenant", "corps": "Médecine militaire"}
+    ]
+  }
+}

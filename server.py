@@ -985,6 +985,83 @@ def save_opinion_cache(data: dict):
     except Exception as e:
         print(f"[Opinion] Erreur écriture cache: {e}")
 
+# ── Journal Officiel — base de connaissances gouvernement ───────────────────
+GOUVERNEMENT_FILE = "gouvernement.json"
+
+def _load_gouvernement() -> dict:
+    try:
+        with open(GOUVERNEMENT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _normalize(s: str) -> str:
+    import unicodedata
+    s = unicodedata.normalize("NFD", s.lower())
+    return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+def _search_gouvernement(question: str) -> str | None:
+    """Cherche dans gouvernement.json le membre correspondant à la question.
+    Retourne une phrase de réponse ou None si rien trouvé."""
+    gov = _load_gouvernement()
+    if not gov:
+        return None
+    membres = gov.get("membres", []) + gov.get("autres_nominations", [])
+    qn = _normalize(question)
+
+    # Mots trop génériques à ignorer dans le score des titres
+    _generics = {"ministre", "ministere", "etat", "charge", "charge", "de", "du", "la", "le", "les", "des", "et", "au"}
+
+    # Score chaque membre
+    best_score = 0
+    best = None
+    for m in membres:
+        score = 0
+        nom_n = _normalize(m.get("nom", ""))
+        titre_n = _normalize(m.get("titre", ""))
+        # Correspondance NOM (fort : chaque mot du nom trouvé dans la question = +10)
+        nom_words = [w for w in nom_n.split() if len(w) > 2]
+        matches = sum(1 for w in nom_words if w in qn)
+        if matches:
+            score += matches * 10
+        # Correspondance TITRE (mots spécifiques du portefeuille, hors générics)
+        # On remplace les apostrophes par des espaces avant de découper
+        titre_tokens = re.split(r"[\s''’]+", titre_n)
+        titre_words = [re.sub(r"[^a-z0-9]", "", w) for w in titre_tokens]
+        titre_words = [w for w in titre_words if len(w) > 4 and w not in _generics]
+        t_matches = sum(1 for w in titre_words if w in qn)
+        if t_matches:
+            score += t_matches * 4
+        if score > best_score:
+            best_score = score
+            best = m
+
+    # Seuil minimum : au moins 8 points (nom partiel) ou 4 points (deux mots de titre spécifiques)
+    if not best or best_score < 4:
+        # Cas "liste" ou "gouvernement entier"
+        if any(w in qn for w in ["liste", "gouvernement", "membres", "composition", "cabinet"]):
+            pm = next((m for m in membres if "premier ministre" in _normalize(m.get("titre", ""))), None)
+            total = len(gov.get("membres", []))
+            pm_txt = f"Premier ministre : {pm['nom']}. " if pm else ""
+            return (
+                f"Le gouvernement de la République du Congo (JO n° 18-2026 du 30 avril 2026) "
+                f"compte {total} membres. {pm_txt}"
+                f"Posez-moi une question précise, par exemple : "
+                f"'Qui est ministre de la santé ?' ou 'Quel est le titre de BININGA ?'"
+            )
+        return None
+
+    titre = best.get("titre", "")
+    nom = best.get("nom", "")
+    decret = best.get("decret", "")
+    decret_txt = f" ({decret})" if decret else ""
+    source = gov.get("source", "Journal Officiel de la République du Congo N° 18-2026 du 30 avril 2026")
+    return (
+        f"Selon le {source}{decret_txt}, "
+        f"{nom} est {titre}."
+    )
+
+
 def _strip_html_entities(text: str) -> str:
     import re, html
     text = html.unescape(text or "")
@@ -2946,14 +3023,26 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # ── Présentation / biographie ─────────────────────────────────
                 elif not _is_followup and any(w in q for w in ["qui est", "qui est-il", "présente", "présentation", "c'est qui", "c est qui", "biographie", "bio"]):
-                    intro = about.get("intro", "")
-                    paras = about.get("paragraphs", [])
-                    if intro:
-                        reply = intro[:500] + ("..." if len(intro) > 500 else "")
-                    elif paras:
-                        reply = paras[0][:500] + ("..." if len(paras[0]) > 500 else "")
-                    else:
-                        reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor public, il représente la 1re circonscription d'Ewo à l'Assemblée Nationale depuis 2017."
+                    # Si la question concerne un autre membre du gouvernement, utiliser la base JO
+                    bininga_keywords = ["bininga", "lui", "il", "son rôle", "son titre", "ce ministre"]
+                    is_about_bininga = (
+                        any(w in q for w in bininga_keywords)
+                        or not any(w in q for w in ["qui est", "c'est qui", "c est qui"])
+                        or all(w not in q for w in ["makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo", "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua", "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault", "matondo", "ebouka", "ngouonimba", "mikolo", "sassou", "sayi", "maboundou", "pongault", "onanga", "djombo", "mouthou", "kimbatsa", "okio", "ingani", "moundele", "malanda", "nze", "adicolle", "bahamboula", "mboko", "ntsiba", "pea ondongo"])
+                    )
+                    if not is_about_bininga:
+                        gov_reply = _search_gouvernement(question)
+                        if gov_reply:
+                            reply = gov_reply
+                    if reply is None:
+                        intro = about.get("intro", "")
+                        paras = about.get("paragraphs", [])
+                        if intro:
+                            reply = intro[:500] + ("..." if len(intro) > 500 else "")
+                        elif paras:
+                            reply = paras[0][:500] + ("..." if len(paras[0]) > 500 else "")
+                        else:
+                            reply = f"{nom} est {role}. Docteur en droit et Inspecteur principal du Trésor public, il représente la 1re circonscription d'Ewo à l'Assemblée Nationale depuis 2017."
 
                 # ── Parcours / formation / carrière ───────────────────────────
                 elif not _is_followup and any(w in q for w in ["parcours", "carrière", "formation", "études", "doctorat", "trésor", "inspecteur", "diplôme", "université", "étudié"]):
@@ -2966,25 +3055,38 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"{nom} est Docteur en droit et Inspecteur principal du Trésor public. Il a exercé plusieurs fonctions ministérielles importantes au Congo avant d'être élu Député d'Ewo."
 
                 # ── Gouvernement / Journal Officiel / autres ministres ────────
-                elif not _is_followup and any(w in q for w in ["journal officiel", "composition du gouvernement", "gouvernement congolais", "liste des ministres", "conseil des ministres", "cabinet ministériel", "qui est ministre", "quel ministre", "ministre de la", "ministre du", "ministre des", "premier ministre", "chef du gouvernement", "qui dirige", "gouvernement de"]):
-                    ai_gov_prompt = (
-                        f"Tu es DA, assistant virtuel du site de {nom}, {role}.\n"
-                        f"Réponds en français, en 3-4 phrases. Tu peux répondre sur le gouvernement congolais "
-                        f"(République du Congo, Brazzaville) et ses membres, tout en soulignant le rôle de {nom} "
-                        f"quand c'est pertinent. Si tu n'es pas sûr d'une information, dis-le clairement.\n"
-                        f"Question : {question}\nDA:"
-                    )
-                    try:
-                        reply = _gemini_call(ai_gov_prompt, max_tokens=300, timeout=15)
-                        if reply.lower().startswith("da:"):
-                            reply = reply[3:].strip()
-                    except Exception:
-                        reply = (
-                            f"Pour consulter la composition officielle du gouvernement congolais et les nominations "
-                            f"publiées au Journal Officiel, je vous recommande de visiter le site officiel de la "
-                            f"Présidence de la République du Congo ou le portail gouvernemental. "
-                            f"{nom} occupe quant à lui les fonctions de {role}."
+                elif not _is_followup and any(w in q for w in ["journal officiel", "composition du gouvernement", "gouvernement congolais", "liste des ministres", "conseil des ministres", "cabinet ministériel", "qui est ministre", "quel ministre", "ministre de la", "ministre du", "ministre des", "premier ministre", "chef du gouvernement", "qui dirige", "gouvernement de", "makosso", "bouya", "oba", "nsilou", "mabiala", "mboulou", "olessongo", "gakosso", "gouelondele", "bounda", "essongo", "ngobo", "yoka", "itoua", "moungalla", "thystere", "tchikaya", "ibara", "ngatse", "nonault", "matondo", "ebouka", "ngouonimba", "mikolo", "sassou nguesso", "sayi", "maboundou", "pongault", "onanga", "djombo", "emmanuel adouki", "mouthou", "kimbatsa", "okio", "ingani", "moundele", "malanda", "nze", "adicolle", "bahamboula", "mboko", "ntsiba", "pea ondongo"]):
+                    # 1. Chercher d'abord dans la base JO (réponse exacte)
+                    gov_reply = _search_gouvernement(question)
+                    if gov_reply:
+                        reply = gov_reply
+                    else:
+                        # 2. Fallback IA avec contexte gouvernement
+                        gov = _load_gouvernement()
+                        gov_context = ""
+                        if gov.get("membres"):
+                            lines = []
+                            for m in gov["membres"][:42]:
+                                lines.append(f"- {m['nom']} : {m['titre']}")
+                            gov_context = "Composition du gouvernement (JO Congo n° 18-2026, 30 avril 2026) :\n" + "\n".join(lines)
+                        ai_gov_prompt = (
+                            f"Tu es DA, assistant virtuel du site de {nom}, {role}.\n"
+                            f"{gov_context}\n\n"
+                            f"Réponds en français, de façon précise et factuelle. "
+                            f"Utilise la liste ci-dessus pour répondre. "
+                            f"Si la personne demandée figure dans la liste, donne son titre exact.\n"
+                            f"Question : {question}\nDA:"
                         )
+                        try:
+                            reply = _gemini_call(ai_gov_prompt, max_tokens=300, timeout=15)
+                            if reply.lower().startswith("da:"):
+                                reply = reply[3:].strip()
+                        except Exception:
+                            reply = (
+                                f"Pour consulter la composition officielle du gouvernement congolais, "
+                                f"référez-vous au Journal Officiel n° 18-2026 du 30 avril 2026. "
+                                f"{nom} occupe quant à lui les fonctions de {role}."
+                            )
 
                 # ── Fonctions / titre / ministre (BININGA spécifiquement) ─────
                 elif not _is_followup and (any(w in q for w in ["fonction", "rôle", "titre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]) or ("ministre" in q and any(w in q for w in ["bininga", "il", "son", "quel est son", "quel est le"]))):
