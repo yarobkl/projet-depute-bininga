@@ -2948,8 +2948,29 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     else:
                         reply = f"{nom} est Docteur en droit et Inspecteur principal du Trésor public. Il a exercé plusieurs fonctions ministérielles importantes au Congo avant d'être élu Député d'Ewo."
 
-                # ── Fonctions / titre / ministre ──────────────────────────────
-                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]):
+                # ── Gouvernement / Journal Officiel / autres ministres ────────
+                elif any(w in q for w in ["journal officiel", "composition du gouvernement", "gouvernement congolais", "liste des ministres", "conseil des ministres", "cabinet ministériel", "qui est ministre", "quel ministre", "ministre de la", "ministre du", "ministre des", "premier ministre", "chef du gouvernement", "qui dirige", "gouvernement de"]):
+                    ai_gov_prompt = (
+                        f"Tu es DA, assistant virtuel du site de {nom}, {role}.\n"
+                        f"Réponds en français, en 3-4 phrases. Tu peux répondre sur le gouvernement congolais "
+                        f"(République du Congo, Brazzaville) et ses membres, tout en soulignant le rôle de {nom} "
+                        f"quand c'est pertinent. Si tu n'es pas sûr d'une information, dis-le clairement.\n"
+                        f"Question : {question}\nDA:"
+                    )
+                    try:
+                        reply = _gemini_call(ai_gov_prompt, max_tokens=300, timeout=15)
+                        if reply.lower().startswith("da:"):
+                            reply = reply[3:].strip()
+                    except Exception:
+                        reply = (
+                            f"Pour consulter la composition officielle du gouvernement congolais et les nominations "
+                            f"publiées au Journal Officiel, je vous recommande de visiter le site officiel de la "
+                            f"Présidence de la République du Congo ou le portail gouvernemental. "
+                            f"{nom} occupe quant à lui les fonctions de {role}."
+                        )
+
+                # ── Fonctions / titre / ministre (BININGA spécifiquement) ─────
+                elif any(w in q for w in ["fonction", "rôle", "titre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]) or ("ministre" in q and any(w in q for w in ["bininga", "il", "son", "quel est son", "quel est le"])):
                     reply = f"{nom} est actuellement {role}. Il est Député de la 1re circonscription d'Ewo depuis 2017, et a exercé les fonctions de Ministre des Finances avant de prendre en charge la Justice."
 
                 # ── Justice / réformes ────────────────────────────────────────
@@ -3229,13 +3250,15 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             ax.get("title","") for ax in programme.get("axes",[])[:4]
                             if isinstance(ax, dict) and ax.get("title")
                         )
-                        ai_prompt = f"""Tu es DA, assistante virtuelle du site de {nom}, {role}.
-Réponds en français, chaleureusement, en 2-3 phrases max, uniquement sur {nom}.
-Si tu ne sais pas, oriente vers le formulaire de contact.
-Contexte : {about_intro} Programme : {prog_axes}
+                        ai_prompt = f"""Tu es DA, assistante virtuelle du site officiel de {nom}, {role} (République du Congo, Brazzaville).
+Réponds en français, chaleureusement, en 3-4 phrases max.
+Tu peux répondre sur {nom}, son action politique, le gouvernement congolais, l'Assemblée Nationale et la politique congolaise en général.
+Pour les questions très éloignées du contexte congolais ou de {nom}, oriente vers le formulaire de contact.
+Contexte sur {nom} : {about_intro}
+Programme : {prog_axes}
 {hist_txt}Visiteur: {question}
 DA:"""
-                        ai_reply = _gemini_call(ai_prompt, max_tokens=150, timeout=12)
+                        ai_reply = _gemini_call(ai_prompt, max_tokens=300, timeout=15)
                         # Nettoyer si le modèle répète "DA:"
                         if ai_reply.lower().startswith("da:"):
                             ai_reply = ai_reply[3:].strip()
