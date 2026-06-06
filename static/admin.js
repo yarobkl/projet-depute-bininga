@@ -3851,7 +3851,7 @@ async function loadOpinion(days, force) {
   _opDays = days;
 
   // Onglets actifs
-  ["7", "30"].forEach(d => {
+  ["3","7","15","30","90","180","365"].forEach(d => {
     const btn = document.getElementById("op-btn-" + d);
     if (!btn) return;
     const on = String(days) === d;

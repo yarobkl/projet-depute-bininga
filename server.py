@@ -2467,7 +2467,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
             qs_op = parse_qs(urlparse(self.path).query)
             days  = int(qs_op.get("days", ["7"])[0])
-            if days not in (7, 30):
+            if days not in (3, 7, 15, 30, 90, 180, 365):
                 days = 7
             force = qs_op.get("force", ["0"])[0] == "1"
             peek  = qs_op.get("peek",  ["0"])[0] == "1"  # lecture cache seule, sans recalcul
