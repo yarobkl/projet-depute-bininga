@@ -1076,30 +1076,26 @@ def _build_opinion_payload(days: int) -> dict:
         return {"ok": False, "message":
                 "Aucun article disponible pour cette période. Lancez d'abord la veille YARO IA."}
 
-    # Limiter le corpus pour laisser de la place à la réponse JSON
+    # Corpus court pour laisser de la place à la réponse JSON
     lines = []
-    for i, a in enumerate(articles[:20], 1):
-        snip = (a.get("snippet") or "")[:100].replace("\n", " ")
-        lines.append(f"{i}. [{a['source']}] {a['title'][:120]} — {snip}")
+    for i, a in enumerate(articles[:15], 1):
+        lines.append(f"{i}. [{a['source']}] {a['title'][:100]}")
     corpus = "\n".join(lines)
 
     yt_section = ""
     if youtube_videos:
-        yt_lines = [f"- [{v['channel']}] {v['title'][:80]} ({v['views']:,} vues)" for v in youtube_videos[:8]]
-        yt_section = f"\n\nVidéos YouTube ({len(youtube_videos)}) :\n" + "\n".join(yt_lines)
+        yt_lines = [f"- {v['title'][:70]} ({v['views']:,} vues)" for v in youtube_videos[:5]]
+        yt_section = "\nYouTube : " + " | ".join(yt_lines)
 
     prompt = (
-        "Tu es un analyste politique spécialisé en communication pour personnalités "
-        "publiques africaines.\n\n"
-        f"Articles sur BININGA (Garde des Sceaux, Congo-Brazzaville), {days} derniers jours :\n\n"
+        f"Analyse {len(articles)} articles sur BININGA (ministre Congo-Brazzaville), {days}j :\n"
         f"{corpus}{yt_section}\n\n"
-        "Réponds UNIQUEMENT avec un objet JSON valide (sans markdown, sans backticks) avec ces clés exactes :\n"
-        '{"sentiment_positif":0,"sentiment_negatif":0,"sentiment_neutre":100,'
-        '"resume":"texte","recommandations":["r1","r2","r3","r4"],'
-        '"sujets":["s1","s2","s3","s4","s5"],'
-        '"articles":[{"titre":"t","source":"s","date":"d","sentiment":"neutre","extrait":"e","url":"u"}]}\n'
-        "Règles : les 3 sentiments somment à 100. Maximum 10 articles. "
-        "Extraits courts (1 phrase max). Pas de caractères spéciaux dans les chaînes JSON."
+        "JSON UNIQUEMENT (pas de markdown) :\n"
+        '{"sentiment_positif":50,"sentiment_negatif":20,"sentiment_neutre":30,'
+        '"resume":"2 phrases max","recommandations":["action1","action2","action3","action4"],'
+        '"sujets":["theme1","theme2","theme3","theme4","theme5"],'
+        '"articles":[{"titre":"titre","source":"src","date":"2025-01-01","sentiment":"positif","url":"https://..."}]}\n'
+        "Règles : somme sentiments=100. Max 8 articles. Titres/sources sans apostrophes ni guillemets."
     )
 
     try:
