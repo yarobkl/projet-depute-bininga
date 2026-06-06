@@ -1330,7 +1330,7 @@ def _gemini_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
                 err_str = str(e)
                 if "429" in err_str or "404" in err_str:
                     continue
-                raise
+                break  # 503/500/autre → sortir et essayer Groq
 
     # Fallback Groq
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
