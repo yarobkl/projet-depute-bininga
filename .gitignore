@@ -46,3 +46,7 @@ monitoring.db-shm
 monitoring.db-wal
 news.db
 youtube.json
+bininga.db
+bininga.db-shm
+bininga.db-wal
+opinion_cache.json
