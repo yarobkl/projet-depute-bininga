@@ -3070,22 +3070,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                                 lines.append(f"- {m['nom']} : {m['titre']}")
                             gov_context = "Composition du gouvernement (JO Congo n° 18-2026, 30 avril 2026) :\n" + "\n".join(lines)
                         ai_gov_prompt = (
-                            f"Tu es DA, assistant virtuel du site de {nom}, {role}.\n"
+                            f"Tu es DA, assistant virtuel factuel. Réponds UNIQUEMENT en te basant sur la liste ci-dessous, sans inventer.\n"
+                            f"Ne commence JAMAIS par 'C'est une excellente question' ou des formules de politesse inutiles.\n"
+                            f"Réponds directement et brièvement en 1-2 phrases.\n"
                             f"{gov_context}\n\n"
-                            f"Réponds en français, de façon précise et factuelle. "
-                            f"Utilise la liste ci-dessus pour répondre. "
-                            f"Si la personne demandée figure dans la liste, donne son titre exact.\n"
-                            f"Question : {question}\nDA:"
+                            f"Question : {question}\nRéponse directe :"
                         )
                         try:
-                            reply = _gemini_call(ai_gov_prompt, max_tokens=300, timeout=15)
-                            if reply.lower().startswith("da:"):
-                                reply = reply[3:].strip()
+                            reply = _gemini_call(ai_gov_prompt, max_tokens=200, timeout=15)
+                            for pfx in ["réponse directe :", "da :", "réponse :"]:
+                                if reply.lower().startswith(pfx):
+                                    reply = reply[len(pfx):].strip()
                         except Exception:
                             reply = (
-                                f"Pour consulter la composition officielle du gouvernement congolais, "
-                                f"référez-vous au Journal Officiel n° 18-2026 du 30 avril 2026. "
-                                f"{nom} occupe quant à lui les fonctions de {role}."
+                                f"Selon le Journal Officiel n° 18-2026 du 30 avril 2026, "
+                                f"{nom} est {role}. Pour les autres membres du gouvernement, "
+                                f"consultez le JO officiel de la République du Congo."
                             )
 
                 # ── Fonctions / titre / ministre (BININGA spécifiquement) ─────
