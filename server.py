@@ -1076,6 +1076,95 @@ def _search_gouvernement(question: str) -> str | None:
     )
 
 
+def _build_chat_knowledge(data: dict) -> str:
+    """Assemble un dossier de connaissances complet (site + Journal Officiel).
+    Ce dossier est injecté dans le prompt de l'IA pour l'ancrer sur les vraies
+    données et l'empêcher d'inventer."""
+    parts = []
+    hero  = data.get("hero", {})
+    about = data.get("about", {})
+    nom  = f"{hero.get('firstName','')} {hero.get('lastName','')}".strip()
+    role = _strip_html_entities(hero.get("role", ""))
+
+    parts.append(f"# IDENTITÉ\nNom : {nom}\nFonction : {role}")
+    if hero.get("subtitle"):
+        parts.append(_strip_html_entities(hero["subtitle"]))
+
+    # Biographie
+    bio = [about.get("intro", "")] + about.get("paragraphs", [])
+    bio = [_strip_html_entities(b) for b in bio if b]
+    if bio:
+        parts.append("# BIOGRAPHIE\n" + "\n".join(bio))
+
+    # Parcours / carrière
+    parc = data.get("parcours", [])
+    if parc:
+        lines = [f"- {p.get('year','')} — {p.get('title','')} : {_strip_html_entities(p.get('desc',''))}"
+                 for p in parc]
+        parts.append("# PARCOURS / CARRIÈRE\n" + "\n".join(lines))
+
+    # Programme
+    axes = data.get("programme", {}).get("axes", [])
+    if axes:
+        lines = []
+        for a in axes:
+            pts = a.get("points", [])
+            pts_txt = "; ".join(_strip_html_entities(str(x)) for x in pts) if pts else ""
+            line = f"- {a.get('title','')} : {_strip_html_entities(a.get('text',''))}"
+            if pts_txt:
+                line += f" (Mesures : {pts_txt})"
+            lines.append(line)
+        parts.append("# PROGRAMME (axes stratégiques)\n" + "\n".join(lines))
+
+    # Réalisations / actions
+    cards = data.get("actus", {}).get("cards", [])
+    if cards:
+        lines = [f"- {c.get('year','')} {c.get('title','')} : {_strip_html_entities(c.get('desc',''))}"
+                 for c in cards[:14]]
+        parts.append("# RÉALISATIONS / ACTIONS CONCRÈTES\n" + "\n".join(lines))
+
+    # Chiffres clés
+    stats = data.get("stats", [])
+    if stats:
+        lines = [f"- {s.get('num','')} {s.get('label','')}" for s in stats]
+        parts.append("# CHIFFRES CLÉS\n" + "\n".join(lines))
+
+    # Contact
+    c = data.get("contact", {})
+    if c:
+        parts.append(
+            "# CONTACT\n"
+            f"Email : {c.get('email','')}\nAdresse : {c.get('address','')}\n"
+            f"BP : {c.get('bp','')} · Fax : {c.get('fax','')}\n"
+            f"Cabinet : {c.get('cabinet','')} · {c.get('city','')}"
+        )
+
+    # Journal Officiel — gouvernement + nominations + avancements militaires
+    gov = _load_gouvernement()
+    if gov.get("membres"):
+        src    = gov.get("source", "Journal Officiel n° 18-2026 du 30 avril 2026")
+        decret = gov.get("decret_principal", "")
+        lines = [f"# JOURNAL OFFICIEL DE LA RÉPUBLIQUE DU CONGO — {src}"]
+        if decret:
+            lines.append(f"{decret}. Président : {gov.get('president','')}.")
+        lines.append("\nComposition du Gouvernement :")
+        lines += [f"- {m['nom']} : {m['titre']}" for m in gov["membres"]]
+        autres = gov.get("autres_nominations", [])
+        if autres:
+            lines.append("\nAutres nominations (Présidence de la République) :")
+            for m in autres:
+                d = f" — {m['decret']}" if m.get("decret") else ""
+                lines.append(f"- {m['nom']} : {m['titre']}{d}")
+        av = gov.get("avancements_militaires", {})
+        if av.get("officiers"):
+            lines.append(f"\nAvancements militaires ({av.get('decret','')}) — {av.get('note','')} :")
+            for o in av["officiers"]:
+                lines.append(f"- {o.get('prenom','')} {o.get('nom','')} : {o.get('grade','')} ({o.get('corps','')})")
+        parts.append("\n".join(lines))
+
+    return "\n\n".join(parts)
+
+
 def _strip_html_entities(text: str) -> str:
     import re, html
     text = html.unescape(text or "")
@@ -3259,7 +3348,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = f"⚠️ Pour toute situation urgente, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site en précisant le caractère urgent de votre demande. Vous pouvez aussi appeler les services compétents selon la nature de votre urgence."
 
                 # ── Messages irrespectueux ────────────────────────────────────
-                elif not _is_followup and any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con"]):
+                elif not _is_followup and re.search(r"\b(idiot|nul|incompétent|voleur|menteur|corrompu|useless|inutile|merde|con|conne|connard)\b", q):
                     reply = "Je vous invite à formuler votre question de façon respectueuse. Je suis ici pour vous informer et vous aider. Si vous avez une préoccupation sérieuse, le formulaire de contact est à votre disposition."
 
                 # ── Questions fréquentes — Comment faire ─────────────────────
@@ -3402,30 +3491,33 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             role_lbl = "Visiteur" if h.get("role") == "user" else "DA"
                             hist_txt += f"{role_lbl}: {h.get('content','')}\n"
 
-                        about_intro = about.get("intro", "")[:200]
-                        prog_axes   = ", ".join(
-                            ax.get("title","") for ax in programme.get("axes",[])[:4]
-                            if isinstance(ax, dict) and ax.get("title")
-                        )
+                        # Dossier complet (site + Journal Officiel) → ancrage de l'IA
+                        knowledge = _build_chat_knowledge(data)
                         is_conv_followup = len(history_ctx) >= 2
                         followup_note = (
-                            "IMPORTANT : C'est une question de suivi dans une conversation en cours. "
-                            "Lis attentivement l'historique ci-dessus et réponds EN LIEN DIRECT avec ce qui vient d'être dit. "
-                            "Ne répète jamais une réponse déjà donnée. Rebondis sur le propos du visiteur.\n"
+                            "Cette question fait suite à la conversation ci-dessus : réponds en lien direct "
+                            "avec ce qui vient d'être dit, sans répéter une réponse déjà donnée.\n"
                             if is_conv_followup else ""
                         )
-                        ai_prompt = f"""Tu es DA, assistante virtuelle du site officiel de {nom}, {role} (République du Congo, Brazzaville).
-{followup_note}Réponds en français, chaleureusement, en 2-3 phrases max.
-Tu peux répondre sur {nom}, l'Assemblée Nationale et la politique congolaise.
-RÈGLE ABSOLUE : n'invente JAMAIS de noms de personnes, de ministres ou de fonctions. Si tu ne connais pas avec certitude le nom d'un membre du gouvernement, dis simplement que l'information n'est pas disponible et oriente vers le formulaire de contact. Ne donne jamais un nom approximatif.
-Pour les sujets sans rapport avec le Congo ou {nom}, oriente vers le formulaire de contact.
-Contexte : {about_intro} Programme : {prog_axes}
+                        ai_prompt = f"""Tu es DA, l'assistant virtuel officiel du site de {nom}, {role} (République du Congo, Brazzaville).
+
+Tu disposes ci-dessous d'un DOSSIER OFFICIEL contenant toutes les informations du site et du Journal Officiel. C'est ta SEULE source de vérité.
+
+RÈGLES STRICTES :
+- Réponds UNIQUEMENT à partir du dossier ci-dessous.
+- N'invente JAMAIS un nom, une date, un chiffre, une fonction ou un fait absent du dossier.
+- Si l'information n'est pas dans le dossier, dis-le honnêtement et propose le formulaire de contact du site.
+- Réponds en français, naturellement et chaleureusement, en 2 à 4 phrases. Va droit au but, sans formule du type « excellente question ».
+{followup_note}
+===== DÉBUT DU DOSSIER OFFICIEL =====
+{knowledge}
+===== FIN DU DOSSIER OFFICIEL =====
 
 Historique de la conversation :
 {hist_txt}
 Visiteur: {question}
 DA:"""
-                        ai_reply = _gemini_call(ai_prompt, max_tokens=300, timeout=15)
+                        ai_reply = _gemini_call(ai_prompt, max_tokens=400, timeout=20)
                         # Nettoyer si le modèle répète "DA:"
                         if ai_reply.lower().startswith("da:"):
                             ai_reply = ai_reply[3:].strip()
