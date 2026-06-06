@@ -1045,6 +1045,7 @@ def _search_gouvernement(question: str) -> str | None:
         "quelles", "sont", "est", "qui", "liste", "gouvernement", "membre", "membres",
         "actuel", "actuelle", "ministres", "nomme", "nommee", "pour", "dans", "avec", "sous",
         "republique", "congo", "monsieur", "madame", "leur", "cette", "notre",
+        "president", "presidence", "presidente", "gere", "dirige", "occupe",
     }
     q_words = [w for w in re.split(r"[^a-z0-9]+", qn) if len(w) > 3 and w not in _generics]
 
@@ -3119,7 +3120,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # A) Identité / biographie de BININGA → toujours sa biographie
                 _asks_bio = any(w in q for w in [
-                    "qui est", "présente", "presente", "biographie", "bio",
+                    "qui est", "qui est-il", "qui est il", "c'est qui", "c est qui", "cest qui",
+                    "présente", "presente", "biographie", "bio",
                     "parle moi de lui", "parle-moi de lui", "parle moi de bininga",
                     "parle-moi de bininga", "son parcours",
                 ])
@@ -3127,17 +3129,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     "qui es-tu", "qui es tu", "tu es qui", "c'est quoi da",
                     "présente-toi", "presente-toi", "présente toi", "qui est da",
                 ])
-                if _asks_bio and not _about_da:
-                    _other_named = any(n in q for n in _MINISTER_KEYS)
-                    _generic_gov = any(w in q for w in [
-                        "ministre de", "ministre du", "ministre des", "ministre à",
-                        "ministre a ", "ministre d'", "premier ministre", "ministres", "gouvernement",
-                    ])
-                    if "bininga" in q or (not _other_named and not _generic_gov):
-                        bio = about.get("intro", "") or (about.get("paragraphs") or [""])[0]
-                        if bio:
-                            self._json({"ok": True, "reply": bio[:600] + ("..." if len(bio) > 600 else "")})
-                            return
+
+                # A) Biographie de BININGA — UNIQUEMENT s'il est nommé explicitement
+                if _asks_bio and not _about_da and "bininga" in q \
+                        and not any(w in q for w in ["titre", "fonction", "poste", "occupe", "ministre de quoi"]):
+                    bio = about.get("intro", "") or (about.get("paragraphs") or [""])[0]
+                    if bio:
+                        self._json({"ok": True, "reply": bio[:600] + ("..." if len(bio) > 600 else "")})
+                        return
 
                 # A') Titre / fonction actuelle de BININGA
                 if "bininga" in q and any(w in q for w in ["titre", "fonction", "poste", "rôle", "role", "actuel", "actuellement", "ministre de quoi", "il fait quoi", "occupe"]):
@@ -3149,16 +3148,35 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
 
                 # B) Questions gouvernement / Journal Officiel → base JO
+                #    Déclencheurs élargis : mots gouvernement, noms, portefeuilles, postes présidence
                 _gov_trigger = any(w in q for w in [
                     "journal officiel", "gouvernement", "ministre", "ministère", "ministere",
                     "conseil des ministres", "cabinet ministériel", "premier ministre",
                     "chef du gouvernement", "garde des sceaux", "vice-premier", "délégué", "delegue",
+                    "directeur de cabinet", "secrétaire général", "secretaire general",
+                    # portefeuilles courants (sans le mot « ministre »)
+                    "justice", "santé", "sante", "finances", "défense", "defense",
+                    "intérieur", "interieur", "économie", "economie", "hydrocarbures",
+                    "affaires étrangères", "affaires etrangeres", "transports",
                 ] + _MINISTER_KEYS)
                 if _gov_trigger:
                     gov_reply = _search_gouvernement(question)
                     if gov_reply:
                         self._json({"ok": True, "reply": gov_reply})
                         return
+
+                # C) « qui est … » générique, sans cible identifiée → BININGA (sujet du site)
+                if _asks_bio and not _about_da:
+                    _other_named = any(n in q for n in _MINISTER_KEYS)
+                    _generic_gov = any(w in q for w in [
+                        "ministre de", "ministre du", "ministre des", "ministre à",
+                        "ministre a ", "ministre d'", "premier ministre", "ministres", "gouvernement",
+                    ])
+                    if not _other_named and not _generic_gov:
+                        bio = about.get("intro", "") or (about.get("paragraphs") or [""])[0]
+                        if bio:
+                            self._json({"ok": True, "reply": bio[:600] + ("..." if len(bio) > 600 else "")})
+                            return
 
                 # ── Détection question de suivi conversationnel ───────────────
                 # Si l'historique existe et que la question est une suite logique,
