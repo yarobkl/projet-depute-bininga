@@ -1838,6 +1838,55 @@ def _public_tracking_payload(entry: dict) -> dict:
         "steps": steps,
     }
 
+# Format du numéro de suivi : BIN-AAAA-XXXXXX (détection large pour repérer
+# aussi les codes mal recopiés et répondre « dossier introuvable »).
+_TRACKING_RE = re.compile(r"BIN[-\s]?(\d{4})[-\s]?([A-Z0-9]{5,12})", re.IGNORECASE)
+
+def _extract_tracking_code(text: str) -> str | None:
+    """Détecte un numéro de suivi dans un texte libre et le normalise."""
+    m = _TRACKING_RE.search(text or "")
+    if not m:
+        return None
+    return f"BIN-{m.group(1)}-{m.group(2).upper()}"
+
+def _chat_tracking_reply(question: str) -> str | None:
+    """Si la question contient un numéro de suivi, renvoie l'état du dossier
+    sous forme de message conversationnel. Sinon None."""
+    code = _extract_tracking_code(question)
+    if not code:
+        return None
+    found = next((c for c in load_contacts()
+                  if str(c.get("tracking_code", "")).upper() == code), None)
+    if not found:
+        return (
+            f"Je ne trouve aucun dossier correspondant au numéro {code}. "
+            f"Vérifiez le numéro (format BIN-ANNÉE-CODE) reçu lors de votre demande, "
+            f"ou contactez l'équipe via le formulaire du site."
+        )
+    p = _public_tracking_payload(found)
+    lignes = [
+        f"📋 Dossier {p['tracking_code']} — {p.get('objet', 'Demande')}",
+        f"Statut actuel : {p.get('status_label', 'Reçu')}",
+    ]
+    if p.get("submitted_at"):
+        lignes.append(f"Demande reçue le : {str(p['submitted_at'])[:16]}")
+    if p.get("decision_label"):
+        dec = f"Décision : {p['decision_label']}"
+        if p.get("decision_note"):
+            dec += f" — {p['decision_note']}"
+        lignes.append(dec)
+    rdv = p.get("appointment") or {}
+    if rdv.get("date"):
+        rdv_txt = f"Rendez-vous : {rdv['date']}"
+        if rdv.get("place"):
+            rdv_txt += f" à {rdv['place']}"
+        lignes.append(rdv_txt)
+    # Prochaine étape (première étape non franchie)
+    next_step = next((s for s in p.get("steps", []) if not s.get("done")), None)
+    if next_step:
+        lignes.append(f"Prochaine étape : {next_step['label']}")
+    return "\n".join(lignes)
+
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
@@ -3104,6 +3153,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 role = hero.get("role", "Garde des Sceaux, Ministre de la Justice, Député d'Ewo")
                 reply = None
                 history_ctx = payload.get("history", [])
+
+                # ════════ SUIVI DE DOSSIER (priorité absolue) ════════
+                # Si le visiteur tape son numéro de suivi (BIN-AAAA-XXXXXX),
+                # on lui renvoie immédiatement l'état de son dossier.
+                _track = _chat_tracking_reply(question)
+                if _track:
+                    self._json({"ok": True, "reply": _track})
+                    return
 
                 # Noms de famille des ministres (hors BININGA) pour la détection
                 _MINISTER_KEYS = [
