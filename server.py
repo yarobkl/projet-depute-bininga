@@ -2131,9 +2131,14 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # ── Bouclier multi-couches (IA/bots/lockdown/coffre-fort/canaris) ──────
         public_get = (
             method == "GET" and (
-                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml")
+                path in ("/", "/index.html", "/health", "/api/load", "/api/dossier",
+                         "/data.json", "/robots.txt", "/sitemap.xml")
                 or path.startswith(("/static/", "/images/"))
             )
+        )
+        # Endpoints publics POST (formulaires visiteurs, chatbot, suivi)
+        public_post = (
+            method == "POST" and path in ("/api/contact", "/api/chat")
         )
         path_clean = path.strip("/")
         admin_entry_get = method == "GET" and path_clean in (ADMIN_SECRET_PATH, ADMIN_SECRET_PATH + ".html")
@@ -2144,7 +2149,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             and path.startswith("/api/")
             and get_session(token)
         )
-        if _AI_GUARD_ENABLED and not public_get and not admin_entry_get and not login_post and not authenticated_admin_api:
+        if _AI_GUARD_ENABLED and not public_get and not public_post and not admin_entry_get and not login_post and not authenticated_admin_api:
             headers_dict = dict(self.headers)
             blocked, reason = AI_GUARD.inspect(ip, method, path, headers_dict, body_size)
             if blocked:
