@@ -107,7 +107,7 @@ def replacements_from_config(config: dict) -> dict[str, str]:
 
     return {
         old_full_name: new_full_name,
-        "bininga.cg": config.get("public_domain", "https://client.cg").replace("https://", ""),
+        "wude3801.odns.fr": config.get("public_domain", "https://client.cg").replace("https://", ""),
     }
 
 

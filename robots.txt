@@ -6,4 +6,4 @@ Disallow: /ministre.html
 Disallow: /gestion.html
 Disallow: /api/
 
-Sitemap: https://bininga.cg/sitemap.xml
+Sitemap: http://wude3801.odns.fr/sitemap.xml

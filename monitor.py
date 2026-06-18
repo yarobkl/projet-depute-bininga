@@ -134,7 +134,7 @@ YOUTUBE_GOOGLE_QUERIES = [
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (compatible; BiningaVeille/1.0; "
-        "+https://bininga.cg) Python/3"
+        "+http://wude3801.odns.fr) Python/3"
     ),
     "Accept": "application/rss+xml,application/xml,text/xml,*/*",
 }
@@ -438,7 +438,7 @@ def send_email_notification(new_articles: list[dict]):
         body_parts.append(f"<p>… et {count - 10} autre(s) article(s). Voir le panneau YARO IA.</p>")
 
     _admin_path = os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025").strip("/")
-    body_parts.append(f'<p><a href="https://bininga.cg/{_admin_path}">→ Ouvrir l\'espace admin</a></p>')
+    body_parts.append(f'<p><a href="http://wude3801.odns.fr/{_admin_path}">→ Ouvrir l\'espace admin</a></p>')
     html_body = "\n".join(body_parts)
 
     msg = MIMEMultipart("alternative")

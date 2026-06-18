@@ -139,7 +139,7 @@ def _send_notif_email(entry: dict, notif_type: str):
         </table>
       </div>
       <p style="font-size:11px;color:#aaa;margin-top:16px;text-align:center">
-        Notif automatique — site bininga.cg
+        Notif automatique — site wude3801.odns.fr
       </p>
     </div>
     """
@@ -216,7 +216,7 @@ ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025
 # Origines autorisées pour CORS
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get(
     "BININGA_ORIGINS",
-    "https://bininga.cg,https://www.bininga.cg,"
+    "http://wude3801.odns.fr,https://wude3801.odns.fr,"
     "http://localhost:8080,https://localhost:8443,http://127.0.0.1:8080"
 ).split(",") if o.strip()]
 BASE_DIR        = os.path.realpath(os.getcwd())
@@ -4389,7 +4389,7 @@ def resolve_ssl_certs():
 
     Priorité :
       1. Variables d'environnement BININGA_CERT / BININGA_KEY
-      2. Certificats Let's Encrypt pour bininga.cg
+      2. Certificats Let's Encrypt pour wude3801.odns.fr
       3. Certificat auto-signé local (cert.pem / key.pem)
     Retourne (cert_path, key_path, source) ou (None, None, None).
     """
@@ -4400,7 +4400,7 @@ def resolve_ssl_certs():
         return env_cert, env_key, "variables d'env"
 
     # 2. Let's Encrypt
-    le_base = "/etc/letsencrypt/live/bininga.cg"
+    le_base = "/etc/letsencrypt/live/wude3801.odns.fr"
     le_cert = os.path.join(le_base, "fullchain.pem")
     le_key  = os.path.join(le_base, "privkey.pem")
     if os.path.isfile(le_cert) and os.path.isfile(le_key):
@@ -4488,7 +4488,7 @@ if __name__ == "__main__":
 
     # Génère un certificat auto-signé si aucun n'existe du tout
     if not (os.path.isfile("cert.pem") and os.path.isfile("key.pem")
-            or os.path.isfile("/etc/letsencrypt/live/bininga.cg/fullchain.pem")):
+            or os.path.isfile("/etc/letsencrypt/live/wude3801.odns.fr/fullchain.pem")):
         generate_self_signed_cert()
 
     CERT_FILE, KEY_FILE, CERT_SOURCE = resolve_ssl_certs()
@@ -4504,8 +4504,8 @@ if __name__ == "__main__":
 ╔══════════════════════════════════════════════╗
   ║   BININGA — Serveur                         ║
   ║                                            ║
-  ║   Site  →  {protocol}://bininga.cg:{PORT}       ║
-  ║   Admin →  {protocol}://bininga.cg:{PORT}/admin.html ║
+  ║   Site  →  {protocol}://wude3801.odns.fr:{PORT}       ║
+  ║   Admin →  {protocol}://wude3801.odns.fr:{PORT}/admin.html ║
   ║                                            ║
   ║   SSL : {ssl_label:<38}║
   ╚══════════════════════════════════════════════╝
@@ -4528,7 +4528,7 @@ if __name__ == "__main__":
 
         class _RedirectHandler(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
-                host = self.headers.get("Host", f"bininga.cg").split(":")[0]
+                host = self.headers.get("Host", f"wude3801.odns.fr").split(":")[0]
                 location = f"https://{host}{self.path}" if HTTPS_PORT == 443 else f"https://{host}:{HTTPS_PORT}{self.path}"
                 self.send_response(301)
                 self.send_header("Location", location)
@@ -4543,7 +4543,7 @@ if __name__ == "__main__":
         print(f"🔄 Redirection HTTP:{REDIRECT_PORT} → HTTPS:{HTTPS_PORT}")
         print(f"🔒 HTTPS activé ({CERT_SOURCE})")
 
-    print(f"✅ Serveur lancé sur {protocol}://bininga.cg:{PORT}\n")
+    print(f"✅ Serveur lancé sur {protocol}://wude3801.odns.fr:{PORT}\n")
 
     try:
         server.serve_forever()

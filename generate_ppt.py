@@ -488,7 +488,7 @@ add_text(slide, "Prochaines Étapes",
 slide_number(slide, 9, TOTAL_SLIDES)
 
 steps = [
-    ("1", "Hébergement", "Mise en ligne sur un serveur officiel avec nom de domaine (ex: bininga.cg)"),
+    ("1", "Hébergement", "Mise en ligne sur un serveur officiel avec nom de domaine (ex: wude3801.odns.fr)"),
     ("2", "Photos officielles", "Intégration des photos réelles du ministre dans la galerie"),
     ("3", "Formation", "Formation de l'équipe à l'utilisation du panneau admin"),
     ("4", "Maintenance", "Contrat de maintenance mensuel pour mises à jour et sécurité"),

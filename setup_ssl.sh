@@ -1,12 +1,12 @@
 #!/bin/bash
 # ─────────────────────────────────────────────────────────────
-#  setup_ssl.sh — Certificat Let's Encrypt pour bininga.cg
+#  setup_ssl.sh — Certificat Let's Encrypt pour wude3801.odns.fr
 #  À exécuter en tant que root sur le vrai serveur
 # ─────────────────────────────────────────────────────────────
 set -e
 
-DOMAIN="bininga.cg"
-EMAIL="admin@bininga.cg"
+DOMAIN="wude3801.odns.fr"
+EMAIL="admin@wude3801.odns.fr"
 CERT_DIR="/etc/letsencrypt/live/$DOMAIN"
 
 echo "======================================================"
@@ -25,8 +25,8 @@ if [ "$SERVER_IP" != "$DOMAIN_IP" ]; then
     echo "   Configure le DNS chez ton registrar :"
     echo ""
     echo "   Type  Nom                  Valeur"
-    echo "   A     bininga.cg           $SERVER_IP"
-    echo "   A     www.bininga.cg       $SERVER_IP"
+    echo "   A     wude3801.odns.fr           $SERVER_IP"
+    echo "   A     www.wude3801.odns.fr       $SERVER_IP"
     echo ""
     read -p "Continuer quand même ? (o/N) " -n 1 -r
     echo
