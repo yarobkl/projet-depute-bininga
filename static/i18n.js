@@ -17,7 +17,7 @@ const I18N = {
     "nav.audience":     "Audience",
 
     // ── Hero ────────────────────────────────────────────────────
-    "hero.btn1":        " Rejoindre la campagne",
+    "hero.btn1":        " Demande d'audience",
     "hero.btn2":        "Notre programme",
     "hero.scroll":      "Découvrir",
     "hero.eyebrow":      "Campagne législative · République du Congo",
@@ -258,7 +258,7 @@ const I18N = {
     "nav.contact":      "Contact",
     "nav.audience":     "Audience",
 
-    "hero.btn1":        " Join the campaign",
+    "hero.btn1":        " Audience request",
     "hero.btn2":        "Our programme",
     "hero.scroll":      "Discover",
     "hero.eyebrow":      "Legislative campaign · Republic of Congo",
@@ -484,7 +484,7 @@ const I18N = {
     "nav.contact":      "Contacto",
     "nav.audience":     "Audiencia",
 
-    "hero.btn1":        " Unirse a la campaña",
+    "hero.btn1":        " Solicitar audiencia",
     "hero.btn2":        "Nuestro programa",
     "hero.scroll":      "Descubrir",
     "hero.eyebrow":      "Campaña legislativa · República del Congo",
@@ -710,7 +710,7 @@ const I18N = {
     "nav.contact":      "联系我们",
     "nav.audience":     "申请会见",
 
-    "hero.btn1":        " 加入竞选",
+    "hero.btn1":        " 申请会见",
     "hero.btn2":        "查看纲领",
     "hero.scroll":      "了解更多",
     "hero.eyebrow":      "立法竞选 · 刚果共和国",
@@ -936,7 +936,7 @@ const I18N = {
     "nav.contact":      "Контакт",
     "nav.audience":     "Аудиенция",
 
-    "hero.btn1":        " Присоединиться к кампании",
+    "hero.btn1":        " Запрос на аудиенцию",
     "hero.btn2":        "Наша программа",
     "hero.scroll":      "Узнать больше",
     "hero.eyebrow":      "Законодательная кампания · Республика Конго",
