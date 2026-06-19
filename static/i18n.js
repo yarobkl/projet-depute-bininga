@@ -1155,6 +1155,8 @@ const I18N = {
 
 // ── Langue courante ────────────────────────────────────────────────────────────
 let _currentLang = localStorage.getItem("bininga_lang") || "fr";
+const _LANG_ORDER = ["fr", "en", "es", "zh", "ru"];
+const _LANG_LABELS = { fr: "FR", en: "EN", es: "ES", zh: "ZH", ru: "RU" };
 
 function t(key) {
   return (I18N[_currentLang] && I18N[_currentLang][key]) ||
@@ -1166,6 +1168,23 @@ function cleanI18nLabel(value) {
     .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\uFE0F]/gu, "")
     .replace(/\s{2,}/g, " ")
     .trim();
+}
+
+function updateLanguageCycleButton(lang) {
+  const code = _LANG_LABELS[lang] || "FR";
+  document.querySelectorAll("[data-lang-cycle-code]").forEach(el => {
+    el.textContent = code;
+  });
+  document.querySelectorAll(".side-lang-cycle").forEach(btn => {
+    btn.setAttribute("aria-label", "Changer la langue, langue actuelle " + code);
+    btn.dataset.lang = lang;
+  });
+}
+
+function cycleI18nLanguage() {
+  const currentIndex = _LANG_ORDER.indexOf(_currentLang);
+  const nextLang = _LANG_ORDER[(currentIndex + 1) % _LANG_ORDER.length] || "fr";
+  applyI18n(nextLang);
 }
 
 // ── Appliquer toutes les traductions ──────────────────────────────────────────
@@ -1200,6 +1219,7 @@ function applyI18n(lang) {
   document.querySelectorAll(".lang-btn").forEach(btn => {
     btn.classList.toggle("lang-active", btn.dataset.lang === lang);
   });
+  updateLanguageCycleButton(lang);
 
   // Chat greeting si la fenêtre chat est ouverte
   const chatGreeting = document.getElementById("chat-greeting");
