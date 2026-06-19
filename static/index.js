@@ -1,6 +1,7 @@
 
 const IMG = "images/bininga.jpg";
 const LOW_DATA_MODE = !!(navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || "")));
+const THEME_STORAGE_KEY = "bininga_theme";
 function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 function cleanLabel(s){
   return String(s || "")
@@ -43,6 +44,36 @@ function safeCta(href) {
   if (/^(https?:\/\/|\/|#|mailto:)/i.test(h)) return h;
   return null; // bloque javascript:, data:, etc.
 }
+
+function getPreferredBiningaTheme() {
+  try {
+    const saved = localStorage.getItem(THEME_STORAGE_KEY);
+    if (saved === "light" || saved === "dark") return saved;
+  } catch (_) {}
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
+
+function setBiningaTheme(theme) {
+  const next = theme === "light" ? "light" : "dark";
+  document.documentElement.classList.remove("theme-light-preload");
+  document.body.classList.toggle("theme-light", next === "light");
+  document.body.dataset.theme = next;
+  try { localStorage.setItem(THEME_STORAGE_KEY, next); } catch (_) {}
+  document.querySelectorAll("[data-theme-label]").forEach(el => {
+    el.textContent = next === "light" ? "Nuit" : "Jour";
+  });
+  document.querySelectorAll(".side-theme-toggle").forEach(btn => {
+    btn.setAttribute("aria-label", next === "light" ? "Passer en mode nuit" : "Passer en mode jour");
+  });
+}
+
+function toggleBiningaTheme() {
+  const current = document.body.classList.contains("theme-light") ? "light" : "dark";
+  setBiningaTheme(current === "light" ? "dark" : "light");
+}
+
+window.toggleBiningaTheme = toggleBiningaTheme;
+document.addEventListener("DOMContentLoaded", () => setBiningaTheme(getPreferredBiningaTheme()));
 
 // ── CHARGEMENT DU CONTENU DEPUIS data.json (synchronisé avec l'admin) ─────
 function loadContent() {
