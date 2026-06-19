@@ -432,6 +432,11 @@ function loadContent() {
           </div>`).join('');
         cardsGrid.querySelectorAll(".rev").forEach(el=>rObs.observe(el));
       }
+
+      const activeLang = (document.documentElement.lang || "fr").slice(0, 2);
+      if (activeLang !== "fr" && typeof applyDynLang === "function") {
+        applyDynLang(activeLang);
+      }
     })
     .catch(() => {}); // Fallback : le contenu statique reste affiché
 }

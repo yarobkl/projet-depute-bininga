@@ -7,7 +7,7 @@ var I18N_DATA_ES = {
     role: "Guardián de los Sellos · Ministro de Justicia, Derechos Humanos y Promoción de los Pueblos Indígenas · Diputado por Ewo · PCT",
     slogan: 'Por <em>Ewo</em>.<br>Por un Congo <em>justo, libre</em> y fuerte.',
     subtitle: "Un hombre de terreno, de convicción y de resultados. Una vida al servicio del pueblo congoleño y de la Cuvette-Ouest.",
-    btn1: "🤝 Unirse a la campaña",
+    btn1: "📋 Solicitar audiencia",
     btn2: "Nuestro programa"
   },
 

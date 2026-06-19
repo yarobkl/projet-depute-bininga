@@ -7,7 +7,7 @@ var I18N_DATA_EN = {
     role: "Keeper of the Seals · Minister of Justice, Human Rights and Promotion of Indigenous Peoples · Member of Parliament for Ewo · PCT",
     slogan: 'For <em>Ewo</em>.<br>For a Congo <em>just, free</em> and strong.',
     subtitle: "A man of the field, of conviction and of results. A life in service of the Congolese people and the Cuvette-Ouest.",
-    btn1: "🤝 Join the campaign",
+    btn1: "📋 Audience request",
     btn2: "Our programme"
   },
 
