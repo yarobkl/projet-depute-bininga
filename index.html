@@ -73,12 +73,6 @@
 }
 </script>
 
-<!-- Analytics, Plausible (sans cookies, conforme RGPD) -->
-<script defer data-domain="wude3801.odns.fr" src="https://plausible.io/js/script.js"></script>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="static/index.css?v=20260522-public-polish">
 <link rel="stylesheet" href="static/mobile.css?v=20260522-public-polish">
 <style>
@@ -119,11 +113,8 @@
   <ul class="nlinks">
     <li><a href="#about" data-i18n="nav.biography">Biographie</a></li>
     <li><a href="#parcours" data-i18n="nav.parcours">Parcours</a></li>
-    <li><a href="#publication" data-i18n="nav.publication">Publication</a></li>
     <li><a href="#programme" data-i18n="nav.programme">Programme</a></li>
-    <li><a href="#galerie" data-i18n="nav.gallery">Galerie</a></li>
-    <li><a href="#actu" data-i18n="nav.news">Actualités</a></li>
-    <li><a href="#contact" data-i18n="nav.contact">Contact</a></li>
+    <li><a href="#suivi-dossier">Suivi</a></li>
     <li><a href="#engagement" class="ncta" data-i18n="nav.audience">Audience</a></li>
   </ul>
   <!-- Sélecteur de langue -->
@@ -145,6 +136,7 @@
   <a href="#programme" onclick="cMob()" data-i18n="nav.programme">Programme</a>
   <a href="#galerie" onclick="cMob()" data-i18n="nav.gallery">Galerie</a>
   <a href="#actu" onclick="cMob()" data-i18n="nav.news">Actualités</a>
+  <a href="#suivi-dossier" onclick="cMob()">Suivi</a>
   <a href="#engagement" onclick="cMob()" data-i18n="nav.audience">Audience</a>
   <a href="#contact" onclick="cMob()" data-i18n="nav.contact">Contact</a>
   <!-- Langue mobile -->
@@ -242,7 +234,7 @@
 </section>
 
 <!-- ═══════════ PUBLICATION ═══════════ -->
-<section id="publication" data-mob-tab="profil">
+<section id="publication" data-mob-tab="profil" data-route-section="publication">
   <div class="pub-wrap">
 
     <!-- Couverture -->
@@ -309,7 +301,7 @@
 </section>
 
 <!-- GALERIE -->
-<section id="galerie" data-mob-tab="actu">
+<section id="galerie" data-mob-tab="actu" data-route-section="galerie">
   <div style="max-width:1300px;margin:0 auto;">
     <div style="text-align:center;" class="rev">
       <span class="stag" id="dyn-gal-tag">En images</span>
@@ -323,7 +315,7 @@
 </section>
 
 <!-- ACTUALITÉS -->
-<section id="actu" data-mob-tab="actu">
+<section id="actu" data-mob-tab="actu" data-route-section="actu">
 
   <!-- ══ HERO SLIDESHOW ══════════════════════════════════════════════ -->
   <div class="actu-hero" id="actu-hero">
@@ -364,7 +356,7 @@
 
 <!-- ENGAGEMENT -->
 <!-- ═══════════ VIDÉO ═══════════ -->
-<section id="video-section" data-mob-tab="actu">
+<section id="video-section" data-mob-tab="actu" data-route-section="actu">
   <div class="video-inner rev">
     <span class="stag" data-i18n="video.tag">Le Député en action</span>
     <h2 class="stitle">Discours &amp; <span class="r" data-i18n="video.title.accent">terrain</span></h2>
@@ -374,9 +366,10 @@
       <video
         id="main-video"
         controls
+        preload="none"
+        poster="images/bininga.jpg"
         muted
         playsinline
-        loop
         style="width:100%;aspect-ratio:16/9;border-radius:12px;display:block;background:#000">
         <source src="/images/video/COOPERATION JUDICIAIRE_ GERALD DARMANIN RECOIT SON HOMOLOGUE CONGOLAIS A. A.WILFRID BININGA A PARIS.mp4" type="video/mp4">
       </video>
@@ -488,21 +481,37 @@
 
         <button type="submit" class="btn-form" id="btn-form-aud" data-i18n="form.submit.aud">Soumettre ma demande</button>
       </form>
+      <div class="tracking-result" id="tracking-result" hidden aria-live="polite"></div>
     </div>
+  </div>
+</section>
+
+<!-- SUIVI DE DOSSIER -->
+<section id="suivi-dossier" class="tracking-section" data-mob-tab="audience">
+  <div class="tracking-wrap">
+    <div class="tracking-copy">
+      <span class="stag">Suivi de dossier</span>
+      <h2 class="stitle">Consulter l'avancement <span class="g">en toute simplicité</span></h2>
+      <p class="tracking-lead">Après une demande d'audience, un numéro de suivi est généré automatiquement. Conservez-le pour vérifier si le dossier est reçu, ouvert, décidé puis programmé en rendez-vous.</p>
+    </div>
+    <form class="tracking-card" onsubmit="trackDossier(event,this)">
+      <label for="tracking-code">Numéro de suivi</label>
+      <div class="tracking-input-row">
+        <input id="tracking-code" name="code" type="text" inputmode="latin" autocomplete="off" placeholder="BIN-2026-ABC123" required>
+        <button type="submit">Consulter</button>
+      </div>
+      <div class="tracking-help">Aucune connexion, aucun compte et aucune pièce jointe ne sont nécessaires.</div>
+      <div class="tracking-status" id="tracking-status" aria-live="polite"></div>
+    </form>
   </div>
 </section>
 
 
 
 <!-- CTA -->
-<div class="cta-band" data-mob-tab="contact">
+<div class="cta-band cta-band-simple" data-mob-tab="contact">
   <h2 id="dyn-cta-title" data-i18n="cta.title">Votez BININGA :<br>le choix de l'expérience et du terrain</h2>
   <p id="dyn-cta-sub" data-i18n="cta.sub">Parce qu'Ewo mérite un homme qui connaît l'État de l'intérieur et le terrain de cœur.</p>
-  <div class="cta-btns">
-    <a href="#engagement" class="btn btn-r" id="dyn-cta-btn1" data-i18n="cta.btn1">Demande d'audience</a>
-    <a href="#contact" class="btn btn-g" id="dyn-cta-btn2" data-i18n="cta.btn2">Nous contacter</a>
-    <a href="#programme" class="btn btn-o" id="dyn-cta-btn3" data-i18n="cta.btn3">Lire le programme</a>
-  </div>
 </div>
 
 <!-- CONTACT -->
@@ -589,6 +598,13 @@
     <div class="ft-legal"><a href="#" onclick="event.preventDefault();openLegal('mentions')" data-i18n="ft.bottom.mentions">Mentions légales</a><a href="#" onclick="event.preventDefault();openLegal('confidentialite')" data-i18n="ft.bottom.privacy">Confidentialité</a><a href="#" onclick="event.preventDefault();openLegal('cookies')" data-i18n="ft.bottom.cookies">Cookies</a></div>
   </div>
 </footer>
+
+<!-- RACCOURCIS RUBRIQUES LONGUES -->
+<nav class="side-shortcuts" aria-label="Rubriques complémentaires">
+  <a href="#publication">Publication</a>
+  <a href="#galerie">Galerie</a>
+  <a href="#actu">Actualités</a>
+</nav>
 
 <!-- BARRE DE NAVIGATION MOBILE (bottom tabbar) -->
 <nav class="mob-tabbar" id="mobTabbar" aria-label="Navigation rapide">
@@ -987,9 +1003,10 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
 
 <script>
 (function(){
+  const lowData = !!(navigator.connection && (navigator.connection.saveData || /2g/.test(navigator.connection.effectiveType || "")));
   // ── Braises flottantes dans le fond hero ──────────────
   const hero = document.getElementById("hero");
-  if (hero) {
+  if (hero && !lowData && window.matchMedia("(min-width: 769px)").matches) {
     hero.style.position = "relative";
     hero.style.overflow = "hidden";
     for (let i = 0; i < 18; i++) {
