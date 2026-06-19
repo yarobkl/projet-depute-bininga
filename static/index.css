@@ -508,18 +508,21 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .lmodal-body strong{color:rgba(255,255,255,.85)}
 
 /* ── SECTION PUBLICATION ── */
-#publication{padding:110px 6%;background:var(--n2)}
-.pub-wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:300px 1fr;gap:80px;align-items:start}
-.pub-book{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
-/* Couverture — reproduit l'original Harmattan (fond blanc, titre bleu) */
-.pub-cover-img{width:260px;border-radius:4px;box-shadow:0 40px 90px rgba(0,0,0,.8),-6px 6px 0 rgba(200,16,46,.25);display:block}
-.pub-cover-css{width:260px;aspect-ratio:1/1.415;border-radius:4px;box-shadow:0 40px 90px rgba(0,0,0,.8),-6px 6px 0 rgba(200,16,46,.25);background:#fff;display:flex;flex-direction:column;padding:28px 22px 20px;font-family:serif;position:relative;overflow:hidden}
+#publication{padding:110px 6%;background:radial-gradient(circle at 18% 18%,rgba(200,16,46,.12),transparent 30%),var(--n2)}
+.pub-wrap{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(330px,440px) minmax(0,1fr);gap:64px;align-items:center}
+.pub-book{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-self:center;width:100%;max-width:430px}
+.pub-book-stage{position:relative;width:min(100%,390px);min-height:500px;display:flex;align-items:center;justify-content:center;padding:24px 22px 32px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.02));box-shadow:0 30px 90px rgba(0,0,0,.38);overflow:hidden}
+.pub-book-stage:before{content:"";position:absolute;inset:18px;border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 45%),radial-gradient(circle at 80% 12%,rgba(200,16,46,.16),transparent 38%);pointer-events:none}
+.pub-book-stage:after{content:"";position:absolute;left:16%;right:16%;bottom:18px;height:22px;background:rgba(0,0,0,.42);filter:blur(18px);border-radius:50%;pointer-events:none}
+.pub-cover-img{position:relative;z-index:2;height:min(470px,calc(100% - 42px));max-width:78%;object-fit:contain;border-radius:5px;box-shadow:0 36px 80px rgba(0,0,0,.52),0 0 0 1px rgba(255,255,255,.12);display:block}
+.pub-back-img{position:absolute;z-index:1;right:8px;bottom:34px;width:132px;max-height:210px;object-fit:contain;border-radius:4px;opacity:.72;filter:saturate(.92);box-shadow:0 24px 55px rgba(0,0,0,.45);transform:rotate(4deg)}
+.pub-cover-css{position:relative;z-index:2;width:260px;aspect-ratio:1/1.415;border-radius:4px;box-shadow:0 40px 90px rgba(0,0,0,.8),-6px 6px 0 rgba(200,16,46,.25);background:#fff;display:flex;flex-direction:column;padding:28px 22px 20px;font-family:serif;overflow:hidden}
 .pub-cover-css .pcc-author{font-size:12.5px;font-weight:700;color:#111;letter-spacing:.3px;margin-bottom:auto}
 .pub-cover-css .pcc-title{font-size:19px;font-weight:900;color:#1a6e9e;line-height:1.25;margin:auto 0 8px}
 .pub-cover-css .pcc-sub{font-size:10.5px;color:#1a6e9e;font-weight:400;line-height:1.4;margin-bottom:auto}
 .pub-cover-css .pcc-harmattan{font-size:10px;color:#555;font-weight:700;text-align:center;margin-top:auto;letter-spacing:.5px;border-top:1px solid #ddd;padding-top:10px}
-.pub-price-badge{margin-top:16px;background:var(--r);color:#fff;font-size:20px;font-weight:800;padding:10px 28px;border-radius:40px;letter-spacing:.5px}
-.pub-cover-badge{position:absolute;top:-10px;right:-10px;background:var(--r);color:var(--w);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:5px 11px;border-radius:20px;z-index:2}
+.pub-price-badge{margin-top:18px;background:var(--r);color:#fff;font-size:20px;font-weight:800;padding:10px 28px;border-radius:40px;letter-spacing:.5px;box-shadow:0 16px 35px rgba(200,16,46,.28)}
+.pub-cover-badge{position:absolute;top:22px;right:22px;background:var(--r);color:var(--w);font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;padding:6px 12px;border-radius:20px;z-index:3;box-shadow:0 10px 24px rgba(0,0,0,.28)}
 .pub-info{}
 .pub-tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--r);font-weight:700;margin-bottom:14px;display:block}
 .pub-title{font-family:'Cormorant Garamond',serif;font-size:clamp(24px,3vw,36px);font-weight:700;color:var(--w);line-height:1.25;margin-bottom:6px}
@@ -566,8 +569,8 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .order-form input:focus,.order-form select:focus,.order-form textarea:focus{border-color:var(--r)}
 .order-form select option{background:var(--n3)}
 .order-note{font-size:12px;color:rgba(255,255,255,.3);margin-top:10px;line-height:1.6;padding:10px 14px;background:rgba(255,255,255,.03);border-radius:6px;border-left:2px solid rgba(200,16,46,.35)}
-@media(max-width:900px){.pub-wrap{grid-template-columns:1fr}.pub-book{flex-direction:row;gap:16px;align-items:flex-start;margin-bottom:24px}.pub-cover-css{width:140px}.pub-price-badge{font-size:16px;padding:7px 18px}}
-@media(max-width:600px){.pub-price-badge{display:none}.pub-info{display:flex;flex-direction:column}.pub-buy-block{order:-1}}
+@media(max-width:900px){.pub-wrap{grid-template-columns:1fr;gap:34px}.pub-book{max-width:390px;margin:0 auto 8px}.pub-book-stage{min-height:430px}.pub-cover-img{height:min(405px,calc(100% - 36px));max-width:76%}.pub-back-img{width:110px;max-height:178px;right:10px;bottom:30px}.pub-cover-css{width:220px}.pub-price-badge{font-size:16px;padding:7px 18px}}
+@media(max-width:600px){#publication{padding:84px 5%}.pub-book-stage{width:100%;min-height:360px;padding:18px 14px 26px;border-radius:14px}.pub-cover-img{height:min(318px,calc(100% - 38px));max-width:82%}.pub-back-img{width:82px;max-height:132px;left:14px;right:auto;bottom:25px;opacity:.58;transform:rotate(-5deg)}.pub-cover-badge{top:14px;right:14px}.pub-price-badge{display:none}.pub-info{display:flex;flex-direction:column}.pub-buy-block{order:-1}}
 /* ── SECTION VIDÉO ── */
 #video-section{padding:100px 6%;background:var(--n);text-align:center}
 .video-inner{max-width:900px;margin:0 auto}

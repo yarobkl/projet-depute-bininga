@@ -73,8 +73,8 @@
 }
 </script>
 
-<link rel="stylesheet" href="static/index.css?v=20260619-short-flow">
-<link rel="stylesheet" href="static/mobile.css?v=20260619-short-flow">
+<link rel="stylesheet" href="static/index.css?v=20260619-book-official2">
+<link rel="stylesheet" href="static/mobile.css?v=20260619-book-official2">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
 .lang-switcher{display:flex;align-items:center;gap:4px;margin-left:10px}
@@ -87,7 +87,7 @@
 .lang-btn.lang-active{opacity:1;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.1);box-shadow:0 0 0 2px rgba(200,16,46,.35)}
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
-<script src="static/i18n.js?v=20260619-short-flow"></script>
+<script src="static/i18n.js?v=20260619-book-official2"></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -238,12 +238,10 @@
   <div class="pub-wrap">
 
     <!-- Couverture -->
-    <div class="pub-book rev-l">
-      <div style="position:relative;display:inline-block">
-        <!-- Si l'image réelle est disponible, elle s'affiche ; sinon le CSS prend le relais -->
+    <div class="pub-book rev-l" aria-label="Livre Les mutations constitutionnelles en Afrique noire francophone">
+      <div class="pub-book-stage">
         <img loading="lazy" src="images/livre-cover.jpg" alt="Couverture du livre Les mutations constitutionnelles" class="pub-cover-img"
              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-        <!-- Couverture CSS fidèle à l'original Harmattan (fond blanc, titre bleu) -->
         <div class="pub-cover-css" style="display:none">
           <span class="pcc-author">Aimé Ange Wilfrid B<small>ININGA</small></span>
           <div class="pcc-title">Les mutations constitutionnelles en Afrique noire francophone</div>
@@ -251,6 +249,7 @@
           <div style="font-size:9px;color:#888;text-align:center;margin-top:auto;margin-bottom:4px;font-style:italic">Préface du Pr Frédéric Joël Aïvo<br>Avant-propos du Pr Babacar Gueye</div>
           <div class="pcc-harmattan">L'Harmattan Congo-Brazzaville</div>
         </div>
+        <img loading="lazy" src="images/livre-back.jpg" alt="Quatrième de couverture du livre" class="pub-back-img">
         <span class="pub-cover-badge" data-i18n="pub.cover.badge">En vente</span>
       </div>
       <div class="pub-price-badge">40 €</div>
@@ -631,11 +630,11 @@
 </nav>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
-<script src="static/i18n-data.en.js?v=20260619-short-flow"></script>
-<script src="static/i18n-data.es.js?v=20260619-short-flow"></script>
-<script src="static/i18n-data.zh.js?v=20260619-short-flow"></script>
-<script src="static/i18n-data.ru.js?v=20260619-short-flow"></script>
-<script src="static/index.js?v=20260619-short-flow" defer></script>
+<script src="static/i18n-data.en.js?v=20260619-book-official2"></script>
+<script src="static/i18n-data.es.js?v=20260619-book-official2"></script>
+<script src="static/i18n-data.zh.js?v=20260619-book-official2"></script>
+<script src="static/i18n-data.ru.js?v=20260619-book-official2"></script>
+<script src="static/index.js?v=20260619-book-official2" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 
@@ -828,7 +827,7 @@
 </div>
 
 <!-- ── CHATBOT WIDGET ────────────────────────────────────── -->
-<link rel="stylesheet" href="static/chat.css?v=20260619-short-flow">
+<link rel="stylesheet" href="static/chat.css?v=20260619-book-official2">
 
 <div class="chat-bubble" id="chatBubble" onclick="document.getElementById('chatBubble').classList.remove('visible');toggleChat()">
   Bonjour, je suis là pour vous aider.<span class="bubble-dots"><span></span><span></span><span></span></span>
