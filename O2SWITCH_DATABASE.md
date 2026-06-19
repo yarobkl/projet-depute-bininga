@@ -27,9 +27,21 @@ MYSQL_PORT=3306
 MYSQL_DATABASE=cpaneluser_bininga
 MYSQL_USER=cpaneluser_bininga
 MYSQL_PASSWORD=mot_de_passe_mysql
+BININGA_USER=admin
+BININGA_PASS=mot_de_passe_admin_fort
+ADMIN_SECRET_PATH=espace-prive-bininga-long-secret
+BININGA_PRODUCTION=1
 ```
 
 Le fichier `.env` est ignoré par Git pour éviter de publier les mots de passe.
+
+Important : `/admin.html` est un piège de sécurité et doit rester en 404. L'espace admin réel est accessible uniquement via la valeur de `ADMIN_SECRET_PATH`.
+
+Si le site doit refuser de démarrer sans base persistante, ajouter aussi :
+
+```bash
+BININGA_REQUIRE_DB=1
+```
 
 ## 3. Installer les dépendances Python
 
@@ -47,6 +59,8 @@ Au premier démarrage, le serveur crée automatiquement :
 
 - `bininga_store` pour le contenu, les utilisateurs, contacts et CRM.
 - `bininga_photos` pour les images sauvegardées en base.
+
+Après le redémarrage, contrôler les logs. La ligne `[DB] ⚠️ Pas de base configurée` signifie que le site utilise encore les fichiers JSON et que la configuration MySQL n'est pas prise en compte.
 
 ## 5. Règle importante
 

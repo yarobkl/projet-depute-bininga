@@ -177,6 +177,9 @@ def _get_build_version():
         import subprocess
         h = subprocess.check_output(["git","rev-parse","--short","HEAD"],
                                     stderr=subprocess.DEVNULL).decode().strip()
+        dirty = subprocess.run(["git", "diff", "--quiet"], stderr=subprocess.DEVNULL).returncode != 0
+        if dirty:
+            return f"{h}-dirty-{int(datetime.now().timestamp())}" if h else str(int(datetime.now().timestamp()))
         return h if h else str(int(datetime.now().timestamp()))
     except Exception:
         return str(int(datetime.now().timestamp()))
@@ -208,9 +211,9 @@ ADMIN_USER      = os.environ.get("BININGA_USER", "admin")
 ADMIN_PASS      = os.environ.get("BININGA_PASS", "")
 PROTECTED_USER  = os.environ.get("BININGA_PROTECTED", "rodrin")
 
-# URL secrète de l'espace admin — à définir dans Railway via ADMIN_SECRET_PATH
+# URL secrète de l'espace admin — à définir en production via ADMIN_SECRET_PATH
 # Par défaut : une URL non devinable. /admin.html devient un piège canari (ban 24h).
-# Exemple Railway : ADMIN_SECRET_PATH=mon-espace-prive-2025
+# Exemple : ADMIN_SECRET_PATH=mon-espace-prive-2025
 ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "espace-ministre-ab-2025").strip("/")
 
 # Origines autorisées pour CORS
@@ -785,9 +788,13 @@ def init_users():
         }])
         print(f"[BININGA] 📁 Compte admin créé ({ADMIN_USER})")
     elif not ADMIN_PASS:
-        # En production (Railway) : bloquer le démarrage sans mot de passe défini
-        on_railway = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
-        if on_railway:
+        # En production : bloquer le démarrage sans mot de passe défini.
+        production_env = bool(
+            os.environ.get("RAILWAY_ENVIRONMENT")
+            or os.environ.get("RAILWAY_PROJECT_ID")
+            or os.environ.get("BININGA_PRODUCTION") == "1"
+        )
+        if production_env:
             print("[BININGA] ❌ BININGA_PASS est obligatoire en production. Ajoutez la variable d'environnement.")
             import sys; sys.exit(1)
         else:
@@ -993,6 +1000,18 @@ def _db_config():
             "database": mysql_db,
         }
     return None, {}
+
+def _enforce_database_if_required():
+    """Bloque le boot quand la production exige une vraie base persistante."""
+    if os.environ.get("BININGA_REQUIRE_DB", "") != "1":
+        return
+    backend, _ = _db_config()
+    if backend:
+        return
+    raise RuntimeError(
+        "BININGA_REQUIRE_DB=1 mais aucune base n'est configurée. "
+        "Définissez DATABASE_URL ou MYSQL_HOST/MYSQL_DATABASE/MYSQL_USER/MYSQL_PASSWORD."
+    )
 
 def _db_label():
     backend, _ = _db_config()
@@ -1502,6 +1521,7 @@ def _migrate_files_to_db():
 # ── Init au chargement du module ───────────────────────────
 # 1. Migrer les fichiers JSON → PostgreSQL (avant init_users pour récupérer le compte existant)
 _migrate_files_to_db()
+_enforce_database_if_required()
 # 2. Créer le compte admin si inexistant (vérifie DB en priorité)
 init_users()
 load_sessions()
@@ -4505,7 +4525,7 @@ if __name__ == "__main__":
   ║   BININGA — Serveur                         ║
   ║                                            ║
   ║   Site  →  {protocol}://wude3801.odns.fr:{PORT}       ║
-  ║   Admin →  {protocol}://wude3801.odns.fr:{PORT}/admin.html ║
+  ║   Admin →  chemin privé défini par ADMIN_SECRET_PATH        ║
   ║                                            ║
   ║   SSL : {ssl_label:<38}║
   ╚══════════════════════════════════════════════╝

@@ -78,6 +78,7 @@ function _applySession(saved, restored = false) {
   window._sessionHas2fa = saved.has_2fa || false;
   document.getElementById("login").classList.add("hidden");
   document.getElementById("app").classList.add("visible");
+  if (window.innerWidth <= 768) closeSidebar();
   document.getElementById("last-login").textContent = restored ? "Session restaurée" : new Date().toLocaleString("fr-FR");
   updateProfileUI();
   applyRoleUI(saved.role);
@@ -2368,6 +2369,8 @@ function toggleSidebar() {
   const pull = document.getElementById("sb-pull");
   if (!sb) return;
   const open = sb.classList.toggle("open");
+  if (open) sb.style.setProperty("left", "0px", "important");
+  else sb.style.removeProperty("left");
   if (btn)  { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
   if (ov)   ov.classList.toggle("open", open);
   if (pull) pull.classList.toggle("visible", open);
@@ -2379,13 +2382,20 @@ function closeSidebar() {
   const btn  = document.getElementById("hamburger");
   const ov   = document.getElementById("sidebar-overlay");
   const pull = document.getElementById("sb-pull");
-  if (sb)   sb.classList.remove("open");
+  if (sb) {
+    sb.classList.remove("open");
+    sb.style.removeProperty("left");
+  }
   if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
   if (ov)   ov.classList.remove("open");
   if (pull) pull.classList.remove("visible");
   document.body.classList.remove("sidebar-open");
   document.body.style.overflow = "";
 }
+
+window.addEventListener("resize", () => {
+  if (window.innerWidth <= 768) closeSidebar();
+});
 
 // ── Navigateur de dossiers d'images ─────────────────────────────────────────
 let _fbCallback   = null;
