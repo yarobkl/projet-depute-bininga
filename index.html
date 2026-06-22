@@ -84,8 +84,8 @@
   } catch (_) {}
 })();
 </script>
-<link rel="stylesheet" href="static/index.css?v=20260619-theme-mode">
-<link rel="stylesheet" href="static/mobile.css?v=20260619-theme-mode">
+<link rel="stylesheet" href="static/index.css?v=20260622-side-drawer">
+<link rel="stylesheet" href="static/mobile.css?v=20260622-side-drawer">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
 .lang-switcher{display:flex;align-items:center;gap:4px;margin-left:10px}
@@ -98,7 +98,7 @@
 .lang-btn.lang-active{opacity:1;border-color:rgba(255,255,255,.35);background:rgba(255,255,255,.1);box-shadow:0 0 0 2px rgba(200,16,46,.35)}
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
-<script src="static/i18n.js?v=20260619-theme-mode"></script>
+<script src="static/i18n.js?v=20260622-side-drawer"></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -610,20 +610,32 @@
 </footer>
 
 <!-- RACCOURCIS RUBRIQUES LONGUES -->
-<nav class="side-shortcuts" aria-label="Rubriques complémentaires">
-  <button class="side-theme-toggle" type="button" onclick="toggleBiningaTheme()" aria-label="Passer en mode jour">
-    <span class="side-theme-mark" aria-hidden="true"></span>
-    <span class="side-theme-label" data-theme-label>Jour</span>
+<aside class="side-drawer" id="sideDrawer" aria-label="Actions rapides">
+  <button class="side-drawer-handle" type="button" onclick="toggleSideDrawer()" aria-controls="sideDrawerPanel" aria-expanded="false">
+    <span class="side-handle-line" aria-hidden="true"></span>
+    <span>Menu</span>
   </button>
-  <button class="side-lang-cycle" type="button" onclick="cycleI18nLanguage()" aria-label="Changer la langue">
-    <span class="side-lang-icon" aria-hidden="true">文</span>
-    <span class="side-lang-label">Traduire</span>
-    <span class="side-lang-code" data-lang-cycle-code>FR</span>
-  </button>
-  <a href="#publication">Publication</a>
-  <a href="#galerie">Galerie</a>
-  <a href="#actu">Actualités</a>
-</nav>
+  <div class="side-drawer-panel" id="sideDrawerPanel">
+    <div class="side-drawer-head">
+      <span>Accès rapide</span>
+      <button class="side-drawer-close" type="button" onclick="closeSideDrawer()" aria-label="Fermer le panneau">×</button>
+    </div>
+    <div class="side-drawer-actions">
+      <button class="side-drawer-action side-theme-toggle" type="button" onclick="toggleBiningaTheme()" aria-label="Passer en mode jour">
+        <span class="side-action-mark side-theme-mark" aria-hidden="true"></span>
+        <span class="side-action-text" data-theme-label>Jour</span>
+      </button>
+      <button class="side-drawer-action side-lang-cycle" type="button" onclick="cycleI18nLanguage()" aria-label="Changer la langue">
+        <span class="side-action-mark side-lang-icon" aria-hidden="true">TR</span>
+        <span class="side-action-text">Traduire</span>
+        <span class="side-action-code" data-lang-cycle-code>FR</span>
+      </button>
+      <a class="side-drawer-action" href="#publication"><span class="side-action-mark" aria-hidden="true">01</span><span class="side-action-text">Publication</span></a>
+      <a class="side-drawer-action" href="#galerie"><span class="side-action-mark" aria-hidden="true">02</span><span class="side-action-text">Galerie</span></a>
+      <a class="side-drawer-action" href="#actu"><span class="side-action-mark" aria-hidden="true">03</span><span class="side-action-text">Actualités</span></a>
+    </div>
+  </div>
+</aside>
 
 <!-- BARRE DE NAVIGATION MOBILE (bottom tabbar) -->
 <nav class="mob-tabbar" id="mobTabbar" aria-label="Navigation rapide">
@@ -654,7 +666,7 @@
 <script src="static/i18n-data.es.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.ru.js?v=20260619-theme-mode"></script>
-<script src="static/index.js?v=20260619-theme-mode" defer></script>
+<script src="static/index.js?v=20260622-side-drawer" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 

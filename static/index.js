@@ -75,6 +75,46 @@ function toggleBiningaTheme() {
 window.toggleBiningaTheme = toggleBiningaTheme;
 document.addEventListener("DOMContentLoaded", () => setBiningaTheme(getPreferredBiningaTheme()));
 
+function setSideDrawerOpen(open) {
+  const drawer = document.getElementById("sideDrawer");
+  if (!drawer) return;
+  const shouldOpen = !!open;
+  drawer.classList.toggle("open", shouldOpen);
+  const handle = drawer.querySelector(".side-drawer-handle");
+  if (handle) handle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+}
+
+function closeSideDrawer() {
+  setSideDrawerOpen(false);
+}
+
+function toggleSideDrawer() {
+  const drawer = document.getElementById("sideDrawer");
+  setSideDrawerOpen(!(drawer && drawer.classList.contains("open")));
+}
+
+window.closeSideDrawer = closeSideDrawer;
+window.toggleSideDrawer = toggleSideDrawer;
+
+document.addEventListener("click", e => {
+  const drawer = document.getElementById("sideDrawer");
+  if (!drawer || !drawer.classList.contains("open")) return;
+  if (drawer.contains(e.target)) return;
+  closeSideDrawer();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeSideDrawer();
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const drawer = document.getElementById("sideDrawer");
+  if (!drawer) return;
+  drawer.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener("click", closeSideDrawer);
+  });
+});
+
 // ── CHARGEMENT DU CONTENU DEPUIS data.json (synchronisé avec l'admin) ─────
 function loadContent() {
   fetch("data.json?t=" + Date.now())
