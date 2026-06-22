@@ -84,7 +84,7 @@
   } catch (_) {}
 })();
 </script>
-<link rel="stylesheet" href="static/index.css?v=20260622-readable-drawer">
+<link rel="stylesheet" href="static/index.css?v=20260622-form-fix">
 <link rel="stylesheet" href="static/mobile.css?v=20260622-readable-drawer">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
@@ -484,7 +484,8 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
           <!-- PHOTO -->
           <div class="fgrp">
             <label><span data-i18n="form.photo.lbl">Photo du sinistre</span> <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#999" data-i18n="form.photo.opt">(optionnel, jpg/png, max 3 Mo)</span></label>
-            <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="handleSinistrePhoto(this)" style="padding:8px">
+            <input type="file" id="photo-file" accept="image/jpeg,image/png,image/webp,image/*" onchange="handleSinistrePhoto(this)" style="padding:8px">
+            <div class="photo-help">Choisissez une photo depuis votre galerie ou prenez une nouvelle photo avec votre appareil.</div>
             <div class="photo-preview" id="photo-preview"></div>
             <input type="hidden" name="photo_url" id="photo-url">
           </div>
@@ -667,7 +668,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 <script src="static/i18n-data.es.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.ru.js?v=20260619-theme-mode"></script>
-<script src="static/index.js?v=20260622-readable-drawer" defer></script>
+<script src="static/index.js?v=20260622-form-fix" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 

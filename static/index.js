@@ -886,6 +886,7 @@ const FORMSPREE = {};
 async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   btn.textContent = "Envoi en cours...";
   btn.disabled = true;
+  btn.style.background = "";
 
   // Construire l'objet à envoyer
   const entry = {};
@@ -907,9 +908,9 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
     serverData = await res.json().catch(() => ({}));
     if (serverData.id) entry._id = serverData.id;
     if (serverData.tracking_code) entry.tracking_code = serverData.tracking_code;
-  } catch (_) { /* serveur non disponible — continuer */ }
+  } catch (_) { /* serveur non disponible — copie locale de secours */ }
 
-  // 2. Copie locale (pour affichage admin en mode hors-ligne)
+  // 2. Copie locale de secours, sans faire croire à l'utilisateur que tout est finalisé.
   try {
     const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
     list.unshift(entry);
@@ -917,8 +918,9 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   } catch (_) {}
 
   if (!serverOk) {
-    btn.textContent = "Envoyé en mode hors ligne";
-    btn.style.background = "#f39c12";
+    btn.textContent = "Envoi non confirmé";
+    btn.style.background = "#C8102E";
+    alert("La demande n'a pas pu être confirmée par le serveur. Vérifiez votre connexion puis réessayez. Les informations restent temporairement sur cet appareil.");
   } else {
     btn.textContent = successMsg;
     btn.style.background = "#2ecc71";
@@ -1063,57 +1065,74 @@ function localizeSinistre() {
   btn.disabled = true;
   btn.textContent = "Localisation en cours…";
   status.className = "geo-status";
-  status.innerHTML = '<span class="dot"></span> Demande de localisation GPS…';
+  status.innerHTML = '<span class="dot"></span> Autorisez la localisation si votre téléphone le demande…';
 
+  const onSuccess = async pos => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    const acc = Math.round(pos.coords.accuracy || 0);
+
+    document.getElementById("geo-lat").value = lat;
+    document.getElementById("geo-lng").value = lng;
+    const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}&z=16`;
+    document.getElementById("geo-maps-url").value = mapsUrl;
+
+    let label = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    try {
+      const r = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`
+      );
+      const d = await r.json();
+      if (d.display_name) label = d.display_name;
+    } catch (_) {}
+
+    document.getElementById("geo-label").value = label;
+
+    status.className = "geo-status ok";
+    status.innerHTML = `<span class="dot"></span> Position capturée${acc ? ` (précision ±${acc}m)` : ""}`;
+
+    const addrEl = document.getElementById("geo-addr");
+    addrEl.textContent = label;
+    addrEl.style.display = "block";
+
+    const mapEl = document.getElementById("geo-map");
+    const δ = 0.008;
+    mapEl.style.display = "block";
+    mapEl.innerHTML = `<iframe
+      src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
+      allowfullscreen loading="lazy"></iframe>`;
+
+    btn.disabled = false;
+    btn.textContent = "Actualiser la position";
+  };
+
+  const onError = err => {
+    status.className = "geo-status err";
+    const msgs = {
+      1: "Localisation refusée. Autorisez-la dans les réglages du navigateur, puis réessayez.",
+      2: "Position introuvable. Sortez près d'une fenêtre ou activez le GPS, puis réessayez.",
+      3: "Le GPS met trop de temps. Vérifiez le réseau ou réessayez dans quelques secondes."
+    };
+    status.innerHTML = `<span class="dot"></span> ${msgs[err.code] || "Localisation impossible pour le moment."}`;
+    btn.disabled = false;
+    btn.textContent = "Réessayer";
+  };
+
+  const options = { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 };
   navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-      const acc = Math.round(pos.coords.accuracy);
-
-      document.getElementById("geo-lat").value = lat;
-      document.getElementById("geo-lng").value = lng;
-      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}&z=16`;
-      document.getElementById("geo-maps-url").value = mapsUrl;
-
-      // Reverse geocode via Nominatim (OpenStreetMap, gratuit)
-      let label = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-      try {
-        const r = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=fr`,
-          { headers: { "User-Agent": "BiningaDepute/1.0" } }
-        );
-        const d = await r.json();
-        if (d.display_name) label = d.display_name;
-      } catch (_) {}
-
-      document.getElementById("geo-label").value = label;
-
-      status.className = "geo-status ok";
-      status.innerHTML = `<span class="dot"></span> Position capturée (précision ±${acc}m)`;
-
-      const addrEl = document.getElementById("geo-addr");
-      addrEl.textContent = label;
-      addrEl.style.display = "block";
-
-      // Carte OpenStreetMap embarquée
-      const mapEl = document.getElementById("geo-map");
-      const δ = 0.008;
-      mapEl.style.display = "block";
-      mapEl.innerHTML = `<iframe
-        src="https://www.openstreetmap.org/export/embed.html?bbox=${lng-δ},${lat-δ},${lng+δ},${lat+δ}&layer=mapnik&marker=${lat},${lng}"
-        allowfullscreen loading="lazy"></iframe>`;
-
-      btn.textContent = "Position enregistrée";
-    },
+    onSuccess,
     err => {
-      status.className = "geo-status err";
-      const msgs = {1:"Accès refusé — autorisez la géolocalisation dans votre navigateur",2:"Position introuvable",3:"Délai dépassé"};
-      status.innerHTML = `<span class="dot"></span> ${msgs[err.code]||"Erreur"}`;
-      btn.disabled = false;
-      btn.textContent = "Réessayer";
+      if (err.code === 3) {
+        navigator.geolocation.getCurrentPosition(onSuccess, onError, {
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 5 * 60 * 1000
+        });
+      } else {
+        onError(err);
+      }
     },
-    { enableHighAccuracy: true, timeout: 12000 }
+    options
   );
 }
 
