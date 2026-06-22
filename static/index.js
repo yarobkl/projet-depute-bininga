@@ -81,7 +81,10 @@ function setSideDrawerOpen(open) {
   const shouldOpen = !!open;
   drawer.classList.toggle("open", shouldOpen);
   const handle = drawer.querySelector(".side-drawer-handle");
-  if (handle) handle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+  if (handle) {
+    handle.setAttribute("aria-expanded", shouldOpen ? "true" : "false");
+    handle.setAttribute("aria-label", shouldOpen ? "Fermer les raccourcis" : "Ouvrir les raccourcis");
+  }
 }
 
 function closeSideDrawer() {
@@ -820,8 +823,12 @@ window.addEventListener("scroll",()=>nav.classList.toggle("sc",scrollY>60));
 const hbg=document.getElementById("hbg"),mob=document.getElementById("mobNav");
 function mobOpen(v){
   mob.classList.toggle("open",v);
-  hbg.setAttribute("aria-expanded", mob.classList.contains("open"));
-  document.body.style.overflow = mob.classList.contains("open") ? "hidden" : "";
+  const isOpen = mob.classList.contains("open");
+  hbg.setAttribute("aria-expanded", isOpen);
+  hbg.setAttribute("aria-label", isOpen ? "Fermer le menu" : "Ouvrir le menu");
+  const label = hbg.querySelector(".hbg-label");
+  if (label) label.textContent = isOpen ? "Fermer" : "Menu";
+  document.body.style.overflow = isOpen ? "hidden" : "";
 }
 hbg.addEventListener("click",()=>mobOpen());
 function cMob(){mobOpen(false)}
