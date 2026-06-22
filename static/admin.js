@@ -420,6 +420,25 @@ async function syncMessages() {
     const data = await res.json();
     if (!data.ok) return;
 
+    const normalizeMessage = (m, key, idx) => {
+      const rawDate = m._date || m.ts || m.date || m.created_at || "";
+      const identity = [
+        key,
+        rawDate,
+        m.email || "",
+        m.telephone || "",
+        m.prenom || "",
+        m.nom || "",
+        idx
+      ].join("|");
+      const id = m._id || `${key}-${btoa(unescape(encodeURIComponent(identity))).replace(/=+$/,"").slice(0, 18)}`;
+      return Object.assign({}, m, {
+        _id: id,
+        _date: rawDate || new Date().toISOString(),
+        _status: m._status || (key === "bininga_contacts" ? "non_lu" : "en_attente")
+      });
+    };
+
     const mapping = [
       ["bininga_audiences", data.audiences || []],
       ["bininga_contacts",  data.contacts  || []]
@@ -432,8 +451,9 @@ async function syncMessages() {
       localList.forEach(m => { if (m._id) localMeta[m._id] = m; });
 
       // Fusionner : données serveur + métadonnées locales
-      const serverIds = new Set(serverList.map(m => m._id).filter(Boolean));
-      const merged = serverList.map(m => {
+      const normalizedServerList = serverList.map((m, idx) => normalizeMessage(m, key, idx));
+      const serverIds = new Set(normalizedServerList.map(m => m._id).filter(Boolean));
+      const merged = normalizedServerList.map(m => {
         const local = localMeta[m._id] || {};
         return Object.assign({}, m, {
           _status: local._status || m._status,
