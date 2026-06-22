@@ -1,0 +1,17 @@
+PassengerEnabled on
+PassengerAppRoot "/home/wude3801/public_html"
+PassengerBaseURI "/"
+PassengerPython "/home/wude3801/virtualenv/bininga/3.10/bin/python"
+
+DirectoryIndex index.html
+
+RewriteEngine On
+RewriteCond %{THE_REQUEST} \s/+admin\.html[\s?] [NC]
+RewriteRule ^admin\.html$ - [R=404,L]
+RewriteRule ^espace-ministre-ab-2025/?$ admin.html [L]
+
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

@@ -8,7 +8,13 @@ existing handler without starting a second HTTP server.
 import http
 import io
 import os
+import sys
 from email.message import Message
+
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+os.chdir(APP_DIR)
+if APP_DIR not in sys.path:
+    sys.path.insert(0, APP_DIR)
 
 import server as bininga_server
 
