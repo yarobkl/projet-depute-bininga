@@ -1078,6 +1078,12 @@ function _refreshDashboardLocal() {
   const reclWait = reclamations.filter(m => !m._status || m._status !== "traite").length;
   const ctUnread = ct.filter(m => !m._status || m._status === "non_lu").length;
 
+  setText("kpi-aud-total",    audiences.length);
+  setText("kpi-aud-wait",     wait);
+  setText("kpi-aud-progress", inprog);
+  setText("kpi-aud-done",     done);
+  setText("kpi-recl",         reclWait);
+  setText("kpi-ct",           ct.length);
   setBadge("badge-aud",  wait);
   setBadge("badge-recl", reclWait);
   setBadge("badge-ct",   ctUnread);
