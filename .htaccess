@@ -5,7 +5,12 @@ PassengerPython "/home/wude3801/virtualenv/bininga/3.10/bin/python"
 
 DirectoryIndex index.html
 
+<FilesMatch "(^\.|\.py$|\.pem$|\.db$|\.log$|\.pid$|^requirements\.txt$|^(users|sessions|contacts|crm|editorial|news_monitor|blocked_ips|attack_scores)\.json$)">
+  Require all denied
+</FilesMatch>
+
 RewriteEngine On
+RewriteRule (^|/)\.git(/|$) - [F,L]
 RewriteCond %{THE_REQUEST} \s/+admin\.html[\s?] [NC]
 RewriteRule ^admin\.html$ - [R=404,L]
 RewriteRule ^espace-ministre-ab-2025/?$ admin.html [L]
