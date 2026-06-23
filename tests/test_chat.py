@@ -168,7 +168,7 @@ def test_chat_journal_officiel_ne_pas_inventer():
     reply = data["reply"].lower()
     assert "journal officiel" in reply
     assert "inventer" in reply or "vérifier" in reply or "verifier" in reply
-    assert "formulaire" in reply or "contact" in reply
+    assert "sgg.cg" in reply
     print(f"✅ test_chat_journal_officiel_ne_pas_inventer — '{data['reply'][:80]}…'")
 
 

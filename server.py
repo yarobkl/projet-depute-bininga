@@ -1181,6 +1181,7 @@ def _pg():
 
 # ── Helper IA — Gemini + Groq fallback ─────────────────────
 _GEMINI_MODEL_CACHE = None  # modèle Gemini fonctionnel mis en cache
+JO_OFFICIEL_URL = "https://sgg.cg/en/journal-officiel/le-journal-officiel.html"
 
 def _groq_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     """Appelle Groq (llama gratuit) et retourne le texte généré."""
@@ -2769,7 +2770,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = (
                         "Je peux répondre sur les éléments publiés dans ce site, mais je ne dois pas inventer un extrait du Journal officiel. "
                         f"D'après les informations du site, {nom} est présenté comme Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, et Député d'Ewo. "
-                        "Pour vérifier un décret, un numéro du Journal officiel ou une référence exacte, veuillez contacter l'équipe via le formulaire de contact afin qu'elle vous transmette le document officiel."
+                        "Pour vérifier un décret, un numéro du Journal officiel ou une référence exacte, consultez la source officielle du Secrétariat général du Gouvernement : "
+                        f"{JO_OFFICIEL_URL}. Vous pouvez aussi contacter l'équipe via le formulaire du site pour être orienté."
                     )
 
                 # ── Âge / naissance ───────────────────────────────────────────
@@ -3119,6 +3121,7 @@ Règles strictes :
 - Réponds en français, naturellement, en 2 à 4 phrases maximum.
 - Utilise uniquement le contexte fourni ci-dessous.
 - Ne cite pas de décret, de numéro du Journal officiel, de date ou de fonction si le contexte ne le donne pas clairement.
+- Si la question porte sur le Journal officiel ou un décret non présent dans le contexte, oriente vers la source officielle : {JO_OFFICIEL_URL}
 - Si la réponse n'est pas dans le contexte, dis que tu ne peux pas confirmer et oriente vers le formulaire de contact.
 - Ne répète pas la même phrase. Ne commence pas par "DA:".
 
