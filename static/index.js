@@ -883,6 +883,37 @@ document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
 
 // ── Envoi des formulaires vers le serveur ────────────────────────────
 const FORMSPREE = {};
+const PENDING_FORM_QUEUE = "bininga_pending_forms";
+
+function queuePendingForm(entry) {
+  try {
+    const queue = JSON.parse(localStorage.getItem(PENDING_FORM_QUEUE) || "[]");
+    queue.unshift({ entry, queued_at: new Date().toISOString(), attempts: 0 });
+    localStorage.setItem(PENDING_FORM_QUEUE, JSON.stringify(queue.slice(0, 25)));
+  } catch (_) {}
+}
+
+async function flushPendingForms() {
+  let queue = [];
+  try { queue = JSON.parse(localStorage.getItem(PENDING_FORM_QUEUE) || "[]"); } catch (_) { return; }
+  if (!queue.length || !navigator.onLine) return;
+  const remaining = [];
+  for (const item of queue) {
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(item.entry)
+      });
+      if (!res.ok) throw new Error("pending-not-saved");
+    } catch (_) {
+      item.attempts = (item.attempts || 0) + 1;
+      if (item.attempts < 5) remaining.push(item);
+    }
+  }
+  try { localStorage.setItem(PENDING_FORM_QUEUE, JSON.stringify(remaining)); } catch (_) {}
+}
+
 async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   btn.textContent = "Envoi en cours...";
   btn.disabled = true;
@@ -910,7 +941,7 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
     if (serverData.tracking_code) entry.tracking_code = serverData.tracking_code;
   } catch (_) { /* serveur non disponible — copie locale de secours */ }
 
-  // 2. Copie locale de secours, sans faire croire à l'utilisateur que tout est finalisé.
+  // 2. Copie locale de secours, puis file de renvoi si le serveur n'a pas confirmé.
   try {
     const list = JSON.parse(localStorage.getItem(storageKey) || "[]");
     list.unshift(entry);
@@ -918,9 +949,10 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   } catch (_) {}
 
   if (!serverOk) {
-    btn.textContent = "Envoi non confirmé";
-    btn.style.background = "#C8102E";
-    alert("La demande n'a pas pu être confirmée par le serveur. Vérifiez votre connexion puis réessayez. Les informations restent temporairement sur cet appareil.");
+    queuePendingForm(entry);
+    btn.textContent = "Demande gardée, renvoi automatique";
+    btn.style.background = "#B8973A";
+    showTrackingReceipt("", "Votre demande est gardée sur cet appareil. Elle sera renvoyée automatiquement dès que la connexion au serveur revient.");
   } else {
     btn.textContent = successMsg;
     btn.style.background = "#2ecc71";
@@ -937,17 +969,18 @@ async function sendForm(storageKey, _unused, formData, btn, successMsg) {
   }, 3000);
 }
 
-function showTrackingReceipt(code) {
+function showTrackingReceipt(code, message) {
   const box = document.getElementById("tracking-result");
   if (!box) return;
   box.hidden = false;
+  const hasCode = !!code;
   box.innerHTML = `
-    <div class="tracking-result-title">Demande envoyée</div>
-    <p>Votre numéro de suivi est <strong>${escHtml(code)}</strong>.</p>
-    <div class="tracking-result-actions">
+    <div class="tracking-result-title">${hasCode ? "Demande envoyée" : "Demande en attente de confirmation"}</div>
+    <p>${hasCode ? `Votre numéro de suivi est <strong>${escHtml(code)}</strong>.` : escHtml(message || "Votre demande sera renvoyée automatiquement.")}</p>
+    ${hasCode ? `<div class="tracking-result-actions">
       <button type="button" onclick="copyTrackingCode('${escHtml(code)}')">Copier le numéro</button>
       <a href="#suivi-dossier" onclick="prefillTracking('${escHtml(code)}')">Suivre mon dossier</a>
-    </div>`;
+    </div>` : ""}`;
 }
 
 function copyTrackingCode(code) {
@@ -1034,25 +1067,27 @@ function toggleGeoFields(sel) {
   reason.style.display = isRecl ? "none" : "block";
   if (raison) raison.required = !isRecl;
 
+  const uiText = (key, fallback) => (typeof t === "function" ? t(key) : fallback);
   const titles = {
-    "Demande d'audience":  ["Demande d'audience auprès du Député", "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h"],
-    "R\u00e9clamation":   ["Signalement officiel au Député", "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement"],
-    "Question au Député":  ["Poser une question au Député", "Rédigez votre question, le Député ou son équipe vous répondra directement"],
-    "Autre":               ["Autre demande", "Décrivez votre demande, notre équipe l'étudiera avec attention"]
+    "Demande d'audience":  [uiText("form.aud.title", "Demande d'audience auprès du Député"), uiText("form.aud.sub", "Expliquez l'objet de votre demande — notre équipe vous contactera sous 48h")],
+    "R\u00e9clamation":   [uiText("form.recl.title", "Signalement officiel au Député"), uiText("form.recl.sub", "Géolocalisez le problème et ajoutez une photo — le Député et toute son équipe seront alertés immédiatement")],
+    "Question au Député":  [uiText("form.q.title", "Poser une question au Député"), uiText("form.q.sub", "Rédigez votre question, le Député ou son équipe vous répondra directement")],
+    "Autre":               [uiText("form.other.title", "Autre demande"), uiText("form.other.sub", "Décrivez votre demande, notre équipe l'étudiera avec attention")]
   };
   const [t, s] = titles[sel.value] || titles["Demande d'audience"];
   document.getElementById("form-title-aud").textContent = t;
   document.getElementById("form-sub-aud").textContent = s;
 
   const placeholders = {
-    "Demande d'audience":  "Expliquez pourquoi vous souhaitez rencontrer le Député, votre situation et l'objet précis de votre demande…",
-    "Question au Député":  "Rédigez votre question pour le Député d'Ewo…",
-    "Autre":               "Décrivez votre demande ou votre situation…"
+    "Demande d'audience":  uiText("form.reason.ph", "Expliquez pourquoi vous souhaitez rencontrer le Député, votre situation et l'objet précis de votre demande…"),
+    "Question au Député":  uiText("form.q.ph", "Rédigez votre question pour le Député d'Ewo…"),
+    "Autre":               uiText("form.other.ph", "Décrivez votre demande ou votre situation…")
   };
   if (raison) raison.placeholder = placeholders[sel.value] || placeholders["Demande d'audience"];
 
   document.getElementById("btn-form-aud").textContent = isRecl
-    ? "Envoyer le signalement" : "Soumettre ma demande";
+    ? uiText("form.submit.recl", "Envoyer le signalement")
+    : uiText("form.submit.aud", "Soumettre ma demande");
 }
 
 function localizeSinistre() {
@@ -1134,6 +1169,34 @@ function localizeSinistre() {
     },
     options
   );
+}
+
+function useManualLocation() {
+  const input = document.getElementById("geo-manual-address");
+  const status = document.getElementById("geo-status");
+  const addrEl = document.getElementById("geo-addr");
+  const mapEl = document.getElementById("geo-map");
+  const label = (input && input.value ? input.value.trim() : "");
+  if (!label) {
+    if (status) {
+      status.className = "geo-status err";
+      status.innerHTML = '<span class="dot"></span> Indiquez une adresse, un quartier ou un repère.';
+    }
+    return;
+  }
+  document.getElementById("geo-label").value = label;
+  document.getElementById("geo-lat").value = "";
+  document.getElementById("geo-lng").value = "";
+  document.getElementById("geo-maps-url").value = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(label);
+  if (status) {
+    status.className = "geo-status ok";
+    status.innerHTML = '<span class="dot"></span> Localisation manuelle enregistrée';
+  }
+  if (addrEl) {
+    addrEl.textContent = label;
+    addrEl.style.display = "block";
+  }
+  if (mapEl) mapEl.style.display = "none";
 }
 
 async function handleSinistrePhoto(input) {
@@ -1287,6 +1350,7 @@ _lbStyle.textContent = "@keyframes lb-in{from{opacity:0;transform:scale(.96)}to{
 document.head.appendChild(_lbStyle);
 
 document.addEventListener("DOMContentLoaded", () => {
+  flushPendingForms();
   const m = location.hash.match(/code=(BIN-\d{4}-[A-Fa-f0-9]+)/);
   if (m) {
     prefillTracking(m[1].toUpperCase());
@@ -1294,6 +1358,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (form) trackDossier(new Event("submit"), form);
   }
 });
+window.addEventListener("online", flushPendingForms);
 
 // ── STAGGER TIMELINE ─────────────────────────────────────
 document.querySelectorAll(".tl-item").forEach((el, i) => {
@@ -1343,17 +1408,22 @@ async function submitOrder(e, f) {
   fd.forEach((v,k) => { entry[k] = v; });
   trackBuy("bureau");
   let trackingCode = "";
+  let serverOk = false;
   try {
     const res = await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});
     const data = await res.json().catch(() => ({}));
+    serverOk = res.ok;
     trackingCode = data.tracking_code || "";
     if (trackingCode) entry.tracking_code = trackingCode;
   } catch(_){}
   try { const l=JSON.parse(localStorage.getItem("bininga_commandes")||"[]"); l.push(entry); localStorage.setItem("bininga_commandes",JSON.stringify(l)); } catch(_){}
+  if (!serverOk) queuePendingForm(entry);
   f.style.display = "none";
   const ok = document.getElementById("order-ok");
   if (trackingCode) {
     ok.innerHTML = `Commande enregistrée. Numéro de suivi : <strong>${escHtml(trackingCode)}</strong>. Notre équipe vous contacte sous 48h.`;
+  } else {
+    ok.textContent = "Commande gardée sur cet appareil. Elle sera renvoyée automatiquement dès que le serveur répond.";
   }
   ok.style.display = "block";
 }
@@ -1366,9 +1436,15 @@ async function subNewsletter(e, f) {
   const email = f.email.value.trim();
   btn.disabled = true; btn.textContent = "⏳ Envoi…";
   const entry = { email, type:"bininga_newsletter", _date: new Date().toLocaleString("fr-FR"), _id: Date.now()+"-"+Math.random().toString(36).slice(2,8) };
-  try { await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)}); } catch(_){}
+  let serverOk = false;
+  try {
+    const res = await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});
+    serverOk = res.ok;
+  } catch(_){}
   try { const l=JSON.parse(localStorage.getItem("bininga_newsletter")||"[]"); l.push(entry); localStorage.setItem("bininga_newsletter",JSON.stringify(l)); } catch(_){}
+  if (!serverOk) queuePendingForm(entry);
   f.style.display = "none";
+  ok.textContent = serverOk ? "Inscription enregistrée." : "Inscription gardée, renvoi automatique dès que le serveur répond.";
   ok.style.display = "block";
 }
 

@@ -168,6 +168,12 @@ body.theme-light .ft-bottom p,
 body.theme-light .ft-legal a{
   color:rgba(23,18,13,.78)!important;
 }
+body.theme-light .about-intro,
+body.theme-light .eng-desc,
+body.theme-light .eng-cd,
+body.theme-light .actu-vedette-txt{
+  color:rgba(23,18,13,.86)!important;
+}
 body.theme-light .actu-card-title,
 body.theme-light .ct-title,
 body.theme-light .ct-val,
@@ -197,8 +203,15 @@ body.theme-light footer .nlogo-txt small{
   color:#fff!important;
 }
 body.theme-light .eng-card{
-  background:rgba(255,255,255,.14);
-  border-color:rgba(255,255,255,.22);
+  background:rgba(255,255,255,.92);
+  border-color:rgba(139,10,30,.14);
+  box-shadow:0 18px 46px rgba(54,35,18,.07);
+}
+body.theme-light #engagement .eng-card .eng-ct{
+  color:#17120d!important;
+}
+body.theme-light #engagement .eng-card .eng-cd{
+  color:rgba(23,18,13,.78)!important;
 }
 body.theme-light .cta-band{
   background:#fffaf1;
@@ -500,6 +513,25 @@ nav.sc{background:rgba(6,6,6,.96);backdrop-filter:blur(24px);border-bottom:1px s
 .geo-map-preview iframe{width:100%;height:180px;border:none;display:block}
 .geo-addr{font-size:11px;color:#3a6fd8;margin-top:6px;font-style:italic;line-height:1.4}
 .photo-help{font-size:11px;line-height:1.5;color:#64748b;margin-top:-4px;margin-bottom:8px}
+.geo-manual{margin-top:12px;padding-top:12px;border-top:1px solid rgba(58,111,216,.14)}
+.geo-manual label{display:block;margin-bottom:7px;font-size:11px;font-weight:800;color:#334155;text-transform:none;letter-spacing:0}
+.geo-manual-row{display:flex;gap:8px}
+.geo-manual-row input{flex:1;min-width:0;border:1px solid #c8daf7;border-radius:6px;padding:10px 11px;font-size:14px;background:#fff;color:#1f2937}
+.geo-manual-row button{border:0;border-radius:6px;background:#1d4ed8;color:#fff;padding:0 14px;font-size:12px;font-weight:800;cursor:pointer}
+body.theme-light .geo-box,
+body.theme-light .tracking-card{
+  background:#fff;
+  border-color:rgba(139,10,30,.14);
+  box-shadow:0 18px 46px rgba(54,35,18,.07)
+}
+body.theme-light .geo-box-title,
+body.theme-light .tracking-card h3{color:#17120d!important}
+body.theme-light .geo-status,
+body.theme-light .photo-help,
+body.theme-light .tracking-card p{color:rgba(23,18,13,.72)!important}
+body.theme-light .geo-manual label{color:rgba(23,18,13,.72)}
+body.theme-light .geo-manual-row input{border-color:rgba(139,10,30,.15);color:#17120d}
+body.theme-light .geo-manual-row button{background:var(--r)}
 .photo-preview{margin-top:8px}
 .photo-preview img{max-width:100%;border-radius:5px;box-shadow:0 4px 16px rgba(0,0,0,.12)}
 .photo-loader{font-size:12px;color:#888;padding:8px 0}
@@ -1148,4 +1180,6 @@ body.theme-light .side-action-code{
     padding:9px 10px;
     font-size:12px;
   }
+  .geo-manual-row{flex-direction:column}
+  .geo-manual-row button{min-height:44px}
 }

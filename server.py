@@ -107,7 +107,7 @@ def _send_notif_email(entry: dict, notif_type: str):
 
     # Corps email HTML
     def row(k, v):
-        return f'<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">{k}</td><td style="padding:6px 12px;font-weight:600">{v}</td></tr>'
+        return f'<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">{_html.escape(str(k))}</td><td style="padding:6px 12px;font-weight:600">{v}</td></tr>'
 
     rows = ""
     if tracking_code:
@@ -126,10 +126,14 @@ def _send_notif_email(entry: dict, notif_type: str):
     ]:
         val = entry.get(field, "").strip() if isinstance(entry.get(field), str) else ""
         if val:
-            rows += row(display, val)
+            rows += row(display, _html.escape(val))
     if entry.get("geo_lat"):
-        maps = entry.get("geo_maps_url", f"https://maps.google.com/?q={entry['geo_lat']},{entry.get('geo_lng','')}")
-        rows += row("Localisation", f'<a href="{maps}">{entry["geo_lat"]}, {entry.get("geo_lng","")}</a>')
+        maps = _html.escape(entry.get("geo_maps_url", f"https://maps.google.com/?q={entry['geo_lat']},{entry.get('geo_lng','')}"), quote=True)
+        rows += row("Localisation", f'<a href="{maps}">{_html.escape(str(entry["geo_lat"]))}, {_html.escape(str(entry.get("geo_lng","")))}</a>')
+    elif entry.get("geo_label"):
+        maps = _html.escape(entry.get("geo_maps_url", ""), quote=True)
+        label_geo = _html.escape(str(entry.get("geo_label", "")))
+        rows += row("Localisation", f'<a href="{maps}">{label_geo}</a>' if maps else label_geo)
 
     html_body = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto">

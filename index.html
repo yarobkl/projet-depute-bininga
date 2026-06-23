@@ -84,7 +84,7 @@
   } catch (_) {}
 })();
 </script>
-<link rel="stylesheet" href="static/index.css?v=20260623-light-readability">
+<link rel="stylesheet" href="static/index.css?v=20260623-priority-fixes">
 <link rel="stylesheet" href="static/mobile.css?v=20260622-readable-drawer">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
@@ -101,7 +101,7 @@ body.theme-light .lang-btn:hover{border-color:rgba(139,10,30,.22);background:rgb
 body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);background:rgba(139,10,30,.08);box-shadow:0 0 0 2px rgba(200,16,46,.22)}
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
-<script src="static/i18n.js?v=20260622-readable-drawer"></script>
+<script src="static/i18n.js?v=20260623-priority-fixes"></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -473,6 +473,13 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
             <button type="button" class="btn-geo" id="btn-geo" onclick="localizeSinistre()">
               <span data-i18n="form.geo.btn">Géolocaliser ma position</span>
             </button>
+            <div class="geo-manual">
+              <label for="geo-manual-address" data-i18n="form.geo.manual.lbl">Ou indiquez l'adresse manuellement</label>
+              <div class="geo-manual-row">
+                <input type="text" id="geo-manual-address" placeholder="Quartier, rue, repère ou village" data-i18n-ph="form.geo.manual.ph">
+                <button type="button" onclick="useManualLocation()" data-i18n="form.geo.manual.btn">Valider</button>
+              </div>
+            </div>
             <div class="geo-addr" id="geo-addr" style="display:none"></div>
             <div class="geo-map-preview" id="geo-map" style="display:none"></div>
             <input type="hidden" name="geo_lat" id="geo-lat">
@@ -668,7 +675,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 <script src="static/i18n-data.es.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.ru.js?v=20260619-theme-mode"></script>
-<script src="static/index.js?v=20260623-tracking-code" defer></script>
+<script src="static/index.js?v=20260623-priority-fixes" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 
