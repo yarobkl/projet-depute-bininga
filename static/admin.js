@@ -1755,7 +1755,7 @@ async function runVeille(preset) {
   try {
     const res  = await apiFetch("/api/news/run", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ query }),
     });
     const data = await res.json();
@@ -1777,7 +1777,7 @@ async function restartMonitor() {
   try {
     const res  = await apiFetch("/api/monitor-restart", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN },
+      headers: authHeaders({ "Content-Type": "application/json" }),
     });
     const data = await res.json();
     if (data.ok) {
@@ -1911,7 +1911,7 @@ async function markNewsRead(id) {
   try {
     await apiFetch("/api/news/mark-read", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ id }),
     });
     const item = _newsItems.find(a => a.id === id);
@@ -1926,7 +1926,7 @@ async function markAllNewsRead() {
   try {
     await apiFetch("/api/news/mark-read", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ all: true }),
     });
     _newsItems.forEach(a => a.read = true);
@@ -1940,7 +1940,7 @@ async function deleteNewsItem(id) {
   try {
     await apiFetch("/api/news/delete", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ id }),
     });
     _newsItems = _newsItems.filter(a => a.id !== id);
@@ -3442,7 +3442,7 @@ async function resolveAlert(id) {
   try {
     await fetch("/api/monitoring/resolve-alert", {
       method: "POST",
-      headers: { "X-Admin-Token": SESSION_TOKEN, "Content-Type": "application/json" },
+      headers: authHeaders(),
       body: JSON.stringify({ id }),
     });
     await loadMonAlerts();

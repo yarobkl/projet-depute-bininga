@@ -418,12 +418,18 @@ def _totp_uri(secret: str, username: str, issuer: str = "BININGA") -> str:
 # ── Sécurité — path traversal ──────────────────────────────
 # Fichiers serveur à ne jamais servir comme statiques
 BLOCKED_STATIC = {
-    "users.json", "sessions.json", "audit.log",
-    "contacts.json", "server.py", "cert.pem", "key.pem",
+    "users.json", "sessions.json", "audit.log", "attacks.log", "monitor.log",
+    "contacts.json", "crm.json", "editorial.json", "news_monitor.json",
+    "blocked_ips.json", "attack_scores.json",
+    "server.py", "passenger_wsgi.py", "monitor.py", "cert.pem", "key.pem",
+    "monitor.pid", "monitoring.db", "news.db", "requirements.txt",
 }
 # Extensions autorisées pour les fichiers statiques
 ALLOWED_STATIC_EXT = {".html", ".css", ".js", ".png", ".jpg", ".jpeg",
                       ".gif", ".webp", ".svg", ".ico", ".xml", ".txt", ".mp4", ".webm"}
+
+def _has_hidden_segment(path_value: str) -> bool:
+    return any(segment.startswith(".") for segment in path_value.split("/") if segment)
 
 def _safe_path(relative: str):
     """Retourne le chemin absolu seulement s'il reste dans BASE_DIR
@@ -432,13 +438,17 @@ def _safe_path(relative: str):
     normalized = posixpath.normpath("/" + relative).lstrip("/")
     filename = os.path.basename(normalized)
 
+    # Bloquer les dotfiles/dossiers cachés (.env, .git/HEAD...) et les chemins vides
+    if not normalized or _has_hidden_segment(normalized):
+        return None
+
     # Bloquer les fichiers sensibles
     if filename in BLOCKED_STATIC:
         return None
 
-    # Bloquer les extensions non autorisées (sauf data.json accessible via /api/load)
+    # Bloquer les fichiers sans extension et les extensions non autorisées
     ext = os.path.splitext(filename)[1].lower()
-    if ext and ext not in ALLOWED_STATIC_EXT:
+    if not ext or ext not in ALLOWED_STATIC_EXT:
         return None
 
     resolved = os.path.realpath(os.path.join(BASE_DIR, normalized))
@@ -2110,10 +2120,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             req_dir = qs.get("dir", ["images"])[0]
             # Sécurité : autoriser uniquement les sous-dossiers de images/
             safe_dir = posixpath.normpath(req_dir).lstrip("/")
-            if not safe_dir.startswith("images"):
+            if _has_hidden_segment(safe_dir) or not (safe_dir == "images" or safe_dir.startswith("images/")):
                 safe_dir = "images"
             abs_dir = os.path.realpath(os.path.join(BASE_DIR, safe_dir))
-            if not abs_dir.startswith(BASE_DIR + os.sep) and abs_dir != BASE_DIR:
+            images_root = os.path.realpath(os.path.join(BASE_DIR, "images"))
+            if abs_dir != images_root and not abs_dir.startswith(images_root + os.sep):
                 self._json({"ok": False, "message": "Chemin non autorisé"}, 403)
                 return
             IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
@@ -3241,8 +3252,7 @@ Réponse :"""
             # DELETE /api/yaro/article  body: {id}
             if path == "/api/yaro/article":
                 try:
-                    length = int(self.headers.get("Content-Length", 0))
-                    payload = json.loads(self.rfile.read(length)) if length else {}
+                    payload = json.loads(body.decode("utf-8")) if body.strip() else {}
                     art_id  = int(payload.get("id", 0))
                     c = _yaro_conn()
                     c.execute("DELETE FROM articles WHERE id = ?", (art_id,))
@@ -3472,7 +3482,12 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                     "/api/contacts/update", "/api/reset",
                     "/api/crm/upsert", "/api/crm/delete", "/api/crm/bulk-delete", "/api/crm/import",
                     "/api/crm/note", "/api/crm/newsletter/send",
-                    "/api/backups/run",
+                    "/api/backups/run", "/api/upload", "/api/admin/force-sync",
+                    "/api/security/unblock", "/api/security/block", "/api/security/bouclier/lockdown",
+                    "/api/news/mark-read", "/api/news/delete", "/api/news/run",
+                    "/api/monitor-restart", "/api/monitoring/resolve-alert",
+                    "/api/editorial/generate", "/api/editorial/save", "/api/editorial/delete",
+                    "/api/yaro/run", "/api/yaro/article",
                     "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
@@ -3733,15 +3748,14 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             raw_name  = part.get_filename() or "upload.jpg"
             safe_name = "".join(c for c in os.path.basename(raw_name) if c.isalnum() or c in ".-_") or "image.jpg"
             # Vérifier extension image
-            if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg")):
+            if not any(safe_name.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".gif", ".webp")):
                 self._json({"ok": False, "message": "Type de fichier non autorisé"}, 400)
                 return
             data_bytes = part.get_payload(decode=True)
             if not data_bytes or len(data_bytes) > 10 * 1024 * 1024:
                 self._json({"ok": False, "message": "Fichier trop volumineux (max 10 Mo)"}, 400)
                 return
-            # SVG autorisé sans vérification magic bytes (texte XML)
-            if not safe_name.lower().endswith(".svg") and not _is_valid_image(data_bytes):
+            if not _is_valid_image(data_bytes):
                 self._json({"ok": False, "message": "Contenu du fichier invalide (image corrompue ou format non autorisé)"}, 400)
                 return
             # Sauvegarder sur disque
@@ -3751,7 +3765,7 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             # Sauvegarder aussi dans PostgreSQL (survit aux redéploiements)
             ext = safe_name.lower().rsplit(".", 1)[-1] if "." in safe_name else "jpg"
             mime_map = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png",
-                        "webp": "image/webp", "gif": "image/gif", "svg": "image/svg+xml"}
+                        "webp": "image/webp", "gif": "image/gif"}
             img_mime = mime_map.get(ext, "image/jpeg")
             _pg_save_photo("upload_" + safe_name, data_bytes, img_mime)
             print(f"[BININGA] 📷 Image uploadée : {safe_name}")
