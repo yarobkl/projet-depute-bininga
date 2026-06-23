@@ -19,4 +19,9 @@ RewriteRule ^espace-ministre-ab-2025/?$ admin.html [L]
   Header always set X-Content-Type-Options "nosniff"
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  <FilesMatch "\.(html|css|js)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
 </IfModule>
