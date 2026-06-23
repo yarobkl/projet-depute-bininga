@@ -266,7 +266,7 @@ def test_news_run_cycle_complet():
     trigger = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "monitor.trigger")
     if os.path.exists(trigger):
         os.unlink(trigger)
-    status, body = post("/api/news/run", {}, token=token)
+    status, body = post("/api/news/run", {}, token=token, csrf=csrf)
     assert status == 200, f"/api/news/run doit retourner 200, reçu {status}"
     assert body.get("ok") == True, f"ok doit être True, reçu : {body}"
     assert "lancé" in body.get("message", "").lower() or "cycle" in body.get("message", "").lower(), \
@@ -288,7 +288,7 @@ def test_news_run_requete_personnalisee():
     if os.path.exists(trigger):
         os.unlink(trigger)
     query = "nouvelles lois justice Afrique 2026"
-    status, body = post("/api/news/run", {"query": query}, token=token)
+    status, body = post("/api/news/run", {"query": query}, token=token, csrf=csrf)
     assert status == 200 and body.get("ok"), f"Recherche personnalisée doit réussir : {body}"
     assert query in body.get("message", ""), f"La requête doit apparaître dans le message : {body.get('message')}"
     assert os.path.exists(trigger), "monitor.trigger doit être créé"
@@ -310,7 +310,7 @@ def test_news_mark_read():
     with open(news_file, "w") as f:
         _json.dump(data, f)
     # Marquer comme lu
-    status, body = post("/api/news/mark-read", {"id": "test_read_001"}, token=token)
+    status, body = post("/api/news/mark-read", {"id": "test_read_001"}, token=token, csrf=csrf)
     assert status == 200 and body.get("ok"), f"mark-read doit réussir : {body}"
     # Vérifier
     saved = _json.load(open(news_file))
@@ -331,7 +331,7 @@ def test_news_mark_all_read():
     ]
     with open(news_file, "w") as f:
         _json.dump({"items": items, "last_run": None, "stats": {}}, f)
-    status, body = post("/api/news/mark-read", {"all": True}, token=token)
+    status, body = post("/api/news/mark-read", {"all": True}, token=token, csrf=csrf)
     assert status == 200 and body.get("ok"), f"mark-read all doit réussir : {body}"
     saved = _json.load(open(news_file))
     assert all(a["read"] for a in saved["items"]), "Tous les articles doivent être marqués lus"
@@ -351,7 +351,7 @@ def test_news_delete_item():
     ]
     with open(news_file, "w") as f:
         _json.dump({"items": items, "last_run": None, "stats": {}}, f)
-    status, body = post("/api/news/delete", {"id": "del_001"}, token=token)
+    status, body = post("/api/news/delete", {"id": "del_001"}, token=token, csrf=csrf)
     assert status == 200 and body.get("ok"), f"delete doit réussir : {body}"
     assert body.get("deleted") == 1, f"1 article doit être supprimé, reçu {body.get('deleted')}"
     saved = _json.load(open(news_file))
