@@ -1342,10 +1342,20 @@ async function submitOrder(e, f) {
   const entry = { type:"bininga_commande_livre", livre:"Les mutations constitutionnelles en Afrique noire francophone", _date: new Date().toLocaleString("fr-FR"), _id: Date.now()+"-"+Math.random().toString(36).slice(2,8) };
   fd.forEach((v,k) => { entry[k] = v; });
   trackBuy("bureau");
-  try { await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)}); } catch(_){}
+  let trackingCode = "";
+  try {
+    const res = await fetch("/api/contact",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(entry)});
+    const data = await res.json().catch(() => ({}));
+    trackingCode = data.tracking_code || "";
+    if (trackingCode) entry.tracking_code = trackingCode;
+  } catch(_){}
   try { const l=JSON.parse(localStorage.getItem("bininga_commandes")||"[]"); l.push(entry); localStorage.setItem("bininga_commandes",JSON.stringify(l)); } catch(_){}
   f.style.display = "none";
-  document.getElementById("order-ok").style.display = "block";
+  const ok = document.getElementById("order-ok");
+  if (trackingCode) {
+    ok.innerHTML = `Commande enregistrée. Numéro de suivi : <strong>${escHtml(trackingCode)}</strong>. Notre équipe vous contacte sous 48h.`;
+  }
+  ok.style.display = "block";
 }
 
 // ── NEWSLETTER ─────────────────────────────────────────────

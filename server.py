@@ -102,12 +102,15 @@ def _send_notif_email(entry: dict, notif_type: str):
     label  = labels.get(src, "📬 Nouveau message")
     nom    = f"{entry.get('prenom','')} {entry.get('nom','')}".strip() or "Inconnu"
     ts     = entry.get("ts", "")
+    tracking_code = str(entry.get("tracking_code", "")).strip()
 
     # Corps email HTML
     def row(k, v):
         return f'<tr><td style="padding:6px 12px;color:#666;white-space:nowrap">{k}</td><td style="padding:6px 12px;font-weight:600">{v}</td></tr>'
 
     rows = ""
+    if tracking_code:
+        rows += row("Numéro de suivi", tracking_code)
     for field, display in [
         ("nom",         "Nom"),
         ("prenom",      "Prénom"),
@@ -145,7 +148,8 @@ def _send_notif_email(entry: dict, notif_type: str):
     """
 
     msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"[BININGA] {label} — {nom}"
+    subject_suffix = f" — Suivi {tracking_code}" if tracking_code else ""
+    msg["Subject"] = f"[BININGA] {label} — {nom}{subject_suffix}"
     msg["From"]    = from_addr
     msg["To"]      = ", ".join(to_list)
     msg.attach(MIMEText(html_body, "html", "utf-8"))
@@ -1385,6 +1389,46 @@ def append_contact(entry: dict):
         contacts.append(entry)
         save_contacts(contacts)
 
+def _needs_tracking(entry: dict) -> bool:
+    src = entry.get("source") or entry.get("type", "")
+    return src in {"bininga_audiences", "bininga_contacts", "bininga_commande_livre"}
+
+def _generate_tracking_code(existing_contacts=None) -> str:
+    existing_contacts = existing_contacts if existing_contacts is not None else load_contacts()
+    existing = {str(c.get("tracking_code", "")).upper() for c in existing_contacts}
+    today = datetime.now().strftime("%Y%m%d")
+    for _ in range(20):
+        code = f"AB-{today}-{secrets.token_hex(3).upper()}"
+        if code not in existing:
+            return code
+    return f"AB-{today}-{secrets.token_hex(5).upper()}"
+
+def _status_label(entry: dict) -> str:
+    if entry.get("appointment", {}).get("date"):
+        return "Rendez-vous programmé"
+    if entry.get("decision"):
+        return "Décision rendue"
+    status = entry.get("_status") or entry.get("status") or "en_attente"
+    return {
+        "en_attente": "Dossier reçu",
+        "non_lu": "Dossier reçu",
+        "en_cours": "En cours de traitement",
+        "traite": "Traité",
+        "lu": "Ouvert par l'équipe",
+    }.get(status, "Dossier reçu")
+
+def _tracking_steps(entry: dict) -> list:
+    status = entry.get("_status") or entry.get("status") or "en_attente"
+    opened = status in {"lu", "en_cours", "traite"} or bool(entry.get("_opened_at"))
+    decided = bool(entry.get("decision"))
+    appointment = bool(entry.get("appointment", {}).get("date"))
+    return [
+        {"label": "Demande reçue", "done": True, "date": entry.get("ts") or entry.get("_date", "")},
+        {"label": "Ouverte par l'équipe", "done": opened, "date": entry.get("_opened_at", "")},
+        {"label": "Traitement / décision", "done": status in {"en_cours", "traite"} or decided, "date": entry.get("_decision_at", "")},
+        {"label": "Rendez-vous programmé", "done": appointment, "date": entry.get("appointment", {}).get("date", "")},
+    ]
+
 # ── CRM ────────────────────────────────────────────────────
 def _crm_expire_date() -> str:
     """Date d'expiration = maintenant + 10 ans (rétention légale)."""
@@ -1761,6 +1805,35 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, **_mon.get_visit_stats()})
             else:
                 self._json({"ok": True, "total": 0, "today": 0, "prog_views": 0})
+            return
+
+        if path == "/api/dossier":
+            qs = parse_qs(urlparse(self.path).query)
+            code = qs.get("code", [""])[0].strip().upper()
+            if not code:
+                self._json({"ok": False, "message": "Numéro de suivi requis"}, 400)
+                return
+            match = next((c for c in load_contacts()
+                          if str(c.get("tracking_code", "")).strip().upper() == code), None)
+            if not match:
+                self._json({"ok": False, "message": "Dossier introuvable"}, 404)
+                return
+            decision = match.get("decision", "")
+            decision_label = {
+                "favorable": "Favorable",
+                "defavorable": "Défavorable",
+                "reportee": "Reportée",
+            }.get(decision, "")
+            self._json({
+                "ok": True,
+                "tracking_code": code,
+                "status_label": _status_label(match),
+                "steps": _tracking_steps(match),
+                "decision": decision,
+                "decision_label": decision_label,
+                "decision_note": match.get("decision_note", ""),
+                "appointment": match.get("appointment", {}),
+            })
             return
 
         # ── /api/events — SSE notifications temps réel ────────────────────────
@@ -3151,6 +3224,13 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 raw_src = entry.get("source") or entry.get("type", "contact")
                 entry["source"] = raw_src
                 entry["type"]   = raw_src
+                if _needs_tracking(entry):
+                    existing_contacts = load_contacts()
+                    entry["tracking_code"] = (
+                        str(entry.get("tracking_code", "")).strip().upper()
+                        or _generate_tracking_code(existing_contacts)
+                    )
+                    entry.setdefault("_status", "en_attente")
                 append_contact(entry)
                 nom    = entry.get("nom", "")
                 prenom = entry.get("prenom", "")
@@ -3230,7 +3310,12 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                             save_crm(crm)
                     except Exception:
                         pass  # CRM non bloquant
-                self._json({"ok": True, "message": "Message reçu"})
+                self._json({
+                    "ok": True,
+                    "message": "Message reçu",
+                    "id": entry.get("_id", ""),
+                    "tracking_code": entry.get("tracking_code", ""),
+                })
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 400)
             return
