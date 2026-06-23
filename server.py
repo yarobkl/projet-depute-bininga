@@ -16,6 +16,7 @@ import re
 import gzip
 import base64
 import html as _html
+import unicodedata
 from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
@@ -673,6 +674,71 @@ def check_chat_rate(ip: str) -> bool:
         record_attack(ip, "CHAT_RATE_ABUSE", 2, f"Chat: {rec['n']} msg/min")
         return True
     return False
+
+def _chat_norm(text: str) -> str:
+    """Normalise une question pour des règles chatbot plus stables."""
+    text = unicodedata.normalize("NFKD", text or "")
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9\s'-]", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+def _chat_has(q: str, terms) -> bool:
+    return any(term in q for term in terms)
+
+def _chat_contact_fallback(nom: str, contact: dict) -> str:
+    email = (contact or {}).get("email", "").strip()
+    if email:
+        return (
+            "Désolé, je ne peux pas vous aider précisément sur ce point. "
+            f"DA répond uniquement à partir des informations publiées sur ce site concernant {nom}. "
+            f"Pour une demande plus spécifique, veuillez contacter l'équipe via le formulaire du site ou par email : {email}."
+        )
+    return (
+        "Désolé, je ne peux pas vous aider précisément sur ce point. "
+        f"DA répond uniquement à partir des informations publiées sur ce site concernant {nom}. "
+        "Pour une demande plus spécifique, veuillez contacter l'équipe via le formulaire de contact."
+    )
+
+def _chat_site_context(data: dict) -> str:
+    """Construit un contexte court, extrait uniquement de data.json."""
+    hero = data.get("hero", {})
+    about = data.get("about", {})
+    programme = data.get("programme", {})
+    parcours = data.get("parcours", [])
+    actus = data.get("actus", {})
+    parts = []
+    role = hero.get("role", "")
+    if role:
+        parts.append(f"Fonctions : {role}")
+    if about.get("intro"):
+        parts.append(f"Biographie : {about.get('intro')}")
+    for p in about.get("paragraphs", [])[:4]:
+        if p:
+            parts.append(p)
+    axes = []
+    for ax in programme.get("axes", [])[:6]:
+        if isinstance(ax, dict) and ax.get("title"):
+            axes.append(ax.get("title"))
+    if axes:
+        parts.append("Axes du programme : " + ", ".join(axes))
+    tl = []
+    for item in parcours[:6]:
+        if isinstance(item, dict):
+            title = item.get("title", "")
+            year = item.get("year", "")
+            desc = item.get("desc", "")
+            if title or desc:
+                tl.append(f"{year} {title} {desc}".strip())
+    if tl:
+        parts.append("Parcours : " + " | ".join(tl))
+    slides = []
+    for slide in actus.get("slides", [])[:6]:
+        if isinstance(slide, dict) and slide.get("title"):
+            slides.append(slide.get("title", "").replace("\n", " "))
+    if slides:
+        parts.append("Actualités : " + " | ".join(slides))
+    return "\n".join(parts)[:3500]
 
 # ── Tarpit ─────────────────────────────────────────────────
 def maybe_tarpit(ip: str):
@@ -2659,6 +2725,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     return
 
                 q = question.lower()
+                qn = _chat_norm(question)
                 import random
 
                 # Charger le contenu depuis PostgreSQL (ou fichier en fallback)
@@ -2675,17 +2742,35 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 role = hero.get("role", "Garde des Sceaux, Ministre de la Justice, Député d'Ewo")
                 reply = None
 
-                # ── Salutations ───────────────────────────────────────────────
-                if any(w in q for w in ["bonjour", "bonsoir", "salut", "bonne journée", "bonne soirée", "hey"]) and not any(w in q for w in ["hello", "hi", "how are", "english", "speak"]):
-                    reply = random.choice([
-                        f"Bonjour ! Bienvenue sur le site officiel de {nom}. Je suis DA, son assistant virtuel. Je peux vous renseigner sur son parcours, ses fonctions, son programme, ses actualités ou la façon de le contacter. Que souhaitez-vous savoir ?",
-                        f"Bonjour et bienvenue ! Je suis DA, l'assistant virtuel du Ministre {nom.split()[-1]}. Posez-moi vos questions sur sa biographie, son action ou son programme. Comment puis-je vous aider ?",
-                        f"Bonsoir ! Heureux de vous accueillir sur ce site. Je suis DA, l'assistant virtuel dédié à {nom}. Comment puis-je vous aider aujourd'hui ?",
-                    ])
+                out_of_scope = [
+                    "meteo", "football", "match", "pari", "casino", "recette", "cuisine",
+                    "bitcoin", "crypto", "trading", "blague", "raconte une blague",
+                    "devoir", "mathematique", "physique", "hack", "pirater", "mot de passe",
+                    "president americain", "france politique", "openai", "anthropic", "chatgpt"
+                ]
+
+                # ── Salutations humaines ──────────────────────────────────────
+                if _chat_has(qn, ["bonjour", "bonsoir", "salut", "coucou", "hey", "ca va", "comment tu vas", "tu vas bien"]) and not _chat_has(qn, ["hello", "hi", "how are", "english", "speak"]):
+                    reply = (
+                        f"Bonjour, ça va merci, et vous ? Je suis DA, l'assistant virtuel du site officiel de {nom}. "
+                        "Je peux vous aider sur sa biographie, son parcours, son programme, ses actualités, les demandes d'audience ou le contact."
+                    )
 
                 # ── Qui est DA ────────────────────────────────────────────────
                 elif any(w in q for w in ["qui es-tu", "qui es tu", "tu es qui", "c'est quoi da", "présente-toi", "tu t'appelles", "tu es quoi"]):
-                    reply = f"Je suis DA, l'assistant virtuel du site officiel de {nom}. Je suis là pour répondre à vos questions sur son parcours, ses fonctions, son programme, ses actualités et ses engagements. Je ne suis pas une intelligence artificielle — je me base uniquement sur les informations publiées sur ce site."
+                    reply = (
+                        f"Je suis DA, l'assistant virtuel du site officiel de {nom}. "
+                        "Je réponds uniquement à partir des informations publiées sur ce site et des documents intégrés au projet. "
+                        "Je peux vous orienter sur son parcours, ses fonctions, son programme, ses actualités, les audiences et le contact."
+                    )
+
+                # ── Journal officiel / documents non intégrés ────────────────
+                elif _chat_has(qn, ["journal officiel", "jo congo", "decret", "nomination officielle", "numero du journal", "pdf officiel"]):
+                    reply = (
+                        "Je peux répondre sur les éléments publiés dans ce site, mais je ne dois pas inventer un extrait du Journal officiel. "
+                        f"D'après les informations du site, {nom} est présenté comme Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, et Député d'Ewo. "
+                        "Pour vérifier un décret, un numéro du Journal officiel ou une référence exacte, veuillez contacter l'équipe via le formulaire de contact afin qu'elle vous transmette le document officiel."
+                    )
 
                 # ── Âge / naissance ───────────────────────────────────────────
                 elif any(w in q for w in ["âge", "age", "né", "naissance", "date de naissance", "quel age", "quel âge", "né quand", "né où", "né a", "né à"]):
@@ -2717,8 +2802,12 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         reply = f"{nom} est Docteur en droit et Inspecteur principal du Trésor public. Il a exercé plusieurs fonctions ministérielles importantes au Congo avant d'être élu Député d'Ewo."
 
                 # ── Fonctions / titre / ministre ──────────────────────────────
-                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]):
-                    reply = f"{nom} est actuellement {role}. Il est Député de la 1re circonscription d'Ewo depuis 2017, et a exercé les fonctions de Ministre des Finances avant de prendre en charge la Justice."
+                elif any(w in q for w in ["fonction", "rôle", "titre", "ministre", "garde des sceaux", "mandat", "poste", "assemblée", "député", "actuel"]) and not any(w in q for w in ["finance", "finances", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
+                    reply = (
+                        f"{nom} est actuellement présenté sur ce site comme {role}. "
+                        "Il est Député de la 1re circonscription d'Ewo depuis le 19 août 2017. "
+                        "Son parcours mentionne notamment le Ministère de la Fonction publique et de la Réforme de l'État en 2016, puis ses fonctions actuelles liées à la Justice."
+                    )
 
                 # ── Justice / réformes ────────────────────────────────────────
                 elif any(w in q for w in ["justice", "loi", "droit", "réforme", "tribunal", "judiciaire", "juridique", "législation", "code", "pénal", "civil"]):
@@ -2737,8 +2826,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = f"{nom} est actif sur le plan de la coopération judiciaire internationale. Il a notamment reçu son homologue français Gérald Darmanin à Paris dans le cadre du renforcement de la coopération judiciaire entre la France et la République du Congo."
 
                 # ── Finances / économie (ancienne fonction) ────────────────────
-                elif any(w in q for w in ["finance", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
-                    reply = f"Avant de prendre en charge le Ministère de la Justice, {nom} a exercé les fonctions de Ministre chargé des Finances. Son expertise en droit et en finances publiques est l'un de ses atouts majeurs."
+                elif any(w in q for w in ["finance", "finances", "économie", "budget", "fiscalité", "trésor", "ministre des finances", "économique"]):
+                    reply = (
+                        f"Le site mentionne l'expertise de {nom} en finances publiques à travers son parcours à la Direction générale du Trésor public, jusqu'au rang d'Inspecteur principal. "
+                        "En revanche, je ne dois pas affirmer ici une fonction ministérielle qui n'est pas publiée dans les données du site. Pour une référence officielle précise, contactez l'équipe."
+                    )
 
                 # ── Programme ─────────────────────────────────────────────────
                 elif any(w in q for w in ["programme", "projet", "plan", "engagements", "promesse", "objectif", "vision", "axe", "priorité"]):
@@ -2849,8 +2941,16 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                     reply = f"⚠️ Pour toute situation urgente, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site en précisant le caractère urgent de votre demande. Vous pouvez aussi appeler les services compétents selon la nature de votre urgence."
 
                 # ── Messages irrespectueux ────────────────────────────────────
-                elif any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con"]):
-                    reply = "Je vous invite à formuler votre question de façon respectueuse. Je suis ici pour vous informer et vous aider. Si vous avez une préoccupation sérieuse, le formulaire de contact est à votre disposition."
+                elif any(w in q for w in ["idiot", "nul", "incompétent", "voleur", "menteur", "corrompu", "useless", "inutile", "merde", "con", "tu dis n'importe quoi", "tu sers a rien"]):
+                    reply = (
+                        "Je comprends que vous puissiez être agacé, mais je dois rester respectueux et utile. "
+                        f"Je peux répondre aux questions liées à {nom}, à son parcours, au programme, aux audiences ou au contact. "
+                        "Pour une réclamation précise, veuillez utiliser le formulaire de contact du site."
+                    )
+
+                # ── Hors sujet évident ────────────────────────────────────────
+                elif _chat_has(qn, out_of_scope):
+                    reply = _chat_contact_fallback(nom, contact)
 
                 # ── Questions fréquentes — Comment faire ─────────────────────
                 elif any(w in q for w in ["comment faire", "comment puis-je", "comment je peux", "est-ce que je peux", "c'est possible", "comment ça marche", "procédure", "démarche"]):
@@ -2899,7 +2999,11 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
                 # ── Robot / humain ? ──────────────────────────────────────────
                 elif any(w in q for w in ["robot", "humain", "intelligence artificielle", "ia ", "chatbot", "bot", "machine", "programme", "automatique", "réel"]):
-                    reply = f"Je suis DA, un assistant virtuel — ni humain, ni intelligence artificielle. Je fonctionne à partir des informations publiées sur ce site officiel de {nom}. Je ne peux donc répondre qu'aux questions liées à son parcours, ses fonctions et ses engagements."
+                    reply = (
+                        f"Je suis DA, l'assistant virtuel du site officiel de {nom}. "
+                        "Je ne suis pas un agent humain du cabinet : je réponds à partir des informations publiées sur ce site. "
+                        "Quand une question dépasse ce cadre, je préfère l'indiquer clairement plutôt que d'inventer."
+                    )
 
                 # ── Compliments / félicitations ───────────────────────────────
                 elif any(w in q for w in ["super da", "bravo da", "bien répondu", "excellente réponse", "top da", "tu es bien", "bonne réponse"]):
@@ -2997,19 +3101,43 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                             ax.get("title","") for ax in programme.get("axes",[])[:4]
                             if isinstance(ax, dict) and ax.get("title")
                         )
-                        ai_prompt = f"""Tu es DA, assistante virtuelle du site de {nom}, {role}.
-Réponds en français, chaleureusement, en 2-3 phrases max, uniquement sur {nom}.
-Si tu ne sais pas, oriente vers le formulaire de contact.
-Contexte : {about_intro} Programme : {prog_axes}
-{hist_txt}Visiteur: {question}
-DA:"""
+                        site_context = _chat_site_context(data)
+                        allowed_terms = [
+                            "bininga", "ewo", "cuvette", "congo", "depute", "deputé", "ministre",
+                            "justice", "droits humains", "autochtones", "programme", "campagne",
+                            "audience", "contact", "parcours", "biographie", "actualite", "actualite",
+                            "darmanin", "rwanda", "halc", "corruption", "livre", "publication",
+                            "assemblee", "parlement", "fonction publique", "tresor", "journal officiel",
+                            "decret", "dossier", "suivi", "reclamation"
+                        ]
+                        if not _chat_has(qn, allowed_terms):
+                            reply = _chat_contact_fallback(nom, contact)
+                            self._json({"ok": True, "reply": reply})
+                            return
+                        ai_prompt = f"""Tu es DA, assistant virtuel officiel du site de {nom}.
+Règles strictes :
+- Réponds en français, naturellement, en 2 à 4 phrases maximum.
+- Utilise uniquement le contexte fourni ci-dessous.
+- Ne cite pas de décret, de numéro du Journal officiel, de date ou de fonction si le contexte ne le donne pas clairement.
+- Si la réponse n'est pas dans le contexte, dis que tu ne peux pas confirmer et oriente vers le formulaire de contact.
+- Ne répète pas la même phrase. Ne commence pas par "DA:".
+
+Contexte autorisé :
+{site_context}
+
+Historique bref :
+{hist_txt}
+Question du visiteur : {question}
+Réponse :"""
                         ai_reply = _gemini_call(ai_prompt, max_tokens=150, timeout=12)
                         # Nettoyer si le modèle répète "DA:"
                         if ai_reply.lower().startswith("da:"):
                             ai_reply = ai_reply[3:].strip()
+                        if any(x in ai_reply.lower() for x in ["je suis désolé, mais en tant", "je n'ai pas accès à internet", "selon mes connaissances"]):
+                            ai_reply = _chat_contact_fallback(nom, contact)
                         reply = ai_reply
                     except Exception:
-                        reply = f"Je n'ai pas d'information précise sur ce sujet. Pour toute question, contactez directement l'équipe de {nom} via le formulaire de contact sur ce site."
+                        reply = _chat_contact_fallback(nom, contact)
 
                 self._json({"ok": True, "reply": reply})
             except Exception as e:

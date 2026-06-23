@@ -141,6 +141,47 @@ def test_chat_parcours():
     print(f"✅ test_chat_parcours — '{data['reply'][:80]}…'")
 
 
+def test_chat_humain_comment_ca_va():
+    """Le chatbot répond naturellement aux petites interactions humaines."""
+    status, data = chat("Bonjour, comment tu vas ?")
+    assert status == 200
+    reply = data["reply"].lower()
+    assert "ça va" in reply or "ca va" in reply
+    assert "que" in reply and "aider" in reply
+    print(f"✅ test_chat_humain_comment_ca_va — '{data['reply'][:80]}…'")
+
+
+def test_chat_hors_sujet_refuse_poliment():
+    """Le chatbot ne doit pas improviser sur des sujets hors cadre."""
+    status, data = chat("Tu peux me donner une recette de pizza ?")
+    assert status == 200
+    reply = data["reply"].lower()
+    assert "désolé" in reply or "desole" in reply
+    assert "site" in reply or "contact" in reply
+    print(f"✅ test_chat_hors_sujet_refuse_poliment — '{data['reply'][:80]}…'")
+
+
+def test_chat_journal_officiel_ne_pas_inventer():
+    """Le chatbot ne doit pas inventer un décret ou un numéro de Journal officiel."""
+    status, data = chat("Donne-moi le numéro du Journal officiel du décret de nomination du ministre")
+    assert status == 200
+    reply = data["reply"].lower()
+    assert "journal officiel" in reply
+    assert "inventer" in reply or "vérifier" in reply or "verifier" in reply
+    assert "formulaire" in reply or "contact" in reply
+    print(f"✅ test_chat_journal_officiel_ne_pas_inventer — '{data['reply'][:80]}…'")
+
+
+def test_chat_ministre_finances_pas_affirme():
+    """Le chatbot ne doit pas affirmer une fonction ministérielle non publiée."""
+    status, data = chat("Il était ministre des finances ?")
+    assert status == 200
+    reply = data["reply"].lower()
+    assert "trésor" in reply or "tresor" in reply
+    assert "ne dois pas affirmer" in reply or "n'est pas publié" in reply or "pas publiée" in reply
+    print(f"✅ test_chat_ministre_finances_pas_affirme — '{data['reply'][:80]}…'")
+
+
 # ── Format de réponse ─────────────────────────────────────
 
 def test_chat_reply_est_une_chaine():

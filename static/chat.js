@@ -202,14 +202,16 @@
       clearTimeout(timer);
       const data = await res.json();
       if (typing) typing.remove();
-      const reply = data.reply || "Je n'ai pas pu répondre. Veuillez réessayer.";
+      const reply = data.reply || data.message || "Désolé, je ne peux pas vous répondre correctement pour le moment. Veuillez réessayer ou contacter l'équipe via le formulaire du site.";
       addMessage("bot", reply);
       _history.push({ role: "assistant", content: reply });
       if (_history.length > 20) _history = _history.slice(-20);
       if (!_open) { const b = document.getElementById("chatFabBadge"); if(b) b.style.display="flex"; }
     } catch(e) {
       if (typing) typing.remove();
-      addMessage("bot", e.name === "AbortError" ? "La réponse prend trop de temps." : "Une erreur s'est produite.");
+      addMessage("bot", e.name === "AbortError"
+        ? "La réponse prend trop de temps. Pour une demande urgente ou précise, veuillez contacter l'équipe via le formulaire du site."
+        : "Désolé, le service de discussion est momentanément indisponible. Vous pouvez contacter l'équipe via le formulaire du site.");
     } finally {
       _loading = false;
       if (btn) btn.disabled = false;
