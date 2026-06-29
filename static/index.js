@@ -1285,9 +1285,21 @@ window.addEventListener("hashchange", updateRouteSections);
 updateRouteSections();
 
 // ── PAGE LOADER ───────────────────────────────────────────
-window.addEventListener("load", () => {
-  setTimeout(() => { document.getElementById("loader").classList.add("done"); }, 1400);
-});
+// Sur mobile, l'événement window.load peut attendre une image ou une ressource lente.
+// Le loader doit donc disparaître dès que le DOM est prêt, avec un garde-fou absolu.
+function closePageLoader() {
+  const loader = document.getElementById("loader");
+  if (!loader || loader.classList.contains("done")) return;
+  loader.classList.add("done");
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", () => setTimeout(closePageLoader, 650), { once: true });
+} else {
+  setTimeout(closePageLoader, 650);
+}
+window.addEventListener("load", () => setTimeout(closePageLoader, 250), { once: true });
+setTimeout(closePageLoader, 3200);
 
 // ── TRACKING VISITEURS (côté serveur) ────────────────────
 (function(){
