@@ -113,6 +113,21 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   <div class="loader-txt">Ange Aimé Wilfrid BININGA</div>
   <div class="loader-dev">Développé par <span>Rodrin Bakala Mouengue</span></div>
 </div>
+<script>
+(function(){
+  function closeLoader(){
+    var loader = document.getElementById("loader");
+    if (loader) loader.classList.add("done");
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(closeLoader, 900); }, { once: true });
+  } else {
+    setTimeout(closeLoader, 900);
+  }
+  window.addEventListener("load", function(){ setTimeout(closeLoader, 250); }, { once: true });
+  setTimeout(closeLoader, 3600);
+})();
+</script>
 
 <!-- CURSOR -->
 <div class="cursor" id="cursor"></div>
@@ -670,7 +685,6 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   </a>
 </nav>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script>
 <script src="static/i18n-data.en.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.es.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
@@ -1080,6 +1094,7 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
   }
 
   // ── Compteurs stats qui montent ───────────────────────
+  const raf = window.requestAnimationFrame || (fn => setTimeout(() => fn(Date.now()), 16));
   function animateCounter(el) {
     const target = parseInt(el.getAttribute("data-c") || el.textContent);
     if (!target || isNaN(target)) return;
@@ -1090,9 +1105,9 @@ html, body { overflow-x: hidden !important; max-width: 100%; }
       const progress = Math.min((ts - start) / duration, 1);
       const ease = 1 - Math.pow(1 - progress, 3);
       el.textContent = Math.round(ease * target);
-      if (progress < 1) requestAnimationFrame(step);
+      if (progress < 1) raf(step);
     }
-    requestAnimationFrame(step);
+    raf(step);
   }
 
   // Observer pour déclencher les compteurs quand visible

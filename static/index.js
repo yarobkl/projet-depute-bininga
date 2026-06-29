@@ -808,20 +808,23 @@ function applyDynLang(lang) {
 
 // cursor
 const cur=document.getElementById("cursor"),ring=document.getElementById("cursorRing");
-document.addEventListener("mousemove",e=>{
-  cur.style.left=e.clientX-5+"px";cur.style.top=e.clientY-5+"px";
-  ring.style.left=e.clientX-17.5+"px";ring.style.top=e.clientY-17.5+"px";
-});
-document.addEventListener("mousedown",()=>cur.style.transform="scale(2)");
-document.addEventListener("mouseup",()=>cur.style.transform="scale(1)");
+if (cur && ring) {
+  document.addEventListener("mousemove",e=>{
+    cur.style.left=e.clientX-5+"px";cur.style.top=e.clientY-5+"px";
+    ring.style.left=e.clientX-17.5+"px";ring.style.top=e.clientY-17.5+"px";
+  });
+  document.addEventListener("mousedown",()=>cur.style.transform="scale(2)");
+  document.addEventListener("mouseup",()=>cur.style.transform="scale(1)");
+}
 
 // nav scroll
 const nav=document.getElementById("nav");
-window.addEventListener("scroll",()=>nav.classList.toggle("sc",scrollY>60));
+if (nav) window.addEventListener("scroll",()=>nav.classList.toggle("sc",scrollY>60));
 
 // mobile nav
 const hbg=document.getElementById("hbg"),mob=document.getElementById("mobNav");
 function mobOpen(v){
+  if (!hbg || !mob) return;
   mob.classList.toggle("open",v);
   const isOpen = mob.classList.contains("open");
   hbg.setAttribute("aria-expanded", isOpen);
@@ -830,7 +833,7 @@ function mobOpen(v){
   if (label) label.textContent = isOpen ? "Fermer" : "Menu";
   document.body.style.overflow = isOpen ? "hidden" : "";
 }
-hbg.addEventListener("click",()=>mobOpen());
+if (hbg) hbg.addEventListener("click",()=>mobOpen());
 function cMob(){mobOpen(false)}
 
 // slider
@@ -853,6 +856,7 @@ function gGo(n){cs=n;upd()}
 function aCount(el){
   const target=+el.dataset.c;
   if(isNaN(target)){el.textContent=el.dataset.c;return;}
+  const raf = window.requestAnimationFrame || (fn => setTimeout(() => fn(performance.now()), 16));
   const totalDur=1800, spinDur=900;
   const start=performance.now();
   function frame(now){
@@ -860,26 +864,34 @@ function aCount(el){
     if(elapsed<spinDur){
       // Phase 1 : chiffres qui défilent en boucle
       el.textContent=Math.floor(Math.random()*99);
-      requestAnimationFrame(frame);
+      raf(frame);
     } else if(elapsed<totalDur){
       // Phase 2 : ralentissement vers la cible
       const p=(elapsed-spinDur)/(totalDur-spinDur);
       const ease=1-Math.pow(1-p,3);
       const displayed=Math.round(ease*target);
       el.textContent=displayed;
-      requestAnimationFrame(frame);
+      raf(frame);
     } else {
       el.textContent=target;
     }
   }
-  requestAnimationFrame(frame);
+  raf(frame);
 }
-const cObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){aCount(e.target);cObs.unobserve(e.target)}})},{threshold:.5});
-document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
+if ("IntersectionObserver" in window) {
+  const cObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){aCount(e.target);cObs.unobserve(e.target)}})},{threshold:.5});
+  document.querySelectorAll("[data-c]").forEach(el=>cObs.observe(el));
+} else {
+  document.querySelectorAll("[data-c]").forEach(aCount);
+}
 
 // reveal
-const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");rObs.unobserve(e.target)}})},{threshold:.12});
-document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
+if ("IntersectionObserver" in window) {
+  const rObs=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("vis");rObs.unobserve(e.target)}})},{threshold:.12});
+  document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>rObs.observe(el));
+} else {
+  document.querySelectorAll(".rev,.rev-l,.rev-r").forEach(el=>el.classList.add("vis"));
+}
 
 // ── Envoi des formulaires vers le serveur ────────────────────────────
 const FORMSPREE = {};
@@ -1313,7 +1325,7 @@ setTimeout(closePageLoader, 3200);
 // ── TRACKING LECTURES DU PROGRAMME ───────────────────────
 (function(){
   const progEl = document.getElementById("programme");
-  if(!progEl) return;
+  if(!progEl || !("IntersectionObserver" in window)) return;
   let tracked = false;
   const obs = new IntersectionObserver(entries => {
     entries.forEach(e => {
@@ -1381,12 +1393,13 @@ document.querySelectorAll(".tl-item").forEach((el, i) => {
 const heroImg = document.querySelector(".hero-img-side");
 const heroBg  = document.querySelector(".hero-video-bg");
 let pxCur = 0, pxTarget = 0;
+const nextFrame = window.requestAnimationFrame || (fn => setTimeout(fn, 16));
 window.addEventListener("scroll", () => { pxTarget = window.scrollY; }, { passive: true });
 (function parallaxLoop(){
   pxCur += (pxTarget - pxCur) * 0.08;
   if(heroImg) heroImg.style.transform = `translate3d(0,${pxCur * 0.18}px,0)`;
   if(heroBg)  heroBg.style.transform  = `translate3d(0,${pxCur * 0.07}px,0)`;
-  requestAnimationFrame(parallaxLoop);
+  nextFrame(parallaxLoop);
 })();
 
 // modales légales
@@ -1505,6 +1518,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelect
 
   // Scroll spy
   const allSections = document.querySelectorAll("[data-mob-tab]");
+  if (!("IntersectionObserver" in window)) return;
   const obs = new IntersectionObserver(entries => {
     entries.forEach(entry => {
       if(entry.isIntersecting){
