@@ -1,0 +1,78 @@
+name: Bininga Mobile — Build Android (Capacitor)
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "mobile/**"
+      - ".github/workflows/bininga-android-build.yml"
+  pull_request:
+    branches: [master, main]
+    paths:
+      - "mobile/**"
+  workflow_dispatch: {}
+
+jobs:
+  build-android:
+    name: Build APK debug + AAB release (non signé)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java 17 (requis par Gradle/Android)
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Installer les dépendances mobile
+        run: npm install
+
+      - name: Builder l'application web (Vite)
+        run: npm run build
+
+      - name: Ajouter la plateforme Android (Capacitor)
+        run: npx cap add android
+
+      - name: Synchroniser les assets web vers Android
+        run: npx cap sync android
+
+      - name: Rendre gradlew exécutable
+        run: chmod +x android/gradlew
+
+      - name: Build APK debug
+        working-directory: mobile/android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Build AAB release (non signé)
+        working-directory: mobile/android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: Publier l'APK debug en artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bininga-android-debug-apk
+          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Publier l'AAB release (non signé) en artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bininga-android-release-aab-unsigned
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error

@@ -1,0 +1,8 @@
+{
+  "appId": "cg.bininga.citoyen",
+  "appName": "Bininga Citoyen",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
