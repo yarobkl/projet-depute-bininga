@@ -1089,9 +1089,24 @@ document.querySelectorAll("a[href^='#']").forEach(a => a.addEventListener("click
 }));
 
 // ── PAGE LOADER ───────────────────────────────────────────
-window.addEventListener("load", () => {
-  setTimeout(() => { document.getElementById("loader").classList.add("done"); }, 1400);
-});
+(function(){
+  const loaderEl = document.getElementById("loader");
+  if (!loaderEl) return;
+  let hidden = false;
+  const hideLoader = () => {
+    if (hidden) return;
+    hidden = true;
+    loaderEl.classList.add("done");
+  };
+  // Cas normal : page entièrement chargée.
+  window.addEventListener("load", () => setTimeout(hideLoader, 1400));
+  // Si le chargement est déjà terminé au moment où ce script s'exécute.
+  if (document.readyState === "complete") setTimeout(hideLoader, 1400);
+  // Filet de sécurité : si une ressource (image/vidéo) ne finit pas de
+  // charger et empêche l'événement "load", on cache quand même le splash
+  // après un délai maximum pour ne jamais bloquer l'utilisateur.
+  setTimeout(hideLoader, 4000);
+})();
 
 // ── TRACKING VISITEURS (côté serveur) ────────────────────
 (function(){
