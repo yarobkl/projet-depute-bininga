@@ -70,5 +70,15 @@
   // Move a currently valid legacy session out of localStorage immediately.
   migrateLegacySession();
 
+  // Follow-up hardening stays in an isolated file. Loading it here avoids any
+  // direct edit of the large legacy admin bundle or document.
+  if (!document.querySelector('script[data-bininga-dashboard-hardening]')) {
+    const script = document.createElement('script');
+    script.src = '/static/admin-dashboard-hardening.js?v=20260819-dashboard-1';
+    script.defer = true;
+    script.dataset.biningaDashboardHardening = '1';
+    document.head.appendChild(script);
+  }
+
   console.info('[BININGA Admin] Session storage hardened');
 })();
