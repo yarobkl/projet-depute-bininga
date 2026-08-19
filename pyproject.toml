@@ -1,2 +1,15 @@
+[project]
+name = "projet-depute-bininga"
+version = "0.1.0"
+description = "Site officiel et plateforme Bininga"
+requires-python = ">=3.11"
+dependencies = [
+  "psycopg2-binary",
+  "PyMySQL",
+  "requests",
+  "beautifulsoup4",
+  "googletrans==4.0.0-rc1",
+]
+
 [tool.vercel]
 entrypoint = "passenger_wsgi:application"
