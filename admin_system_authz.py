@@ -4,6 +4,12 @@ import gzip
 import io
 import os
 
+import vercel_database_env
+
+# Normalize Vercel/Supabase Postgres aliases before passenger_wsgi runs its
+# bootstrap. Existing DATABASE_URL always wins and no secret is stored here.
+vercel_database_env.apply()
+
 
 _MAIN_ADMIN_GET = {
     "/api/users",
