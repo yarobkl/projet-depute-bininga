@@ -23,9 +23,15 @@ if os.environ.get("VERCEL") and not os.environ.get("BININGA_PASS"):
 if os.environ.get("VERCEL"):
     try:
         import urllib.request
+        import urllib.error
         repair_url = "https://gcklaqpesdsnjzgkccdq.supabase.co/functions/v1/bininga-photo-repair"
         req = urllib.request.Request(repair_url, headers={"User-Agent": "BININGA-Migration-Preview/1.0"})
-        with urllib.request.urlopen(req, timeout=25) as resp:
-            print(f"[MIGRATION] photo repair trigger HTTP {resp.status}", flush=True)
+        try:
+            with urllib.request.urlopen(req, timeout=25) as resp:
+                body = resp.read(4096).decode("utf-8", "replace")
+                print(f"[MIGRATION] photo repair HTTP {resp.status}: {body}", flush=True)
+        except urllib.error.HTTPError as exc:
+            body = exc.read(4096).decode("utf-8", "replace")
+            print(f"[MIGRATION] photo repair HTTP {exc.code}: {body}", flush=True)
     except Exception as exc:
         print(f"[MIGRATION] photo repair trigger failed: {type(exc).__name__}", flush=True)
