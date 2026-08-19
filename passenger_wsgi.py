@@ -210,27 +210,27 @@ def _replace_response_body(handler: _PassengerHandler, patched: bytes) -> None:
 
 
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
-    """Load the admin integrity patch only on the real administration page.
-
-    This deliberately avoids editing the large legacy admin HTML/JS files in-place.
-    The response is changed only when it is clearly the BININGA admin document,
-    making this first stabilization step easy to disable or roll back.
-    """
+    """Load the admin integrity/security patches only on the real admin page."""
     if handler.command != "GET" or handler._status_code != 200:
         return
 
     body = handler.wfile.getvalue()
     if b"static/admin.js" not in body or b"Espace Administration" not in body:
         return
-    if b"static/admin-hardening.js" in body:
-        return
 
     marker = b"</body>"
     if marker not in body:
         return
 
-    script = b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
-    _replace_response_body(handler, body.replace(marker, script + marker, 1))
+    scripts = b""
+    if b"static/admin-hardening.js" not in body:
+        scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
+    if b"static/admin-notification-hardening.js" not in body:
+        scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
+    if not scripts:
+        return
+
+    _replace_response_body(handler, body.replace(marker, scripts + marker, 1))
 
 
 def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
