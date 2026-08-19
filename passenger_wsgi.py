@@ -194,6 +194,15 @@ def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
     return True
 
 
+def _replace_response_body(handler: _PassengerHandler, patched: bytes) -> None:
+    handler.wfile = io.BytesIO(patched)
+    handler._response_headers = [
+        (key, value) for key, value in handler._response_headers
+        if key.lower() != "content-length"
+    ]
+    handler._response_headers.append(("Content-Length", str(len(patched))))
+
+
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     """Load the admin integrity patch only on the real administration page.
 
@@ -215,13 +224,26 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
         return
 
     script = b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
-    patched = body.replace(marker, script + marker, 1)
-    handler.wfile = io.BytesIO(patched)
-    handler._response_headers = [
-        (key, value) for key, value in handler._response_headers
-        if key.lower() != "content-length"
-    ]
-    handler._response_headers.append(("Content-Length", str(len(patched))))
+    _replace_response_body(handler, body.replace(marker, script + marker, 1))
+
+
+def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
+    """Load the public form privacy layer after the legacy public bundle."""
+    if handler.command != "GET" or handler._status_code != 200:
+        return
+
+    body = handler.wfile.getvalue()
+    if b"static/index.js" not in body or b"Espace Administration" in body:
+        return
+    if b"static/public-form-hardening.js" in body:
+        return
+
+    marker = b"</body>"
+    if marker not in body:
+        return
+
+    script = b'\n<script src="/static/public-form-hardening.js?v=20260819-privacy-1" defer></script>\n'
+    _replace_response_body(handler, body.replace(marker, script + marker, 1))
 
 
 def _dispatch_request(handler: _PassengerHandler) -> None:
@@ -259,6 +281,7 @@ def application(environ, start_response):
         return [body]
 
     _inject_admin_hardening(handler)
+    _inject_public_form_hardening(handler)
 
     status = handler._status_code
     reason = http.HTTPStatus(status).phrase if status in http.HTTPStatus._value2member_map_ else "OK"
