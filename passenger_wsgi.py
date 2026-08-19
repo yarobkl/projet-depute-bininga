@@ -25,6 +25,11 @@ if os.environ.get("VERCEL"):
     os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
 
 import server as bininga_server
+import admin_contact_integrity
+
+# Install the small compatibility/integrity layer after server.py has finished
+# bootstrapping, before the first WSGI request is handled.
+admin_contact_integrity.install(bininga_server)
 
 
 def _bootstrap() -> None:
@@ -218,6 +223,17 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     handler._response_headers.append(("Content-Length", str(len(patched))))
 
 
+def _dispatch_request(handler: _PassengerHandler) -> None:
+    if handler.command == "GET":
+        handler.do_GET()
+    elif handler.command == "POST":
+        handler.do_POST()
+    elif handler.command == "OPTIONS":
+        handler.do_OPTIONS()
+    else:
+        handler.send_error(405, "Method Not Allowed")
+
+
 _bootstrap()
 
 
@@ -226,14 +242,11 @@ def application(environ, start_response):
     try:
         if not _harden_admin_authorization(handler):
             pass
-        elif handler.command == "GET":
-            handler.do_GET()
-        elif handler.command == "POST":
-            handler.do_POST()
-        elif handler.command == "OPTIONS":
-            handler.do_OPTIONS()
+        elif not admin_contact_integrity.guard_request(bininga_server, handler):
+            pass
         else:
-            handler.send_error(405, "Method Not Allowed")
+            with admin_contact_integrity.mutation_guard(bininga_server, handler):
+                _dispatch_request(handler)
     except Exception as exc:
         body = f"Internal Server Error: {exc}".encode("utf-8")
         start_response(
