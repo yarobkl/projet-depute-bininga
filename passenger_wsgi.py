@@ -24,6 +24,10 @@ if os.environ.get("VERCEL"):
     os.environ.setdefault("DATA_DIR", "/tmp/bininga")
     os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
 
+# Must run before server.py: the legacy module performs an admin bootstrap at
+# import time, so post-import wrappers are too late to suppress credential logs.
+import preimport_security  # noqa: F401
+
 import server as bininga_server
 import admin_contact_integrity
 import admin_system_authz
