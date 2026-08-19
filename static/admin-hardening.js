@@ -138,7 +138,8 @@
         method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ id: cid, status })
       });
-      await checkedJson(res, 'La mise à jour du statut a échoué');
+      const data = await checkedJson(res, 'La mise à jour du statut a échoué');
+      if (data.updated === false) throw new Error('Dossier introuvable côté serveur');
       ref.all[ref.idx]._status = status;
       localStorage.setItem(storageKey, JSON.stringify(ref.all));
       refreshDashboard();
@@ -172,7 +173,8 @@
         method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ id: cid, notes })
       });
-      await checkedJson(res, "L'ajout de la note a échoué");
+      const data = await checkedJson(res, "L'ajout de la note a échoué");
+      if (data.updated === false) throw new Error('Dossier introuvable côté serveur');
       ref.all[ref.idx]._notes = notes;
       localStorage.setItem(storageKey, JSON.stringify(ref.all));
       if (storageKey === 'bininga_audiences') { renderAudiences(); renderReclamations(); }
@@ -195,7 +197,8 @@
         method: 'POST', headers: authHeaders(),
         body: JSON.stringify({ id: cid, pinged: true, pinged_date: pingedDate })
       });
-      await checkedJson(res, "L'alerte au Député a échoué");
+      const data = await checkedJson(res, "L'alerte au Député a échoué");
+      if (data.updated === false) throw new Error('Dossier introuvable côté serveur');
       ref.all[ref.idx]._pinged = true;
       ref.all[ref.idx]._pinged_date = pingedDate;
       localStorage.setItem(storageKey, JSON.stringify(ref.all));
