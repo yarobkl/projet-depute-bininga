@@ -16,6 +16,13 @@ os.chdir(APP_DIR)
 if APP_DIR not in sys.path:
     sys.path.insert(0, APP_DIR)
 
+# Vercel serverless functions expose the deployed code as read-only.
+# Keep the app's transient JSON/session files in /tmp so importing server.py
+# cannot crash while preserving the normal o2switch/Railway behaviour.
+if os.environ.get("VERCEL"):
+    os.environ.setdefault("DATA_DIR", "/tmp/bininga")
+    os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
+
 import server as bininga_server
 
 
