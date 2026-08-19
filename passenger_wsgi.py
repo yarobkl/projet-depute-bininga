@@ -33,6 +33,7 @@ import admin_contact_integrity
 import admin_system_authz
 import admin_bootstrap_hardening
 import request_identity
+import chatbot_hardening
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
@@ -230,6 +231,8 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
         scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
     if b"static/admin-session-hardening.js" not in body:
         scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260819-session-1" defer></script>\n'
+    if b"static/admin-chatbot.js" not in body:
+        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260819-da-1" defer></script>\n'
     if not scripts:
         return
 
@@ -277,6 +280,8 @@ def application(environ, start_response):
         elif not admin_system_authz.guard_request(bininga_server, handler):
             pass
         elif not admin_contact_integrity.guard_request(bininga_server, handler):
+            pass
+        elif not chatbot_hardening.guard_request(bininga_server, handler):
             pass
         else:
             with admin_contact_integrity.mutation_guard(bininga_server, handler):
