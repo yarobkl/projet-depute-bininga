@@ -27,10 +27,12 @@ if os.environ.get("VERCEL"):
 import server as bininga_server
 import admin_contact_integrity
 import admin_system_authz
+import admin_bootstrap_hardening
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
 admin_contact_integrity.install(bininga_server)
+admin_bootstrap_hardening.install(bininga_server)
 
 
 def _bootstrap() -> None:
