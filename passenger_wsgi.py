@@ -26,6 +26,7 @@ if os.environ.get("VERCEL"):
 
 import server as bininga_server
 import admin_contact_integrity
+import admin_system_authz
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
@@ -241,6 +242,8 @@ def application(environ, start_response):
     handler = _PassengerHandler(environ)
     try:
         if not _harden_admin_authorization(handler):
+            pass
+        elif not admin_system_authz.guard_request(bininga_server, handler):
             pass
         elif not admin_contact_integrity.guard_request(bininga_server, handler):
             pass
