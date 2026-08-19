@@ -212,7 +212,9 @@
   // it to actual website-content panels so CRM/search/security fields cannot save siteData.
   const originalScheduleAutoSave = window.scheduleAutoSave;
   window.scheduleAutoSave = function scheduleAutoSaveScoped() {
-    if (!CONTENT_PANELS.has(String(window._currentPanel || ''))) return;
+    const activePanel = document.querySelector('.panel.active');
+    const panelName = activePanel && activePanel.id ? activePanel.id.replace(/^panel-/, '') : '';
+    if (!CONTENT_PANELS.has(panelName)) return;
     return originalScheduleAutoSave();
   };
 
