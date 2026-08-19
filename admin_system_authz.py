@@ -1,5 +1,7 @@
-"""Server-side authorization and durability guards for BININGA admin APIs."""
+"""Server-side authorization, durability and public-form guards for BININGA."""
 
+import gzip
+import io
 import os
 
 
@@ -25,10 +27,6 @@ _MAIN_ADMIN_POST_PREFIXES = (
     "/api/monitoring/",
 )
 
-# These POST routes do not claim to durably save business/admin data. They may
-# keep working on a serverless instance while the persistent database is being
-# configured. Every other API mutation fails closed on Vercel when no DB is
-# available, rather than returning a false success for data written only to /tmp.
 _STATELESS_POSTS_WITHOUT_DB = {
     "/api/login",
     "/api/logout",
@@ -36,6 +34,65 @@ _STATELESS_POSTS_WITHOUT_DB = {
     "/api/track-visit",
     "/api/test/reset",
 }
+
+_PUBLIC_FORM_SCRIPT = b'\n<script src="/static/public-form-hardening.js?v=20260819-privacy-1" defer></script>\n'
+
+
+def _response_header(handler, name: str) -> str:
+    wanted = name.lower()
+    for key, value in getattr(handler, "_response_headers", []):
+        if str(key).lower() == wanted:
+            return str(value)
+    return ""
+
+
+def _set_response_body(handler, body: bytes) -> None:
+    handler.wfile = io.BytesIO(body)
+    handler._response_headers = [
+        (key, value) for key, value in handler._response_headers
+        if str(key).lower() != "content-length"
+    ]
+    handler._response_headers.append(("Content-Length", str(len(body))))
+
+
+def _ensure_public_form_hardening(server) -> None:
+    """Inject the privacy layer after public HTML, including gzip responses.
+
+    The legacy public bundle is intentionally left untouched. Wrapping the base
+    handler here keeps the patch isolated and also avoids depending on the
+    client's Accept-Encoding value.
+    """
+    handler_cls = server.BiningaHandler
+    if getattr(handler_cls, "_bininga_public_forms_wrapped", False):
+        return
+
+    original_get = handler_cls.do_GET
+
+    def hardened_get(self):
+        original_get(self)
+        if getattr(self, "_status_code", 200) != 200:
+            return
+
+        raw = self.wfile.getvalue()
+        encoding = _response_header(self, "Content-Encoding").lower()
+        was_gzip = encoding == "gzip"
+        try:
+            body = gzip.decompress(raw) if was_gzip else raw
+        except Exception:
+            return
+
+        if b"static/index.js" not in body or b"Espace Administration" in body:
+            return
+        if b"static/public-form-hardening.js" in body or b"</body>" not in body:
+            return
+
+        patched = body.replace(b"</body>", _PUBLIC_FORM_SCRIPT + b"</body>", 1)
+        if was_gzip:
+            patched = gzip.compress(patched, compresslevel=6)
+        _set_response_body(self, patched)
+
+    handler_cls.do_GET = hardened_get
+    handler_cls._bininga_public_forms_wrapped = True
 
 
 def _guard_serverless_durability(server, handler, path: str, method: str) -> bool:
@@ -74,11 +131,9 @@ def _guard_serverless_durability(server, handler, path: str, method: str) -> boo
 
 
 def guard_request(server, handler):
-    """Apply durability then System/CRM authorization rules.
+    """Apply public-form hardening, durability and System/CRM authorization."""
+    _ensure_public_form_hardening(server)
 
-    Unauthenticated requests are deliberately left to ``server.py`` whenever
-    possible so its existing 401/rate-limit/audit behaviour remains authoritative.
-    """
     path = handler.path.split("?", 1)[0]
     method = handler.command.upper()
 
