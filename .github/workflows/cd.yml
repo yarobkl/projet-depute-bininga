@@ -1,56 +1,78 @@
-name: CD — Déploiement en production
+name: CD — Déploiement o2switch
 
-# Se déclenche UNIQUEMENT sur push vers master (branche principale)
 on:
-  push:
-    branches: [master, main]
+  workflow_run:
+    workflows: ["CI — Tests automatiques"]
+    types: [completed]
+  workflow_dispatch:
+
+concurrency:
+  group: production-o2switch
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Déploiement sur le serveur
+    name: Déploiement production o2switch
     runs-on: ubuntu-latest
-    # Ne déploie que si les tests CI ont réussi
-    needs: []
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
 
     steps:
-      - name: Checkout du code
-        uses: actions/checkout@v4
+      - name: Vérifier la configuration de déploiement
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_PORT: ${{ secrets.SSH_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          test -n "$SSH_HOST" || (echo "❌ Secret SSH_HOST manquant" && exit 1)
+          test -n "$SSH_USER" || (echo "❌ Secret SSH_USER manquant" && exit 1)
+          test -n "$SSH_KEY" || (echo "❌ Secret SSH_KEY manquant" && exit 1)
+          test -n "$SSH_PORT" || (echo "❌ Secret SSH_PORT manquant" && exit 1)
+          test -n "$DEPLOY_PATH" || (echo "❌ Secret DEPLOY_PATH manquant" && exit 1)
 
-      # ── Déploiement via SSH ───────────────────────────────
-      # Prérequis : ajouter ces 4 secrets dans GitHub → Settings → Secrets :
-      #   SSH_HOST     → adresse IP ou domaine du serveur (ex: 192.168.1.1)
-      #   SSH_USER     → utilisateur SSH (ex: ubuntu, root)
-      #   SSH_KEY      → clé privée SSH (contenu du fichier id_rsa)
-      #   SSH_PORT     → port SSH (généralement 22)
-      - name: Déploiement SSH
+      - name: Déployer sur o2switch via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          RESTART_COMMAND: ${{ secrets.RESTART_COMMAND }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          envs: DEPLOY_PATH,RESTART_COMMAND
+          script_stop: true
           script: |
-            echo "📦 Mise à jour du code..."
-            cd /var/www/bininga
-            git pull origin master
+            set -eu
+            echo "📦 Déploiement BININGA vers $DEPLOY_PATH"
+            cd "$DEPLOY_PATH"
 
-            echo "🔄 Redémarrage du serveur..."
-            pkill -f "python3 server.py" || true
-            nohup python3 server.py > logs/server.log 2>&1 &
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+
+            if [ -f requirements.txt ]; then
+              echo "🐍 Mise à jour des dépendances Python"
+              if [ -n "${VIRTUAL_ENV:-}" ]; then
+                python -m pip install -r requirements.txt
+              else
+                python3 -m pip install --user -r requirements.txt || true
+              fi
+            fi
+
+            if [ -n "${RESTART_COMMAND:-}" ]; then
+              echo "🔄 Redémarrage de l'application"
+              sh -lc "$RESTART_COMMAND"
+            else
+              echo "ℹ️ RESTART_COMMAND non configuré : redémarrer l'application depuis Setup Python App si nécessaire."
+            fi
 
             echo "✅ Déploiement terminé — $(date)"
 
-      # ── Notification de succès ────────────────────────────
       - name: Confirmation
         if: success()
-        run: |
-          echo "╔══════════════════════════════════════════╗"
-          echo "  🚀 Déploiement réussi !"
-          echo "  Site BININGA mis à jour en production"
-          echo "╚══════════════════════════════════════════╝"
-
-      # ── Notification d'échec ──────────────────────────────
-      - name: Alerte en cas d'échec
-        if: failure()
-        run: |
-          echo "❌ Le déploiement a échoué. Vérifier les logs."
+        run: echo "🚀 BININGA a été déployé sur o2switch."
