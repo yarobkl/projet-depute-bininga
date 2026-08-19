@@ -227,6 +227,8 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
         scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
     if b"static/admin-notification-hardening.js" not in body:
         scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
+    if b"static/admin-session-hardening.js" not in body:
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260819-session-1" defer></script>\n'
     if not scripts:
         return
 
