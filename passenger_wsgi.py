@@ -110,6 +110,36 @@ class _PassengerHandler(bininga_server.BiningaHandler):
         return None
 
 
+def _inject_admin_hardening(handler: _PassengerHandler) -> None:
+    """Load the admin integrity patch only on the real administration page.
+
+    This deliberately avoids editing the large legacy admin HTML/JS files in-place.
+    The response is changed only when it is clearly the BININGA admin document,
+    making this first stabilization step easy to disable or roll back.
+    """
+    if handler.command != "GET" or handler._status_code != 200:
+        return
+
+    body = handler.wfile.getvalue()
+    if b"static/admin.js" not in body or b"Espace Administration" not in body:
+        return
+    if b"static/admin-hardening.js" in body:
+        return
+
+    marker = b"</body>"
+    if marker not in body:
+        return
+
+    script = b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
+    patched = body.replace(marker, script + marker, 1)
+    handler.wfile = io.BytesIO(patched)
+    handler._response_headers = [
+        (key, value) for key, value in handler._response_headers
+        if key.lower() != "content-length"
+    ]
+    handler._response_headers.append(("Content-Length", str(len(patched))))
+
+
 _bootstrap()
 
 
@@ -131,6 +161,8 @@ def application(environ, start_response):
             [("Content-Type", "text/plain; charset=utf-8"), ("Content-Length", str(len(body)))],
         )
         return [body]
+
+    _inject_admin_hardening(handler)
 
     status = handler._status_code
     reason = http.HTTPStatus(status).phrase if status in http.HTTPStatus._value2member_map_ else "OK"
