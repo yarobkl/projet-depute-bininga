@@ -7,6 +7,7 @@ existing handler without starting a second HTTP server.
 
 import http
 import io
+import json
 import os
 import sys
 from email.message import Message
@@ -110,6 +111,83 @@ class _PassengerHandler(bininga_server.BiningaHandler):
         return None
 
 
+def _main_admin_session(handler: _PassengerHandler):
+    """Return the authenticated main-admin session, otherwise ``None``."""
+    token = handler.headers.get("X-Admin-Token", "")
+    session = bininga_server.get_session(token) if token else None
+    if not session:
+        return None
+    if session.get("username") != bininga_server.ADMIN_USER:
+        return None
+    return session
+
+
+def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
+    """Apply server-side authorization rules that the legacy handler under-enforces.
+
+    Returns ``True`` when the request may continue into ``server.py`` and ``False``
+    when a response has already been emitted.
+
+    Two dangerous gaps are closed here without rewriting the large legacy server:
+      * user creation/deletion is reserved to the main administrator;
+      * Hero/About/Parcours data really is main-admin-only, even if a secondary
+        admin bypasses the UI and calls ``/api/save`` directly.
+    """
+    if handler.command != "POST":
+        return True
+
+    path = handler.path.split("?", 1)[0]
+    token = handler.headers.get("X-Admin-Token", "")
+    session = bininga_server.get_session(token) if token else None
+
+    # Let the legacy handler deal with unauthenticated requests so its normal
+    # 401/rate-limit/audit behaviour remains unchanged.
+    if not session:
+        return True
+
+    # The Users panel is visible only to the main admin. Enforce the same rule
+    # on the API so a minister/secondary admin cannot create an administrator.
+    if path in ("/api/users/upsert", "/api/users/delete"):
+        if not _main_admin_session(handler):
+            bininga_server.audit_log(
+                "AUTHZ_REJECT",
+                handler.client_address[0],
+                f"Accès refusé à {path} pour {session.get('username', '?')}",
+            )
+            handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+            return False
+        return True
+
+    # server.py already labels these keys as main-admin-only, but its legacy
+    # role check only distinguishes "admin" from other roles. Sanitize the
+    # body before handing it over, preserving the authoritative stored values.
+    if path == "/api/save" and session.get("username") != bininga_server.ADMIN_USER:
+        raw = handler.rfile.getvalue()
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except Exception:
+            # Preserve the legacy validation/error response for malformed JSON.
+            return True
+
+        if isinstance(payload, dict):
+            existing = bininga_server.load_data()
+            admin_only_keys = ("hero", "about", "parcours", "parcoursSection")
+            for key in admin_only_keys:
+                if key in existing:
+                    payload[key] = existing[key]
+                else:
+                    payload.pop(key, None)
+
+            patched = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            handler.rfile = io.BytesIO(patched)
+            if handler.headers.get("Content-Length") is not None:
+                handler.headers.replace_header("Content-Length", str(len(patched)))
+            else:
+                handler.headers["Content-Length"] = str(len(patched))
+
+    return True
+
+
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     """Load the admin integrity patch only on the real administration page.
 
@@ -146,7 +224,9 @@ _bootstrap()
 def application(environ, start_response):
     handler = _PassengerHandler(environ)
     try:
-        if handler.command == "GET":
+        if not _harden_admin_authorization(handler):
+            pass
+        elif handler.command == "GET":
             handler.do_GET()
         elif handler.command == "POST":
             handler.do_POST()
