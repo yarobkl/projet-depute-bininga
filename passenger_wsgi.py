@@ -32,6 +32,7 @@ import server as bininga_server
 import admin_contact_integrity
 import admin_system_authz
 import admin_bootstrap_hardening
+import request_identity
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
@@ -83,7 +84,7 @@ class _PassengerHandler(bininga_server.BiningaHandler):
             self.path = f"{self.path}?{query}"
         self.request_version = environ.get("SERVER_PROTOCOL", "HTTP/1.1")
         self.protocol_version = "HTTP/1.1"
-        self.client_address = (environ.get("REMOTE_ADDR", "127.0.0.1"), 0)
+        self.client_address = (request_identity.client_ip(environ), 0)
         self.server = None
         self.close_connection = True
         self.headers = self._headers_from_environ(environ)
