@@ -1,16 +1,14 @@
 """Integrity guard for BININGA admin operational records.
 
-This module is intentionally small and loaded from ``passenger_wsgi.py``.  It
+This module is intentionally small and loaded from ``passenger_wsgi.py``. It
 hardens the legacy contact/CRM handlers without rewriting the large server.py:
 
 * legacy form records receive stable deterministic IDs;
 * source/type aliases are normalized consistently;
 * contact updates are validated before they reach the legacy handler;
 * destructive contact operations are main-admin only;
-* read/modify/write mutations are serialized to avoid lost updates.
-
-The public form endpoints and their existing CSRF/auth/rate-limit behaviour stay
-inside server.py.
+* read/modify/write mutations are serialized to avoid lost updates;
+* public citizen forms never report success when durable DB storage is absent.
 """
 
 from __future__ import annotations
@@ -104,8 +102,6 @@ def normalize_contacts(rows: Any) -> List[Dict[str, Any]]:
 
         source = _canonical_source(item.get("source") or item.get("type"))
         if source:
-            # Public endpoints already store both. Filling a missing or legacy
-            # alias keeps old imports compatible with the current API filters.
             item["source"] = source
             item["type"] = source
 
@@ -130,8 +126,6 @@ def install(server) -> None:
     _original_load_contacts = server.load_contacts
     _original_save_contacts = server.save_contacts
 
-    # RLock is deliberate: append_contact/public CRM already acquire these
-    # locks internally, while WSGI mutation_guard may acquire them externally.
     server._CONTACT_LOCK = threading.RLock()
     server._CRM_LOCK = threading.RLock()
 
@@ -139,7 +133,17 @@ def install(server) -> None:
         return normalize_contacts(_original_load_contacts())
 
     def save_contacts_normalized(rows):
-        return _original_save_contacts(normalize_contacts(rows))
+        normalized = normalize_contacts(rows)
+        result = _original_save_contacts(normalized)
+
+        # A local /tmp or JSON fallback is not durable enough for citizen data.
+        # When a DB backend is configured, verify the write reached it before
+        # allowing the public/admin handler to report success.
+        if server._db_label() != "no_database":
+            persisted = server._pg_load("contacts")
+            if persisted is None:
+                raise RuntimeError("Échec de la persistance durable des données")
+        return result
 
     server.load_contacts = load_contacts_normalized
     server.save_contacts = save_contacts_normalized
@@ -182,16 +186,27 @@ def _sanitize_notes(notes: Any) -> List[Dict[str, str]]:
 
 
 def guard_request(server, handler) -> bool:
-    """Validate dangerous contact mutations before server.py handles them.
+    """Validate contact writes before server.py handles them.
 
     ``False`` means a response has already been emitted by this guard.
-    Authentication/CSRF failures are intentionally left to the legacy handler
-    so its normal logging and rate-limit behaviour is preserved.
     """
     if handler.command != "POST":
         return True
 
     path = handler.path.split("?", 1)[0]
+
+    # Public forms contain citizen data. Never acknowledge them into an
+    # ephemeral serverless filesystem. If the durable database is absent or
+    # cannot establish a connection, fail visibly so the browser can retry.
+    if path == "/api/contact":
+        if server._db_label() == "no_database" or server._pg() is None:
+            handler._json({
+                "ok": False,
+                "message": "Service momentanément indisponible. Vos informations n'ont pas été enregistrées. Réessayez plus tard.",
+            }, 503)
+            return False
+        return True
+
     if path not in _CONTACT_MUTATIONS and path != "/api/reset":
         return True
 
@@ -200,8 +215,6 @@ def guard_request(server, handler) -> bool:
     if not session:
         return True
 
-    # Destructive global operations are intentionally reserved to the same
-    # main administrator that owns the System panels in the UI.
     if path in {"/api/contacts/clear", "/api/reset"}:
         if session.get("username") != server.ADMIN_USER:
             server.audit_log(
@@ -213,7 +226,6 @@ def guard_request(server, handler) -> bool:
             return False
         return True
 
-    # Keep the legacy CSRF rejection path authoritative.
     if not _csrf_is_valid(server, handler, session):
         return True
 
@@ -275,7 +287,6 @@ def mutation_guard(server, handler):
         if path in _CONTACT_MUTATIONS:
             stack.enter_context(server._CONTACT_LOCK)
         elif path == "/api/reset":
-            # Fixed acquisition order across the adapter.
             stack.enter_context(server._CONTACT_LOCK)
             stack.enter_context(server._CRM_LOCK)
         elif path == "/api/crm/import":
