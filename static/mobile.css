@@ -86,7 +86,7 @@ body.theme-light #contact .ct-item {
   body.theme-light footer .ft-legal a { color:rgba(247,243,235,.82) !important; }
 }
 
-/* Admin mobile — sidebar stabilisée iOS/Safari */
+/* Admin mobile — un seul conteneur de scroll, fiable sur iOS/Safari */
 @media (max-width: 768px) {
   body.sidebar-open {
     overflow: hidden !important;
@@ -106,49 +106,47 @@ body.theme-light #contact .ct-item {
     filter: none !important;
     background: rgba(0, 0, 0, .42) !important;
     touch-action: none !important;
-    overscroll-behavior: contain !important;
   }
 
   .sidebar,
   .sidebar.open,
   .sidebar.active {
     top: 0 !important;
-    bottom: 0 !important;
+    bottom: auto !important;
     height: 100dvh !important;
     max-height: 100dvh !important;
-    overflow: hidden !important;
-    display: grid !important;
-    grid-template-rows: auto minmax(0, 1fr) auto !important;
-    -webkit-filter: none !important;
-    filter: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    overscroll-behavior: contain !important;
-  }
-
-  .sidebar .sb-header {
-    grid-row: 1 !important;
-    min-height: 0 !important;
-  }
-
-  .sidebar .sb-nav {
-    grid-row: 2 !important;
-    min-height: 0 !important;
-    height: auto !important;
-    overflow-y: scroll !important;
+    display: block !important;
+    overflow-y: auto !important;
     overflow-x: hidden !important;
     -webkit-overflow-scrolling: touch !important;
     overscroll-behavior-y: contain !important;
     touch-action: pan-y !important;
-    padding-bottom: calc(32px + env(safe-area-inset-bottom)) !important;
+    -webkit-filter: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding-bottom: calc(20px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .sidebar .sb-header,
+  .sidebar .sb-nav,
+  .sidebar .sb-footer {
+    display: block !important;
+    position: static !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  .sidebar .sb-nav {
+    padding-bottom: 24px !important;
   }
 
   .sidebar .sb-footer {
-    grid-row: 3 !important;
-    position: relative !important;
-    z-index: 2 !important;
-    flex: none !important;
+    margin-top: 8px !important;
+    padding: 10px 10px calc(18px + env(safe-area-inset-bottom)) !important;
     background: var(--n2) !important;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    border-top: 1px solid rgba(226,232,240,.10) !important;
   }
 }
