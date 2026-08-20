@@ -12,4 +12,4 @@ dependencies = [
 ]
 
 [tool.vercel]
-entrypoint = "passenger_wsgi:application"
+entrypoint = "vercel_entrypoint:application"
