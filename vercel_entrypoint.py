@@ -12,10 +12,16 @@ import http
 import chatbot_hardening
 import chatbot_nlu
 import passenger_wsgi
+import vercel_session_persistence
 
 # Add conversational French/paraphrase understanding without weakening the
 # hardened factual, privacy, rate-limit or prompt-injection protections.
 chatbot_nlu.install(chatbot_hardening)
+
+# Vercel can route consecutive requests to different warm workers. Keep admin
+# sessions authoritative in PostgreSQL so a successful login remains valid on
+# the following dashboard/API requests.
+vercel_session_persistence.install(passenger_wsgi.bininga_server)
 
 
 def _finish(handler, start_response):
