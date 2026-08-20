@@ -23,8 +23,8 @@ jobs:
       # ── 1. Syntaxe Python ──────────────────────────────────
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py
-          echo "✅ server.py — syntaxe OK"
+          python -m py_compile server.py passenger_wsgi.py admin_system_authz.py
+          echo "✅ Python — syntaxe OK"
 
       # ── 2. Validation JSON ─────────────────────────────────
       - name: Validation data.json
@@ -50,7 +50,7 @@ jobs:
         run: |
           python -c "
           import os, sys
-          required = ['index.html', 'admin.html', 'server.py', 'data.json']
+          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js']
           missing = [f for f in required if not os.path.isfile(f)]
           if missing:
               print(f'❌ Fichiers manquants: {missing}')
@@ -58,7 +58,13 @@ jobs:
           print('✅ Tous les fichiers requis sont présents')
           "
 
-      # ── 4. Tests serveur HTTP ─────────────────────────────
+      # ── 4. Contrats UI admin ───────────────────────────────
+      - name: Contrats actions admin
+        run: |
+          python tests/test_admin_ui.py
+          python tests/test_admin_action_contracts.py
+
+      # ── 5. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP
         env:
           BININGA_PASS: bininga2025
