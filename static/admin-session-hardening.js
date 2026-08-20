@@ -88,5 +88,13 @@
     document.head.appendChild(script);
   }
 
+  if (!document.querySelector('script[data-bininga-cases-ui]')) {
+    const script = document.createElement('script');
+    script.src = '/static/admin-cases.js?v=20260820-cases-1';
+    script.defer = true;
+    script.dataset.biningaCasesUi = '1';
+    document.head.appendChild(script);
+  }
+
   console.info('[BININGA Admin] Session storage hardened');
 })();
