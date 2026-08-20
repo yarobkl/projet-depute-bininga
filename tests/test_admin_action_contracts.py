@@ -102,3 +102,14 @@ def test_server_side_system_authorization_stays_enabled():
     assert '"/api/backups"' in authz
     assert '"/api/crm"' in authz
     assert '"/api/logs"' in authz
+
+
+if __name__ == "__main__":
+    tests = [
+        value for name, value in sorted(globals().items())
+        if name.startswith("test_") and callable(value)
+    ]
+    for test in tests:
+        test()
+        print(f"OK {test.__name__}")
+    print(f"{len(tests)} contrats admin validés")
