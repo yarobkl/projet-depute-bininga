@@ -1,0 +1,62 @@
+name: Gallery and news render hotfix
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/hotfix-gallery-actus.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Patch shared reveal observer
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('static/index.js')
+          text = path.read_text(encoding='utf-8')
+          marker = "// ── CHARGEMENT DU CONTENU DEPUIS data.json (synchronisé avec l'admin) ─────"
+          patch_marker = '// ── REVEAL OBSERVER PARTAGÉ (contenu statique + dynamique) ──'
+          if patch_marker not in text:
+              if marker not in text:
+                  raise SystemExit('loadContent marker not found')
+              shared = '''// ── REVEAL OBSERVER PARTAGÉ (contenu statique + dynamique) ──
+const rObs = ("IntersectionObserver" in window)
+  ? new IntersectionObserver(es => {
+      es.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add("vis");
+          rObs.unobserve(e.target);
+        }
+      });
+    }, { threshold: .12 })
+  : { observe(el) { if (el) el.classList.add("vis"); }, unobserve() {} };
+
+'''
+              text = text.replace(marker, shared + marker, 1)
+
+          text = text.replace('    .catch(() => {}); // Fallback : le contenu statique reste affiché',
+                              '    .catch(err => console.error("Chargement du contenu impossible", err)); // Fallback : le contenu statique reste affiché',
+                              1)
+          path.write_text(text, encoding='utf-8')
+          PY
+      - name: Validate JavaScript syntax
+        run: node --check static/index.js
+      - name: Commit hotfix and remove temporary workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/hotfix-gallery-actus.yml
+          git add static/index.js
+          git commit -m "fix: restore gallery and news dynamic rendering"
+          git push origin HEAD:main
