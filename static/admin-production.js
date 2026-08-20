@@ -68,8 +68,12 @@
     const nextInit = { ...init, headers };
     try {
       const response = await nativeFetch(input, nextInit);
-      if (currentToken && response.status === 403) {
+      if (currentToken && response.status === 401) {
+        toast('Session expirée. Reconnexion nécessaire.', true);
+      } else if (currentToken && response.status === 403) {
         toast('Action refusée : droits insuffisants ou contrôle CSRF.', true);
+      } else if (currentToken && response.status === 409) {
+        toast('Cette donnée a été modifiée ailleurs. Actualisez avant de recommencer.', true);
       } else if (currentToken && response.status === 503) {
         toast('Service temporairement indisponible. Aucune donnée n’a été perdue.', true);
       }
@@ -80,6 +84,16 @@
     }
   };
 
+  function enforceDestructiveControls() {
+    document.querySelectorAll('[onclick*="clearAll("], [onclick*="runBackupNow("], [onclick*="manualBlock("]').forEach(el => {
+      const allowed = isMainAdmin();
+      el.style.display = allowed ? '' : 'none';
+      el.setAttribute('aria-hidden', allowed ? 'false' : 'true');
+      if (!allowed) el.setAttribute('tabindex', '-1');
+      else el.removeAttribute('tabindex');
+    });
+  }
+
   function patchRoleUI() {
     if (typeof window.applyRoleUI !== 'function' || window.applyRoleUI.__productionWrapped) return;
     const original = window.applyRoleUI;
@@ -88,6 +102,7 @@
       document.querySelectorAll('.role-superadmin').forEach(el => {
         el.style.display = role === 'admin' && isMainAdmin() ? '' : 'none';
       });
+      enforceDestructiveControls();
       return result;
     };
     wrapped.__productionWrapped = true;
@@ -222,6 +237,7 @@
     makeSecurityCopyFactual();
     protectApiLinks();
     restoreLoginInteraction();
+    enforceDestructiveControls();
     auditInteractiveControls();
 
     const login = document.getElementById('login');
