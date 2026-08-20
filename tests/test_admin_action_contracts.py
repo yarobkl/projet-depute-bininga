@@ -137,6 +137,30 @@ def test_session_hardening_loads_production_actions():
     assert "data-bininga-production-hardening" in session
 
 
+def test_case_management_ui_is_loaded_and_server_synced():
+    session = _read(os.path.join(STATIC, "admin-session-hardening.js"))
+    cases = _read(os.path.join(STATIC, "admin-cases.js"))
+    hardening = _read(os.path.join(STATIC, "admin-hardening.js"))
+    assert "admin-cases.js" in session
+    assert "data-bininga-cases-ui" in session
+    assert "window.renderMsgList" in cases
+    assert "Informations complémentaires et techniques" in cases
+    assert "mailto:" in cases and "tel:" in cases
+    assert "setStatus(" in cases and "addNote(" in cases and "pingDepute(" in cases
+    assert "window.syncMessages" in hardening
+    assert "'/api/contacts'" in hardening
+    assert "'/api/contacts/update'" in hardening
+
+
+def test_case_mutations_are_server_first_not_fake_success():
+    hardening = _read(os.path.join(STATIC, "admin-hardening.js"))
+    assert "Persist first, update the cache/UI only after the server confirms the write." in hardening
+    assert "await checkedJson(res" in hardening
+    assert "Statut non modifié" in hardening
+    assert "Note non enregistrée" in hardening
+    assert "Alerte non envoyée" in hardening
+
+
 def test_server_side_system_authorization_stays_enabled():
     passenger = _read(os.path.join(ROOT, "passenger_wsgi.py"))
     authz = _read(os.path.join(ROOT, "admin_system_authz.py"))
