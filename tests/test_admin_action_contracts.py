@@ -34,6 +34,7 @@ def _server_sources() -> str:
         "passenger_wsgi.py",
         "admin_system_authz.py",
         "admin_contact_integrity.py",
+        "editorial_publish_integrity.py",
         "chatbot_hardening.py",
     )
     return "\n".join(_read(os.path.join(ROOT, name)) for name in names if os.path.exists(os.path.join(ROOT, name)))
@@ -144,6 +145,18 @@ def test_server_side_system_authorization_stays_enabled():
     assert '"/api/backups"' in authz
     assert '"/api/crm"' in authz
     assert '"/api/logs"' in authz
+
+
+def test_editorial_publish_is_a_real_server_side_publication():
+    passenger = _read(os.path.join(ROOT, "passenger_wsgi.py"))
+    editorial = _read(os.path.join(ROOT, "editorial_publish_integrity.py"))
+    assert "import editorial_publish_integrity" in passenger
+    assert "editorial_publish_integrity.guard_request" in passenger
+    assert '"/api/editorial/save"' in editorial
+    assert 'server.save_data(site_data)' in editorial
+    assert 'server._pg_save("editorial", rows)' in editorial
+    assert '"publication_source": "editorial_ia"' in editorial
+    assert '"EDITORIAL_PUBLISH"' in editorial
 
 
 if __name__ == "__main__":
