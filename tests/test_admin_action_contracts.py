@@ -28,6 +28,17 @@ def _admin_sources() -> str:
     return "\n".join(parts)
 
 
+def _server_sources() -> str:
+    names = (
+        "server.py",
+        "passenger_wsgi.py",
+        "admin_system_authz.py",
+        "admin_contact_integrity.py",
+        "chatbot_hardening.py",
+    )
+    return "\n".join(_read(os.path.join(ROOT, name)) for name in names if os.path.exists(os.path.join(ROOT, name)))
+
+
 def _inline_handlers(html: str):
     for attr, code in re.findall(r'\b(onclick|onchange|oninput)="([^"]+)"', html):
         match = re.match(r"\s*([A-Za-z_$][\w$]*)\s*\(", code)
@@ -44,11 +55,37 @@ def _is_defined(name: str, source: str) -> bool:
     return any(re.search(pattern, source) for pattern in patterns)
 
 
+def _admin_api_paths() -> set[str]:
+    source = _admin_sources()
+    paths = set(re.findall(r"/api/[A-Za-z0-9_.:/-]+", source))
+    # Dynamic URLs are represented by their stable prefix in source, e.g.
+    # `/api/crm/${id}` => `/api/crm/`. Prefix presence is sufficient here.
+    return {p.rstrip(".,;:'\"") for p in paths}
+
+
 def test_every_inline_admin_action_has_a_real_handler():
     html = _read(ADMIN_HTML)
     source = _admin_sources()
     missing = sorted({name for _, name, _ in _inline_handlers(html) if not _is_defined(name, source)})
     assert not missing, f"Contrôles admin sans fonction JavaScript: {', '.join(missing)}"
+
+
+def test_every_admin_api_action_has_server_implementation():
+    server = _server_sources()
+    missing = []
+    for path in sorted(_admin_api_paths()):
+        if path in server:
+            continue
+        # For dynamic REST-style URLs, accept a known parent prefix present in
+        # the server routing code.
+        parent = path.rstrip("/")
+        while "/" in parent[len("/api/"):]:
+            parent = parent.rsplit("/", 1)[0]
+            if parent and parent in server:
+                break
+        else:
+            missing.append(path)
+    assert not missing, "Routes admin sans implémentation serveur: " + ", ".join(missing)
 
 
 def test_protected_api_downloads_are_authenticated():
