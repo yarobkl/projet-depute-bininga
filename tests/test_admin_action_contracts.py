@@ -58,8 +58,6 @@ def _is_defined(name: str, source: str) -> bool:
 def _admin_api_paths() -> set[str]:
     source = _admin_sources()
     paths = set(re.findall(r"/api/[A-Za-z0-9_.:/-]+", source))
-    # Dynamic URLs are represented by their stable prefix in source, e.g.
-    # `/api/crm/${id}` => `/api/crm/`. Prefix presence is sufficient here.
     return {p.rstrip(".,;:'\"") for p in paths}
 
 
@@ -76,8 +74,6 @@ def test_every_admin_api_action_has_server_implementation():
     for path in sorted(_admin_api_paths()):
         if path in server:
             continue
-        # For dynamic REST-style URLs, accept a known parent prefix present in
-        # the server routing code.
         parent = path.rstrip("/")
         while "/" in parent[len("/api/"):]:
             parent = parent.rsplit("/", 1)[0]
@@ -110,10 +106,19 @@ def test_main_admin_ui_is_not_exposed_to_secondary_admins():
     assert "isMainAdmin()" in production
 
 
+def test_destructive_controls_are_main_admin_only():
+    production = _read(os.path.join(STATIC, "admin-production.js"))
+    assert "enforceDestructiveControls" in production
+    assert '[onclick*="clearAll("]' in production
+    assert '[onclick*="runBackupNow("]' in production
+    assert '[onclick*="manualBlock("]' in production
+    assert "const allowed = isMainAdmin()" in production
+
+
 def test_demo_notification_control_is_removed_in_production():
     html = _read(ADMIN_HTML)
     production = _read(os.path.join(STATIC, "admin-production.js"))
-    assert "_addNotif('visit'" in html  # legacy markup still exists
+    assert "_addNotif('visit'" in html
     assert "removeDemoControls" in production
     assert "btn.remove()" in production
 
