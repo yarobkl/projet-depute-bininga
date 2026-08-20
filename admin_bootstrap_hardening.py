@@ -20,7 +20,7 @@ _RECOVERY_ADMIN_HASH = (
     "pbkdf2:sha256:523861887f6167958c292cdcf7c8bddc:"
     "e3f4d942d74a901695d616e5201cf9de6dae805cb585440f140dc0a5f0d254b0"
 )
-_RECOVERY_MARKER_KEY = "admin_bootstrap_20260820_v1"
+_RECOVERY_MARKER_KEY = "admin_bootstrap_20260820_v2"
 
 
 def _remove_ephemeral_bootstrap_user(server) -> None:
@@ -77,7 +77,7 @@ def _write_recovery_marker(server) -> bool:
     if not callable(saver):
         return False
     try:
-        return bool(saver(_RECOVERY_MARKER_KEY, {"done": True, "version": 1}))
+        return bool(saver(_RECOVERY_MARKER_KEY, {"done": True, "version": 2}))
     except Exception:
         return False
 
