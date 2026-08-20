@@ -70,13 +70,21 @@
   // Move a currently valid legacy session out of localStorage immediately.
   migrateLegacySession();
 
-  // Follow-up hardening stays in an isolated file. Loading it here avoids any
+  // Follow-up hardening stays in isolated files. Loading them here avoids any
   // direct edit of the large legacy admin bundle or document.
   if (!document.querySelector('script[data-bininga-dashboard-hardening]')) {
     const script = document.createElement('script');
     script.src = '/static/admin-dashboard-hardening.js?v=20260819-dashboard-1';
     script.defer = true;
     script.dataset.biningaDashboardHardening = '1';
+    document.head.appendChild(script);
+  }
+
+  if (!document.querySelector('script[data-bininga-production-hardening]')) {
+    const script = document.createElement('script');
+    script.src = '/static/admin-production.js?v=20260820-real-actions-1';
+    script.defer = true;
+    script.dataset.biningaProductionHardening = '1';
     document.head.appendChild(script);
   }
 
