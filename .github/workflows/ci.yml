@@ -16,14 +16,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
-        with:
+        uses:
           python-version: "3.11"
 
       # ── 1. Syntaxe Python ──────────────────────────────────
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py passenger_wsgi.py admin_system_authz.py
+          python -m py_compile server.py passenger_wsgi.py admin_system_authz.py editorial_publish_integrity.py
           echo "✅ Python — syntaxe OK"
 
       # ── 2. Validation JSON ─────────────────────────────────
@@ -63,6 +62,7 @@ jobs:
         run: |
           python tests/test_admin_ui.py
           python tests/test_admin_action_contracts.py
+          python tests/test_editorial_publish_integrity.py
 
       # ── 5. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP
