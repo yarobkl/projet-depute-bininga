@@ -1,0 +1,1 @@
+Temporary release note for the 2026-08-20 DA routing lock. The production Vercel entrypoint explicitly intercepts POST /api/chat through chatbot_hardening before legacy routing. Remove this note after the release if desired.
