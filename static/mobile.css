@@ -88,6 +88,42 @@ body.theme-light #contact .ct-item {
 
 /* Admin mobile — un seul conteneur de scroll, fiable sur iOS/Safari */
 @media (max-width: 768px) {
+  html,
+  body {
+    min-height:100% !important;
+    height:auto !important;
+    overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+
+  #app.visible,
+  .main,
+  .content,
+  .panel.active,
+  #panel-dashboard {
+    height:auto !important;
+    max-height:none !important;
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+
+  .main {
+    min-height:100dvh !important;
+  }
+
+  .content {
+    padding-bottom:calc(240px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #panel-dashboard {
+    padding-bottom:40px !important;
+  }
+
+  .dashboard-bottom-grid {
+    grid-template-columns:1fr !important;
+  }
+
   body.sidebar-open {
     overflow: hidden !important;
     overscroll-behavior: none !important;
