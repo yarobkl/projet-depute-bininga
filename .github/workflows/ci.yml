@@ -69,3 +69,7 @@ jobs:
         env:
           BININGA_PASS: bininga2025
         run: python tests/test_server.py
+
+      # ── 6. Sécurité complète ───────────────────────────────
+      - name: Suite de sécurité admin
+        run: python test_security.py
