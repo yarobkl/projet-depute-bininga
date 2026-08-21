@@ -56,6 +56,7 @@
     if (document.querySelector(`script[${marker}]`)) return;
     const script = document.createElement('script'); script.src = src; script.defer = true; script.setAttribute(marker, '1'); document.head.appendChild(script);
   }
+  load('data-bininga-login-input-fix','/static/admin-login-input-fix.js?v=20260821-focus-1');
   load('data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1');
   load('data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1');
   load('data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1');
