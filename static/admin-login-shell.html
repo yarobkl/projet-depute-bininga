@@ -22,6 +22,7 @@
 (() => {
   'use strict';
   const KEY='bininga_session';
+  const ADMIN_PATH='/cabinet-bininga-Ff4wjckb0MG7XRvv';
   const form=document.getElementById('form');
   const u=document.getElementById('u');
   const p=document.getElementById('p');
@@ -42,9 +43,9 @@
       if(data.ok){
         const ttlSeconds=Math.max(60,Number(data.session_ttl||72*3600));
         const saved={token:data.token,csrf:data.csrf_token||data.csrf||'',role:data.role,nom:data.nom,username:data.username||'',is_main_admin:data.is_main_admin||false,has_2fa:data.has_2fa||false,trusted_ip:data.trusted_ip||false,session_duration:data.session_duration||'',expires_at:Date.now()+ttlSeconds*1000};
-        try{parent.localStorage.removeItem(KEY);}catch(_){}
-        parent.sessionStorage.setItem(KEY,JSON.stringify(saved));
-        parent.location.reload();
+        try{localStorage.removeItem(KEY);}catch(_){}
+        sessionStorage.setItem(KEY,JSON.stringify(saved));
+        window.location.replace(ADMIN_PATH);
         return;
       }
       if(data.require_2fa){
