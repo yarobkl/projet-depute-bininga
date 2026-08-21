@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>BININGA — Connexion</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px}.box{width:min(100%,420px);background:#111722;border:1px solid #263247;border-radius:18px;padding:34px 28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center}.logo{width:62px;height:62px;margin:0 auto 22px;border-radius:14px;background:#bb1232;display:grid;place-items:center;font:700 30px Georgia,serif}.box h1{font-size:22px;margin:0 0 8px}.box p{margin:0 0 28px;color:#8d95a4;font-size:14px}.field{display:block;width:100%;height:56px;margin:0 0 14px;padding:0 16px;border:1px solid #344056;border-radius:12px;background:#192231;color:#fff;font-size:16px;outline:none;-webkit-appearance:none;appearance:none}.field:focus{border-color:#bb1232;box-shadow:0 0 0 3px rgba(187,18,50,.14)}.btn{display:block;width:100%;height:54px;border:0;border-radius:12px;background:#123f33;color:#7df0aa;font-size:17px;font-weight:800;-webkit-appearance:none;appearance:none}.btn:disabled{opacity:.55}.err{min-height:20px;margin-top:12px;color:#ff7f8d;font-size:13px}.hidden{display:none}</style>
+</head>
+<body>
+<form class="box" id="form" autocomplete="on">
+  <div class="logo">B</div>
+  <h1>Espace Administration</h1>
+  <p>Administration du site BININGA · Accès sécurisé</p>
+  <input class="field" id="u" name="username" type="text" placeholder="Identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+  <input class="field" id="p" name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+  <input class="field hidden" id="totp" name="totp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code 2FA (6 chiffres)" autocomplete="one-time-code">
+  <button class="btn" id="btn" type="submit">Connexion</button>
+  <div class="err" id="err" role="alert" aria-live="polite"></div>
+</form>
+<script>
+(() => {
+  'use strict';
+  const KEY='bininga_session';
+  const form=document.getElementById('form');
+  const u=document.getElementById('u');
+  const p=document.getElementById('p');
+  const totp=document.getElementById('totp');
+  const btn=document.getElementById('btn');
+  const err=document.getElementById('err');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    err.textContent='';
+    btn.disabled=true;
+    btn.textContent='Connexion…';
+    try {
+      const payload={username:u.value.trim(),password:p.value};
+      if(!totp.classList.contains('hidden') && totp.value.trim()) payload.totp_code=totp.value.trim();
+      const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const data=await res.json();
+      if(data.ok){
+        const ttlSeconds=Math.max(60,Number(data.session_ttl||72*3600));
+        const saved={token:data.token,csrf:data.csrf_token||data.csrf||'',role:data.role,nom:data.nom,username:data.username||'',is_main_admin:data.is_main_admin||false,has_2fa:data.has_2fa||false,trusted_ip:data.trusted_ip||false,session_duration:data.session_duration||'',expires_at:Date.now()+ttlSeconds*1000};
+        try{parent.localStorage.removeItem(KEY);}catch(_){}
+        parent.sessionStorage.setItem(KEY,JSON.stringify(saved));
+        parent.location.reload();
+        return;
+      }
+      if(data.require_2fa){
+        totp.classList.remove('hidden');
+        totp.focus();
+        err.textContent="Entrez votre code d'authentification à 6 chiffres.";
+      } else {
+        err.textContent=data.message||'Identifiant ou mot de passe incorrect.';
+      }
+    } catch(_) {
+      err.textContent='Connexion serveur impossible.';
+    } finally {
+      btn.disabled=false;
+      btn.textContent='Connexion';
+    }
+  });
+})();
+</script>
+</body>
+</html>
