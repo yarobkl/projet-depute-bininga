@@ -1,9 +1,4 @@
-/* BININGA Admin — session storage hardening
- *
- * The legacy bundle persists bearer + CSRF tokens in localStorage for 72h.
- * Keep the same server-side session duration, but store credentials only in
- * sessionStorage so closing the browser/tab removes the browser copy.
- */
+/* BININGA Admin — session storage hardening + isolated mobile login shell */
 (() => {
   'use strict';
 
@@ -25,6 +20,22 @@
     }
   }
 
+  function readValidSession() {
+    try {
+      const raw = sessionStorage.getItem(KEY);
+      if (!raw) return null;
+      const saved = JSON.parse(raw);
+      if (!saved || !saved.token || Date.now() > Number(saved.expires_at || 0)) {
+        clearSessionCopies();
+        return null;
+      }
+      return saved;
+    } catch (_) {
+      clearSessionCopies();
+      return null;
+    }
+  }
+
   window._clearStoredSession = function clearStoredSessionHardened() { clearSessionCopies(); };
 
   window._storeSession = function storeSessionHardened(data) {
@@ -41,26 +52,64 @@
   };
 
   window.restoreStoredSession = function restoreStoredSessionHardened() {
-    try {
-      const raw = sessionStorage.getItem(KEY);
-      if (!raw) return false;
-      const saved = JSON.parse(raw);
-      if (!saved || !saved.token || Date.now() > Number(saved.expires_at || 0)) { clearSessionCopies(); return false; }
-      _applySession(saved, true); return true;
-    } catch (_) { clearSessionCopies(); return false; }
+    const saved = readValidSession();
+    if (!saved) return false;
+    try { _applySession(saved, true); return true; }
+    catch (_) { return false; }
   };
-
-  migrateLegacySession();
 
   function load(marker, src) {
     if (document.querySelector(`script[${marker}]`)) return;
-    const script = document.createElement('script'); script.src = src; script.defer = true; script.setAttribute(marker, '1'); document.head.appendChild(script);
+    const script = document.createElement('script');
+    script.src = src;
+    script.defer = true;
+    script.setAttribute(marker, '1');
+    document.head.appendChild(script);
   }
-  load('data-bininga-login-input-fix','/static/admin-login-input-fix.js?v=20260821-focus-1');
-  load('data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1');
-  load('data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1');
-  load('data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1');
-  load('data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1');
 
-  console.info('[BININGA Admin] Session storage hardened');
+  function loadAuthenticatedModules() {
+    load('data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1');
+    load('data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1');
+    load('data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1');
+    load('data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1');
+  }
+
+  function mountIsolatedLogin() {
+    if (readValidSession()) return;
+    if (document.getElementById('bininga-login-frame')) return;
+
+    const legacyLogin = document.getElementById('login');
+    if (legacyLogin) {
+      legacyLogin.setAttribute('aria-hidden', 'true');
+      legacyLogin.style.setProperty('display', 'none', 'important');
+      legacyLogin.style.setProperty('pointer-events', 'none', 'important');
+    }
+
+    const app = document.getElementById('app');
+    if (app) app.style.setProperty('display', 'none', 'important');
+
+    const frame = document.createElement('iframe');
+    frame.id = 'bininga-login-frame';
+    frame.src = '/static/admin-login-shell.html?v=20260821-shell-1';
+    frame.title = 'Connexion administration BININGA';
+    frame.setAttribute('allow', '');
+    frame.style.cssText = 'position:fixed;inset:0;width:100%;height:100dvh;border:0;margin:0;padding:0;background:#050505;z-index:2147483647;display:block;';
+    document.body.appendChild(frame);
+  }
+
+  migrateLegacySession();
+
+  if (readValidSession()) {
+    loadAuthenticatedModules();
+  } else if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mountIsolatedLogin, { once: true });
+  } else {
+    mountIsolatedLogin();
+  }
+
+  window.addEventListener('pageshow', () => {
+    if (!readValidSession()) mountIsolatedLogin();
+  }, { passive: true });
+
+  console.info('[BININGA Admin] Session storage hardened; isolated login shell enabled');
 })();
