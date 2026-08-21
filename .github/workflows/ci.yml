@@ -73,4 +73,6 @@ jobs:
 
       # ── 6. Sécurité complète ───────────────────────────────
       - name: Suite de sécurité admin
+        env:
+          BININGA_FORCE_HTTP: "1"
         run: python test_security.py
