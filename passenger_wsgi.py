@@ -34,6 +34,7 @@ import admin_system_authz
 import admin_bootstrap_hardening
 import request_identity
 import chatbot_hardening
+import editorial_publish_integrity
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
@@ -280,6 +281,8 @@ def application(environ, start_response):
         elif not admin_system_authz.guard_request(bininga_server, handler):
             pass
         elif not admin_contact_integrity.guard_request(bininga_server, handler):
+            pass
+        elif not editorial_publish_integrity.guard_request(bininga_server, handler):
             pass
         elif not chatbot_hardening.guard_request(bininga_server, handler):
             pass
