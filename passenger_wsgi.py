@@ -213,7 +213,7 @@ def _replace_response_body(handler: _PassengerHandler, patched: bytes) -> None:
 
 
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
-    """Load the admin integrity/security patches only on the real admin page."""
+    """Load admin hardening and redirect unauthenticated browsers before heavy UI boot."""
     if handler.command != "GET" or handler._status_code != 200:
         return
 
@@ -221,23 +221,37 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin.js" not in body or b"Espace Administration" not in body:
         return
 
+    patched = body
+
+    # Execute before linked CSS and the very large admin DOM are parsed. The browser
+    # owns sessionStorage, so this must be client-side, but placing it at the start
+    # of <head> lets unauthenticated iOS/Safari/Chrome abandon the heavy document
+    # immediately and open the native login shell instead.
+    preboot_marker = b"data-bininga-admin-preboot"
+    if preboot_marker not in patched and b"<head>" in patched:
+        preboot = b'''\n<script data-bininga-admin-preboot>\n(function(){\n  try {\n    var raw=sessionStorage.getItem('bininga_session');\n    var s=raw?JSON.parse(raw):null;\n    if(!s||!s.token||Date.now()>Number(s.expires_at||0)){\n      try{sessionStorage.removeItem('bininga_session');}catch(_){}\n      try{localStorage.removeItem('bininga_session');}catch(_){}\n      location.replace('/static/admin-login-shell.html');\n    }\n  } catch(e) {\n    location.replace('/static/admin-login-shell.html');\n  }\n})();\n</script>\n'''
+        patched = patched.replace(b"<head>", b"<head>" + preboot, 1)
+
     marker = b"</body>"
-    if marker not in body:
+    if marker not in patched:
+        if patched != body:
+            _replace_response_body(handler, patched)
         return
 
     scripts = b""
-    if b"static/admin-hardening.js" not in body:
+    if b"static/admin-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
-    if b"static/admin-notification-hardening.js" not in body:
+    if b"static/admin-notification-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
-    if b"static/admin-session-hardening.js" not in body:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260819-session-1" defer></script>\n'
-    if b"static/admin-chatbot.js" not in body:
+    if b"static/admin-session-hardening.js" not in patched:
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260822-session-2" defer></script>\n'
+    if b"static/admin-chatbot.js" not in patched:
         scripts += b'\n<script src="/static/admin-chatbot.js?v=20260819-da-1" defer></script>\n'
-    if not scripts:
-        return
+    if scripts:
+        patched = patched.replace(marker, scripts + marker, 1)
 
-    _replace_response_body(handler, body.replace(marker, scripts + marker, 1))
+    if patched != body:
+        _replace_response_body(handler, patched)
 
 
 def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
