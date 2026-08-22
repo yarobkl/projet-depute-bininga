@@ -1,60 +1,75 @@
-/* BININGA Admin — mobile navigation interaction fix v3
- * One deterministic state machine for both red menu buttons.
- * Key fix: never auto-close the drawer on mobile resize/viewport chrome changes.
+/* BININGA Admin — navigation stable (mobile + desktop)
+ *
+ * Important: this file does not create any shortcut/floating button.
+ * It only makes the existing admin hamburger/sidebar reliable and clears stale
+ * states left by previous mobile rescue scripts.
  */
 (() => {
   'use strict';
-  if (window.__BININGA_MOBILE_NAV_FIX_V3__) return;
-  window.__BININGA_MOBILE_NAV_FIX_V3__ = true;
+  if (window.__BININGA_ADMIN_NAV_STABLE__) return;
+  window.__BININGA_ADMIN_NAV_STABLE__ = true;
 
-  const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
+  const mobile = () => window.matchMedia('(max-width: 768px)').matches;
   let openState = false;
-  let installed = false;
-  let lastTap = 0;
+  let lastAction = 0;
 
-  const get = () => ({
+  const refs = () => ({
     body: document.body,
     sidebar: document.getElementById('sidebar'),
     overlay: document.getElementById('sidebar-overlay'),
     hamburger: document.getElementById('hamburger'),
+    pull: document.getElementById('sb-pull'),
     main: document.querySelector('.main')
   });
 
-  function ensureFab() {
-    let fab = document.getElementById('bininga-mobile-menu-fab');
-    if (!fab) {
-      fab = document.createElement('button');
-      fab.id = 'bininga-mobile-menu-fab';
-      fab.type = 'button';
-      fab.innerHTML = '&#9776;';
-      fab.setAttribute('aria-label', 'Ouvrir le menu administration');
-      fab.style.cssText = [
-        'position:fixed','left:0','top:50%','transform:translateY(-50%)',
-        'width:42px','height:68px','border:0','border-radius:0 12px 12px 0',
-        'background:#C8102E','color:#fff','font-size:24px','font-weight:800',
-        'display:flex','align-items:center','justify-content:center',
-        'z-index:2147483647','pointer-events:auto','touch-action:manipulation',
-        '-webkit-tap-highlight-color:transparent','box-shadow:3px 0 18px rgba(0,0,0,.35)'
-      ].join(';');
-      document.body.appendChild(fab);
+  function removeLegacyRescueUI() {
+    document.getElementById('bininga-mobile-menu-fab')?.remove();
+    const { pull } = refs();
+    if (pull) {
+      pull.style.setProperty('display', 'none', 'important');
+      pull.style.setProperty('visibility', 'hidden', 'important');
+      pull.style.setProperty('pointer-events', 'none', 'important');
     }
-    return fab;
   }
 
   function render(open) {
-    const { body, sidebar, overlay, hamburger, main } = get();
+    const { body, sidebar, overlay, hamburger, main } = refs();
     if (!body || !sidebar) return;
+
+    // Desktop keeps its native fixed sidebar visible.
+    if (!mobile()) {
+      openState = false;
+      body.classList.remove('sidebar-open');
+      body.style.removeProperty('overflow');
+      sidebar.classList.remove('open', 'active');
+      ['left','transform','visibility','pointer-events','display','z-index'].forEach(p => sidebar.style.removeProperty(p));
+      if (overlay) {
+        overlay.classList.remove('open', 'active');
+        ['display','visibility','pointer-events','z-index'].forEach(p => overlay.style.removeProperty(p));
+      }
+      if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
+      if (main) {
+        main.style.removeProperty('pointer-events');
+        main.style.removeProperty('touch-action');
+      }
+      return;
+    }
+
     openState = !!open;
 
-    body.classList.toggle('sidebar-open', openState);
+    // Do not use body.sidebar-open: mobile.css historically disables .main while
+    // this class is present, which caused the whole admin to become untouchable.
+    body.classList.remove('sidebar-open');
+    body.style.overflow = openState ? 'hidden' : '';
+
     sidebar.classList.toggle('open', openState);
     sidebar.classList.remove('active');
-    sidebar.style.setProperty('display', 'block', 'important');
-    sidebar.style.setProperty('left', openState ? '0px' : '-110vw', 'important');
-    sidebar.style.setProperty('transform', openState ? 'translate3d(0,0,0)' : 'translate3d(-110%,0,0)', 'important');
+    sidebar.style.setProperty('left', openState ? '0px' : 'calc(-1 * min(84vw, 304px))', 'important');
+    sidebar.style.setProperty('transform', 'none', 'important');
     sidebar.style.setProperty('visibility', openState ? 'visible' : 'hidden', 'important');
     sidebar.style.setProperty('pointer-events', openState ? 'auto' : 'none', 'important');
-    sidebar.style.setProperty('z-index', '2147483646', 'important');
+    sidebar.style.setProperty('display', 'block', 'important');
+    sidebar.style.setProperty('z-index', '1001', 'important');
 
     if (overlay) {
       overlay.classList.toggle('open', openState);
@@ -62,79 +77,85 @@
       overlay.style.setProperty('display', openState ? 'block' : 'none', 'important');
       overlay.style.setProperty('visibility', openState ? 'visible' : 'hidden', 'important');
       overlay.style.setProperty('pointer-events', openState ? 'auto' : 'none', 'important');
-      overlay.style.setProperty('z-index', '2147483645', 'important');
+      overlay.style.setProperty('z-index', '1000', 'important');
     }
-
-    if (main) {
-      main.style.setProperty('pointer-events', 'auto', 'important');
-      main.style.setProperty('touch-action', 'auto', 'important');
-    }
-
-    const fab = ensureFab();
-    fab.innerHTML = openState ? '&#10005;' : '&#9776;';
-    fab.setAttribute('aria-label', openState ? 'Fermer le menu administration' : 'Ouvrir le menu administration');
 
     if (hamburger) {
       hamburger.setAttribute('aria-expanded', openState ? 'true' : 'false');
       hamburger.style.setProperty('pointer-events', 'auto', 'important');
       hamburger.style.setProperty('touch-action', 'manipulation', 'important');
-      hamburger.style.setProperty('z-index', '2147483647', 'important');
+      hamburger.style.setProperty('position', 'relative', 'important');
+      hamburger.style.setProperty('z-index', '1002', 'important');
+    }
+
+    // Main remains structurally interactive; the overlay alone captures outside
+    // taps while the drawer is open. This avoids stale pointer-events:none states.
+    if (main) {
+      main.style.setProperty('pointer-events', 'auto', 'important');
+      main.style.setProperty('touch-action', 'auto', 'important');
     }
   }
 
-  function toggleFromEvent(e) {
+  function toggle(e) {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     const now = Date.now();
-    if (now - lastTap < 250) return;
-    lastTap = now;
+    if (now - lastAction < 220) return;
+    lastAction = now;
     render(!openState);
   }
 
-  function bindTap(el, handler) {
-    if (!el || el.dataset.biningaNavBoundV3 === '1') return;
-    el.dataset.biningaNavBoundV3 = '1';
+  function close(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    render(false);
+  }
+
+  function bindOnce(el, key, handler) {
+    if (!el || el.dataset[key] === '1') return;
+    el.dataset[key] = '1';
     el.removeAttribute('onclick');
-    el.addEventListener('touchend', handler, { passive:false });
-    el.addEventListener('click', handler, { passive:false });
+    // Pointer events cover touch, pen and mouse with one event instead of the
+    // touchend + synthetic click double-fire that broke iOS.
+    el.addEventListener('pointerup', handler, { passive: false });
   }
 
   function install() {
-    if (!isMobile()) return;
-    const { sidebar, overlay, hamburger, main } = get();
+    removeLegacyRescueUI();
+    const { sidebar, overlay, hamburger, main } = refs();
     if (!sidebar || !main) return;
 
-    const fab = ensureFab();
-    bindTap(fab, toggleFromEvent);
-    bindTap(hamburger, toggleFromEvent);
+    bindOnce(hamburger, 'biningaNavStable', toggle);
+    bindOnce(overlay, 'biningaOverlayStable', close);
 
-    if (overlay && overlay.dataset.biningaOverlayBoundV3 !== '1') {
-      overlay.dataset.biningaOverlayBoundV3 = '1';
-      overlay.removeAttribute('onclick');
-      overlay.addEventListener('touchend', (e) => { e.preventDefault(); render(false); }, { passive:false });
-      overlay.addEventListener('click', (e) => { e.preventDefault(); render(false); }, { passive:false });
-    }
-
-    if (!installed) {
-      sidebar.querySelectorAll('.sb-item').forEach((item) => {
-        item.addEventListener('click', () => setTimeout(() => render(false), 50), { passive:true });
-      });
-      installed = true;
-      render(false);
-    } else {
-      render(openState);
-    }
+    sidebar.querySelectorAll('.sb-item').forEach(item => {
+      if (item.dataset.biningaPanelClose === '1') return;
+      item.dataset.biningaPanelClose = '1';
+      item.addEventListener('click', () => {
+        if (mobile()) setTimeout(() => render(false), 0);
+      }, { passive: true });
+    });
 
     window.toggleSidebar = () => render(!openState);
-    window.closeSidebar = () => render(false);
     window.openSidebar = () => render(true);
+    window.closeSidebar = () => render(false);
+
+    render(false);
   }
 
-  window.addEventListener('pageshow', install, { passive:true });
-  // Important on iOS: viewport/browser chrome resizes must NOT close the drawer.
-  window.addEventListener('resize', () => { if (isMobile()) requestAnimationFrame(() => render(openState)); }, { passive:true });
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once:true });
-  else install();
+  window.addEventListener('pageshow', install, { passive: true });
+  window.addEventListener('resize', () => {
+    // Browser chrome / orientation changes must preserve an open mobile drawer.
+    requestAnimationFrame(() => render(mobile() ? openState : false));
+  }, { passive: true });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', install, { once: true });
+  } else {
+    install();
+  }
 })();
