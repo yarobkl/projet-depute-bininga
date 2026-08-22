@@ -133,24 +133,20 @@
     }).join('');
   };
 
-  // Synchroniser les données serveur avant d'afficher les trois files métier.
-  const originalShowPanel = window.showPanel;
-  if(typeof originalShowPanel==='function'){
-    window.showPanel = function showPanelCases(name,el){
-      const result=originalShowPanel.apply(this,arguments);
-      if(['audiences','reclamations','contacts'].includes(name) && typeof window.syncMessages==='function'){
-        Promise.resolve(window.syncMessages()).then(()=>{
-          if(name==='audiences'&&typeof window.renderAudiences==='function') window.renderAudiences();
-          else if(name==='reclamations'&&typeof window.renderReclamations==='function') window.renderReclamations();
-          else if(name==='contacts'&&typeof window.renderContacts==='function') window.renderContacts();
-        }).catch(err=>{
-          console.warn('[BININGA Admin] sync dossiers',err);
-          if(typeof window.showToast==='function') window.showToast('Synchronisation des dossiers impossible',true);
-        });
-      }
-      return result;
-    };
-  }
+  // Sync dossiers via event listener, not by wrapping showPanel
+  window.addEventListener('admin:panelchange', (e) => {
+    const name = e.detail.name;
+    if (['audiences','reclamations','contacts'].includes(name) && typeof window.syncMessages==='function'){
+      Promise.resolve(window.syncMessages()).then(()=>{
+        if(name==='audiences'&&typeof window.renderAudiences==='function') window.renderAudiences();
+        else if(name==='reclamations'&&typeof window.renderReclamations==='function') window.renderReclamations();
+        else if(name==='contacts'&&typeof window.renderContacts==='function') window.renderContacts();
+      }).catch(err=>{
+        console.warn('[BININGA Admin] sync dossiers',err);
+        if(typeof window.showToast==='function') window.showToast('Synchronisation des dossiers impossible',true);
+      });
+    }
+  });
 
   installCss();
   console.info('[BININGA Admin] Vues métier dossiers actives');

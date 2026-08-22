@@ -1733,16 +1733,14 @@ async function yaroRunScraper(){
   }
 }
 
-// Déclenche le chargement quand le panel s'ouvre
+// YARO loads stats/articles via event, not by wrapping showPanel
 document.addEventListener("DOMContentLoaded",()=>{
-  const orig = typeof showPanel==="function" ? showPanel : null;
-  if(orig){
-    window._origShowPanel = orig;
-    window.showPanel = function(name,...args){
-      window._origShowPanel(name,...args);
-      if(name==="yaro-legal"){ yaroLoadStats(); yaroLoadArticles(1); }
-    };
-  }
+  window.addEventListener('admin:panelchange', (e) => {
+    if (e.detail.name === 'yaro-legal') {
+      if (typeof window.yaroLoadStats === 'function') window.yaroLoadStats();
+      if (typeof window.yaroLoadArticles === 'function') window.yaroLoadArticles(1);
+    }
+  });
 });
 
 function _ylFmtDate(ts){

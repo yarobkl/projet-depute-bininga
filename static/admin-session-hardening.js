@@ -115,7 +115,7 @@
   }
 
   const modules = [
-    ['data-bininga-mobile-nav-fix','/static/admin-mobile-nav-fix.js?v=20260822-nav-stable-1'],
+    ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260822-nav-unified-1'],
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1'],
