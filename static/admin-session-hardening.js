@@ -114,10 +114,8 @@
     return ok;
   }
 
-  // Dynamic scripts are async by default in browsers. Loading them one by one
-  // prevents intermittent handler overrides and broken mobile navigation.
   const modules = [
-    ['data-bininga-mobile-nav-fix','/static/admin-mobile-nav-fix.js?v=20260822-nav-3'],
+    ['data-bininga-mobile-nav-fix','/static/admin-mobile-nav-fix.js?v=20260822-nav-4'],
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1'],
