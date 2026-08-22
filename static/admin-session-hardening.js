@@ -1,8 +1,8 @@
 /* BININGA Admin — session storage hardening
  *
  * Keep credentials in sessionStorage and route unauthenticated visitors through
- * the tiny native login shell. This removes the large admin DOM / overlay stack
- * from the iOS keyboard path while preserving the full admin after login.
+ * the tiny native login shell. Authenticated modules are loaded deterministically
+ * to avoid race conditions between dashboard, navigation and action handlers.
  */
 (() => {
   'use strict';
@@ -66,31 +66,51 @@
 
   migrateLegacySession();
 
-  // Root-cause containment for iOS/Safari/Chrome-in-app: never ask the keyboard
-  // to focus fields inside the full admin document. The isolated shell contains
-  // only a native <form> and was already verified to accept typing reliably.
   const existingSession = readValidSession();
   if (!existingSession) {
     if (location.pathname !== LOGIN_SHELL) location.replace(LOGIN_SHELL);
     return;
   }
 
-  function load(marker, src) {
-    if (document.querySelector(`script[${marker}]`)) return;
-    const script = document.createElement('script');
-    script.src = src;
-    script.defer = true;
-    script.setAttribute(marker, '1');
-    document.head.appendChild(script);
+  function loadOne(marker, src) {
+    return new Promise((resolve) => {
+      const existing = document.querySelector(`script[${marker}]`);
+      if (existing) {
+        if (existing.dataset.loaded === '1') return resolve();
+        existing.addEventListener('load', resolve, { once: true });
+        existing.addEventListener('error', resolve, { once: true });
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = src;
+      script.async = false;
+      script.setAttribute(marker, '1');
+      script.addEventListener('load', () => {
+        script.dataset.loaded = '1';
+        resolve();
+      }, { once: true });
+      script.addEventListener('error', () => {
+        console.error('[BININGA Admin] Module non chargé:', src);
+        resolve();
+      }, { once: true });
+      document.head.appendChild(script);
+    });
   }
 
-  // Authenticated-only modules. Keeping login helpers out of the full admin
-  // reduces boot work and removes another possible touch/focus interference.
-  load('data-bininga-mobile-nav-fix','/static/admin-mobile-nav-fix.js?v=20260822-nav-3');
-  load('data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1');
-  load('data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1');
-  load('data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1');
-  load('data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1');
+  // Dynamic scripts are async by default in browsers. Loading them one by one
+  // prevents intermittent handler overrides and broken mobile navigation.
+  const modules = [
+    ['data-bininga-mobile-nav-fix','/static/admin-mobile-nav-fix.js?v=20260822-nav-3'],
+    ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260819-dashboard-1'],
+    ['data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1'],
+    ['data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1'],
+    ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1']
+  ];
 
-  console.info('[BININGA Admin] Authenticated admin boot hardened');
+  (async () => {
+    for (const [marker, src] of modules) await loadOne(marker, src);
+    document.documentElement.dataset.adminModulesReady = '1';
+    window.dispatchEvent(new CustomEvent('bininga:admin-modules-ready'));
+    console.info('[BININGA Admin] Authenticated modules loaded in stable order');
+  })();
 })();
