@@ -2389,10 +2389,18 @@ function showToast(msg, err=false) {
 
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
 // Fallback navigation functions (will be overridden by admin-navigation.js when authenticated)
-function toggleSidebar() {
+function toggleSidebar(e) {
+  if (e) {
+    e.preventDefault?.();
+    e.stopPropagation?.();
+  }
   const sb = document.getElementById("sidebar");
-  if (!sb) return;
+  if (!sb) {
+    console.warn('[BININGA] toggleSidebar fallback: sidebar not found');
+    return;
+  }
   const open = sb.classList.contains("open");
+  console.log('[BININGA] toggleSidebar fallback: sidebar currently', open ? 'open' : 'closed');
   if (open) closeSidebar();
   else openSidebar();
 }
@@ -2401,7 +2409,11 @@ function openSidebar() {
   const ov = document.getElementById("sidebar-overlay");
   const btn = document.getElementById("hamburger");
   const main = document.querySelector(".main");
-  if (!sb) return;
+  if (!sb) {
+    console.warn('[BININGA] openSidebar fallback: sidebar not found');
+    return;
+  }
+  console.log('[BININGA] openSidebar fallback: opening sidebar');
   sb.classList.add("open");
   sb.style.setProperty("left", "0px", "important");
   if (ov) ov.classList.add("open");
@@ -2419,7 +2431,11 @@ function closeSidebar() {
   const ov = document.getElementById("sidebar-overlay");
   const pull = document.getElementById("sb-pull");
   const main = document.querySelector(".main");
-  if (!sb) return;
+  if (!sb) {
+    console.warn('[BININGA] closeSidebar fallback: sidebar not found');
+    return;
+  }
+  console.log('[BININGA] closeSidebar fallback: closing sidebar');
   sb.classList.remove("open");
   sb.style.setProperty("left", "calc(-1 * min(84vw, 304px))", "important");
   if (btn) btn.setAttribute("aria-expanded", "false");
