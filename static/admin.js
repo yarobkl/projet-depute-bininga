@@ -2389,34 +2389,48 @@ function showToast(msg, err=false) {
 
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
 // Fallback navigation functions (will be overridden by admin-navigation.js when authenticated)
-// Do NOT add sidebar-open class (breaks pointer-events in mobile.css)
 function toggleSidebar() {
   const sb = document.getElementById("sidebar");
   if (!sb) return;
   const open = sb.classList.contains("open");
   if (open) closeSidebar();
-  else {
-    sb.classList.add("open");
-    sb.style.setProperty("left", "0px", "important");
-    const ov = document.getElementById("sidebar-overlay");
-    if (ov) ov.classList.add("open");
-    const btn = document.getElementById("hamburger");
-    if (btn) btn.setAttribute("aria-expanded", "true");
+  else openSidebar();
+}
+function openSidebar() {
+  const sb = document.getElementById("sidebar");
+  const ov = document.getElementById("sidebar-overlay");
+  const btn = document.getElementById("hamburger");
+  const main = document.querySelector(".main");
+  if (!sb) return;
+  sb.classList.add("open");
+  sb.style.setProperty("left", "0px", "important");
+  if (ov) ov.classList.add("open");
+  if (btn) btn.setAttribute("aria-expanded", "true");
+  if (main) {
+    main.style.setProperty("pointer-events", "auto", "important");
+    main.style.setProperty("touch-action", "auto", "important");
   }
+  document.body.style.overflow = "hidden";
+  document.body.classList.add("sidebar-open");
 }
 function closeSidebar() {
   const sb = document.getElementById("sidebar");
   const btn = document.getElementById("hamburger");
   const ov = document.getElementById("sidebar-overlay");
   const pull = document.getElementById("sb-pull");
-  if (sb) {
-    sb.classList.remove("open");
-    sb.style.setProperty("left", "calc(-1 * min(84vw, 304px))", "important");
-  }
+  const main = document.querySelector(".main");
+  if (!sb) return;
+  sb.classList.remove("open");
+  sb.style.setProperty("left", "calc(-1 * min(84vw, 304px))", "important");
   if (btn) btn.setAttribute("aria-expanded", "false");
   if (ov) ov.classList.remove("open");
   if (pull) pull.classList.remove("visible");
+  if (main) {
+    main.style.setProperty("pointer-events", "auto", "important");
+    main.style.setProperty("touch-action", "auto", "important");
+  }
   document.body.style.overflow = "";
+  document.body.classList.remove("sidebar-open");
 }
 
 window.addEventListener("resize", () => {
