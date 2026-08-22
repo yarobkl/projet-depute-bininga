@@ -1,6 +1,10 @@
 /* BININGA Admin — vues métier Messages / Audiences / Réclamations
  * Présentation type messagerie / gestion de dossiers, sans perdre les données
  * techniques ni les actions serveur existantes.
+ *
+ * ⚠️  Do NOT wrap window.showPanel here. Listen to 'admin:panelchange' instead.
+ * This module is loaded AFTER admin-navigation.js defines the centralized
+ * navigation functions. Wrapping showPanel creates fragile chained dependencies.
  */
 (()=>{
   'use strict';
