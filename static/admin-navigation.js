@@ -54,16 +54,30 @@
     window.dispatchEvent(new CustomEvent('admin:panelchange', { detail: { name } }));
   };
 
-  window.toggleSidebar = function toggleSidebar() {
-    if (!isMobile()) return;
+  window.toggleSidebar = function toggleSidebar(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const mobile = isMobile();
+    if (!mobile) {
+      console.log('[BININGA Nav] toggleSidebar: not mobile, returning');
+      return;
+    }
     if (_sidebarOpen) closeSidebar();
     else openSidebar();
   };
 
   window.openSidebar = function openSidebar() {
-    if (!isMobile()) return;
+    if (!isMobile()) {
+      console.log('[BININGA Nav] openSidebar: not mobile');
+      return;
+    }
     const { sidebar, overlay, hamburger, main, body } = refs();
-    if (!sidebar) return;
+    if (!sidebar) {
+      console.log('[BININGA Nav] openSidebar: sidebar not found');
+      return;
+    }
 
     _sidebarOpen = true;
     sidebar.classList.add('open');
@@ -99,8 +113,17 @@
   // ─── INSTALLATION ───
 
   function install() {
-    const { sidebar, overlay, hamburger } = refs();
-    if (!sidebar || !hamburger) return;
+    console.log('[BININGA Nav] install() called');
+    const { sidebar, overlay, hamburger, main } = refs();
+    if (!sidebar || !hamburger) {
+      console.log('[BININGA Nav] install: sidebar or hamburger not found', { sidebar: !!sidebar, hamburger: !!hamburger });
+      return;
+    }
+    if (!main) {
+      console.log('[BININGA Nav] install: main element not found');
+      return;
+    }
+    console.log('[BININGA Nav] install: binding events');
 
     // Hamburger click
     hamburger.addEventListener('pointerup', (e) => {

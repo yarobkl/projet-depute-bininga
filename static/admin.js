@@ -2388,34 +2388,34 @@ function showToast(msg, err=false) {
 }
 
 // ── Hamburger menu mobile ──────────────────────────────────────────────────
+// Fallback navigation functions (will be overridden by admin-navigation.js when authenticated)
+// Do NOT add sidebar-open class (breaks pointer-events in mobile.css)
 function toggleSidebar() {
-  const sb   = document.getElementById("sidebar");
-  const btn  = document.getElementById("hamburger");
-  const ov   = document.getElementById("sidebar-overlay");
-  const pull = document.getElementById("sb-pull");
+  const sb = document.getElementById("sidebar");
   if (!sb) return;
-  const open = sb.classList.toggle("open");
-  if (open) sb.style.setProperty("left", "0px", "important");
-  else sb.style.removeProperty("left");
-  if (btn)  { btn.classList.toggle("open", open); btn.setAttribute("aria-expanded", open); }
-  if (ov)   ov.classList.toggle("open", open);
-  if (pull) pull.classList.toggle("visible", open);
-  document.body.classList.toggle("sidebar-open", open);
-  document.body.style.overflow = open ? "hidden" : "";
+  const open = sb.classList.contains("open");
+  if (open) closeSidebar();
+  else {
+    sb.classList.add("open");
+    sb.style.setProperty("left", "0px", "important");
+    const ov = document.getElementById("sidebar-overlay");
+    if (ov) ov.classList.add("open");
+    const btn = document.getElementById("hamburger");
+    if (btn) btn.setAttribute("aria-expanded", "true");
+  }
 }
 function closeSidebar() {
-  const sb   = document.getElementById("sidebar");
-  const btn  = document.getElementById("hamburger");
-  const ov   = document.getElementById("sidebar-overlay");
+  const sb = document.getElementById("sidebar");
+  const btn = document.getElementById("hamburger");
+  const ov = document.getElementById("sidebar-overlay");
   const pull = document.getElementById("sb-pull");
   if (sb) {
     sb.classList.remove("open");
-    sb.style.removeProperty("left");
+    sb.style.setProperty("left", "calc(-1 * min(84vw, 304px))", "important");
   }
-  if (btn)  { btn.classList.remove("open"); btn.setAttribute("aria-expanded", "false"); }
-  if (ov)   ov.classList.remove("open");
+  if (btn) btn.setAttribute("aria-expanded", "false");
+  if (ov) ov.classList.remove("open");
   if (pull) pull.classList.remove("visible");
-  document.body.classList.remove("sidebar-open");
   document.body.style.overflow = "";
 }
 
