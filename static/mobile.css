@@ -167,8 +167,8 @@ body.theme-light #contact .ct-item {
   }
 
   body.sidebar-open .main {
-    pointer-events: none !important;
-    touch-action: none !important;
+    pointer-events: auto !important;
+    touch-action: auto !important;
   }
 
   .sidebar-overlay,
