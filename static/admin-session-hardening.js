@@ -72,29 +72,46 @@
     return;
   }
 
-  function loadOne(marker, src) {
+  function appendRetryParam(src) {
+    const sep = src.includes('?') ? '&' : '?';
+    return `${src}${sep}retry=${Date.now()}`;
+  }
+
+  function loadScript(marker, src) {
     return new Promise((resolve) => {
       const existing = document.querySelector(`script[${marker}]`);
       if (existing) {
-        if (existing.dataset.loaded === '1') return resolve();
-        existing.addEventListener('load', resolve, { once: true });
-        existing.addEventListener('error', resolve, { once: true });
+        if (existing.dataset.loaded === '1') return resolve(true);
+        const onLoad = () => resolve(true);
+        const onError = () => resolve(false);
+        existing.addEventListener('load', onLoad, { once: true });
+        existing.addEventListener('error', onError, { once: true });
         return;
       }
+
       const script = document.createElement('script');
       script.src = src;
       script.async = false;
       script.setAttribute(marker, '1');
       script.addEventListener('load', () => {
         script.dataset.loaded = '1';
-        resolve();
+        resolve(true);
       }, { once: true });
-      script.addEventListener('error', () => {
-        console.error('[BININGA Admin] Module non chargé:', src);
-        resolve();
-      }, { once: true });
+      script.addEventListener('error', () => resolve(false), { once: true });
       document.head.appendChild(script);
     });
+  }
+
+  async function loadOne(marker, src) {
+    if (await loadScript(marker, src)) return true;
+
+    console.warn('[BININGA Admin] Premier chargement échoué, nouvelle tentative:', src);
+    const failed = document.querySelector(`script[${marker}]`);
+    if (failed) failed.remove();
+
+    const ok = await loadScript(marker, appendRetryParam(src));
+    if (!ok) console.error('[BININGA Admin] Module indisponible après nouvelle tentative:', src);
+    return ok;
   }
 
   // Dynamic scripts are async by default in browsers. Loading them one by one
@@ -108,8 +125,21 @@
   ];
 
   (async () => {
-    for (const [marker, src] of modules) await loadOne(marker, src);
+    const failed = [];
+    for (const [marker, src] of modules) {
+      if (!(await loadOne(marker, src))) failed.push(src);
+    }
+
+    if (failed.length) {
+      document.documentElement.dataset.adminModulesReady = 'degraded';
+      document.documentElement.dataset.adminModulesFailed = String(failed.length);
+      window.dispatchEvent(new CustomEvent('bininga:admin-modules-degraded', { detail: { failed } }));
+      console.error('[BININGA Admin] Démarrage dégradé:', failed);
+      return;
+    }
+
     document.documentElement.dataset.adminModulesReady = '1';
+    document.documentElement.removeAttribute('data-admin-modules-failed');
     window.dispatchEvent(new CustomEvent('bininga:admin-modules-ready'));
     console.info('[BININGA Admin] Authenticated modules loaded in stable order');
   })();
