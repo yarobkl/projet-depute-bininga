@@ -3319,35 +3319,39 @@ Réponse :"""
                     _yaro_init_db(yaro_db)
                     _yaro_rehydrate(yaro_db)
                     total = 0
-                    mode = "ia" if gemini_key else "flux"
 
-                    # Sans clé IA : bulletins RÉELS depuis les flux juridiques
-                    # publics (RFI, ONU, Le Monde Afrique…) — URLs authentiques,
-                    # plus de références factices yaro-ref.cg.
+                    # Base de travail : bulletins RÉELS depuis les flux juridiques
+                    # publics (Google News, RFI, ONU, Le Monde Afrique…). L'IA,
+                    # quand une clé existe, REFORMULE ces vrais articles — elle
+                    # n'invente plus de bulletins avec des URLs factices.
                     real_map = {}
-                    if not gemini_key:
-                        try:
-                            import veille_serverless
-                            real_map = veille_serverless.run_yaro_real(YARO_THEMES, budget_s=8.0)
-                        except Exception as fe:
-                            print(f"[YARO] flux juridiques indisponibles : {fe}")
+                    try:
+                        import veille_serverless
+                        real_map = veille_serverless.run_yaro_real(YARO_THEMES, budget_s=8.0)
+                    except Exception as fe:
+                        print(f"[YARO] flux juridiques indisponibles : {fe}")
 
+                    ia_used = real_used = local_used = False
                     for theme in YARO_THEMES:
                         today_str = datetime.now().strftime("%d %B %Y")
                         items = []
-                        if gemini_key:
+                        reals = real_map.get(theme["source"]) or []
+                        if gemini_key and reals:
+                            liste = "\n".join(f"- {a['titre']} | {a['url']}" for a in reals[:6])
                             prompt = f"""Tu es un expert en veille juridique spécialisé dans le droit africain.
 
-Génère 4 bulletins de veille juridique portant sur : {theme['sujet']}
+Voici de vrais articles récents en lien avec : {theme['sujet']}
 Date de référence : {today_str}
 
-Chaque bulletin doit couvrir un aspect différent (actualité législative, jurisprudence, accord international, analyse).
+{liste}
+
+Sélectionne les 4 plus pertinents et reformule chacun en bulletin de veille professionnel.
 
 Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
 [
   {{
-    "titre": "titre du bulletin (factuel, informatif, max 120 caractères)",
-    "url": "https://yaro-ref.cg/{secrets.token_hex(6)}"
+    "titre": "titre professionnel et factuel du bulletin (max 120 caractères)",
+    "url": "l'URL EXACTE de l'article source, copiée de la liste"
   }}
 ]"""
                             try:
@@ -3358,14 +3362,20 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                                     raw = "\n".join(raw.split("\n")[:-1])
                                 parsed = json.loads(raw.strip())
                                 if isinstance(parsed, list):
-                                    items = parsed
+                                    allowed = {a["url"] for a in reals}
+                                    items = [it for it in parsed
+                                             if isinstance(it, dict) and it.get("url") in allowed
+                                             and (it.get("titre") or "").strip()]
+                                    if items:
+                                        ia_used = True
                             except Exception as ge:
                                 print(f"[YARO] Erreur IA thème {theme['source']} : {ge}")
+                        if not items and reals:
+                            items = reals
+                            real_used = True
                         if not items:
-                            items = real_map.get(theme["source"]) or []
-                            if not items:
-                                mode = "local" if not gemini_key else "mixte"
-                                items = _yaro_local_bulletins(theme)
+                            local_used = True
+                            items = _yaro_local_bulletins(theme)
                         for it in items:
                             titre = (it.get("titre") or "").strip()
                             url_b = (it.get("url") or f"https://yaro-ref.cg/{secrets.token_hex(8)}").strip()
@@ -3375,8 +3385,14 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                     _yaro_mirror_to_db(yaro_db)
                     yaro_db.close()
                     audit_log("YARO_IA", ip, f"Veille juridique IA lancée — {total} bulletins générés")
-                    suffix = {"ia": "via IA", "flux": "depuis les flux juridiques réels",
-                              "mixte": "IA + flux réels"}.get(mode, "en mode local sécurisé")
+                    if ia_used:
+                        suffix = "par IA à partir des flux juridiques réels"
+                    elif real_used:
+                        suffix = "depuis les flux juridiques réels"
+                    else:
+                        suffix = "en mode local sécurisé"
+                    if local_used and (ia_used or real_used):
+                        suffix += " (complément local partiel)"
                     self._json({"ok": True, "message": f"{total} bulletins générés {suffix}."})
                 except Exception as e:
                     self._json({"ok": False, "message": str(e)}, 500)
