@@ -143,20 +143,6 @@ def test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritativ
     assert server.site["actus"].get("cards", []) == []
 
 
-if __name__ == "__main__":
-    tests = [
-        test_non_publish_request_is_left_to_legacy_handler,
-        test_publish_requires_existing_article,
-        test_publish_creates_public_actualite_and_marks_editorial_published,
-        test_republish_is_idempotent_and_does_not_duplicate_public_article,
-        test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritative,
-        test_migration_moves_editorial_vedettes_to_cards,
-    ]
-    for test in tests:
-        test()
-        print("OK", test.__name__)
-
-
 def test_migration_moves_editorial_vedettes_to_cards():
     server = Server()
     server.markers = {}
@@ -192,3 +178,17 @@ def test_migration_moves_editorial_vedettes_to_cards():
     # Rejouer la migration ne change plus rien (marqueur posé)
     epi.migrate_editorial_vedettes(server)
     assert len(server.site["actus"]["cards"]) == 1
+
+
+if __name__ == "__main__":
+    tests = [
+        test_non_publish_request_is_left_to_legacy_handler,
+        test_publish_requires_existing_article,
+        test_publish_creates_public_actualite_and_marks_editorial_published,
+        test_republish_is_idempotent_and_does_not_duplicate_public_article,
+        test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritative,
+        test_migration_moves_editorial_vedettes_to_cards,
+    ]
+    for test in tests:
+        test()
+        print("OK", test.__name__)
