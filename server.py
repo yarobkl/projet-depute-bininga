@@ -1513,16 +1513,35 @@ def run_backup_now():
     }
 
 # ── Contacts (formulaires publics) ──────────────────────────
+def _heal_missing_contact_ids(contacts: list) -> bool:
+    """Attribue un _id stable aux enregistrements historiques qui n'en ont pas.
+
+    Un contact sans _id ne peut jamais être ciblé par /api/contacts/update :
+    l'admin voit le clic aboutir localement (statut, décision, note) mais rien
+    n'est jamais persisté côté serveur, donc les compteurs restent bloqués.
+    """
+    healed = False
+    for c in contacts:
+        if isinstance(c, dict) and not c.get("_id"):
+            c["_id"] = secrets.token_hex(12)
+            healed = True
+    return healed
+
 def load_contacts() -> list:
     """Charge les contacts : PostgreSQL en priorité, fichier en fallback."""
     db = _pg_load("contacts")
     if db is not None:
+        if _heal_missing_contact_ids(db):
+            save_contacts(db)
         return db
     if not os.path.exists(CONTACT_FILE):
         return []
     try:
         with open(CONTACT_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            contacts = json.load(f)
+        if _heal_missing_contact_ids(contacts):
+            save_contacts(contacts)
+        return contacts
     except Exception:
         return []
 

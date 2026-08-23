@@ -318,6 +318,49 @@ def test_contacts_update_decision_invalide_ignoree():
     print("✅ test_contacts_update_decision_invalide_ignoree")
 
 
+def test_legacy_contact_sans_id_est_reparee_et_devient_modifiable():
+    """Un dossier historique enregistré sans _id (ex: données importées
+    manuellement dans data.json/contacts.json avant l'introduction du champ)
+    doit recevoir un _id stable dès sa première lecture, sinon /api/contacts/update
+    ne peut jamais le cibler : le clic parait fonctionner côté admin (statut
+    local, toast) mais rien n'est jamais persisté côté serveur — symptôme
+    observé : compteur "En attente" qui ne bouge jamais pour ce dossier précis."""
+    import server as srv
+
+    admin_token, admin_csrf = _get_admin_token()
+
+    contacts = srv.load_contacts()
+    legacy = {
+        "ts": "2026-06-06 10:46:12", "ip": "0.0.0.0",
+        "source": "bininga_audiences", "type": "bininga_audiences",
+        "objet": "Demande d'audience", "nom": "Goma", "prenom": "Jude",
+        "raison": "Legacy sans _id", "_status": "en_attente",
+    }
+    contacts.append(legacy)
+    srv.save_contacts(contacts)
+
+    # Première lecture : doit réparer et persister un _id.
+    healed = srv.load_contacts()
+    entry = next((c for c in healed if c.get("nom") == "Goma" and c.get("prenom") == "Jude"), None)
+    assert entry is not None and entry.get("_id"), "load_contacts doit attribuer un _id au dossier historique"
+    cid = entry["_id"]
+
+    # Rejouer la lecture ne doit pas changer l'_id déjà attribué (stable).
+    again = srv.load_contacts()
+    entry2 = next(c for c in again if c.get("_id") == cid)
+    assert entry2["_id"] == cid
+
+    # Le dossier doit maintenant être réellement modifiable côté serveur.
+    status, body = post("/api/contacts/update", {"id": cid, "status": "traite"},
+                         token=admin_token, csrf=admin_csrf)
+    assert status == 200 and body.get("ok") and body.get("updated"), (
+        f"Le dossier réparé doit être modifiable : {body}"
+    )
+    final = next(c for c in srv.load_contacts() if c.get("_id") == cid)
+    assert final["_status"] == "traite"
+    print("✅ test_legacy_contact_sans_id_est_reparee_et_devient_modifiable")
+
+
 # ── Tests Veille IA ────────────────────────────────────────────
 
 def test_news_sans_token():
@@ -767,6 +810,7 @@ if __name__ == "__main__":
             # Suivi de dossier : décision & rendez-vous
             test_audience_decision_et_rendezvous,
             test_contacts_update_decision_invalide_ignoree,
+            test_legacy_contact_sans_id_est_reparee_et_devient_modifiable,
             # Veille IA
             test_news_sans_token,
             test_news_avec_token,
