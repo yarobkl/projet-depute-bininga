@@ -54,11 +54,20 @@
     window.dispatchEvent(new CustomEvent('admin:panelchange', { detail: { name } }));
   };
 
+  let _lastToggle = 0;
   window.toggleSidebar = function toggleSidebar(e) {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    // Anti double-fire : un tap mobile peut déclencher pointerup + click.
+    // Toute seconde invocation sous 350ms est le même geste — on l'ignore.
+    const now = Date.now();
+    if (now - _lastToggle < 350) {
+      console.log('[BININGA Nav] toggleSidebar: doublon ignoré (' + (now - _lastToggle) + 'ms)');
+      return;
+    }
+    _lastToggle = now;
     const mobile = isMobile();
     if (!mobile) {
       console.log('[BININGA Nav] toggleSidebar: not mobile, returning');
@@ -125,20 +134,26 @@
     }
     console.log('[BININGA Nav] install: binding events');
 
-    // Hamburger click
-    hamburger.addEventListener('pointerup', (e) => {
+    // ⚠️ Le HTML porte des onclick inline (toggleSidebar/closeSidebar).
+    // On les retire AVANT de lier nos écouteurs, sinon un tap mobile
+    // déclenche pointerup + click → le menu s'ouvre puis se referme
+    // instantanément (symptôme : « le hamburger ne s'ouvre pas »).
+    hamburger.removeAttribute('onclick');
+    hamburger.onclick = null;
+    hamburger.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      toggleSidebar();
-    }, { passive: false });
+      window.toggleSidebar();
+    });
 
-    // Overlay click
     if (overlay) {
-      overlay.addEventListener('pointerup', (e) => {
+      overlay.removeAttribute('onclick');
+      overlay.onclick = null;
+      overlay.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        closeSidebar();
-      }, { passive: false });
+        window.closeSidebar();
+      });
     }
 
     // Sidebar items close sidebar on mobile
