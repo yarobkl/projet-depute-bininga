@@ -82,6 +82,15 @@
           <div><label>Messages / minute / visiteur</label><input class="field" id="da-rate" type="number" min="1" max="60" value="10"></div>
         </div>
         <div id="da-providers" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"></div>
+        <div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(184,151,58,.05);border:1px solid rgba(184,151,58,.18)">
+          <div style="font-weight:800;font-size:13px;margin-bottom:4px">Clé IA Gemini</div>
+          <div id="da-key-status" style="font-size:12px;color:var(--muted,#94a3b8);margin-bottom:10px">Vérification…</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="field" id="da-key-input" type="password" placeholder="Coller la clé (AIza…)" autocomplete="off" style="flex:1;min-width:200px">
+            <button class="btn btn-primary" id="da-key-save">Enregistrer la clé</button>
+          </div>
+          <p style="margin-top:8px;color:var(--muted,#777);font-size:11px">La clé est stockée dans la base de données sécurisée — jamais dans le code, jamais affichée en clair. Active immédiatement pour la Veille Juridique, l'Éditorial IA et l'Assistant.</p>
+        </div>
         <div style="margin-top:14px"><button class="btn btn-primary" id="da-save-settings">Enregistrer la configuration</button></div>
         <p style="margin-top:12px;color:var(--muted,#777);font-size:13px">DA privilégie les réponses déterministes et les sources validées. Les données personnelles évidentes sont masquées ou bloquées avant tout envoi vers un fournisseur IA.</p>
       </div>
@@ -207,6 +216,34 @@
       ]);
       renderStatus(status); renderKnowledge(knowledge.items); renderUnanswered(unanswered.items);
     } catch (e) { toast(e.message, false); }
+    loadKeyStatus();
+  }
+
+  async function loadKeyStatus() {
+    const el = document.getElementById('da-key-status');
+    if (!el) return;
+    try {
+      const st = await api('/api/ia/key');
+      el.textContent = st.configured
+        ? `✓ Clé configurée (${st.masked})${st.source === 'env' ? ' — via Vercel' : ' — via la base'}`
+        : 'Aucune clé enregistrée — le système utilise les flux réels sans IA.';
+      el.style.color = st.configured ? '#4ade80' : '';
+    } catch (e) {
+      el.textContent = 'Statut indisponible : ' + e.message;
+    }
+  }
+
+  async function saveKey() {
+    const input = document.getElementById('da-key-input');
+    const key = (input?.value || '').trim();
+    if (!key) { toast('Collez la clé avant d’enregistrer', false); return; }
+    try {
+      const r = await api('/api/ia/key', { method: 'POST', body: JSON.stringify({ key }) });
+      input.value = '';
+      toast(r.message || 'Clé enregistrée');
+      loadKeyStatus();
+      loadAll();
+    } catch (e) { toast(e.message, false); }
   }
 
   function openEditor(item = null) {
@@ -251,6 +288,7 @@
 
   function bind() {
     document.getElementById('da-refresh').onclick = loadAll;
+    document.getElementById('da-key-save').onclick = saveKey;
     document.getElementById('da-save-settings').onclick = saveSettings;
     document.getElementById('da-new').onclick = () => openEditor();
     document.getElementById('da-save').onclick = saveItem;

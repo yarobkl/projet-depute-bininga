@@ -54,6 +54,13 @@ def _bootstrap() -> None:
         if callable(fn):
             fn()
 
+    # Hydrate GEMINI_API_KEY depuis la base si absente de l'environnement,
+    # pour que chatbot/éditorial/veille voient la clé enregistrée via l'admin.
+    try:
+        bininga_server.get_gemini_key()
+    except Exception:
+        pass
+
     if os.environ.get("BININGA_PASSENGER_BOOT_SERVICES") != "1":
         return
 
@@ -246,7 +253,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-session-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260823-session-4" defer></script>\n'
     if b"static/admin-chatbot.js" not in patched:
-        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260819-da-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-key-1" defer></script>\n'
     if scripts:
         patched = patched.replace(marker, scripts + marker, 1)
 

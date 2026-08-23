@@ -1264,11 +1264,28 @@ def _groq_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
         resp = json.loads(r.read())
     return resp["choices"][0]["message"]["content"].strip()
 
+def get_gemini_key() -> str:
+    """Clé Gemini : variable d'environnement d'abord, sinon celle enregistrée
+    en base via l'admin (panneau Assistant DA). Quand la clé vient de la base,
+    elle est injectée dans os.environ pour que les modules qui lisent
+    directement GEMINI_API_KEY (chatbot, éditorial, veille) la voient aussi."""
+    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    if key:
+        return key
+    try:
+        cfg = _pg_load("app_config") or {}
+        key = str(cfg.get("gemini_api_key") or "").strip()
+        if key:
+            os.environ["GEMINI_API_KEY"] = key
+        return key
+    except Exception:
+        return ""
+
 def _gemini_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     """Appelle Gemini Flash, avec fallback automatique sur Groq puis Claude."""
     import urllib.request as ur
     global _GEMINI_MODEL_CACHE
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
+    key = get_gemini_key()
 
     gemini_err = None
     if key:
@@ -2128,6 +2145,27 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             self._json({"ok": False, "message": "Endpoint monitoring inconnu"}, 404)
+            return
+
+        # ── /api/ia/key — statut de la clé Gemini (masquée) ──
+        if path == "/api/ia/key":
+            token = self.headers.get("X-Admin-Token", "")
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Non autorisé"}, 401)
+                return
+            env_key = os.environ.get("GEMINI_API_KEY", "").strip()
+            db_key = ""
+            try:
+                db_key = str((_pg_load("app_config") or {}).get("gemini_api_key") or "").strip()
+            except Exception:
+                pass
+            key = env_key or db_key
+            self._json({
+                "ok": True,
+                "configured": bool(key),
+                "source": "env" if env_key and not db_key else ("db" if key else ""),
+                "masked": (key[:4] + "…" + key[-4:]) if len(key) >= 12 else ("•••" if key else ""),
+            })
             return
 
         if path == "/api/2fa/status":
@@ -3314,7 +3352,7 @@ Réponse :"""
                 try:
                     import sqlite3 as _sq3
 
-                    gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
+                    gemini_key = get_gemini_key()
                     yaro_db = _sq3.connect(YARO_DB_FILE)
                     _yaro_init_db(yaro_db)
                     _yaro_rehydrate(yaro_db)
@@ -3566,7 +3604,7 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                     "/api/news/mark-read", "/api/news/delete", "/api/news/run",
                     "/api/monitor-restart", "/api/monitoring/resolve-alert",
                     "/api/editorial/generate", "/api/editorial/save", "/api/editorial/delete",
-                    "/api/yaro/run", "/api/yaro/article",
+                    "/api/yaro/run", "/api/yaro/article", "/api/ia/key",
                     "/api/2fa/setup", "/api/2fa/activate", "/api/2fa/disable"):
             csrf_received = self.headers.get("X-CSRF-Token", "")
             csrf_expected = session.get("csrf_token", "")
@@ -3574,6 +3612,38 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 audit_log("CSRF_REJECT", ip, f"Token CSRF invalide sur {path}")
                 self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
                 return
+
+        # ── /api/ia/key — enregistrer la clé Gemini depuis l'admin ──
+        # La clé va en base (PostgreSQL), jamais dans le code ni les logs.
+        if path == "/api/ia/key":
+            if not has_role(token, "admin"):
+                self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
+                return
+            try:
+                data = json.loads(body.decode("utf-8"))
+                new_key = str(data.get("key") or "").strip()
+                if new_key and (len(new_key) < 20 or " " in new_key):
+                    self._json({"ok": False, "message": "Format de clé invalide"}, 400)
+                    return
+                cfg = _pg_load("app_config") or {}
+                if new_key:
+                    cfg["gemini_api_key"] = new_key
+                else:  # clé vide = suppression
+                    cfg.pop("gemini_api_key", None)
+                if not _pg_save("app_config", cfg):
+                    self._json({"ok": False, "message": "Base indisponible — clé non enregistrée"}, 500)
+                    return
+                # L'environnement du processus ne reflète la clé qu'après
+                # confirmation de la sauvegarde en base.
+                if new_key:
+                    os.environ["GEMINI_API_KEY"] = new_key
+                else:
+                    os.environ.pop("GEMINI_API_KEY", None)
+                audit_log("IA_KEY", ip, "Clé Gemini " + ("enregistrée" if new_key else "supprimée"))
+                self._json({"ok": True, "message": "Clé IA " + ("enregistrée — active immédiatement" if new_key else "supprimée")})
+            except Exception as e:
+                self._json({"ok": False, "message": str(e)}, 500)
+            return
 
         if path == "/api/backups/run":
             if not has_role(token, "admin"):
