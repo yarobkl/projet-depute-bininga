@@ -219,6 +219,74 @@ def test_find_entry_idx_matches_real_hex_ids():
         os.unlink(path)
 
 
+def test_sync_messages_discards_stale_ghost_after_id_repair():
+    """Un dossier synchronisé AVANT que le serveur lui répare son _id
+    (localStorage garde alors un id synthétique 'bininga_audiences-XXXX')
+    ne doit pas créer de doublon fantôme une fois que le serveur renvoie le
+    même dossier avec son vrai _id — sinon l'admin clique sur la carte
+    fantôme, dont l'id ne correspond à rien côté serveur, et le statut ne
+    bouge jamais malgré le toast de confirmation."""
+    js = _js()
+    match = re.search(r"async function syncMessages\(\) \{.*?\n\}", js, re.S)
+    assert match, "syncMessages doit être défini dans admin.js"
+    fn_src = match.group(0)
+
+    harness = fn_src + """
+    const assert = require('assert');
+
+    // État AVANT réparation serveur : le client avait généré un id
+    // synthétique (comme le faisait normalizeMessage avant que le serveur
+    // garantisse toujours un _id réel).
+    global.localStorage = {
+      _store: {
+        bininga_audiences: JSON.stringify([{
+          _id: 'bininga_audiences-Z2hvc3RfaWQ',
+          nom: 'Goma', prenom: 'Jude', _date: '2026-06-06 10:46:12',
+          _status: 'en_attente'
+        }])
+      },
+      getItem(k) { return this._store[k] ?? null; },
+      setItem(k, v) { this._store[k] = v; }
+    };
+
+    // Réponse serveur : même dossier, désormais avec un vrai _id (réparé
+    // par load_contacts()/_heal_missing_contact_ids côté serveur).
+    global.fetch = async () => ({
+      json: async () => ({
+        ok: true,
+        audiences: [{
+          _id: 'd1063ceb512bbda0672d3b87',
+          nom: 'Goma', prenom: 'Jude', _date: '2026-06-06 10:46:12',
+          _status: 'en_attente'
+        }],
+        contacts: []
+      })
+    });
+    global.apiFetch = global.fetch;
+    global.SESSION_TOKEN = 'tok';
+
+    syncMessages().then(() => {
+      const merged = JSON.parse(global.localStorage.getItem('bininga_audiences'));
+      assert.strictEqual(merged.length, 1,
+        'un seul enregistrement doit subsister, pas de doublon fantôme : ' + JSON.stringify(merged));
+      assert.strictEqual(merged[0]._id, 'd1063ceb512bbda0672d3b87',
+        "l'entrée survivante doit porter le vrai _id serveur");
+      console.log('OK');
+    }).catch(e => { console.error(e); process.exit(1); });
+    """
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False, encoding="utf-8") as f:
+        f.write(harness)
+        path = f.name
+    try:
+        result = subprocess.run(["node", path], capture_output=True, text=True, timeout=10)
+        assert result.returncode == 0 and "OK" in result.stdout, (
+            f"syncMessages doit éliminer le doublon fantôme après réparation du _id : "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+    finally:
+        os.unlink(path)
+
+
 if __name__ == "__main__":
     print("\n🧪 Tests UI admin.html + admin.js...\n")
     tests = [
@@ -239,6 +307,7 @@ if __name__ == "__main__":
         test_audit_icone_user_upsert,
         test_audit_icone_user_delete,
         test_find_entry_idx_matches_real_hex_ids,
+        test_sync_messages_discards_stale_ghost_after_id_repair,
     ]
     passed = failed = 0
     for t in tests:

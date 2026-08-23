@@ -420,17 +420,23 @@ async function syncMessages() {
     const data = await res.json();
     if (!data.ok) return;
 
+    const identityOf = (m, key, idx) => [
+      key,
+      m._date || m.ts || m.date || m.created_at || "",
+      m.email || "",
+      m.telephone || "",
+      m.prenom || "",
+      m.nom || "",
+      idx
+    ].join("|");
+
     const normalizeMessage = (m, key, idx) => {
       const rawDate = m._date || m.ts || m.date || m.created_at || "";
-      const identity = [
-        key,
-        rawDate,
-        m.email || "",
-        m.telephone || "",
-        m.prenom || "",
-        m.nom || "",
-        idx
-      ].join("|");
+      const identity = identityOf(m, key, idx);
+      // Le serveur assigne désormais toujours un _id réel (y compris aux
+      // dossiers historiques, auto-réparés à la lecture) : ce repli
+      // synthétique ne sert plus que si l'API renvoyait exceptionnellement
+      // un enregistrement sans _id.
       const id = m._id || `${key}-${btoa(unescape(encodeURIComponent(identity))).replace(/=+$/,"").slice(0, 18)}`;
       return Object.assign({}, m, {
         _id: id,
@@ -446,15 +452,22 @@ async function syncMessages() {
 
     for (const [key, serverList] of mapping) {
       const localList = JSON.parse(localStorage.getItem(key) || "[]");
-      // Construire un index des métadonnées locales (_status, _notes, _pinged) par _id
-      const localMeta = {};
-      localList.forEach(m => { if (m._id) localMeta[m._id] = m; });
+      // Index des métadonnées locales par _id ET par identité (nom+date+contact) :
+      // un dossier qui n'avait pas encore de _id réel (réparé côté serveur entre
+      // deux synchronisations) doit retrouver son statut/notes malgré le
+      // changement d'identifiant, sans laisser de doublon fantôme derrière lui.
+      const localById = {};
+      const localByIdentity = {};
+      localList.forEach((m, idx) => {
+        if (m._id) localById[m._id] = m;
+        localByIdentity[identityOf(m, key, idx)] = m;
+      });
 
-      // Fusionner : données serveur + métadonnées locales
       const normalizedServerList = serverList.map((m, idx) => normalizeMessage(m, key, idx));
       const serverIds = new Set(normalizedServerList.map(m => m._id).filter(Boolean));
-      const merged = normalizedServerList.map(m => {
-        const local = localMeta[m._id] || {};
+      const serverIdentities = new Set(serverList.map((m, idx) => identityOf(m, key, idx)));
+      const merged = normalizedServerList.map((m, idx) => {
+        const local = localById[m._id] || localByIdentity[identityOf(serverList[idx], key, idx)] || {};
         return Object.assign({}, m, {
           _status: local._status || m._status,
           _notes:  local._notes  || m._notes,
@@ -462,8 +475,16 @@ async function syncMessages() {
         });
       });
 
-      // Conserver les entrées locales absentes du serveur (redéploiement ou hors-ligne)
-      localList.filter(m => !serverIds.has(m._id || "__none__")).forEach(m => merged.push(m));
+      // Conserver les entrées locales absentes du serveur (redéploiement ou
+      // hors-ligne) — mais jamais celles dont l'identité correspond déjà à un
+      // enregistrement serveur : ce sont d'anciens doublons créés avec un
+      // identifiant synthétique avant que le dossier reçoive un _id réel.
+      localList.forEach((m, idx) => {
+        const id = m._id || "__none__";
+        if (serverIds.has(id)) return;
+        if (serverIdentities.has(identityOf(m, key, idx))) return;
+        merged.push(m);
+      });
 
       localStorage.setItem(key, JSON.stringify(merged));
     }
