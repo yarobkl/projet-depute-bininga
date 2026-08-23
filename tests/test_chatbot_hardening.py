@@ -1,4 +1,10 @@
 """Focused regression tests for the hardened DA chatbot router/privacy layer."""
+import os
+import sys
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
 from chatbot_hardening import classify_intent, is_sensitive, redact_personal_data, _norm
 
