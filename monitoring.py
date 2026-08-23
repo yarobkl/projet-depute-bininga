@@ -11,7 +11,10 @@ from datetime import datetime, timedelta
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 _BASE          = os.path.dirname(os.path.abspath(__file__))
-DB_FILE        = os.path.join(_BASE, "monitoring.db")
+# DATA_DIR d'abord : sur Vercel le répertoire du code est en LECTURE SEULE —
+# une base placée à côté du code ne peut jamais recevoir la moindre métrique.
+_DATA_DIR      = os.environ.get("DATA_DIR", "").strip() or _BASE
+DB_FILE        = os.path.join(_DATA_DIR, "monitoring.db")
 RETENTION_DAYS = 7      # Purge auto des données > 7 jours
 SCHEDULER_SEC  = 60     # Analyse toutes les 60 s
 
@@ -186,6 +189,9 @@ def _ensure_writer():
     with _writer_lock:
         if not _writer_started:
             _writer_started = True
+            # Serverless : personne n'appelle init_db() au boot (les services
+            # de fond sont opt-in) — garantir les tables avant toute écriture.
+            init_db()
             t = threading.Thread(target=_writer_loop, daemon=True, name="mon-writer")
             t.start()
 

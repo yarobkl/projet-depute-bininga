@@ -151,8 +151,14 @@ def _stop(sig, frame):
     running = False
     _log("Signal reçu — arrêt propre en cours…")
 
-signal.signal(signal.SIGINT,  _stop)
-signal.signal(signal.SIGTERM, _stop)
+# Enregistrés seulement dans le thread principal : ce module est aussi importé
+# par le serveur web (cycles de veille inline) depuis des threads de requête,
+# où signal.signal() lève « signal only works in main thread ».
+try:
+    signal.signal(signal.SIGINT,  _stop)
+    signal.signal(signal.SIGTERM, _stop)
+except ValueError:
+    pass
 
 # ── Utilitaires ───────────────────────────────────────────────────────────────
 

@@ -70,7 +70,7 @@ def _sse_broadcast(event_type: str, data: dict):
         for q in dead:
             try: _SSE_CLIENTS.remove(q)
             except ValueError: pass
-from datetime import datetime
+from datetime import datetime, timezone
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -312,6 +312,34 @@ def _yaro_save(conn, source, titre, url, kws):
         return cur.rowcount > 0
     except Exception:
         return False
+
+def _yaro_mirror_to_db(conn):
+    """Copie les bulletins vers le stockage KV durable (Vercel: sqlite = /tmp éphémère)."""
+    try:
+        rows = [
+            dict(zip(("source", "titre", "titre_fr", "url", "keywords", "lang_orig", "ts"), r))
+            for r in conn.execute(
+                "SELECT source,titre,titre_fr,url,keywords,lang_orig,ts FROM articles ORDER BY ts DESC LIMIT 600"
+            ).fetchall()
+        ]
+        _pg_save("yaro_articles", rows)
+    except Exception as e:
+        print(f"[YARO] miroir base ignoré: {e}")
+
+def _yaro_rehydrate(conn):
+    """Recharge les bulletins depuis le KV durable après un cold start (sqlite vide)."""
+    try:
+        if conn.execute("SELECT COUNT(*) FROM articles").fetchone()[0]:
+            return
+        for r in (_pg_load("yaro_articles") or []):
+            conn.execute(
+                "INSERT OR IGNORE INTO articles (source,titre,titre_fr,url,keywords,lang_orig,ts) VALUES (?,?,?,?,?,?,?)",
+                (r.get("source"), r.get("titre"), r.get("titre_fr"), r.get("url"),
+                 r.get("keywords"), r.get("lang_orig") or "fr", r.get("ts")),
+            )
+        conn.commit()
+    except Exception as e:
+        print(f"[YARO] réhydratation ignorée: {e}")
 
 def _yaro_local_bulletins(theme: dict, count: int = 4) -> list:
     today = datetime.now().strftime("%d/%m/%Y")
@@ -1037,21 +1065,39 @@ def save_data(data):
             raise RuntimeError("Impossible de sauvegarder le contenu du site (DB et fichier indisponibles)")
 
 # ── Veille IA : lecture/écriture ──────────────────────────
+# Miroir PostgreSQL : sur Vercel le fichier vit dans /tmp (éphémère, une copie
+# par instance) — seule la base garantit des articles durables et partagés.
 def load_news() -> dict:
+    empty = {"items": [], "last_run": None, "stats": {"total_found": 0, "runs": 0}}
+    try:
+        db = _pg_load("news_monitor")
+        if isinstance(db, dict) and db.get("items") is not None:
+            return db
+    except Exception:
+        pass
     if not os.path.exists(NEWS_FILE):
-        return {"items": [], "last_run": None, "stats": {"total_found": 0, "runs": 0}}
+        return empty
     try:
         with open(NEWS_FILE, "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
-        return {"items": [], "last_run": None, "stats": {"total_found": 0, "runs": 0}}
+        return empty
 
 def save_news(data: dict):
+    # Borne le volume conservé pour garder le stockage KV raisonnable
+    items = data.get("items") or []
+    if len(items) > 400:
+        items.sort(key=lambda a: a.get("found_at") or "", reverse=True)
+        data["items"] = items[:400]
     try:
         with open(NEWS_FILE, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        print(f"[BININGA] Erreur sauvegarde news: {e}")
+        print(f"[BININGA] Erreur sauvegarde news (fichier): {e}")
+    try:
+        _pg_save("news_monitor", data)
+    except Exception as e:
+        print(f"[BININGA] Erreur sauvegarde news (db): {e}")
 
 # ══════════════════════════════════════════════════════════════════════════
 # ██  COUCHE BASE DE DONNÉES — PostgreSQL/MySQL + fallback fichiers JSON     ██
@@ -2275,6 +2321,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 import sqlite3 as _sq
                 c = _sq.connect(YARO_DB_FILE)
                 _yaro_init_db(c)
+                _yaro_rehydrate(c)  # cold start Vercel : sqlite vide → recharge KV
                 c.row_factory = _sq.Row
                 return c
 
@@ -3270,8 +3317,20 @@ Réponse :"""
                     gemini_key = os.environ.get("GEMINI_API_KEY", "").strip()
                     yaro_db = _sq3.connect(YARO_DB_FILE)
                     _yaro_init_db(yaro_db)
+                    _yaro_rehydrate(yaro_db)
                     total = 0
-                    mode = "ia" if gemini_key else "local"
+                    mode = "ia" if gemini_key else "flux"
+
+                    # Sans clé IA : bulletins RÉELS depuis les flux juridiques
+                    # publics (RFI, ONU, Le Monde Afrique…) — URLs authentiques,
+                    # plus de références factices yaro-ref.cg.
+                    real_map = {}
+                    if not gemini_key:
+                        try:
+                            import veille_serverless
+                            real_map = veille_serverless.run_yaro_real(YARO_THEMES, budget_s=8.0)
+                        except Exception as fe:
+                            print(f"[YARO] flux juridiques indisponibles : {fe}")
 
                     for theme in YARO_THEMES:
                         today_str = datetime.now().strftime("%d %B %Y")
@@ -3303,17 +3362,21 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                             except Exception as ge:
                                 print(f"[YARO] Erreur IA thème {theme['source']} : {ge}")
                         if not items:
-                            mode = "local" if not gemini_key else "mixte"
-                            items = _yaro_local_bulletins(theme)
+                            items = real_map.get(theme["source"]) or []
+                            if not items:
+                                mode = "local" if not gemini_key else "mixte"
+                                items = _yaro_local_bulletins(theme)
                         for it in items:
                             titre = (it.get("titre") or "").strip()
                             url_b = (it.get("url") or f"https://yaro-ref.cg/{secrets.token_hex(8)}").strip()
                             if titre and _yaro_save(yaro_db, theme["source"], titre, url_b, theme["keywords"]):
                                 total += 1
 
+                    _yaro_mirror_to_db(yaro_db)
                     yaro_db.close()
                     audit_log("YARO_IA", ip, f"Veille juridique IA lancée — {total} bulletins générés")
-                    suffix = "via IA" if mode == "ia" else "en mode local sécurisé"
+                    suffix = {"ia": "via IA", "flux": "depuis les flux juridiques réels",
+                              "mixte": "IA + flux réels"}.get(mode, "en mode local sécurisé")
                     self._json({"ok": True, "message": f"{total} bulletins générés {suffix}."})
                 except Exception as e:
                     self._json({"ok": False, "message": str(e)}, 500)
@@ -3866,6 +3929,10 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             return
 
         # ── /api/news/run ── déclenchement manuel de la veille ──
+        # Exécution INLINE (bornée dans le temps) : sur Vercel il n'existe
+        # aucun agent de fond pour consommer un fichier déclencheur, et le
+        # répertoire du code est en lecture seule. Le cycle tourne donc dans
+        # la requête et les résultats sont persistés (fichier + PostgreSQL).
         if path == "/api/news/run":
             if not has_role(token, "admin", "ministre"):
                 self._json({"ok": False, "message": "Non autorisé"}, 403)
@@ -3873,12 +3940,32 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
             try:
                 payload = json.loads(body.decode("utf-8")) if body.strip() else {}
                 custom_query = (payload.get("query") or "").strip()
-                trigger_file = os.path.join(os.path.dirname(__file__), "monitor.trigger")
-                with open(trigger_file, "w", encoding="utf-8") as f:
-                    f.write(custom_query)
-                msg = f"Recherche lancée : « {custom_query} »" if custom_query else "Cycle de veille complet lancé"
+
+                import veille_serverless
+                data = load_news()
+                nouveaux = veille_serverless.run_news_quick(data, custom_query, budget_s=8.0)
+                if nouveaux:
+                    data.setdefault("items", []).extend(nouveaux)
+                data["last_run"] = datetime.now(timezone.utc).isoformat()
+                stats = data.setdefault("stats", {"total_found": 0, "runs": 0})
+                stats["total_found"] = int(stats.get("total_found") or 0) + len(nouveaux)
+                stats["runs"] = int(stats.get("runs") or 0) + 1
+                save_news(data)
+
+                # Legacy (o2switch/Railway) : réveiller aussi l'agent s'il existe
+                try:
+                    trigger_file = os.path.join(os.path.dirname(__file__), "monitor.trigger")
+                    with open(trigger_file, "w", encoding="utf-8") as f:
+                        f.write(custom_query)
+                except OSError:
+                    pass  # lecture seule (Vercel) — le cycle inline a déjà tourné
+
+                if custom_query:
+                    msg = f"Recherche « {custom_query} » : {len(nouveaux)} article(s) trouvé(s)"
+                else:
+                    msg = f"Cycle de veille exécuté : {len(nouveaux)} nouvel(aux) article(s)"
                 audit_log("SAVE", ip, msg)
-                self._json({"ok": True, "message": msg})
+                self._json({"ok": True, "message": msg, "found": len(nouveaux)})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
             return
