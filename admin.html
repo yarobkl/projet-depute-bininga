@@ -8,6 +8,9 @@
 <link rel="stylesheet" href="static/mobile.css?v=admin-mobile-final">
 </head>
 <body>
+<script>
+try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.classList.add('admin-theme-light');}catch(e){}
+</script>
 <!-- Barre de progression upload (globale, visible pendant un upload) -->
 <div id="upload-progress-wrap" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;height:4px;background:rgba(0,0,0,.3)">
   <div id="upload-progress-bar" style="height:100%;background:var(--r);width:0%;transition:width .2s ease;font-size:0;line-height:0;color:transparent"></div>
@@ -183,6 +186,7 @@
       <span id="autosave-indicator"></span>
       <div class="topbar-info" style="margin-left:auto"><span id="topbar-user">—</span> · <span id="last-login">—</span></div>
       <button class="topbar-logout" onclick="logout()" title="Déconnexion">Déconnexion</button>
+      <button class="theme-toggle-btn" id="theme-toggle-btn" onclick="toggleAdminTheme()" title="Mode jour / nuit" aria-label="Basculer le mode jour / nuit" style="margin-left:8px">☀</button>
       <!-- Cloche de notifications — extrême droite -->
       <div class="notif-bell-wrap" id="notif-bell-wrap" style="margin-left:12px">
         <button class="notif-bell" id="notif-bell" onclick="toggleNotifPanel()" title="Notifications">

@@ -2269,6 +2269,27 @@ function getAll(key)       { return JSON.parse(localStorage.getItem(key)||"[]");
 function saveAll(key, arr) { localStorage.setItem(key, JSON.stringify(arr)); }
 function setText(id, val)  { const el=document.getElementById(id); if(el) el.textContent=val; }
 function setBadge(id, n)   { const el=document.getElementById(id); if(!el)return; el.style.display=n>0?"inline":"none"; el.textContent=n; }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MODE JOUR / NUIT
+// ══════════════════════════════════════════════════════════════════════════
+const ADMIN_THEME_KEY = "bininga_admin_theme";
+
+function _syncThemeToggleIcon() {
+  const btn = document.getElementById("theme-toggle-btn");
+  if (!btn) return;
+  const isLight = document.body.classList.contains("admin-theme-light");
+  btn.textContent = isLight ? "☾" : "☀";
+  btn.title = isLight ? "Passer en mode nuit" : "Passer en mode jour";
+}
+
+function toggleAdminTheme() {
+  const isLight = document.body.classList.toggle("admin-theme-light");
+  try { localStorage.setItem(ADMIN_THEME_KEY, isLight ? "light" : "dark"); } catch (_) {}
+  _syncThemeToggleIcon();
+}
+
+document.addEventListener("DOMContentLoaded", _syncThemeToggleIcon, { once: true });
 function esc(s)            { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 async function resetSystem(targets) {
