@@ -1305,10 +1305,7 @@ function buildBadge(status, objet) {
 
 function setStatus(storageKey, idOrIdx, status) {
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
-  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  const idx = _findEntryIdx(all, idOrIdx);
   if (idx !== -1) {
     all[idx]._status = status;
     saveAll(storageKey, all);
@@ -1355,10 +1352,7 @@ function addNote(storageKey, idOrIdx) {
   if (!texte) { showToast("Note vide.", true); return; }
 
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) idx = all.findIndex(x => x._id === decoded);
-  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  const idx = _findEntryIdx(all, idOrIdx);
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
 
   if (!all[idx]._notes) all[idx]._notes = [];
@@ -1382,15 +1376,7 @@ function addNote(storageKey, idOrIdx) {
 // ══════════════════════════════════════════════════════════════════════════
 function pingDepute(storageKey, idOrIdx) {
   const all = getAll(storageKey);
-  let idx = -1;
-  const decoded = decodeURIComponent(String(idOrIdx));
-  if (decoded.includes("-")) {
-    idx = all.findIndex(x => x._id === decoded);
-  }
-  if (idx === -1) {
-    const n = parseInt(idOrIdx, 10);
-    if (!isNaN(n) && all[n]) idx = n;
-  }
+  const idx = _findEntryIdx(all, idOrIdx);
   if (idx === -1) { showToast("Dossier introuvable.", true); return; }
   all[idx]._pinged      = true;
   all[idx]._pinged_date = new Date().toLocaleString("fr-FR");
@@ -1456,7 +1442,10 @@ function buildDecisionSection(m, storageKey, btnId) {
 
 function _findEntryIdx(all, idOrIdx) {
   const decoded = decodeURIComponent(String(idOrIdx));
-  let idx = decoded.includes("-") ? all.findIndex(x => x._id === decoded) : -1;
+  // Les _id réels (secrets.token_hex) ne contiennent jamais de tiret : il ne
+  // faut donc jamais exclure la recherche exacte sur cette seule base, sous
+  // peine de retomber sur un index de tableau non lié à la ligne cliquée.
+  let idx = all.findIndex(x => x._id === decoded);
   if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
   return idx;
 }

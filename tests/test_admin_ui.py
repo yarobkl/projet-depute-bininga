@@ -3,8 +3,12 @@ Tests de l'interface admin — vérifications du HTML (admin.html) et du JavaScr
 Ces tests s'assurent que les éléments UI et les fonctions JS de gestion des
 utilisateurs sont bien présents et corrects.
 """
+import json
 import os
 import re
+import subprocess
+import sys
+import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ADMIN_HTML = os.path.join(ROOT, "admin.html")
@@ -172,6 +176,49 @@ def test_audit_icone_user_delete():
 
 # ── Lancement autonome ──────────────────────────────────────
 
+# ── Résolution d'identifiant de dossier (setStatus / addNote / pingDepute) ──
+
+def test_find_entry_idx_matches_real_hex_ids():
+    """Les vrais _id serveur (secrets.token_hex, sans tiret) doivent être
+    trouvés par correspondance exacte, jamais retomber sur un index de
+    tableau arbitraire — régression du bug qui bloquait la mise à jour de
+    statut (KPI "En attente" bloqué) car _id ne contient jamais de '-'."""
+    js = _js()
+    match = re.search(r"function _findEntryIdx\(all, idOrIdx\) \{.*?\n\}", js, re.S)
+    assert match, "_findEntryIdx doit être défini dans admin.js"
+    fn_src = match.group(0)
+
+    harness = fn_src + """
+    const assert = require('assert');
+    // _id réel : hex sans tiret (comme secrets.token_hex côté serveur).
+    const all = [
+      { _id: '9f1a2b3c4d5e6f708192a3b4', label: 'zero' },
+      { _id: 'a3f9e21b4c5d6e7f8091a2b3', label: 'un' },
+      { _id: 'd8e7f6a5b4c3d2e1f0091827', label: 'deux' },
+    ];
+    // Doit trouver l'entrée par _id exact, quelle que soit sa position ou
+    // son premier caractère (chiffre ou lettre).
+    assert.strictEqual(_findEntryIdx(all, 'a3f9e21b4c5d6e7f8091a2b3'), 1,
+      "doit matcher l'entrée 'un' par son _id réel, pas un index déduit");
+    assert.strictEqual(_findEntryIdx(all, 'd8e7f6a5b4c3d2e1f0091827'), 2,
+      "doit matcher l'entrée 'deux' même si son id ne parse pas comme nombre");
+    assert.strictEqual(_findEntryIdx(all, 'inconnu'), -1,
+      "un id absent ne doit correspondre à aucune entrée");
+    console.log('OK');
+    """
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".js", delete=False, encoding="utf-8") as f:
+        f.write(harness)
+        path = f.name
+    try:
+        result = subprocess.run(["node", path], capture_output=True, text=True, timeout=10)
+        assert result.returncode == 0 and "OK" in result.stdout, (
+            f"_findEntryIdx doit résoudre les vrais _id hex sans tiret : "
+            f"stdout={result.stdout!r} stderr={result.stderr!r}"
+        )
+    finally:
+        os.unlink(path)
+
+
 if __name__ == "__main__":
     print("\n🧪 Tests UI admin.html + admin.js...\n")
     tests = [
@@ -191,6 +238,7 @@ if __name__ == "__main__":
         test_audit_label_user_delete_present,
         test_audit_icone_user_upsert,
         test_audit_icone_user_delete,
+        test_find_entry_idx_matches_real_hex_ids,
     ]
     passed = failed = 0
     for t in tests:
