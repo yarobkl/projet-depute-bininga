@@ -1987,6 +1987,22 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self._json({"ok": True, "total": 0, "today": 0, "prog_views": 0})
             return
 
+        if path == "/api/_db_diag":
+            # Diagnostic temporaire, public et sans secret : confirme si une
+            # base durable est réellement branchée sur ce déploiement, et
+            # laquelle des variables d'environnement gérées est présente.
+            # Aucune valeur (URL, mot de passe) n'est jamais exposée ici.
+            self._json({
+                "ok": True,
+                "backend": _db_label(),
+                "database_url_present": bool(os.environ.get("DATABASE_URL", "").strip()),
+                "postgres_url_present": bool(os.environ.get("POSTGRES_URL", "").strip()),
+                "postgres_prisma_url_present": bool(os.environ.get("POSTGRES_PRISMA_URL", "").strip()),
+                "postgres_url_non_pooling_present": bool(os.environ.get("POSTGRES_URL_NON_POOLING", "").strip()),
+                "vercel_env": bool(os.environ.get("VERCEL")),
+            })
+            return
+
         if path == "/api/dossier":
             qs = parse_qs(urlparse(self.path).query)
             code = qs.get("code", [""])[0].strip().upper()
