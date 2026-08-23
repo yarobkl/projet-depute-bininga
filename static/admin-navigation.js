@@ -169,7 +169,13 @@
     }, { passive: true });
 
     // Initial state
-    closeSidebar();
+    if (isMobile()) {
+      closeSidebar();
+    } else {
+      // Desktop : sidebar visible par défaut
+      const { sidebar } = refs();
+      if (sidebar) sidebar.classList.remove('open');
+    }
   }
 
   if (document.readyState === 'loading') {
