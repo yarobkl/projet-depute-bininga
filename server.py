@@ -1816,7 +1816,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # ── Bouclier multi-couches (IA/bots/lockdown/coffre-fort/canaris) ──────
         public_get = (
             method == "GET" and (
-                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml")
+                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml", "/api/_db_diag")
                 or path.startswith(("/static/", "/images/"))
             )
         )
