@@ -172,9 +172,12 @@
     if (isMobile()) {
       closeSidebar();
     } else {
-      // Desktop : sidebar visible par défaut
+      // Desktop : sidebar visible, aucun style inline qui cache
       const { sidebar } = refs();
-      if (sidebar) sidebar.classList.remove('open');
+      if (sidebar) {
+        sidebar.classList.remove('open');
+        sidebar.style.removeProperty('left');
+      }
     }
   }
 
