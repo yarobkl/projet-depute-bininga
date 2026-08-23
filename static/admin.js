@@ -2279,7 +2279,7 @@ function _syncThemeToggleIcon() {
   const btn = document.getElementById("theme-toggle-btn");
   if (!btn) return;
   const isLight = document.body.classList.contains("admin-theme-light");
-  btn.textContent = isLight ? "☾" : "☀";
+  btn.textContent = isLight ? "Mode nuit" : "Mode jour";
   btn.title = isLight ? "Passer en mode nuit" : "Passer en mode jour";
 }
 

@@ -947,9 +947,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
    fond sombre) sont assombries explicitement plus bas pour rester lisibles.
    ══════════════════════════════════════════════════════════ */
 .theme-toggle-btn{
-  min-height:36px;min-width:36px;padding:0 10px;border-radius:7px;
+  min-height:36px;padding:0 14px;border-radius:7px;
   border:1px solid rgba(var(--ink),.12);background:rgba(var(--ink),.05);
-  color:var(--w);font-size:15px;line-height:1;cursor:pointer;transition:var(--t);
+  color:var(--w);font-size:12px;font-weight:700;font-family:inherit;
+  white-space:nowrap;cursor:pointer;transition:var(--t);
 }
 .theme-toggle-btn:hover{background:rgba(var(--ink),.1);transform:translateY(-1px)}
 
