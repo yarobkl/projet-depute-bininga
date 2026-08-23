@@ -8,8 +8,6 @@
 <link rel="stylesheet" href="static/mobile.css?v=admin-mobile-final">
 </head>
 <body>
-<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
-
 <!-- Barre de progression upload (globale, visible pendant un upload) -->
 <div id="upload-progress-wrap" style="display:none;position:fixed;top:0;left:0;right:0;z-index:10000;height:4px;background:rgba(0,0,0,.3)">
   <div id="upload-progress-bar" style="height:100%;background:var(--r);width:0%;transition:width .2s ease;font-size:0;line-height:0;color:transparent"></div>
@@ -37,6 +35,11 @@
 
 <!-- ═══════════════════════════════ APP ════════════════════════════════ -->
 <div id="app">
+
+  <!-- Overlay DANS #app : même contexte d'empilement que la sidebar,
+       sinon l'animation de #app le fait passer AU-DESSUS du menu
+       (touch-action:none → scroll et taps du menu bloqués) -->
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
   <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">

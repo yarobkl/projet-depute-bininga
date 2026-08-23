@@ -27,7 +27,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 
 /* ── APP ── */
 #app{display:none}
-#app.visible{display:flex;min-height:100vh;animation:app-in .24s var(--ease) both}
+/* fill "backwards" et pas "both" : un fill persistant crée un stacking context
+   permanent sur #app qui piège le z-index de la sidebar sous l'overlay */
+#app.visible{display:flex;min-height:100vh;animation:app-in .24s var(--ease) backwards}
 @keyframes app-in{from{opacity:0}to{opacity:1}}
 
 /* ── SIDEBAR ── */
