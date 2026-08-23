@@ -95,7 +95,7 @@ def test_publish_requires_existing_article():
     handler = Handler({"id": "missing", "statut": "publie"})
     assert epi.guard_request(server, handler) is False
     assert handler.status == 404
-    assert server.site["actus"]["vedettes"] == []
+    assert server.site["actus"].get("cards", []) == []
 
 
 def test_publish_creates_public_actualite_and_marks_editorial_published():
@@ -105,11 +105,14 @@ def test_publish_creates_public_actualite_and_marks_editorial_published():
     assert handler.status == 200
     assert handler.response["published"] is True
 
-    public = server.site["actus"]["vedettes"][0]
+    # Choix du propriétaire : publication en carte, dans la grille du bas.
+    assert server.site["actus"].get("vedettes", []) == []
+    public = server.site["actus"]["cards"][-1]
     assert public["editorial_id"] == "ed-1"
     assert public["title"] == "Une nouvelle route pour Ewo"
     assert public["publication_source"] == "editorial_ia"
-    assert public["text1"]
+    assert public["desc"]
+    assert public["day"] and public["month"] and public["year"]
 
     editorial = server.editorial[0]
     assert editorial["statut"] == "publie"
@@ -121,13 +124,13 @@ def test_republish_is_idempotent_and_does_not_duplicate_public_article():
     server = Server()
     first = Handler({"id": "ed-1", "statut": "publie"})
     assert epi.guard_request(server, first) is False
-    server.site["actus"]["vedettes"][0]["image"] = "images/news.jpg"
+    server.site["actus"]["cards"][0]["image"] = "images/news.jpg"
 
     server.editorial[0]["titre"] = "Titre actualisé"
     second = Handler({"id": "ed-1", "statut": "publie"})
     assert epi.guard_request(server, second) is False
 
-    rows = server.site["actus"]["vedettes"]
+    rows = server.site["actus"]["cards"]
     assert len(rows) == 1
     assert rows[0]["title"] == "Titre actualisé"
     assert rows[0]["image"] == "images/news.jpg"
@@ -137,7 +140,7 @@ def test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritativ
     server = Server()
     handler = Handler({"id": "ed-1", "statut": "publie"}, csrf="wrong")
     assert epi.guard_request(server, handler) is True
-    assert server.site["actus"]["vedettes"] == []
+    assert server.site["actus"].get("cards", []) == []
 
 
 if __name__ == "__main__":
@@ -147,7 +150,45 @@ if __name__ == "__main__":
         test_publish_creates_public_actualite_and_marks_editorial_published,
         test_republish_is_idempotent_and_does_not_duplicate_public_article,
         test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritative,
+        test_migration_moves_editorial_vedettes_to_cards,
     ]
     for test in tests:
         test()
         print("OK", test.__name__)
+
+
+def test_migration_moves_editorial_vedettes_to_cards():
+    server = Server()
+    server.markers = {}
+    orig_load, orig_save = server._pg_load, server._pg_save
+
+    def pg_load(key):
+        if key == "editorial_cards_migration_v1":
+            return server.markers.get(key)
+        return orig_load(key)
+
+    def pg_save(key, value):
+        if key == "editorial_cards_migration_v1":
+            server.markers[key] = value
+            return True
+        return orig_save(key, value)
+
+    server._pg_load, server._pg_save = pg_load, pg_save
+    server.site = {"actus": {"vedettes": [
+        {"editorial_id": "ed-9", "title": "Article publié", "text2": "Résumé",
+         "published_at": "2026-08-23T08:12:38+00:00", "image": "images/x.jpg"},
+        {"title": "Vedette manuelle sans editorial_id"},
+    ], "cards": []}}
+
+    epi.migrate_editorial_vedettes(server)
+
+    vedettes = server.site["actus"]["vedettes"]
+    cards = server.site["actus"]["cards"]
+    assert len(vedettes) == 1 and "editorial_id" not in vedettes[0]
+    assert len(cards) == 1 and cards[0]["editorial_id"] == "ed-9"
+    assert cards[0]["image"] == "images/x.jpg"
+    assert server.markers["editorial_cards_migration_v1"]["done"] is True
+
+    # Rejouer la migration ne change plus rien (marqueur posé)
+    epi.migrate_editorial_vedettes(server)
+    assert len(server.site["actus"]["cards"]) == 1

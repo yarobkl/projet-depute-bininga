@@ -116,7 +116,7 @@
 
   const modules = [
     ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260823-nav-singleclick-2'],
-    ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-2'],
+    ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260820-real-actions-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260820-cases-1'],
     ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1']

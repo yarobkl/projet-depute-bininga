@@ -40,6 +40,9 @@ import editorial_publish_integrity
 # bootstrapping, before the first WSGI request is handled.
 admin_contact_integrity.install(bininga_server)
 admin_bootstrap_hardening.install(bininga_server)
+# Migration unique : publications éditoriales déplacées des vedettes vers la
+# grille de cartes (marqueur en base, ne se rejoue jamais).
+editorial_publish_integrity.migrate_editorial_vedettes(bininga_server)
 
 
 def _bootstrap() -> None:

@@ -64,30 +64,34 @@ def _save_editorial(server, rows: List[Dict[str, Any]]) -> None:
             pass
 
 
+_MONTHS_FR = ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUN",
+              "JUL", "AOÛ", "SEP", "OCT", "NOV", "DÉC"]
+
+
 def _public_record(article: Dict[str, Any], published_at: str) -> Dict[str, Any]:
-    title = str(article.get("titre") or "Article").strip()[:180]
+    """Carte d'actualité pour la grille du bas de la section Actualités.
+
+    Choix éditorial du propriétaire : les articles IA apparaissent comme des
+    cartes ordinaires parmi les autres (grille), pas en grande vedette.
+    """
+    title = str(article.get("titre") or "Article").strip()[:160]
     summary = str(article.get("resume") or "").strip()
     body = str(article.get("article") or summary).strip()
-    source_name = str(article.get("source_nom") or "").strip()
-    source_date = str(article.get("source_date") or "").strip()
-    points = article.get("points_cles") if isinstance(article.get("points_cles"), list) else []
-    sources = article.get("sources") if isinstance(article.get("sources"), list) else []
-
-    tags = [str(x).strip() for x in points[:4] if str(x).strip()]
-    if source_name and source_name not in tags:
-        tags.append(source_name)
-
+    desc = (summary or body)[:230]
+    try:
+        dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
+    except Exception:
+        dt = datetime.now(timezone.utc)
     return {
         "editorial_id": str(article.get("id", "")),
-        "badge": "Actualité",
-        "tag": source_name or "BININGA",
-        "date": source_date or published_at[:10],
+        "image": str(article.get("image") or "").strip(),
+        "cat": "Actualité",
+        "icon": "AB",
+        "day": f"{dt.day:02d}",
+        "month": _MONTHS_FR[dt.month - 1],
+        "year": str(dt.year),
         "title": title,
-        "text1": body or summary,
-        "quote": "",
-        "text2": summary if summary and summary != body else "",
-        "tags": tags,
-        "sources": [str(x) for x in sources[:8]],
+        "desc": desc,
         "published_at": published_at,
         "publication_source": "editorial_ia",
     }
@@ -98,21 +102,88 @@ def _upsert_public_article(site_data: Dict[str, Any], public: Dict[str, Any]) ->
     if not isinstance(actus, dict):
         actus = {}
         site_data["actus"] = actus
-    vedettes = actus.setdefault("vedettes", [])
-    if not isinstance(vedettes, list):
-        vedettes = []
-        actus["vedettes"] = vedettes
+    cards = actus.setdefault("cards", [])
+    if not isinstance(cards, list):
+        cards = []
+        actus["cards"] = cards
 
     editorial_id = public["editorial_id"]
-    existing = next((i for i, row in enumerate(vedettes)
+
+    # Une publication ne doit plus jamais vivre en vedette : retirer toute
+    # ancienne entrée du même article dans la liste des grandes actualités.
+    vedettes = actus.get("vedettes")
+    if isinstance(vedettes, list):
+        actus["vedettes"] = [row for row in vedettes
+                             if not (isinstance(row, dict)
+                                     and str(row.get("editorial_id", "")) == editorial_id)]
+
+    existing = next((i for i, row in enumerate(cards)
                      if isinstance(row, dict) and str(row.get("editorial_id", "")) == editorial_id), None)
     if existing is None:
-        vedettes.insert(0, public)
+        cards.append(public)  # en bas de la grille, comme les autres
     else:
-        preserved_image = vedettes[existing].get("image", "") if isinstance(vedettes[existing], dict) else ""
+        preserved_image = cards[existing].get("image", "") if isinstance(cards[existing], dict) else ""
         if preserved_image and not public.get("image"):
             public["image"] = preserved_image
-        vedettes[existing] = public
+        cards[existing] = public
+
+
+def _vedette_to_card(row: Dict[str, Any]) -> Dict[str, Any]:
+    """Convertit une ancienne vedette éditoriale au format carte."""
+    published = str(row.get("published_at") or "")
+    try:
+        dt = datetime.fromisoformat(published.replace("Z", "+00:00"))
+    except Exception:
+        dt = datetime.now(timezone.utc)
+    desc = str(row.get("text2") or row.get("text1") or "").strip()[:230]
+    return {
+        "editorial_id": str(row.get("editorial_id", "")),
+        "image": str(row.get("image") or "").strip(),
+        "cat": "Actualité",
+        "icon": "AB",
+        "day": f"{dt.day:02d}",
+        "month": _MONTHS_FR[dt.month - 1],
+        "year": str(dt.year),
+        "title": str(row.get("title") or "Article").strip()[:160],
+        "desc": desc,
+        "published_at": published,
+        "publication_source": "editorial_ia",
+    }
+
+
+def migrate_editorial_vedettes(server) -> None:
+    """Migration unique : déplace les publications éditoriales déjà en
+    vedette vers la grille de cartes (choix du propriétaire), avec marqueur
+    en base pour ne jamais rejouer la migration."""
+    marker_key = "editorial_cards_migration_v1"
+    try:
+        marker = server._pg_load(marker_key)
+        if isinstance(marker, dict) and marker.get("done") is True:
+            return
+        site = server.load_data()
+        actus = site.get("actus") if isinstance(site, dict) else None
+        vedettes = actus.get("vedettes") if isinstance(actus, dict) else None
+        if not isinstance(vedettes, list):
+            server._pg_save(marker_key, {"done": True})
+            return
+        moved = [row for row in vedettes
+                 if isinstance(row, dict) and str(row.get("editorial_id", "")).strip()]
+        if moved:
+            site = copy.deepcopy(site)
+            site["actus"]["vedettes"] = [row for row in site["actus"]["vedettes"]
+                                         if not (isinstance(row, dict)
+                                                 and str(row.get("editorial_id", "")).strip())]
+            cards = site["actus"].setdefault("cards", [])
+            known = {str(c.get("editorial_id", "")) for c in cards if isinstance(c, dict)}
+            for row in moved:
+                if str(row.get("editorial_id", "")) not in known:
+                    cards.append(_vedette_to_card(row))
+            server.save_data(site)
+            server.audit_log("EDITORIAL_MIGRATE", "system",
+                             f"{len(moved)} publication(s) déplacée(s) des vedettes vers la grille")
+        server._pg_save(marker_key, {"done": True})
+    except Exception as exc:
+        print(f"[EDITORIAL] Migration vedettes→cartes différée : {exc}", flush=True)
 
 
 def guard_request(server, handler) -> bool:
