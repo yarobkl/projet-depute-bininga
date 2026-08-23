@@ -54,10 +54,11 @@ def _bootstrap() -> None:
         if callable(fn):
             fn()
 
-    # Hydrate GEMINI_API_KEY depuis la base si absente de l'environnement,
-    # pour que chatbot/éditorial/veille voient la clé enregistrée via l'admin.
+    # Hydrate les clés IA (Gemini/Groq/Claude) depuis la base si absentes de
+    # l'environnement, pour que chatbot/éditorial/veille voient les clés
+    # enregistrées via l'admin.
     try:
-        bininga_server.get_gemini_key()
+        bininga_server.hydrate_ia_keys()
     except Exception:
         pass
 
@@ -253,7 +254,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-session-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260823-session-4" defer></script>\n'
     if b"static/admin-chatbot.js" not in patched:
-        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-key-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
     if scripts:
         patched = patched.replace(marker, scripts + marker, 1)
 

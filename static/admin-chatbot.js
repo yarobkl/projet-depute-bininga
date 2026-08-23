@@ -83,13 +83,23 @@
         </div>
         <div id="da-providers" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px"></div>
         <div style="margin-top:16px;padding:14px;border-radius:12px;background:rgba(184,151,58,.05);border:1px solid rgba(184,151,58,.18)">
-          <div style="font-weight:800;font-size:13px;margin-bottom:4px">Clé IA Gemini</div>
-          <div id="da-key-status" style="font-size:12px;color:var(--muted,#94a3b8);margin-bottom:10px">Vérification…</div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <input class="field" id="da-key-input" type="password" placeholder="Coller la clé (AIza…)" autocomplete="off" style="flex:1;min-width:200px">
-            <button class="btn btn-primary" id="da-key-save">Enregistrer la clé</button>
+          <div style="font-weight:800;font-size:13px;margin-bottom:10px">🔑 Clés API — Intelligence Artificielle</div>
+          <div id="da-keys-list" style="display:grid;gap:8px;margin-bottom:12px">
+            <div style="font-size:12px;color:var(--muted,#94a3b8)">Vérification…</div>
           </div>
-          <p style="margin-top:8px;color:var(--muted,#777);font-size:11px">La clé est stockée dans la base de données sécurisée — jamais dans le code, jamais affichée en clair. Active immédiatement pour la Veille Juridique, l'Éditorial IA et l'Assistant.</p>
+          <div style="display:grid;gap:8px">
+            <select class="field" id="da-key-provider">
+              <option value="gemini">Gemini (Google) — aistudio.google.com</option>
+              <option value="groq">Groq — console.groq.com</option>
+              <option value="anthropic">Claude (Anthropic) — console.anthropic.com</option>
+            </select>
+            <input class="field" id="da-key-input" type="password" placeholder="Coller la clé ici" autocomplete="off">
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" id="da-key-save" style="flex:1">Enregistrer la clé</button>
+              <button class="btn btn-outline" id="da-key-delete">Supprimer</button>
+            </div>
+          </div>
+          <p style="margin-top:10px;color:var(--muted,#777);font-size:11px">Les clés sont stockées dans la base de données sécurisée — jamais dans le code, jamais affichées en clair. Actives immédiatement pour la Veille Juridique, l'Éditorial IA et l'Assistant. Gemini suffit ; Groq et Claude servent de relais automatiques si configurés.</p>
         </div>
         <div style="margin-top:14px"><button class="btn btn-primary" id="da-save-settings">Enregistrer la configuration</button></div>
         <p style="margin-top:12px;color:var(--muted,#777);font-size:13px">DA privilégie les réponses déterministes et les sources validées. Les données personnelles évidentes sont masquées ou bloquées avant tout envoi vers un fournisseur IA.</p>
@@ -219,28 +229,45 @@
     loadKeyStatus();
   }
 
+  const PROVIDER_LABELS = { gemini: 'Gemini (Google)', groq: 'Groq', anthropic: 'Claude (Anthropic)' };
+
   async function loadKeyStatus() {
-    const el = document.getElementById('da-key-status');
-    if (!el) return;
+    const box = document.getElementById('da-keys-list');
+    if (!box) return;
     try {
       const st = await api('/api/ia/key');
-      el.textContent = st.configured
-        ? `✓ Clé configurée (${st.masked})${st.source === 'env' ? ' — via Vercel' : ' — via la base'}`
-        : 'Aucune clé enregistrée — le système utilise les flux réels sans IA.';
-      el.style.color = st.configured ? '#4ade80' : '';
+      box.innerHTML = Object.entries(st.providers || {}).map(([name, p]) => `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:8px 10px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)">
+          <span style="font-size:12px;font-weight:700">${esc(PROVIDER_LABELS[name] || name)}</span>
+          <span style="font-size:11px;color:${p.configured ? '#4ade80' : 'var(--muted,#94a3b8)'}">${
+            p.configured ? `✓ ${esc(p.masked)}${p.source === 'env' ? ' (Vercel)' : ''}` : 'non configurée'
+          }</span>
+        </div>`).join('');
     } catch (e) {
-      el.textContent = 'Statut indisponible : ' + e.message;
+      box.innerHTML = `<div style="font-size:12px;color:var(--muted,#94a3b8)">Statut indisponible : ${esc(e.message)}</div>`;
     }
   }
 
   async function saveKey() {
     const input = document.getElementById('da-key-input');
+    const provider = document.getElementById('da-key-provider')?.value || 'gemini';
     const key = (input?.value || '').trim();
     if (!key) { toast('Collez la clé avant d’enregistrer', false); return; }
     try {
-      const r = await api('/api/ia/key', { method: 'POST', body: JSON.stringify({ key }) });
+      const r = await api('/api/ia/key', { method: 'POST', body: JSON.stringify({ provider, key }) });
       input.value = '';
       toast(r.message || 'Clé enregistrée');
+      loadKeyStatus();
+      loadAll();
+    } catch (e) { toast(e.message, false); }
+  }
+
+  async function deleteKey() {
+    const provider = document.getElementById('da-key-provider')?.value || 'gemini';
+    if (!confirm(`Supprimer la clé ${PROVIDER_LABELS[provider] || provider} ?`)) return;
+    try {
+      const r = await api('/api/ia/key', { method: 'POST', body: JSON.stringify({ provider, key: '' }) });
+      toast(r.message || 'Clé supprimée');
       loadKeyStatus();
       loadAll();
     } catch (e) { toast(e.message, false); }
@@ -289,6 +316,7 @@
   function bind() {
     document.getElementById('da-refresh').onclick = loadAll;
     document.getElementById('da-key-save').onclick = saveKey;
+    document.getElementById('da-key-delete').onclick = deleteKey;
     document.getElementById('da-save-settings').onclick = saveSettings;
     document.getElementById('da-new').onclick = () => openEditor();
     document.getElementById('da-save').onclick = saveItem;

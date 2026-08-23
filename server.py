@@ -1264,22 +1264,39 @@ def _groq_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
         resp = json.loads(r.read())
     return resp["choices"][0]["message"]["content"].strip()
 
-def get_gemini_key() -> str:
-    """Clé Gemini : variable d'environnement d'abord, sinon celle enregistrée
-    en base via l'admin (panneau Assistant DA). Quand la clé vient de la base,
-    elle est injectée dans os.environ pour que les modules qui lisent
-    directement GEMINI_API_KEY (chatbot, éditorial, veille) la voient aussi."""
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if key:
-        return key
+# Fournisseurs IA gérés depuis l'admin (panneau Assistant DA).
+# Priorité : variable d'environnement, sinon clé enregistrée en base.
+_IA_PROVIDERS = {
+    "gemini":    "GEMINI_API_KEY",
+    "groq":      "GROQ_API_KEY",
+    "anthropic": "ANTHROPIC_API_KEY",
+}
+
+def hydrate_ia_keys() -> None:
+    """Injecte dans os.environ les clés IA enregistrées en base (si absentes
+    de l'environnement), pour que chatbot/éditorial/veille — qui lisent les
+    variables directement — voient les clés gérées via l'admin."""
     try:
         cfg = _pg_load("app_config") or {}
-        key = str(cfg.get("gemini_api_key") or "").strip()
-        if key:
-            os.environ["GEMINI_API_KEY"] = key
-        return key
     except Exception:
-        return ""
+        return
+    for provider, env_name in _IA_PROVIDERS.items():
+        if os.environ.get(env_name, "").strip():
+            continue
+        key = str(cfg.get(f"{provider}_api_key") or "").strip()
+        if key:
+            os.environ[env_name] = key
+
+def get_ia_key(provider: str) -> str:
+    env_name = _IA_PROVIDERS.get(provider, "")
+    key = os.environ.get(env_name, "").strip() if env_name else ""
+    if key:
+        return key
+    hydrate_ia_keys()
+    return os.environ.get(env_name, "").strip() if env_name else ""
+
+def get_gemini_key() -> str:
+    return get_ia_key("gemini")
 
 def _gemini_call(prompt: str, max_tokens: int = 800, timeout: int = 12) -> str:
     """Appelle Gemini Flash, avec fallback automatique sur Groq puis Claude."""
@@ -2147,25 +2164,27 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             self._json({"ok": False, "message": "Endpoint monitoring inconnu"}, 404)
             return
 
-        # ── /api/ia/key — statut de la clé Gemini (masquée) ──
+        # ── /api/ia/key — statut des clés IA (masquées) ──
         if path == "/api/ia/key":
             token = self.headers.get("X-Admin-Token", "")
             if not has_role(token, "admin"):
                 self._json({"ok": False, "message": "Non autorisé"}, 401)
                 return
-            env_key = os.environ.get("GEMINI_API_KEY", "").strip()
-            db_key = ""
             try:
-                db_key = str((_pg_load("app_config") or {}).get("gemini_api_key") or "").strip()
+                cfg = _pg_load("app_config") or {}
             except Exception:
-                pass
-            key = env_key or db_key
-            self._json({
-                "ok": True,
-                "configured": bool(key),
-                "source": "env" if env_key and not db_key else ("db" if key else ""),
-                "masked": (key[:4] + "…" + key[-4:]) if len(key) >= 12 else ("•••" if key else ""),
-            })
+                cfg = {}
+            providers = {}
+            for provider, env_name in _IA_PROVIDERS.items():
+                env_key = os.environ.get(env_name, "").strip()
+                db_key = str(cfg.get(f"{provider}_api_key") or "").strip()
+                key = env_key or db_key
+                providers[provider] = {
+                    "configured": bool(key),
+                    "source": "db" if db_key else ("env" if env_key else ""),
+                    "masked": (key[:4] + "…" + key[-4:]) if len(key) >= 12 else ("•••" if key else ""),
+                }
+            self._json({"ok": True, "providers": providers})
             return
 
         if path == "/api/2fa/status":
@@ -3613,34 +3632,41 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 self._json({"ok": False, "message": "Requête invalide (CSRF)"}, 403)
                 return
 
-        # ── /api/ia/key — enregistrer la clé Gemini depuis l'admin ──
-        # La clé va en base (PostgreSQL), jamais dans le code ni les logs.
+        # ── /api/ia/key — enregistrer une clé IA depuis l'admin ──
+        # Fournisseurs : gemini, groq, anthropic. Les clés vont en base
+        # (PostgreSQL), jamais dans le code ni les logs.
         if path == "/api/ia/key":
             if not has_role(token, "admin"):
                 self._json({"ok": False, "message": "Réservé à l'admin"}, 403)
                 return
             try:
                 data = json.loads(body.decode("utf-8"))
+                provider = str(data.get("provider") or "gemini").strip().lower()
+                if provider not in _IA_PROVIDERS:
+                    self._json({"ok": False, "message": "Fournisseur inconnu"}, 400)
+                    return
                 new_key = str(data.get("key") or "").strip()
                 if new_key and (len(new_key) < 20 or " " in new_key):
                     self._json({"ok": False, "message": "Format de clé invalide"}, 400)
                     return
                 cfg = _pg_load("app_config") or {}
+                cfg_field = f"{provider}_api_key"
                 if new_key:
-                    cfg["gemini_api_key"] = new_key
+                    cfg[cfg_field] = new_key
                 else:  # clé vide = suppression
-                    cfg.pop("gemini_api_key", None)
+                    cfg.pop(cfg_field, None)
                 if not _pg_save("app_config", cfg):
                     self._json({"ok": False, "message": "Base indisponible — clé non enregistrée"}, 500)
                     return
                 # L'environnement du processus ne reflète la clé qu'après
                 # confirmation de la sauvegarde en base.
+                env_name = _IA_PROVIDERS[provider]
                 if new_key:
-                    os.environ["GEMINI_API_KEY"] = new_key
+                    os.environ[env_name] = new_key
                 else:
-                    os.environ.pop("GEMINI_API_KEY", None)
-                audit_log("IA_KEY", ip, "Clé Gemini " + ("enregistrée" if new_key else "supprimée"))
-                self._json({"ok": True, "message": "Clé IA " + ("enregistrée — active immédiatement" if new_key else "supprimée")})
+                    os.environ.pop(env_name, None)
+                audit_log("IA_KEY", ip, f"Clé {provider} " + ("enregistrée" if new_key else "supprimée"))
+                self._json({"ok": True, "message": f"Clé {provider} " + ("enregistrée — active immédiatement" if new_key else "supprimée")})
             except Exception as e:
                 self._json({"ok": False, "message": str(e)}, 500)
             return
