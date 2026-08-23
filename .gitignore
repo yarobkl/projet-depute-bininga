@@ -46,3 +46,4 @@ monitoring.db-shm
 monitoring.db-wal
 news.db
 youtube.json
+monitor.trigger
