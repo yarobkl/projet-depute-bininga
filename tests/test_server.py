@@ -229,6 +229,95 @@ def test_actus_rwanda_article():
     print("✅ test_actus_rwanda_article")
 
 
+# ── Tests suivi de dossier : décision & rendez-vous ─────────────
+
+def test_audience_decision_et_rendezvous():
+    """Une décision et un rendez-vous posés depuis l'admin doivent apparaître
+    dans le suivi public /api/dossier, exactement comme prévu par le parcours :
+    Demande reçue → Ouverte par l'équipe → Traitement/décision → Rendez-vous."""
+    admin_token, admin_csrf = _get_admin_token()
+
+    # 1. Simule une demande d'audience publique (comme le formulaire du site)
+    status, body = post("/api/contact", {
+        "source": "bininga_audiences", "objet": "Demande d'audience",
+        "nom": "Test", "prenom": "Suivi", "raison": "Vérification du parcours de suivi",
+    })
+    assert status == 200 and body.get("ok"), "La soumission publique doit réussir"
+    cid = body.get("id", "")
+    code = body.get("tracking_code", "")
+    assert cid and code, "Un id et un numéro de suivi doivent être générés"
+
+    # 2. Juste après soumission, le suivi doit afficher uniquement "Demande reçue"
+    status, raw = get(f"/api/dossier?code={code}")
+    dossier = json.loads(raw)
+    assert status == 200 and dossier.get("ok")
+    steps = {s["label"]: s["done"] for s in dossier["steps"]}
+    assert steps["Demande reçue"] is True
+    assert steps["Ouverte par l'équipe"] is False
+    assert steps["Rendez-vous programmé"] is False
+
+    # 3. L'équipe passe le dossier "en cours" → doit ouvrir l'étape "Ouverte par l'équipe"
+    status, body = post("/api/contacts/update", {"id": cid, "status": "en_cours"},
+                         token=admin_token, csrf=admin_csrf)
+    assert status == 200 and body.get("ok") and body.get("updated")
+    status, raw = get(f"/api/dossier?code={code}")
+    dossier = json.loads(raw)
+    steps = {s["label"]: s["done"] for s in dossier["steps"]}
+    assert steps["Ouverte par l'équipe"] is True, "Passer en cours doit ouvrir le dossier côté suivi public"
+
+    # 4. L'équipe rend une décision favorable
+    status, body = post("/api/contacts/update", {
+        "id": cid, "decision": "favorable", "decision_note": "Audience accordée",
+    }, token=admin_token, csrf=admin_csrf)
+    assert status == 200 and body.get("ok") and body.get("updated")
+    status, raw = get(f"/api/dossier?code={code}")
+    dossier = json.loads(raw)
+    assert dossier["decision"] == "favorable"
+    assert dossier["decision_label"] == "Favorable"
+    assert dossier["decision_note"] == "Audience accordée"
+    steps = {s["label"]: s["done"] for s in dossier["steps"]}
+    assert steps["Traitement / décision"] is True
+
+    # 5. L'équipe programme un rendez-vous
+    status, body = post("/api/contacts/update", {
+        "id": cid,
+        "appointment": {"date": "28/08/2026 à 14h30", "type": "presentiel", "place": "Cabinet du Député, Ewo"},
+    }, token=admin_token, csrf=admin_csrf)
+    assert status == 200 and body.get("ok") and body.get("updated")
+    status, raw = get(f"/api/dossier?code={code}")
+    dossier = json.loads(raw)
+    assert dossier["appointment"]["date"] == "28/08/2026 à 14h30"
+    assert dossier["appointment"]["place"] == "Cabinet du Député, Ewo"
+    steps = {s["label"]: s["done"] for s in dossier["steps"]}
+    assert steps["Rendez-vous programmé"] is True
+    assert dossier["status_label"] == "Rendez-vous programmé"
+
+    print("✅ test_audience_decision_et_rendezvous")
+
+
+def test_contacts_update_decision_invalide_ignoree():
+    """Une valeur de décision hors énumération ne doit pas être enregistrée."""
+    admin_token, admin_csrf = _get_admin_token()
+    status, body = post("/api/contact", {
+        "source": "bininga_audiences", "objet": "Demande d'audience",
+        "nom": "Test", "prenom": "Invalide",
+    })
+    cid = body.get("id", "")
+    status, body = post("/api/contacts/update", {"id": cid, "decision": "peut-etre"},
+                         token=admin_token, csrf=admin_csrf)
+    assert status == 200 and body.get("ok")
+    # Vérifie directement via /api/contacts que la décision n'a pas été posée
+    req = urllib.request.Request(f"http://127.0.0.1:{PORT}/api/contacts")
+    req.add_header("X-Admin-Token", admin_token)
+    with urllib.request.urlopen(req, timeout=5) as r:
+        listing = json.loads(r.read().decode("utf-8"))
+    all_entries = listing.get("audiences", []) + listing.get("contacts", [])
+    entry = next((c for c in all_entries if c.get("_id") == cid), None)
+    assert entry is not None
+    assert entry.get("decision", "") != "peut-etre", "Une décision hors énumération ne doit jamais être stockée"
+    print("✅ test_contacts_update_decision_invalide_ignoree")
+
+
 # ── Tests Veille IA ────────────────────────────────────────────
 
 def test_news_sans_token():
@@ -675,6 +764,9 @@ if __name__ == "__main__":
             test_delete_interdit_pour_editeur,
             test_logs_contiennent_user_upsert,
             test_logs_contiennent_user_delete,
+            # Suivi de dossier : décision & rendez-vous
+            test_audience_decision_et_rendezvous,
+            test_contacts_update_decision_invalide_ignoree,
             # Veille IA
             test_news_sans_token,
             test_news_avec_token,

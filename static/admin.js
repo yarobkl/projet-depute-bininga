@@ -1284,6 +1284,7 @@ function renderMsgList(containerId, list, storageKey, mode) {
       ${descHtml}
       ${geoHtml}
       ${photoHtml}
+      ${mode === "status3" ? buildDecisionSection(m, storageKey, btnId) : ""}
       ${buildNotesSection(m, storageKey, btnId)}
       <div class="msg-footer">${actions}</div>
     </div>`;
@@ -1406,6 +1407,142 @@ function pingDepute(storageKey, idOrIdx) {
   if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
   else renderContacts();
   showToast("Le Député a été alerté sur ce dossier.");
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  DÉCISION & RENDEZ-VOUS — visibles par le demandeur via son numéro de suivi
+// ══════════════════════════════════════════════════════════════════════════
+const DECISION_LABELS = { favorable: "Favorable", defavorable: "Défavorable", reportee: "Reportée" };
+
+function buildDecisionSection(m, storageKey, btnId) {
+  const dec = m.decision || "";
+  const ap  = m.appointment || {};
+  const decisionSummary = dec
+    ? `<div class="decision-current decision-${dec}">Décision actuelle : <strong>${esc(DECISION_LABELS[dec] || dec)}</strong>${m._decision_at ? ` · ${esc(m._decision_at)}` : ""}</div>`
+    : "";
+  const apSummary = ap.date
+    ? `<div class="appointment-current">Rendez-vous programmé : <strong>${esc(ap.date)}</strong>${ap.place ? ` — ${esc(ap.place)}` : ""} <button class="btn-link-mini" onclick="clearAppointment('${storageKey}','${btnId}')">Annuler</button></div>`
+    : "";
+  return `
+    <div class="decision-section">
+      <div class="notes-title">Décision & rendez-vous (visibles par le demandeur)</div>
+      ${decisionSummary}
+      ${apSummary}
+      <div class="decision-form">
+        <select id="dec-sel-${btnId}">
+          <option value="">— Choisir une décision —</option>
+          <option value="favorable"${dec === "favorable" ? " selected" : ""}>Favorable</option>
+          <option value="defavorable"${dec === "defavorable" ? " selected" : ""}>Défavorable</option>
+          <option value="reportee"${dec === "reportee" ? " selected" : ""}>Reportée</option>
+        </select>
+        <textarea id="dec-note-${btnId}" placeholder="Note de décision (visible par le demandeur)" rows="2">${esc(m.decision_note || "")}</textarea>
+        <button class="sbtn sbtn-progress" onclick="setDecision('${storageKey}','${btnId}')">Enregistrer la décision</button>
+      </div>
+      <div class="appointment-form">
+        <div class="appointment-row">
+          <input type="date" id="apt-date-${btnId}">
+          <input type="time" id="apt-time-${btnId}">
+          <select id="apt-type-${btnId}">
+            <option value="presentiel">Présentiel</option>
+            <option value="telephone">Téléphonique</option>
+          </select>
+        </div>
+        <input type="text" id="apt-place-${btnId}" placeholder="Lieu (ex : Cabinet du Député, Ewo)" value="${esc(ap.place || "")}">
+        <textarea id="apt-note-${btnId}" placeholder="Note complémentaire" rows="2">${esc(ap.note || "")}</textarea>
+        <button class="sbtn sbtn-done" onclick="setAppointment('${storageKey}','${btnId}')">Programmer le rendez-vous</button>
+      </div>
+    </div>`;
+}
+
+function _findEntryIdx(all, idOrIdx) {
+  const decoded = decodeURIComponent(String(idOrIdx));
+  let idx = decoded.includes("-") ? all.findIndex(x => x._id === decoded) : -1;
+  if (idx === -1) { const n = parseInt(idOrIdx, 10); if (!isNaN(n) && all[n]) idx = n; }
+  return idx;
+}
+
+function setDecision(storageKey, idOrIdx) {
+  const sel  = document.getElementById("dec-sel-" + idOrIdx);
+  const note = document.getElementById("dec-note-" + idOrIdx);
+  const decision = sel ? sel.value : "";
+  if (!decision) { showToast("Choisissez une décision.", true); return; }
+
+  const all = getAll(storageKey);
+  const idx = _findEntryIdx(all, idOrIdx);
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+
+  const decisionNote = note ? note.value.trim() : "";
+  all[idx].decision = decision;
+  all[idx].decision_note = decisionNote;
+  all[idx]._decision_at = new Date().toLocaleString("fr-FR");
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, decision, decision_note: decisionNote })
+    }).catch(() => {});
+  }
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Décision enregistrée — visible par le demandeur");
+}
+
+function setAppointment(storageKey, idOrIdx) {
+  const dateEl  = document.getElementById("apt-date-" + idOrIdx);
+  const timeEl  = document.getElementById("apt-time-" + idOrIdx);
+  const typeEl  = document.getElementById("apt-type-" + idOrIdx);
+  const placeEl = document.getElementById("apt-place-" + idOrIdx);
+  const noteEl  = document.getElementById("apt-note-" + idOrIdx);
+  const dateVal = dateEl ? dateEl.value : "";
+  if (!dateVal) { showToast("Choisissez une date de rendez-vous.", true); return; }
+
+  const all = getAll(storageKey);
+  const idx = _findEntryIdx(all, idOrIdx);
+  if (idx === -1) { showToast("Dossier introuvable.", true); return; }
+
+  const [y, mo, d] = dateVal.split("-");
+  const timeVal = timeEl && timeEl.value ? timeEl.value : "";
+  const display = `${d}/${mo}/${y}${timeVal ? ` à ${timeVal.replace(":", "h")}` : ""}`;
+  const appointment = {
+    date: display,
+    type: typeEl ? typeEl.value : "presentiel",
+    place: placeEl ? placeEl.value.trim() : "",
+    note: noteEl ? noteEl.value.trim() : "",
+  };
+  all[idx].appointment = appointment;
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, appointment })
+    }).catch(() => {});
+  }
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Rendez-vous programmé — visible par le demandeur");
+}
+
+function clearAppointment(storageKey, idOrIdx) {
+  const all = getAll(storageKey);
+  const idx = _findEntryIdx(all, idOrIdx);
+  if (idx === -1) return;
+  all[idx].appointment = {};
+  saveAll(storageKey, all);
+  const cid = all[idx]._id;
+  if (cid) {
+    apiFetch("/api/contacts/update", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({ id: cid, appointment: {} })
+    }).catch(() => {});
+  }
+  if (storageKey === "bininga_audiences") { renderAudiences(); renderReclamations(); }
+  else renderContacts();
+  showToast("Rendez-vous annulé");
 }
 
 // ══════════════════════════════════════════════════════════════════════════

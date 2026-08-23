@@ -3716,12 +3716,36 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                     return
                 all_c   = load_contacts()
                 updated = False
+                now_str = datetime.now().strftime("%d/%m/%Y à %Hh%M")
                 for c in all_c:
                     if c.get("_id") == cid:
-                        if "status"     in data: c["_status"]     = data["status"]
-                        if "notes"      in data: c["_notes"]      = data["notes"]
-                        if "pinged"     in data: c["_pinged"]     = data["pinged"]
+                        if "status" in data:
+                            c["_status"] = data["status"]
+                            # Première ouverture du dossier par l'équipe — horodatage
+                            # utilisé par le suivi public (étape "Ouverte par l'équipe").
+                            if data["status"] in ("lu", "en_cours", "traite") and not c.get("_opened_at"):
+                                c["_opened_at"] = now_str
+                        if "notes"       in data: c["_notes"]       = data["notes"]
+                        if "pinged"      in data: c["_pinged"]      = data["pinged"]
                         if "pinged_date" in data: c["_pinged_date"] = data["pinged_date"]
+                        if "decision" in data:
+                            decision = str(data["decision"] or "").strip()
+                            if decision in ("favorable", "defavorable", "reportee"):
+                                c["decision"] = decision
+                                c["decision_note"] = str(data.get("decision_note", "")).strip()[:500]
+                                c["_decision_at"] = now_str
+                        if "appointment" in data and isinstance(data["appointment"], dict):
+                            ap_date = str(data["appointment"].get("date", "")).strip()
+                            ap_type = data["appointment"].get("type") if data["appointment"].get("type") in ("presentiel", "telephone") else "presentiel"
+                            if ap_date:
+                                c["appointment"] = {
+                                    "date": ap_date,
+                                    "type": ap_type,
+                                    "place": str(data["appointment"].get("place", "")).strip()[:200],
+                                    "note": str(data["appointment"].get("note", "")).strip()[:300],
+                                }
+                            else:
+                                c["appointment"] = {}
                         updated = True
                         break
                 if updated:

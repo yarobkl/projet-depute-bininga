@@ -181,6 +181,24 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
 .note-form button{align-self:flex-end;padding:8px 14px;background:rgba(200,16,46,.12);color:var(--r);border:1px solid rgba(200,16,46,.2);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
 .note-form button:hover{background:rgba(200,16,46,.25)}
 
+/* ── DÉCISION & RENDEZ-VOUS ── */
+.decision-section{margin-top:12px;border-top:1px solid rgba(255,255,255,.06);padding-top:12px}
+.decision-current,.appointment-current{font-size:12px;color:rgba(255,255,255,.55);background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:7px;padding:8px 12px;margin-bottom:8px}
+.decision-current strong,.appointment-current strong{color:var(--w)}
+.decision-current.decision-favorable{border-color:rgba(46,204,113,.3);color:#2ecc71}
+.decision-current.decision-defavorable{border-color:rgba(231,76,60,.3);color:#e74c3c}
+.decision-current.decision-reportee{border-color:rgba(243,156,18,.3);color:#f39c12}
+.btn-link-mini{background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;text-decoration:underline;cursor:pointer;font-family:inherit;padding:0;margin-left:8px}
+.btn-link-mini:hover{color:var(--r)}
+.decision-form,.appointment-form{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:flex-start}
+.decision-form select,.appointment-form select,.appointment-form input[type=date],.appointment-form input[type=time],.appointment-form input[type=text]{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:12px;font-family:inherit;padding:8px 10px;outline:none;transition:var(--t)}
+.decision-form select:focus,.appointment-form select:focus,.appointment-form input:focus{border-color:var(--r)}
+.decision-form textarea,.appointment-form textarea{flex:1;min-width:180px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:7px;color:var(--w);font-size:12px;font-family:inherit;padding:8px 10px;resize:none;min-height:40px;outline:none;transition:var(--t)}
+.decision-form textarea:focus,.appointment-form textarea:focus{border-color:var(--r)}
+.decision-form button,.appointment-form button{padding:8px 14px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:var(--t);white-space:nowrap}
+.appointment-row{display:flex;gap:8px;flex-wrap:wrap;width:100%}
+.appointment-form{width:100%}
+
 /* ── DANGER BUTTON ── */
 .btn-danger{background:rgba(231,76,60,.1);color:#e74c3c;border:1px solid rgba(231,76,60,.2);padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:var(--t);font-family:inherit}
 .btn-danger:hover{background:rgba(231,76,60,.25)}
