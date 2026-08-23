@@ -974,7 +974,7 @@ async function forceSyncData() {
   } catch (e) {
     showToast("Erreur : " + e.message, true);
   } finally {
-    if (btn) { btn.textContent = "Restaurer data.json"; btn.disabled = false; }
+    if (btn) { btn.innerHTML = 'Restaurer<span class="btn-ext"> data.json</span>'; btn.disabled = false; }
   }
 }
 

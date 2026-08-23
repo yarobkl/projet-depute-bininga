@@ -894,10 +894,12 @@ img {
     width: 100%;
     max-height: 42svh;
     overflow-y: auto;
-    padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
-    background: #080d18;
-    border-top: 1px solid rgba(226,232,240,.12);
-    box-shadow: 0 -18px 45px rgba(0,0,0,.34);
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(7, 11, 20, .97);
+    border-top: 1px solid rgba(226,232,240,.09);
+    box-shadow: 0 -12px 32px rgba(0,0,0,.35);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     z-index: 80;
   }
 
@@ -913,7 +915,23 @@ img {
   #app.visible .admin-actionbar .sb-btn {
     width: 100%;
     min-width: 0;
-    min-height: 44px;
+    min-height: 42px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  /* Enregistrer = action héros, pleine largeur au-dessus des secondaires */
+  .admin-actionbar .sb-btn-primary,
+  #app.visible .admin-actionbar .sb-btn-primary {
+    grid-column: 1 / -1;
+    min-height: 46px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 11px;
   }
 
   body.sidebar-open .admin-actionbar {
@@ -941,12 +959,14 @@ img {
 @media (max-width: 480px) {
   .content,
   #app.visible .content {
-    padding: 14px 12px calc(176px + env(safe-area-inset-bottom)) !important;
+    padding: 14px 12px calc(150px + env(safe-area-inset-bottom)) !important;
   }
 
-  .admin-actionbar-actions,
-  #app.visible .admin-actionbar-actions {
-    grid-template-columns: 1fr;
+  /* Secondaires côte à côte avec libellés courts (.btn-ext masqué) —
+     surtout ne pas repasser en une colonne : trois pavés empilés. */
+  .admin-actionbar .btn-ext,
+  #app.visible .admin-actionbar .btn-ext {
+    display: none;
   }
 }
 
