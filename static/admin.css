@@ -79,8 +79,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(-
   cursor:pointer;transition:var(--t);white-space:nowrap;
 }
 .topbar-logout:hover{background:rgba(248,113,113,.18);border-color:rgba(248,113,113,.38);transform:translateY(-1px);color:#fff}
-.theme-toggle-btn{min-height:36px;padding:0 14px;border-radius:7px;border:1px solid rgba(var(--ink),.12);background:rgba(var(--ink),.05);color:var(--w);font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;transition:var(--t)}
-.theme-toggle-btn:hover{background:rgba(var(--ink),.1);transform:translateY(-1px)}
+.theme-toggle-btn{min-height:36px;padding:0 14px;border-radius:7px;border:1px solid rgba(var(--ink),.22);background:rgba(var(--ink),.07);color:var(--w);font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap;cursor:pointer;transition:var(--t)}
+.theme-toggle-btn:hover{background:rgba(var(--ink),.14);border-color:rgba(var(--ink),.32);transform:translateY(-1px)}
 #autosave-indicator{font-size:11px;padding:3px 10px;border-radius:20px;transition:all .3s;white-space:nowrap}
 #autosave-indicator.autosave-pending{color:rgba(255,200,0,.7);background:rgba(255,200,0,.08)}
 #autosave-indicator.autosave-saving{color:rgba(100,160,255,.8);background:rgba(100,160,255,.08)}
@@ -959,6 +959,8 @@ body.admin-theme-light{
   background:#f4f5f7;color:#14161a;
 }
 body.admin-theme-light #login{background:var(--n)}
+body.admin-theme-light .theme-toggle-btn{background:#eef0f3;border-color:rgba(15,23,42,.16)}
+body.admin-theme-light .theme-toggle-btn:hover{background:#e4e7eb;border-color:rgba(15,23,42,.26)}
 body.admin-theme-light .sidebar{background:#ffffff;border-right-color:rgba(15,23,42,.08);box-shadow:2px 0 24px rgba(15,23,42,.05)}
 body.admin-theme-light .sb-header{background:linear-gradient(180deg,rgba(15,23,42,.025),transparent)}
 body.admin-theme-light .sb-item:hover{background:rgba(15,23,42,.045)}
