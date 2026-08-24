@@ -1816,7 +1816,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
         # ── Bouclier multi-couches (IA/bots/lockdown/coffre-fort/canaris) ──────
         public_get = (
             method == "GET" and (
-                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml", "/api/_mon_diag")
+                path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml")
                 or path.startswith(("/static/", "/images/"))
             )
         )
@@ -1890,29 +1890,6 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
 
         if path in ("/api/load", "/data.json"):
             self._json(load_data())
-            return
-
-        # ── /api/_mon_diag — diagnostic temporaire monitoring (aucune donnée sensible) ──
-        if path == "/api/_mon_diag":
-            info = {}
-            try:
-                backend, _cfg = _mon._db_config()
-                info["backend"] = backend
-                conn, be = _mon._sql_conn()
-                info["connected"] = conn is not None
-                if conn:
-                    with conn.cursor() as cur:
-                        for t in ("mon_requests", "mon_errors", "mon_system_status", "mon_alerts"):
-                            try:
-                                cur.execute(f"SELECT COUNT(*) FROM {t}")
-                                info[f"{t}_count"] = cur.fetchone()[0]
-                            except Exception as te:
-                                info[f"{t}_error"] = str(te)
-                summary = _mon.get_summary(len(ACTIVE_SESSIONS), len(BLOCKED_IPS))
-                info["summary"] = summary
-            except Exception as e:
-                info["error"] = str(e)
-            self._json(info)
             return
 
         # ── /api/debug-ai (diagnostic clé IA — admin uniquement) ──
