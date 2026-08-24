@@ -14,6 +14,90 @@
 }
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--n);color:var(--w);min-height:100vh;font-size:14px}
 
+/* ══════════════════════════════════════════════════════════
+   MODE JOUR — fond blanc pour l'espace admin
+   La quasi-totalité du fichier lit déjà --n/--n2/--n3/--w/--surface*/--line
+   et rgba(var(--ink),alpha) pour le texte/bordures : les redéfinir ici
+   suffit à repeindre l'admin sans toucher chaque règle individuellement.
+   Les rares couleurs pastel (texte clair sur fond teinté, pensées pour un
+   fond sombre) sont assombries explicitement plus bas pour rester lisibles.
+   ══════════════════════════════════════════════════════════ */
+body.admin-theme-light{
+  --n:#f4f5f7;--n2:#ffffff;--n3:#eef0f3;
+  --w:#14161a;
+  --ink:15,23,42;
+  --surface:#ffffff;--surface-2:#f3f4f6;--surface-3:#e9ebef;
+  --line:rgba(15,23,42,.10);
+  --muted:#64748b;
+  color-scheme:light;
+  background:#f4f5f7;color:#14161a;
+}
+body.admin-theme-light #login{background:var(--n)}
+body.admin-theme-light .theme-toggle-btn{background:#eef0f3;border-color:rgba(15,23,42,.16)}
+body.admin-theme-light .theme-toggle-btn:hover{background:#e4e7eb;border-color:rgba(15,23,42,.26)}
+body.admin-theme-light .sidebar{background:#ffffff;border-right-color:rgba(15,23,42,.08);box-shadow:2px 0 24px rgba(15,23,42,.05)}
+body.admin-theme-light .sb-header{background:linear-gradient(180deg,rgba(15,23,42,.025),transparent)}
+body.admin-theme-light .sb-item:hover{background:rgba(15,23,42,.045)}
+body.admin-theme-light .sb-item.active{background:rgba(200,16,46,.08)}
+body.admin-theme-light .topbar{background:rgba(255,255,255,.92)}
+body.admin-theme-light .login-box{background:#ffffff;box-shadow:0 30px 70px rgba(15,23,42,.12)}
+body.admin-theme-light .main{background:var(--n)}
+body.admin-theme-light #toast{background:#ecfdf5;border-color:rgba(22,163,74,.28);color:#166534}
+body.admin-theme-light #toast::before{background:rgba(22,163,74,.16);border-color:rgba(22,163,74,.4)}
+body.admin-theme-light #toast.err{background:#fef2f2;border-color:rgba(220,38,38,.24);color:#991b1b}
+body.admin-theme-light #toast.err::before{background:rgba(220,38,38,.14);border-color:rgba(220,38,38,.4)}
+body.admin-theme-light .admin-actionbar{background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,.98));border-top-color:rgba(15,23,42,.08);box-shadow:0 -18px 45px rgba(15,23,42,.06)}
+body.admin-theme-light .admin-actionbar-status strong{color:#14161a}
+body.admin-theme-light .yaro-stat-card{background:#f8fafc!important;border-color:rgba(15,23,42,.10)!important}
+body.admin-theme-light .admin-table th{background:rgba(15,23,42,.045)}
+body.admin-theme-light .sec-stat{background:var(--n3)}
+body.admin-theme-light .mon-kpi-card,body.admin-theme-light .mon-report-box{background:rgba(15,23,42,.035)}
+body.admin-theme-light .case-card,body.admin-theme-light .case-notes,
+body.admin-theme-light .decision-section .decision-form,
+body.admin-theme-light .decision-section .appointment-form{background:var(--surface)}
+
+/* Boutons/badges pensés « clair sur fond teinté sombre » : trop pâles sur
+   fond blanc, on assombrit juste le texte, le fond teinté reste identique */
+body.admin-theme-light .sb-btn-logout,body.admin-theme-light .topbar-logout{color:#b91c1c}
+body.admin-theme-light .sb-btn-logout:hover,body.admin-theme-light .topbar-logout:hover,
+body.admin-theme-light .sb-btn-danger:hover{color:#b91c1c}
+body.admin-theme-light .sb-btn-soft:hover{color:#0f172a}
+body.admin-theme-light .sbtn-progress,body.admin-theme-light .sb-btn-primary,body.admin-theme-light .login-btn{color:#166534}
+body.admin-theme-light .sb-btn-primary.is-saving,body.admin-theme-light .sbtn-progress.is-saving{color:#0369a1}
+body.admin-theme-light .sb-btn-primary.is-saved{color:#15803d}
+body.admin-theme-light #autosave-indicator.autosave-ok{color:#15803d}
+body.admin-theme-light #autosave-indicator.autosave-saving{color:#0369a1}
+body.admin-theme-light #autosave-indicator.autosave-pending{color:#b45309}
+body.admin-theme-light #autosave-indicator.autosave-err{color:#b91c1c}
+body.admin-theme-light .badge-wait,body.admin-theme-light .sbtn-wait{color:#b45309}
+body.admin-theme-light .badge-progress,body.admin-theme-light .sbtn-progress,body.admin-theme-light .badge-unread,
+body.admin-theme-light .case-status-progress.is-active{color:#1d4ed8}
+body.admin-theme-light .badge-done,body.admin-theme-light .sbtn-done,body.admin-theme-light .case-status-done.is-active{color:#15803d}
+body.admin-theme-light .case-status-wait.is-active{color:#b45309}
+body.admin-theme-light .badge-recl,body.admin-theme-light .role-badge.admin,body.admin-theme-light .user-avatar.admin,
+body.admin-theme-light .case-util-alert{color:#b91c1c}
+body.admin-theme-light .role-badge.editeur,body.admin-theme-light .crm-tag-aud{color:#1d4ed8}
+body.admin-theme-light .decision-current.decision-favorable{color:#15803d}
+body.admin-theme-light .decision-current.decision-defavorable{color:#b91c1c}
+body.admin-theme-light .decision-current.decision-reportee{color:#b45309}
+body.admin-theme-light .log-action.fail,body.admin-theme-light .badge-pinged,body.admin-theme-light .case-pinged{color:#b91c1c}
+body.admin-theme-light .ip-score.danger,body.admin-theme-light .atk-SQL_INJECTION,body.admin-theme-light .atk-PATH_TRAVERSAL_DEEP,
+body.admin-theme-light .atk-CMD_INJECTION,body.admin-theme-light .atk-FILE_READ_ATTEMPT,
+body.admin-theme-light .atk-AUTO_BAN,body.admin-theme-light .atk-MANUAL_BAN{color:#b91c1c}
+body.admin-theme-light .ip-score.warn,body.admin-theme-light .atk-XSS_ATTEMPT{color:#b45309}
+body.admin-theme-light .ip-score.info,body.admin-theme-light .atk-LOGIN_FAIL,body.admin-theme-light .atk-RATE_ABUSE,
+body.admin-theme-light .crm-tag-ct{color:#1d4ed8}
+body.admin-theme-light .mon-ok{color:#15803d}
+body.admin-theme-light .mon-warning{color:#b45309}
+body.admin-theme-light .mon-critical{color:#b91c1c}
+
+@media(max-width:768px){
+  body.admin-theme-light .main{background:#f4f5f7}
+  body.admin-theme-light .admin-actionbar{background:rgba(255,255,255,.97);border-top-color:rgba(15,23,42,.08)}
+  body.admin-theme-light .sidebar-overlay{background:rgba(15,23,42,.35)}
+}
+
+
 /* ── LOGIN ── */
 #login{position:fixed;inset:0;background:var(--n);display:flex;align-items:center;justify-content:center;z-index:9999}
 #login.hidden{display:none}
@@ -938,87 +1022,4 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .content{padding-left:9px!important;padding-right:9px!important}
   .kpi-grid{grid-template-columns:1fr!important}
   .topbar-title{font-size:13px}
-}
-
-/* ══════════════════════════════════════════════════════════
-   MODE JOUR — fond blanc pour l'espace admin
-   La quasi-totalité du fichier lit déjà --n/--n2/--n3/--w/--surface*/--line
-   et rgba(var(--ink),alpha) pour le texte/bordures : les redéfinir ici
-   suffit à repeindre l'admin sans toucher chaque règle individuellement.
-   Les rares couleurs pastel (texte clair sur fond teinté, pensées pour un
-   fond sombre) sont assombries explicitement plus bas pour rester lisibles.
-   ══════════════════════════════════════════════════════════ */
-body.admin-theme-light{
-  --n:#f4f5f7;--n2:#ffffff;--n3:#eef0f3;
-  --w:#14161a;
-  --ink:15,23,42;
-  --surface:#ffffff;--surface-2:#f3f4f6;--surface-3:#e9ebef;
-  --line:rgba(15,23,42,.10);
-  --muted:#64748b;
-  color-scheme:light;
-  background:#f4f5f7;color:#14161a;
-}
-body.admin-theme-light #login{background:var(--n)}
-body.admin-theme-light .theme-toggle-btn{background:#eef0f3;border-color:rgba(15,23,42,.16)}
-body.admin-theme-light .theme-toggle-btn:hover{background:#e4e7eb;border-color:rgba(15,23,42,.26)}
-body.admin-theme-light .sidebar{background:#ffffff;border-right-color:rgba(15,23,42,.08);box-shadow:2px 0 24px rgba(15,23,42,.05)}
-body.admin-theme-light .sb-header{background:linear-gradient(180deg,rgba(15,23,42,.025),transparent)}
-body.admin-theme-light .sb-item:hover{background:rgba(15,23,42,.045)}
-body.admin-theme-light .sb-item.active{background:rgba(200,16,46,.08)}
-body.admin-theme-light .topbar{background:rgba(255,255,255,.92)}
-body.admin-theme-light .login-box{background:#ffffff;box-shadow:0 30px 70px rgba(15,23,42,.12)}
-body.admin-theme-light .main{background:var(--n)}
-body.admin-theme-light #toast{background:#ecfdf5;border-color:rgba(22,163,74,.28);color:#166534}
-body.admin-theme-light #toast::before{background:rgba(22,163,74,.16);border-color:rgba(22,163,74,.4)}
-body.admin-theme-light #toast.err{background:#fef2f2;border-color:rgba(220,38,38,.24);color:#991b1b}
-body.admin-theme-light #toast.err::before{background:rgba(220,38,38,.14);border-color:rgba(220,38,38,.4)}
-body.admin-theme-light .admin-actionbar{background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,.98));border-top-color:rgba(15,23,42,.08);box-shadow:0 -18px 45px rgba(15,23,42,.06)}
-body.admin-theme-light .admin-actionbar-status strong{color:#14161a}
-body.admin-theme-light .yaro-stat-card{background:#f8fafc!important;border-color:rgba(15,23,42,.10)!important}
-body.admin-theme-light .admin-table th{background:rgba(15,23,42,.045)}
-body.admin-theme-light .sec-stat{background:var(--n3)}
-body.admin-theme-light .mon-kpi-card,body.admin-theme-light .mon-report-box{background:rgba(15,23,42,.035)}
-body.admin-theme-light .case-card,body.admin-theme-light .case-notes,
-body.admin-theme-light .decision-section .decision-form,
-body.admin-theme-light .decision-section .appointment-form{background:var(--surface)}
-
-/* Boutons/badges pensés « clair sur fond teinté sombre » : trop pâles sur
-   fond blanc, on assombrit juste le texte, le fond teinté reste identique */
-body.admin-theme-light .sb-btn-logout,body.admin-theme-light .topbar-logout{color:#b91c1c}
-body.admin-theme-light .sb-btn-logout:hover,body.admin-theme-light .topbar-logout:hover,
-body.admin-theme-light .sb-btn-danger:hover{color:#b91c1c}
-body.admin-theme-light .sb-btn-soft:hover{color:#0f172a}
-body.admin-theme-light .sbtn-progress,body.admin-theme-light .sb-btn-primary,body.admin-theme-light .login-btn{color:#166534}
-body.admin-theme-light .sb-btn-primary.is-saving,body.admin-theme-light .sbtn-progress.is-saving{color:#0369a1}
-body.admin-theme-light .sb-btn-primary.is-saved{color:#15803d}
-body.admin-theme-light #autosave-indicator.autosave-ok{color:#15803d}
-body.admin-theme-light #autosave-indicator.autosave-saving{color:#0369a1}
-body.admin-theme-light #autosave-indicator.autosave-pending{color:#b45309}
-body.admin-theme-light #autosave-indicator.autosave-err{color:#b91c1c}
-body.admin-theme-light .badge-wait,body.admin-theme-light .sbtn-wait{color:#b45309}
-body.admin-theme-light .badge-progress,body.admin-theme-light .sbtn-progress,body.admin-theme-light .badge-unread,
-body.admin-theme-light .case-status-progress.is-active{color:#1d4ed8}
-body.admin-theme-light .badge-done,body.admin-theme-light .sbtn-done,body.admin-theme-light .case-status-done.is-active{color:#15803d}
-body.admin-theme-light .case-status-wait.is-active{color:#b45309}
-body.admin-theme-light .badge-recl,body.admin-theme-light .role-badge.admin,body.admin-theme-light .user-avatar.admin,
-body.admin-theme-light .case-util-alert{color:#b91c1c}
-body.admin-theme-light .role-badge.editeur,body.admin-theme-light .crm-tag-aud{color:#1d4ed8}
-body.admin-theme-light .decision-current.decision-favorable{color:#15803d}
-body.admin-theme-light .decision-current.decision-defavorable{color:#b91c1c}
-body.admin-theme-light .decision-current.decision-reportee{color:#b45309}
-body.admin-theme-light .log-action.fail,body.admin-theme-light .badge-pinged,body.admin-theme-light .case-pinged{color:#b91c1c}
-body.admin-theme-light .ip-score.danger,body.admin-theme-light .atk-SQL_INJECTION,body.admin-theme-light .atk-PATH_TRAVERSAL_DEEP,
-body.admin-theme-light .atk-CMD_INJECTION,body.admin-theme-light .atk-FILE_READ_ATTEMPT,
-body.admin-theme-light .atk-AUTO_BAN,body.admin-theme-light .atk-MANUAL_BAN{color:#b91c1c}
-body.admin-theme-light .ip-score.warn,body.admin-theme-light .atk-XSS_ATTEMPT{color:#b45309}
-body.admin-theme-light .ip-score.info,body.admin-theme-light .atk-LOGIN_FAIL,body.admin-theme-light .atk-RATE_ABUSE,
-body.admin-theme-light .crm-tag-ct{color:#1d4ed8}
-body.admin-theme-light .mon-ok{color:#15803d}
-body.admin-theme-light .mon-warning{color:#b45309}
-body.admin-theme-light .mon-critical{color:#b91c1c}
-
-@media(max-width:768px){
-  body.admin-theme-light .main{background:#f4f5f7}
-  body.admin-theme-light .admin-actionbar{background:rgba(255,255,255,.97);border-top-color:rgba(15,23,42,.08)}
-  body.admin-theme-light .sidebar-overlay{background:rgba(15,23,42,.35)}
 }
