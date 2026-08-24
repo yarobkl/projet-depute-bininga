@@ -3556,12 +3556,26 @@ async function loadMonitoring() {
   _monRefreshTimer = setInterval(loadMonitoring, 30000);
 }
 
+let _monSummaryFailNotified = false;
 async function loadMonSummary() {
   try {
     const r = await fetch("/api/monitoring/summary", { headers: { "X-Admin-Token": SESSION_TOKEN } });
-    if (!r.ok) return;
+    if (!r.ok) {
+      if (!_monSummaryFailNotified) {
+        showToast(`Monitoring : erreur serveur (HTTP ${r.status})`, true);
+        _monSummaryFailNotified = true;
+      }
+      return;
+    }
     const d = await r.json();
-    if (!d.ok) return;
+    if (!d.ok) {
+      if (!_monSummaryFailNotified) {
+        showToast("Monitoring : " + (d.message || "réponse invalide"), true);
+        _monSummaryFailNotified = true;
+      }
+      return;
+    }
+    _monSummaryFailNotified = false;
 
     // Statut global
     const bar  = document.getElementById("mon-status-bar");
@@ -3594,7 +3608,12 @@ async function loadMonSummary() {
     _setBar("mem",  sys.memory_percent);
     _setBar("disk", sys.disk_percent);
 
-  } catch {}
+  } catch (e) {
+    if (!_monSummaryFailNotified) {
+      showToast("Monitoring : requête réseau échouée", true);
+      _monSummaryFailNotified = true;
+    }
+  }
 }
 
 function _setMon(id, val) {
