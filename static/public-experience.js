@@ -451,9 +451,7 @@
         region.classList.remove("is-filtering-out");
         region.classList.add("is-filtering-in");
       });
-      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-        clearNewsFilteringState();
-      }));
+      window.setTimeout(clearNewsFilteringState, 60);
     }, 150);
   }
 
