@@ -45,6 +45,28 @@ function safeCta(href) {
   return null; // bloque javascript:, data:, etc.
 }
 
+const FOOTER_DEVELOPER_NAME = "YaroConsulting";
+const FOOTER_DEVELOPER_URL = "https://yaroconsulting.fr/";
+
+function normalizeFooterCopyright(value) {
+  return cleanLabel(value)
+    .replace(/\s*·\s*(?:Développé par|Developed by|Desarrollado por|开发者[:：]?|Разработано)\s+.*$/iu, "")
+    .trim();
+}
+
+function renderFooterAttribution(footer) {
+  const ft = footer || {};
+  const copyright = document.getElementById("dyn-ft-copyright-text");
+  if (copyright && ft.copyright) {
+    copyright.textContent = normalizeFooterCopyright(ft.copyright);
+  }
+
+  const link = document.getElementById("dyn-ft-developer-link");
+  if (!link) return;
+  link.textContent = cleanLabel(ft.developerName) || FOOTER_DEVELOPER_NAME;
+  link.href = safeCta(ft.developerUrl) || FOOTER_DEVELOPER_URL;
+}
+
 function getPreferredBiningaTheme() {
   try {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
@@ -432,7 +454,7 @@ function loadContent() {
       if (ft.logoName)   { const el=document.getElementById("dyn-ft-logo-name"); if(el) el.textContent=ft.logoName; }
       if (ft.logoSub)    { const el=document.getElementById("dyn-ft-logo-sub");  if(el) el.textContent=ft.logoSub; }
       if (ft.brandText)  { const el=document.getElementById("dyn-ft-brand");     if(el) el.textContent=ft.brandText; }
-      if (ft.copyright)  { const el=document.getElementById("dyn-ft-copyright"); if(el) el.textContent=ft.copyright; }
+      renderFooterAttribution(ft);
       // ── Contact — titre formulaire message ───────────────────────────
       if (ct.formTitle2) { const el=document.getElementById("dyn-ct-form-title2"); if(el) el.textContent=ct.formTitle2; }
 
@@ -803,7 +825,7 @@ function applyDynLang(lang) {
   const ft = d.footer || {};
   if (ft.logoSub)   setTxt("dyn-ft-logo-sub", ft.logoSub);
   if (ft.brand)     setTxt("dyn-ft-brand", ft.brand);
-  if (ft.copyright) setTxt("dyn-ft-copyright", ft.copyright);
+  renderFooterAttribution(ft);
 }
 
 // cursor

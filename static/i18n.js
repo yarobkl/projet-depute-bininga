@@ -138,6 +138,7 @@ const I18N = {
     "ft.mentions":      "Mentions légales",
     "ft.privacy":       "Confidentialité",
     "ft.copyright":     "© 2026 Campagne Aimé BININGA · Parti Congolais du Travail · Tous droits réservés",
+    "ft.developed":     "Développé par",
 
     // ── Chat ────────────────────────────────────────────────────
     "chat.placeholder": "Posez votre question à DA…",
@@ -383,6 +384,7 @@ const I18N = {
     "ft.mentions":      "Legal notices",
     "ft.privacy":       "Privacy",
     "ft.copyright":     "© 2026 Aimé BININGA Campaign · Parti Congolais du Travail · All rights reserved",
+    "ft.developed":     "Developed by",
 
     "chat.placeholder": "Ask DA your question…",
     "chat.send":        "Send",
@@ -621,6 +623,7 @@ const I18N = {
     "ft.mentions":      "Aviso legal",
     "ft.privacy":       "Privacidad",
     "ft.copyright":     "© 2026 Campaña Aimé BININGA · Parti Congolais du Travail · Todos los derechos reservados",
+    "ft.developed":     "Desarrollado por",
 
     "chat.placeholder": "Haga su pregunta a DA…",
     "chat.send":        "Enviar",
@@ -859,6 +862,7 @@ const I18N = {
     "ft.mentions":      "法律声明",
     "ft.privacy":       "隐私政策",
     "ft.copyright":     "© 2026 艾梅·BININGA竞选 · 刚果劳动党 · 保留所有权利",
+    "ft.developed":     "开发者",
 
     "chat.placeholder": "向DA提问…",
     "chat.send":        "发送",
@@ -1097,6 +1101,7 @@ const I18N = {
     "ft.mentions":      "Правовые уведомления",
     "ft.privacy":       "Конфиденциальность",
     "ft.copyright":     "© 2026 Кампания Эме BININGA · Parti Congolais du Travail · Все права защищены",
+    "ft.developed":     "Разработано",
 
     "chat.placeholder": "Задайте вопрос DA…",
     "chat.send":        "Отправить",

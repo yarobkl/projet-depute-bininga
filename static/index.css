@@ -619,7 +619,12 @@ footer{background:#030303;border-top:1px solid rgba(200,16,46,.1);padding:70px 6
 .ft-col ul a:hover{color:var(--w);padding-left:4px}
 .ft-bottom{max-width:1300px;margin:0 auto;padding-top:28px;border-top:1px solid rgba(255,255,255,.05);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px}
 .ft-bottom p{font-size:12px;color:rgba(255,255,255,.2)}
-.ft-bottom span{color:var(--r)}
+.ft-bottom .ft-copyright-text,
+.ft-bottom .ft-copyright-separator,
+.ft-bottom .ft-developer-label{color:inherit}
+.ft-developer-link{color:inherit;font-weight:600;text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px;transition:var(--t)}
+.ft-developer-link:hover,.ft-developer-link:focus-visible{color:var(--w);text-decoration-color:currentColor}
+body.theme-light .ft-developer-link{color:inherit!important}
 .ft-legal{display:flex;gap:18px}
 .ft-legal a{font-size:12px;color:rgba(255,255,255,.2);text-decoration:none;transition:var(--t)}
 .ft-legal a:hover{color:rgba(255,255,255,.55)}
