@@ -447,11 +447,14 @@
         return;
       }
       renderNewsNow(data);
+      clearNewsFilteringState();
       regions.forEach(region => {
-        region.classList.remove("is-filtering-out");
-        region.classList.add("is-filtering-in");
+        if (typeof region.animate !== "function") return;
+        region.animate(
+          [{ opacity: 0, transform: "translate3d(0,10px,0)" }, { opacity: 1, transform: "translate3d(0,0,0)" }],
+          { duration: 340, easing: "cubic-bezier(.22,1,.36,1)" }
+        );
       });
-      window.setTimeout(clearNewsFilteringState, 60);
     }, 150);
   }
 
