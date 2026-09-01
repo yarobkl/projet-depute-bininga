@@ -289,7 +289,7 @@ function loadContent() {
       if (prog && progWrap) {
         const axes = prog.axes || [];
         const delays2 = ["d1","d2","d3","d1","d2","d3"];
-        const heroTitle = (prog.heroTitle || "").replace(/\n/g, "<br>");
+        const heroTitle = (prog.heroTitle || "").replace(/\n/g, "<br> ");
         progWrap.innerHTML = `
           <div class="prog-hero rev">
             <div>
@@ -323,7 +323,7 @@ function loadContent() {
         const slidesHtml = slides.map(s => `
           <div class="gal-slide">
             ${s.image
-              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}" loading="lazy">`
+              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}" loading="lazy" decoding="async">`
               : `<div class="gal-slide-placeholder"><div class="placeholder-mark">Image</div></div>`}
             <div class="gal-cap">
               <h3>${escHtml(s.title||'')}</h3>
@@ -332,13 +332,13 @@ function loadContent() {
           </div>`).join("");
 
         const dotsHtml = slides.map((_, i) =>
-          `<button class="gal-dot${i===0?' a':''}" onclick="gGo(${i})"></button>`
+          `<button type="button" class="gal-dot${i===0?' a':''}" onclick="gGo(${i})" aria-label="Afficher l'image ${i+1}"></button>`
         ).join("");
 
         // data-src et data-alt pour la lightbox, onclick géré en JS après injection
         const gridHtml = grid.map((g, i) =>
           `<div class="gi" data-gi="${i}">${g.image
-            ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}" loading="lazy">`
+            ? `<img src="${escHtml(g.image)}" alt="${escHtml(g.alt||'')}" loading="lazy" decoding="async">`
             : `<div class="gi-ph">Image</div>`
           }<div class="gi-ov">Voir</div></div>`
         ).join("");
@@ -346,8 +346,8 @@ function loadContent() {
         galWrap.innerHTML = `
           <div class="gal-slider">
             <div class="gal-track" id="galTrack">${slidesHtml}</div>
-            <button class="gal-btn p" onclick="gSlide(-1)">‹</button>
-            <button class="gal-btn n" onclick="gSlide(1)">›</button>
+            <button type="button" class="gal-btn p" onclick="gSlide(-1)" aria-label="Image précédente">‹</button>
+            <button type="button" class="gal-btn n" onclick="gSlide(1)" aria-label="Image suivante">›</button>
             <div class="gal-dots" id="galDots">${dotsHtml}</div>
           </div>
           <div class="gal-grid">${gridHtml}</div>`;
@@ -427,7 +427,7 @@ function loadContent() {
 
       // ── CTA ──────────────────────────────────────────────────────────
       const cta = d.cta || {};
-      if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
+      if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br> "); }
       if (cta.subtitle) { const el=document.getElementById("dyn-cta-sub");   if(el) el.textContent=cta.subtitle; }
       if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el){ el.textContent=cleanLabel(cta.btn1.text||cta.btn1); const h1=safeCta(cta.btn1.href); if(h1) el.href=h1; } }
       if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el){ el.textContent=cleanLabel(cta.btn2.text||cta.btn2); const h2=safeCta(cta.btn2.href); if(h2) el.href=h2; } }
@@ -442,7 +442,7 @@ function loadContent() {
       }
       if (ct.sidebarTitle)  {
         const el=document.getElementById("dyn-ct-sidebar-title");
-        if(el) el.innerHTML=escHtml(ct.sidebarTitle).replace(/\n/g,"<br>");
+        if(el) el.innerHTML=escHtml(ct.sidebarTitle).replace(/\n/g,"<br> ");
       }
       if (ct.sidebarDesc)   { const el=document.getElementById("dyn-ct-sidebar-desc"); if(el) el.textContent=ct.sidebarDesc; }
       if (ct.address)       { const el=document.getElementById("dyn-ct-address");      if(el) el.textContent=ct.address; }
@@ -467,12 +467,12 @@ function loadContent() {
       if (slidesWrap && Array.isArray(ac.slides) && ac.slides.length) {
         slidesWrap.innerHTML = ac.slides.map(s => `
           <div class="actu-hero-slide">
-            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
+            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}" loading="lazy" decoding="async">
             <div class="actu-hero-overlay"></div>
             <div class="actu-hero-content">
               <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(cleanLabel(s.chip||''))}</span>
               <div class="actu-hero-date">${escHtml(cleanLabel(s.date||''))}</div>
-              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
+              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br> ')}</h2>
               <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
             </div>
           </div>`).join('');
@@ -486,11 +486,11 @@ function loadContent() {
       if (vedettesWrap && Array.isArray(ac.vedettes) && ac.vedettes.length) {
         vedettesWrap.innerHTML = ac.vedettes.map((v,i) => {
           const imgSide = v.image
-            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
+            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}" loading="lazy" decoding="async">
                <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`
             : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
                  <div class="placeholder-mark">Actu</div>
-                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
+                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br> ')}</div>
                  <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
                </div>
                <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`;
@@ -516,7 +516,7 @@ function loadContent() {
       if (cardsGrid && Array.isArray(ac.cards) && ac.cards.length) {
         cardsGrid.innerHTML = ac.cards.map(c => `
           <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
-            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
+            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy" decoding="async"></div>`:''}
             <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
             <div class="actu-card-ic">${escHtml(cleanLabel(c.icon)||"AB")}</div>
             <div class="actu-card-dt">
@@ -533,6 +533,7 @@ function loadContent() {
       if (activeLang !== "fr" && typeof applyDynLang === "function") {
         applyDynLang(activeLang);
       }
+      document.dispatchEvent(new CustomEvent("bininga:dataloaded", { detail: { lang: activeLang } }));
     })
     .catch(() => {}); // Fallback : le contenu statique reste affiché
 }
@@ -634,7 +635,7 @@ function applyDynLang(lang) {
     if (progWrap) {
       const axes = prog.axes || [];
       const delays2 = ["d1","d2","d3","d1","d2","d3"];
-      const heroTitle = (prog.heroTitle || "").replace(/\n/g, "<br>");
+      const heroTitle = (prog.heroTitle || "").replace(/\n/g, "<br> ");
       progWrap.innerHTML = `
         <div class="prog-hero rev">
           <div>
@@ -683,7 +684,7 @@ function applyDynLang(lang) {
   if (eng.titleAccent) setTxt("dyn-eng-title-accent", eng.titleAccent);
   if (eng.title) {
     const el = document.getElementById("dyn-eng-title");
-    if (el && el.childNodes[0]) el.childNodes[0].innerHTML = eng.title.replace(/\n/g,"<br>") + " ";
+    if (el && el.childNodes[0]) el.childNodes[0].innerHTML = eng.title.replace(/\n/g,"<br> ") + " ";
   }
   if (eng.desc) setTxt("dyn-eng-desc", eng.desc);
   if (Array.isArray(eng.cards) && eng.cards.length) {
@@ -706,12 +707,12 @@ function applyDynLang(lang) {
         const merged = frAc.slides.map((s,i) => { const t=i18nAc.slides[i]||{}; return Object.assign({},s,t); });
         slidesWrap2.innerHTML = merged.map(s => `
           <div class="actu-hero-slide">
-            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}">
+            <img src="${escHtml(s.image||'')}" alt="${escHtml(s.alt||'')}" loading="lazy" decoding="async">
             <div class="actu-hero-overlay"></div>
             <div class="actu-hero-content">
               <span class="actu-hero-chip"${s.chipColor?` style="background:${escHtml(s.chipColor)}"`:''}">${escHtml(cleanLabel(s.chip||''))}</span>
               <div class="actu-hero-date">${escHtml(cleanLabel(s.date||''))}</div>
-              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br>')}</h2>
+              <h2 class="actu-hero-title">${escHtml(s.title||'').replace(/\n/g,'<br> ')}</h2>
               <p class="actu-hero-sub">${escHtml(s.subtitle||'')}</p>
             </div>
           </div>`).join('');
@@ -728,11 +729,11 @@ function applyDynLang(lang) {
         const merged = frAc.vedettes.map((v,i) => { const t=i18nAc.vedettes[i]||{}; return Object.assign({},v,t); });
         vedettesWrap2.innerHTML = merged.map((v,i) => {
           const imgSide = v.image
-            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}">
+            ? `<img src="${escHtml(v.image)}" alt="${escHtml(v.tag||'')}" loading="lazy" decoding="async">
                <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`
             : `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:40px;text-align:center">
                  <div class="placeholder-mark">Actu</div>
-                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br>')}</div>
+                 <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:rgba(255,255,255,.9);line-height:1.3">${escHtml(v.placeholderTitle||'').replace(/\n/g,'<br> ')}</div>
                  <div style="font-size:11px;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.35);font-weight:700">${escHtml(v.placeholderDate||'')}</div>
                </div>
                <span class="actu-vedette-badge"${v.badgeColor?` style="background:${escHtml(v.badgeColor)}"`:''}">${escHtml(cleanLabel(v.badge||''))}</span>`;
@@ -761,7 +762,7 @@ function applyDynLang(lang) {
         const merged = frAc.cards.map((c,i) => { const t=i18nAc.cards[i]||{}; return Object.assign({},c,t); });
         cardsGrid2.innerHTML = merged.map(c => `
           <div class="actu-card rev${c.image?' actu-card-has-img':''}"${c.borderColor?` style="border-color:${escHtml(c.borderColor)}"`:''}>
-            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy"></div>`:''}
+            ${c.image?`<div class="actu-card-img"><img src="${escHtml(c.image)}" alt="${escHtml(c.title||'')}" loading="lazy" decoding="async"></div>`:''}
             <div class="actu-card-cat"${c.catColor?` style="color:${escHtml(c.catColor)}"`:''}">${escHtml(c.cat||'')}</div>
             <div class="actu-card-ic">${escHtml(cleanLabel(c.icon)||"AB")}</div>
             <div class="actu-card-dt">
@@ -787,7 +788,7 @@ function applyDynLang(lang) {
         galTrack2.innerHTML = merged.map(s => `
           <div class="gal-slide">
             ${s.image
-              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}">`
+              ? `<img src="${escHtml(s.image)}" alt="${escHtml(s.title||'')}" loading="lazy" decoding="async">`
               : `<div class="gal-slide-placeholder"><div class="placeholder-mark">Image</div></div>`}
             <div class="gal-cap">
               <h3>${escHtml(s.title||'')}</h3>
@@ -801,7 +802,7 @@ function applyDynLang(lang) {
 
   // CTA
   const cta = d.cta || {};
-  if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br>"); }
+  if (cta.title)    { const el=document.getElementById("dyn-cta-title"); if(el) el.innerHTML=sanitizeHtml(cta.title).replace(/\n/g,"<br> "); }
   if (cta.subtitle) setTxt("dyn-cta-sub", cta.subtitle);
   if (cta.btn1)     { const el=document.getElementById("dyn-cta-btn1"); if(el) el.textContent=cleanLabel(cta.btn1.text||cta.btn1); }
   if (cta.btn2)     { const el=document.getElementById("dyn-cta-btn2"); if(el) el.textContent=cleanLabel(cta.btn2.text||cta.btn2); }
@@ -817,7 +818,7 @@ function applyDynLang(lang) {
   }
   if (ct.sidebarTitle) {
     const el = document.getElementById("dyn-ct-sidebar-title");
-    if (el) el.innerHTML = escHtml(ct.sidebarTitle).replace(/\n/g,"<br>");
+    if (el) el.innerHTML = escHtml(ct.sidebarTitle).replace(/\n/g,"<br> ");
   }
   if (ct.sidebarDesc)  setTxt("dyn-ct-sidebar-desc", ct.sidebarDesc);
 
@@ -1282,20 +1283,28 @@ function fCt(e, f) {
 }
 
 // ── RUBRIQUES LONGUES HORS FIL PRINCIPAL ─────────────────
-const ROUTE_SECTIONS = new Set(["publication", "galerie", "actu"]);
+const ROUTE_SECTIONS = new Set(["publication", "galerie", "actu", "article"]);
+
+function currentRouteKey() {
+  const hashKey = (location.hash || "").replace("#", "").split("?")[0].split("/")[0];
+  if (hashKey) return hashKey;
+  if (/^\/actualites\/[^/]+\/?$/.test(location.pathname)) return "article";
+  return "";
+}
 
 function updateRouteSections() {
-  const key = (location.hash || "").replace("#", "").split("?")[0];
+  const key = currentRouteKey();
   document.body.classList.remove(
     "route-page-active",
     "route-page-publication",
     "route-page-galerie",
-    "route-page-actu"
+    "route-page-actu",
+    "route-page-article"
   );
   if (ROUTE_SECTIONS.has(key)) {
     document.body.classList.add("route-page-active", "route-page-" + key);
   }
-  const target = document.getElementById(key || "hero");
+  const target = document.getElementById(key === "article" ? "article-detail" : (key || "hero"));
   if (target) {
     setTimeout(() => target.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
   }
@@ -1304,14 +1313,15 @@ function updateRouteSections() {
 // ── SMOOTH SCROLL ANCRES ─────────────────────────────────
 document.querySelectorAll("a[href^='#']").forEach(a => a.addEventListener("click", e => {
   const href = a.getAttribute("href");
-  const key = (href || "").replace("#", "").split("?")[0];
+  if (!href || href === "#") return;
+  const key = href.replace("#", "").split("?")[0].split("/")[0];
   if (ROUTE_SECTIONS.has(key)) {
     e.preventDefault();
     if (location.hash === href) updateRouteSections();
     else location.hash = href;
     return;
   }
-  const t = document.querySelector(href);
+  const t = document.getElementById(href.slice(1));
   if(t){ e.preventDefault(); location.hash = href; updateRouteSections(); }
 }));
 

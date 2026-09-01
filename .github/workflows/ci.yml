@@ -64,6 +64,7 @@ jobs:
           python tests/test_admin_ui.py
           python tests/test_admin_action_contracts.py
           python tests/test_editorial_publish_integrity.py
+          python tests/test_public_experience.py
 
       # ── 5. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP

@@ -6,4 +6,4 @@ Disallow: /ministre.html
 Disallow: /gestion.html
 Disallow: /api/
 
-Sitemap: http://wude3801.odns.fr/sitemap.xml
+Sitemap: https://projet-depute-bininga.vercel.app/sitemap.xml

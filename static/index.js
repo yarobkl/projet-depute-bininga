@@ -27,7 +27,7 @@
     // Chargement synchrone volontaire ici : index.js est déjà un script defer.
     // Le cœur doit être exécuté avant DOMContentLoaded pour préserver tous ses listeners.
     var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/static/index-core.js?v=20260901-yaroconsulting-link", false);
+    xhr.open("GET", "/static/index-core.js?v=20260901-public-experience", false);
     xhr.send(null);
     if (xhr.status < 200 || xhr.status >= 300) {
       throw new Error("index-core.js HTTP " + xhr.status);

@@ -165,8 +165,8 @@ class PublicHandler(http.server.BaseHTTPRequestHandler):
             _proxy_to_admin(self, "GET", "/api/load")
             return
 
-        # Racine → index.html
-        if path in ("/", ""):
+        # Racine et pages d'actualité → index.html (routage côté navigateur)
+        if path in ("/", "") or re.fullmatch(r"/actualites/[a-z0-9-]+/?", path):
             path = "/index.html"
 
         # Fichier statique

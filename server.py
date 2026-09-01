@@ -1038,6 +1038,102 @@ def load_data():
     except Exception:
         return {}
 
+
+PUBLIC_SITE_URL = os.environ.get(
+    "BININGA_PUBLIC_URL", "https://projet-depute-bininga.vercel.app"
+).rstrip("/")
+
+
+def _public_article_slug(title: str) -> str:
+    """Produit le même identifiant stable que public-experience.js."""
+    value = unicodedata.normalize("NFD", str(title or ""))
+    value = "".join(ch for ch in value if not unicodedata.combining(ch)).lower()
+    value = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+    return (value[:96] or "actualite")
+
+
+def _public_article_by_slug(slug: str):
+    """Retourne une actualité publique depuis les données éditoriales."""
+    actus = (load_data() or {}).get("actus", {})
+    for collection in ("vedettes", "cards"):
+        for item in actus.get(collection, []) or []:
+            if isinstance(item, dict) and _public_article_slug(item.get("title", "")) == slug:
+                return item
+    return None
+
+
+def _public_article_image_url(image: str) -> str:
+    value = str(image or "").strip()
+    if not value:
+        return f"{PUBLIC_SITE_URL}/images/og-bininga.jpg"
+    parsed = urlparse(value)
+    if parsed.scheme in ("http", "https"):
+        return value
+    return f"{PUBLIC_SITE_URL}/{value.lstrip('/')}"
+
+
+def _inject_public_article_metadata(text: str, article: dict, slug: str) -> str:
+    """Injecte les balises nécessaires aux aperçus WhatsApp, Facebook et moteurs."""
+    title_raw = str(article.get("title", "Actualité")).strip()
+    description_raw = re.sub(
+        r"\s+", " ", str(article.get("text1") or article.get("desc") or "").strip()
+    )
+    if len(description_raw) > 180:
+        description_raw = description_raw[:179].rsplit(" ", 1)[0].rstrip(" ,;:") + "…"
+    canonical_raw = f"{PUBLIC_SITE_URL}/actualites/{slug}"
+    image_raw = _public_article_image_url(article.get("image", ""))
+    title = _html.escape(f"{title_raw} · Aimé BININGA", quote=True)
+    headline = _html.escape(title_raw, quote=True)
+    description = _html.escape(description_raw, quote=True)
+    canonical = _html.escape(canonical_raw, quote=True)
+    image = _html.escape(image_raw, quote=True)
+
+    text = re.sub(r"<title>.*?</title>", lambda _: f"<title>{title}</title>", text, count=1, flags=re.I | re.S)
+    text = re.sub(
+        r'<link\s+rel="canonical"\s+href="[^"]*"\s*/?>',
+        lambda _: f'<link rel="canonical" href="{canonical}">',
+        text,
+        count=1,
+        flags=re.I,
+    )
+
+    def replace_meta(selector: str, value: str, attribute: str = "name") -> None:
+        nonlocal text
+        pattern = rf'<meta\s+{attribute}="{re.escape(selector)}"\s+content="[^"]*"\s*/?>'
+        text = re.sub(
+            pattern,
+            lambda _: f'<meta {attribute}="{selector}" content="{value}">',
+            text,
+            count=1,
+            flags=re.I,
+        )
+
+    replace_meta("description", description)
+    replace_meta("og:type", "article", "property")
+    replace_meta("og:url", canonical, "property")
+    replace_meta("og:title", headline, "property")
+    replace_meta("og:description", description, "property")
+    replace_meta("og:image", image, "property")
+    replace_meta("twitter:title", headline)
+    replace_meta("twitter:description", description)
+    replace_meta("twitter:image", image)
+
+    schema = {
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": title_raw,
+        "description": description_raw,
+        "image": [image_raw],
+        "mainEntityOfPage": canonical_raw,
+        "publisher": {
+            "@type": "Organization",
+            "name": "Site officiel d'Ange Aimé Wilfrid BININGA",
+        },
+    }
+    schema_json = json.dumps(schema, ensure_ascii=False).replace("</", "<\\/")
+    script = f'<script id="article-server-jsonld" type="application/ld+json">{schema_json}</script>'
+    return text.replace("</head>", f"{script}\n</head>", 1)
+
 def save_data(data):
     """Persiste le contenu du site dans PostgreSQL ET dans le fichier (double sécurité)."""
     global _DATA_CACHE, _DATA_CACHE_AT
@@ -1818,6 +1914,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             method == "GET" and (
                 path in ("/", "/index.html", "/health", "/api/load", "/data.json", "/robots.txt", "/sitemap.xml")
                 or path.startswith(("/static/", "/images/"))
+                or bool(re.fullmatch(r"/actualites/[a-z0-9-]+/?", path))
             )
         )
         path_clean = path.strip("/")
@@ -2532,7 +2629,13 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         # ── Fichiers statiques avec protection path traversal ──
-        relative = "index.html" if path in ("/", "") else path.lstrip("/")
+        is_public_article = bool(re.fullmatch(r"/actualites/[a-z0-9-]+/?", path))
+        public_article_slug = path.strip("/").split("/", 1)[1] if is_public_article else ""
+        public_article = _public_article_by_slug(public_article_slug) if is_public_article else None
+        if is_public_article and not public_article:
+            self._error(404, "Actualité introuvable")
+            return
+        relative = "index.html" if path in ("/", "") or is_public_article else path.lstrip("/")
         safe = _safe_path(relative)
         if safe and os.path.isfile(safe):
             try:
@@ -2576,6 +2679,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if mime.startswith("text/html"):
                     text = content.decode("utf-8", errors="replace")
                     text = _version_static_assets(text)
+                    if public_article:
+                        text = _inject_public_article_metadata(text, public_article, public_article_slug)
                     # Injecter l'URL secrète de l'admin (gestion.html, ministre.html…)
                     text = text.replace("__ADMIN_PATH__", f"/{ADMIN_SECRET_PATH}")
                     content = text.encode("utf-8")
@@ -4796,6 +4901,8 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
             "jpg":  "image/jpeg", "jpeg": "image/jpeg",
             "gif":  "image/gif",
             "svg":  "image/svg+xml",
+            "xml":  "application/xml; charset=utf-8",
+            "txt":  "text/plain; charset=utf-8",
             "webp": "image/webp",
             "ico":  "image/x-icon",
             "mp4":  "video/mp4",

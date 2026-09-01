@@ -1,39 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-  <url>
-    <loc>http://wude3801.odns.fr/</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
-  </url>
-
-  <url>
-    <loc>http://wude3801.odns.fr/#a-propos</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>http://wude3801.odns.fr/#programme</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-
-  <url>
-    <loc>http://wude3801.odns.fr/#actualites</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
-  </url>
-
-  <url>
-    <loc>http://wude3801.odns.fr/#contact</loc>
-    <lastmod>2026-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-
+  <url><loc>https://projet-depute-bininga.vercel.app/</loc><lastmod>2026-09-01</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/l-ambassadeur-du-rwanda-rend-visite-au-ministre-bininga-pour-renforcer-la-cooperation-judiciaire</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/bininga-sillonne-13-villages-pour-porter-le-message-du-president-candidat-denis-sassou-nguesso</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/bininga-et-darmanin-relancent-la-cooperation-judiciaire-congo-france</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/boulevard-energetique-ewo-bientot-connecte-au-reseau-electrique-national</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/droits-humains-au-congo-des-avancees-appreciables-presentees-par-bininga-a-l-onu</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/droits-de-l-homme-validation-de-l-avant-projet-de-loi-instituant-la-justice-restaurative</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/droits-humains-la-jeunesse-autochtone-priorite-du-ministere-bininga</loc><lastmod>2026-09-01</lastmod><priority>0.7</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/adoption-de-la-loi-instituant-la-halc-107-voix-pour</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/magistrature-23-sanctions-prononcees-sous-l-autorite-du-ministre-bininga</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/le-gouvernement-rappelle-les-avancees-dans-l-amelioration-de-la-vie-des-autochtones</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/mission-diplomatique-a-l-aiea-congo-represente</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/forum-pour-l-emploi-des-jeunes-de-la-cuvette-ouest</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/50-bourses-d-etudes-remises-a-des-jeunes-d-ewo</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/accord-historique-avec-les-syndicats-congolais</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/l-ambassadeur-du-rwanda-en-visite-chez-le-ministre-bininga</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/inauguration-du-tribunal-de-proximite-d-ewo</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/coordinateur-de-campagne-tournee-sur-l-axe-lebankaya</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/droits-humains-l-acces-des-peuples-autochtones-a-l-emploi-pris-en-compte</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/justice-le-congo-reitere-sa-volonte-d-assurer-la-protection-des-droits-de-l-homme</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/legislatives-2017-bininga-elu-depute-de-la-1re-circonscription-d-ewo</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/justice-l-amelioration-des-conditions-de-vie-dans-les-lieux-de-detention-se-poursuit</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
+  <url><loc>https://projet-depute-bininga.vercel.app/actualites/l-observateur-bininga-et-l-action-judiciaire-au-service-du-congo</loc><lastmod>2026-09-01</lastmod><priority>0.6</priority></url>
 </urlset>
