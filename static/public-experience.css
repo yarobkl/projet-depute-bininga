@@ -28,12 +28,16 @@ html[data-motion-transition="language"]::view-transition-old(root){animation:mot
 html[data-motion-transition="language"]::view-transition-new(root){animation:motion-language-in 280ms var(--motion-standard) both}
 ::view-transition-group(bininga-article-image){animation-duration:540ms;animation-timing-function:var(--motion-emphasized);overflow:hidden;border-radius:14px}
 ::view-transition-group(bininga-article-title){animation-duration:480ms;animation-timing-function:var(--motion-emphasized)}
+html[data-motion-fallback] body{transition:opacity 150ms ease,transform 280ms var(--motion-standard),filter 180ms ease}
+html.motion-fallback-out body{opacity:.08;transform:translate3d(0,-6px,0);filter:blur(1.5px)}
+html.motion-fallback-in body{animation:motion-fallback-in 340ms var(--motion-standard) both}
 @keyframes motion-root-out{to{opacity:.18;transform:translate3d(0,-8px,0)}}
 @keyframes motion-root-in{from{opacity:0;transform:translate3d(0,14px,0)}}
 @keyframes motion-theme-out{to{opacity:0}}
 @keyframes motion-theme-in{from{opacity:0}}
 @keyframes motion-language-out{to{opacity:.1;filter:blur(2px)}}
 @keyframes motion-language-in{from{opacity:0;filter:blur(2px);transform:translate3d(0,5px,0)}}
+@keyframes motion-fallback-in{from{opacity:0;transform:translate3d(0,10px,0);filter:blur(1.5px)}to{opacity:1;transform:none;filter:none}}
 
 .nlinks a.is-current,.mob-nav a.is-current{color:var(--w)}
 .nlinks a.is-current::after{width:100%;background:linear-gradient(90deg,var(--r),var(--g))}

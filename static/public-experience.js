@@ -96,9 +96,32 @@
 
   function runViewTransition(kind, update) {
     const root = document.documentElement;
-    if (motionReduced() || typeof document.startViewTransition !== "function") {
+    if (motionReduced()) {
       update();
       return Promise.resolve();
+    }
+    if (typeof document.startViewTransition !== "function") {
+      root.dataset.motionFallback = kind;
+      root.classList.add("motion-fallback-out");
+      return new Promise((resolve, reject) => {
+        window.setTimeout(() => {
+          try {
+            update();
+          } catch (error) {
+            root.classList.remove("motion-fallback-out");
+            delete root.dataset.motionFallback;
+            reject(error);
+            return;
+          }
+          root.classList.remove("motion-fallback-out");
+          root.classList.add("motion-fallback-in");
+          window.setTimeout(() => {
+            root.classList.remove("motion-fallback-in");
+            delete root.dataset.motionFallback;
+            resolve();
+          }, 360);
+        }, kind === "language" ? 110 : 150);
+      });
     }
     root.dataset.motionTransition = kind;
     let transition;
@@ -394,10 +417,19 @@
     prepareMotionElements(cardsGrid.querySelectorAll(".motion-reveal"));
   }
 
+  function clearNewsFilteringState() {
+    document.querySelectorAll("#actu-vedettes-wrap, #actu-cards-grid, .news-result-count").forEach(region => {
+      region.classList.remove("is-filtering-out", "is-filtering-in");
+    });
+    const newsSection = document.getElementById("actu");
+    if (newsSection) newsSection.removeAttribute("aria-busy");
+  }
+
   function renderNews(data, options) {
     const animate = !!(options && options.animate) && !motionReduced();
     if (!animate) {
       filterRenderToken += 1;
+      clearNewsFilteringState();
       renderNewsNow(data);
       return;
     }
@@ -410,15 +442,17 @@
     const newsSection = document.getElementById("actu");
     if (newsSection) newsSection.setAttribute("aria-busy", "true");
     window.setTimeout(() => {
-      if (token !== filterRenderToken) return;
+      if (token !== filterRenderToken) {
+        clearNewsFilteringState();
+        return;
+      }
       renderNewsNow(data);
       regions.forEach(region => {
         region.classList.remove("is-filtering-out");
         region.classList.add("is-filtering-in");
       });
       window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-        regions.forEach(region => region.classList.remove("is-filtering-in"));
-        if (newsSection) newsSection.removeAttribute("aria-busy");
+        clearNewsFilteringState();
       }));
     }, 150);
   }
