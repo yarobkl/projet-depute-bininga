@@ -62,6 +62,27 @@ def main() -> None:
     assert '"og:type", "article"' in server
     assert sum(bool(item.get("sourceUrl")) for item in data["actus"]["vedettes"] + data["actus"]["cards"]) >= 8
 
+    # Les transitions restent fonctionnelles, progressives et accessibles.
+    motion_css = read("static/public-experience.css")
+    for marker in (
+        "document.startViewTransition",
+        "history.pushState",
+        'window.addEventListener("popstate"',
+        "biningaScroll",
+        "is-filtering-out",
+        "dashboard-card-toggle",
+        "prefers-reduced-motion",
+    ):
+        assert marker in experience or marker in motion_css, marker
+    for marker in (
+        "::view-transition-group(bininga-article-image)",
+        ".nlinks a.is-current",
+        ".mob-nav.open a:nth-child",
+        ".dashboard-card.is-collapsed",
+        "transition-delay:calc(var(--motion-order,0) * 55ms)",
+    ):
+        assert marker in motion_css, marker
+
     # Accessibilité et performance des médias secondaires.
     assert 'aria-label="Image précédente"' in core
     assert 'aria-label="Image suivante"' in core

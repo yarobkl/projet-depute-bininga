@@ -82,6 +82,85 @@
   let baseDescription = "";
   let baseCanonical = "";
   let renderScheduled = false;
+  let motionObserver = null;
+  let filterRenderToken = 0;
+  let surfaceMotionReady = false;
+  const openDashboardAxes = new Set([0]);
+  const reducedMotionQuery = window.matchMedia
+    ? window.matchMedia("(prefers-reduced-motion: reduce)")
+    : null;
+
+  function motionReduced() {
+    return !!(reducedMotionQuery && reducedMotionQuery.matches);
+  }
+
+  function runViewTransition(kind, update) {
+    const root = document.documentElement;
+    if (motionReduced() || typeof document.startViewTransition !== "function") {
+      update();
+      return Promise.resolve();
+    }
+    root.dataset.motionTransition = kind;
+    let transition;
+    try {
+      transition = document.startViewTransition(update);
+    } catch (_) {
+      delete root.dataset.motionTransition;
+      update();
+      return Promise.resolve();
+    }
+    return transition.finished
+      .catch(() => {})
+      .finally(() => { delete root.dataset.motionTransition; });
+  }
+
+  function ensureMotionObserver() {
+    if (motionObserver || motionReduced() || !("IntersectionObserver" in window)) return motionObserver;
+    motionObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-motion-visible");
+        motionObserver.unobserve(entry.target);
+      });
+    }, { threshold: 0.1, rootMargin: "0px 0px -7% 0px" });
+    return motionObserver;
+  }
+
+  function prepareMotionElements(elements) {
+    const items = Array.from(elements || []);
+    const observer = ensureMotionObserver();
+    items.forEach((element, index) => {
+      element.style.setProperty("--motion-order", String(index % 8));
+      if (!observer || motionReduced()) element.classList.add("is-motion-visible");
+      else observer.observe(element);
+    });
+  }
+
+  function clearSharedTransitionNames() {
+    document.querySelectorAll("[data-shared-transition]").forEach(element => {
+      element.style.removeProperty("view-transition-name");
+      element.removeAttribute("data-shared-transition");
+    });
+  }
+
+  function markSharedElements(container) {
+    if (!container) return;
+    const image = container.querySelector(".actu-vedette-img img, .actu-card-img img, .article-hero-image");
+    const title = container.querySelector(".actu-vedette-title, .actu-card-title, .article-detail-title");
+    if (image) {
+      image.style.setProperty("view-transition-name", "bininga-article-image");
+      image.setAttribute("data-shared-transition", "image");
+    }
+    if (title) {
+      title.style.setProperty("view-transition-name", "bininga-article-title");
+      title.setAttribute("data-shared-transition", "title");
+    }
+  }
+
+  function newsCardForSlug(slug) {
+    return Array.from(document.querySelectorAll("[data-article-slug]"))
+      .find(element => element.dataset.articleSlug === slug) || null;
+  }
 
   function language() {
     const lang = (document.documentElement.lang || "fr").slice(0, 2).toLowerCase();
@@ -244,12 +323,12 @@
     return `<span class="experience-source-mark${record.sourceUrl ? " is-sourced" : ""}">${escapeHtml(record.sourceUrl ? copy.sourced : copy.editorial)}</span>`;
   }
 
-  function featureTemplate(record) {
+  function featureTemplate(record, index) {
     const copy = words();
     const image = record.image
       ? `<img src="${escapeHtml(record.image)}" alt="${escapeHtml(record.title)}" loading="lazy" decoding="async">`
       : `<div class="gal-slide-placeholder"><span class="placeholder-mark">AB</span></div>`;
-    return `<article class="actu-vedette">
+    return `<article class="actu-vedette motion-reveal" data-article-slug="${escapeHtml(record.slug)}" style="--motion-order:${index || 0}">
       <div class="actu-vedette-img">${image}</div>
       <div class="actu-vedette-body">
         <div class="actu-vedette-tag">${escapeHtml(record.category)}</div>
@@ -262,7 +341,7 @@
     </article>`;
   }
 
-  function cardTemplate(record) {
+  function cardTemplate(record, index) {
     const copy = words();
     const isFeatured = record.kind === "featured";
     const day = isFeatured ? copy.featured : (record.day || record.year || copy.archive);
@@ -271,7 +350,7 @@
       : (record.day
           ? [record.month, record.year].filter(Boolean).map(escapeHtml).join("<br>")
           : escapeHtml(copy.archive));
-    return `<article class="actu-card experience-news-card${record.image ? " actu-card-has-img" : ""}${isFeatured ? " is-feature-derived" : ""}">
+    return `<article class="actu-card experience-news-card motion-reveal${record.image ? " actu-card-has-img" : ""}${isFeatured ? " is-feature-derived" : ""}" data-article-slug="${escapeHtml(record.slug)}" style="--motion-order:${index || 0}">
       ${record.image ? `<div class="actu-card-img"><img src="${escapeHtml(record.image)}" alt="${escapeHtml(record.title)}" loading="lazy" decoding="async"></div>` : ""}
       <div class="actu-card-cat">${escapeHtml(record.category)}</div>
       <div class="actu-card-dt"><span class="actu-card-day">${escapeHtml(day)}</span><span class="actu-card-mon">${month}</span></div>
@@ -286,7 +365,7 @@
     return activeFilter === "all" ? records : records.filter(item => recordCategory(item) === activeFilter);
   }
 
-  function renderNews(data) {
+  function renderNewsNow(data) {
     const featuredWrap = document.getElementById("actu-vedettes-wrap");
     const cardsGrid = document.getElementById("actu-cards-grid");
     const resultCount = document.getElementById("news-result-count");
@@ -311,6 +390,37 @@
       button.classList.toggle("active", selected);
       button.setAttribute("aria-pressed", selected ? "true" : "false");
     });
+    prepareMotionElements(featuredWrap.querySelectorAll(".motion-reveal"));
+    prepareMotionElements(cardsGrid.querySelectorAll(".motion-reveal"));
+  }
+
+  function renderNews(data, options) {
+    const animate = !!(options && options.animate) && !motionReduced();
+    if (!animate) {
+      filterRenderToken += 1;
+      renderNewsNow(data);
+      return;
+    }
+    const token = ++filterRenderToken;
+    const featuredWrap = document.getElementById("actu-vedettes-wrap");
+    const cardsGrid = document.getElementById("actu-cards-grid");
+    const resultCount = document.getElementById("news-result-count");
+    const regions = [featuredWrap, cardsGrid, resultCount].filter(Boolean);
+    regions.forEach(region => region.classList.add("is-filtering-out"));
+    const newsSection = document.getElementById("actu");
+    if (newsSection) newsSection.setAttribute("aria-busy", "true");
+    window.setTimeout(() => {
+      if (token !== filterRenderToken) return;
+      renderNewsNow(data);
+      regions.forEach(region => {
+        region.classList.remove("is-filtering-out");
+        region.classList.add("is-filtering-in");
+      });
+      window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+        regions.forEach(region => region.classList.remove("is-filtering-in"));
+        if (newsSection) newsSection.removeAttribute("aria-busy");
+      }));
+    }, 150);
   }
 
   function renderDashboard(data) {
@@ -323,15 +433,28 @@
     if (axisCount) axisCount.textContent = String(axes.length);
     if (commitmentCount) commitmentCount.textContent = String(commitments);
     const copy = words();
-    grid.innerHTML = axes.map((axis, index) => `<article class="dashboard-card">
-      <div class="dashboard-card-head">
-        <span class="dashboard-card-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
-        <div><p class="dashboard-card-kicker">${escapeHtml(copy.axis)} ${String(index + 1).padStart(2, "0")}</p><h3>${escapeHtml(axis.title || "")}</h3></div>
-      </div>
-      <p>${escapeHtml(axis.text || "")}</p>
-      <ul class="dashboard-commitments">${(axis.points || []).map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
-      <span class="dashboard-status">${escapeHtml(copy.status)}</span>
-    </article>`).join("");
+    const mobile = window.matchMedia && window.matchMedia("(max-width: 600px)").matches;
+    grid.innerHTML = axes.map((axis, index) => {
+      const expanded = !mobile || openDashboardAxes.has(index);
+      const contentId = `dashboard-axis-content-${index + 1}`;
+      return `<article class="dashboard-card motion-reveal${expanded ? "" : " is-collapsed"}" data-axis-index="${index}" style="--motion-order:${index}">
+        <button class="dashboard-card-toggle" type="button" aria-expanded="${expanded ? "true" : "false"}" aria-controls="${contentId}">
+          <span class="dashboard-card-head">
+            <span class="dashboard-card-number" aria-hidden="true">${String(index + 1).padStart(2, "0")}</span>
+            <span><span class="dashboard-card-kicker">${escapeHtml(copy.axis)} ${String(index + 1).padStart(2, "0")}</span><span class="dashboard-card-title">${escapeHtml(axis.title || "")}</span></span>
+          </span>
+          <span class="dashboard-card-chevron" aria-hidden="true"></span>
+        </button>
+        <div class="dashboard-card-content" id="${contentId}">
+          <div class="dashboard-card-content-inner">
+            <p>${escapeHtml(axis.text || "")}</p>
+            <ul class="dashboard-commitments">${(axis.points || []).map(point => `<li>${escapeHtml(point)}</li>`).join("")}</ul>
+            <span class="dashboard-status">${escapeHtml(copy.status)}</span>
+          </div>
+        </div>
+      </article>`;
+    }).join("");
+    prepareMotionElements(grid.querySelectorAll(".motion-reveal"));
   }
 
   function articleSlugFromLocation() {
@@ -444,12 +567,16 @@
     rememberBaseMetadata(data);
     const slug = articleSlugFromLocation();
     if (!slug) {
+      container.innerHTML = "";
+      delete container.dataset.articleSlug;
       restoreBaseMetadata();
+      makeArticleNavigationLeaveCleanly();
       return;
     }
     document.body.classList.add("route-page-active", "route-page-article");
     const records = buildRecords(data);
     const record = records.bySlug.get(slug);
+    container.dataset.articleSlug = slug;
     const copy = words();
     if (!record) {
       container.innerHTML = `<div class="article-not-found"><h1>${escapeHtml(copy.notFound)}</h1><p>${escapeHtml(copy.notFoundText)}</p><a class="article-action" href="/#actu">${escapeHtml(copy.back)}</a></div>`;
@@ -474,6 +601,10 @@
         ${sourceAside(record)}
       </div>
       <p class="article-share-status" id="article-share-status" role="status" aria-live="polite"></p>`;
+    if (document.documentElement.dataset.motionTransition && document.documentElement.dataset.motionTransition.indexOf("article") === 0) {
+      markSharedElements(container);
+    }
+    prepareMotionElements(container.querySelectorAll(".article-eyebrow, .article-actions, .article-layout"));
     bindShare(record);
   }
 
@@ -502,6 +633,15 @@
       try {
         await copyArticleLink(url);
         if (status) status.textContent = words().copied;
+        if (copyButton) {
+          const original = copyButton.textContent;
+          copyButton.textContent = words().copied.replace(/[.!。]$/, "");
+          copyButton.classList.add("is-success");
+          window.setTimeout(() => {
+            copyButton.textContent = original;
+            copyButton.classList.remove("is-success");
+          }, 1800);
+        }
       } catch (_) {
         if (status) status.textContent = words().shareUnavailable;
       }
@@ -521,11 +661,167 @@
   }
 
   function makeArticleNavigationLeaveCleanly() {
-    if (!articleSlugFromLocation() || !location.pathname.startsWith("/actualites/")) return;
-    document.querySelectorAll('a[href^="#"]').forEach(link => {
+    const articleRoute = !!articleSlugFromLocation() && location.pathname.startsWith("/actualites/");
+    document.querySelectorAll("a").forEach(link => {
+      const savedHref = link.dataset.homeHref;
+      if (!articleRoute && savedHref) {
+        link.setAttribute("href", savedHref);
+        delete link.dataset.homeHref;
+        return;
+      }
+      if (!articleRoute) return;
       const href = link.getAttribute("href");
-      if (href && href !== "#") link.setAttribute("href", "/" + href);
+      if (href && href.startsWith("#") && href !== "#") {
+        link.dataset.homeHref = href;
+        link.setAttribute("href", "/" + href);
+      }
     });
+  }
+
+  function updateRoutePresentation() {
+    if (typeof updateRouteSections === "function") updateRouteSections();
+    else {
+      const articleRoute = !!articleSlugFromLocation();
+      document.body.classList.toggle("route-page-active", articleRoute);
+      document.body.classList.toggle("route-page-article", articleRoute);
+    }
+    setActiveNavigation(articleSlugFromLocation() ? "actu" : (location.hash.slice(1) || "hero"));
+  }
+
+  function articleSlugFromHref(href) {
+    try {
+      const url = new URL(href, location.href);
+      if (url.origin !== location.origin) return "";
+      const match = url.pathname.match(/^\/actualites\/([^/]+)\/?$/);
+      return match ? decodeURIComponent(match[1]) : "";
+    } catch (_) {
+      return "";
+    }
+  }
+
+  function handleArticleNavigation(event) {
+    const link = event.target.closest("a");
+    if (!link || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (link.classList.contains("article-back")) {
+      if (history.state && history.state.biningaView === "article") {
+        event.preventDefault();
+        history.back();
+      }
+      return;
+    }
+    if (!link.classList.contains("experience-read-link")) return;
+    const slug = articleSlugFromHref(link.href);
+    if (!slug) return;
+    event.preventDefault();
+    const returnScroll = window.scrollY;
+    const currentState = Object.assign({}, history.state || {}, {
+      biningaView: "news",
+      biningaFilter: activeFilter,
+      biningaScroll: returnScroll,
+      biningaLastArticle: slug
+    });
+    history.replaceState(currentState, "", location.href);
+    clearSharedTransitionNames();
+    markSharedElements(link.closest("[data-article-slug]"));
+    runViewTransition("article-forward", () => {
+      history.pushState({
+        biningaView: "article",
+        biningaFilter: activeFilter,
+        biningaReturnScroll: returnScroll,
+        biningaArticle: slug
+      }, "", articleHref(slug));
+      updateRoutePresentation();
+      renderAll();
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }).finally(clearSharedTransitionNames);
+  }
+
+  function handleHistoryNavigation(event) {
+    const state = event.state || {};
+    const destinationSlug = articleSlugFromLocation();
+    const articleContainer = document.getElementById("article-detail-content");
+    const leavingSlug = document.body.classList.contains("route-page-article") && articleContainer
+      ? (articleContainer.dataset.articleSlug || "")
+      : "";
+    if (state.biningaFilter) activeFilter = state.biningaFilter;
+    clearSharedTransitionNames();
+    if (leavingSlug) markSharedElements(document.getElementById("article-detail-content"));
+    else if (destinationSlug) markSharedElements(newsCardForSlug(destinationSlug));
+    const kind = destinationSlug ? "article-forward" : "article-back";
+    runViewTransition(kind, () => {
+      updateRoutePresentation();
+      renderAll();
+      if (destinationSlug) {
+        markSharedElements(document.getElementById("article-detail-content"));
+        window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      } else {
+        markSharedElements(newsCardForSlug(state.biningaLastArticle || leavingSlug));
+        const targetScroll = Number.isFinite(state.biningaScroll) ? state.biningaScroll : 0;
+        window.scrollTo({ top: targetScroll, left: 0, behavior: "auto" });
+        window.setTimeout(() => window.scrollTo({ top: targetScroll, left: 0, behavior: "auto" }), 90);
+      }
+    }).finally(clearSharedTransitionNames);
+  }
+
+  function setActiveNavigation(sectionId) {
+    const activeId = document.body.classList.contains("route-page-article") ? "actu" : sectionId;
+    document.querySelectorAll(".nlinks a, .mob-nav a").forEach(link => {
+      const href = (link.dataset.homeHref || link.getAttribute("href") || "").replace(/^\//, "");
+      const current = href === "#" + activeId;
+      link.classList.toggle("is-current", current);
+      if (current) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+  }
+
+  function setupActiveNavigation() {
+    const sections = ["hero", "missions", "about", "programme", "ewo-dashboard", "actu", "engagement", "contact"]
+      .map(id => document.getElementById(id)).filter(Boolean);
+    if (!("IntersectionObserver" in window)) return;
+    const ratios = new Map();
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => ratios.set(entry.target.id, entry.isIntersecting ? entry.intersectionRatio : 0));
+      const active = Array.from(ratios.entries()).sort((a, b) => b[1] - a[1])[0];
+      if (active && active[1] > 0) setActiveNavigation(active[0]);
+    }, { threshold: [0.12, 0.3, 0.55], rootMargin: "-20% 0px -55% 0px" });
+    sections.forEach(section => observer.observe(section));
+    setActiveNavigation(document.body.classList.contains("route-page-article") ? "actu" : (location.hash.slice(1) || "hero"));
+  }
+
+  function toggleDashboardAxis(button) {
+    if (!window.matchMedia || !window.matchMedia("(max-width: 600px)").matches) return;
+    const card = button.closest(".dashboard-card");
+    if (!card) return;
+    const index = Number(card.dataset.axisIndex);
+    const expanded = button.getAttribute("aria-expanded") === "true";
+    button.setAttribute("aria-expanded", expanded ? "false" : "true");
+    card.classList.toggle("is-collapsed", expanded);
+    if (expanded) openDashboardAxes.delete(index);
+    else openDashboardAxes.add(index);
+  }
+
+  function installSurfaceMotionHooks() {
+    const originalThemeToggle = window.toggleBiningaTheme;
+    if (typeof originalThemeToggle === "function" && !originalThemeToggle.motionEnhanced) {
+      const enhancedThemeToggle = function () {
+        if (!surfaceMotionReady) return originalThemeToggle();
+        return runViewTransition("theme", originalThemeToggle);
+      };
+      enhancedThemeToggle.motionEnhanced = true;
+      window.toggleBiningaTheme = enhancedThemeToggle;
+    }
+    const originalApplyI18n = window.applyI18n;
+    if (typeof originalApplyI18n === "function" && !originalApplyI18n.motionEnhanced) {
+      const enhancedApplyI18n = function (lang) {
+        if (!surfaceMotionReady) return originalApplyI18n(lang);
+        return runViewTransition("language", () => {
+          originalApplyI18n(lang);
+          renderAll();
+        });
+      };
+      enhancedApplyI18n.motionEnhanced = true;
+      window.applyI18n = enhancedApplyI18n;
+    }
   }
 
   function renderAll() {
@@ -560,11 +856,21 @@
       if (!button) return;
       activeFilter = button.dataset.filter || "all";
       const data = localizedData();
-      if (data) renderNews(data);
+      if (data) renderNews(data, { animate: true });
     });
+    const dashboard = document.getElementById("ewo-dashboard-grid");
+    if (dashboard) dashboard.addEventListener("click", event => {
+      const button = event.target.closest(".dashboard-card-toggle");
+      if (button) toggleDashboardAxis(button);
+    });
+    document.addEventListener("click", handleArticleNavigation);
+    window.addEventListener("popstate", handleHistoryNavigation);
+    setupActiveNavigation();
     waitForData(0);
+    window.setTimeout(() => { surfaceMotionReady = true; }, 0);
   });
+  installSurfaceMotionHooks();
   document.addEventListener("bininga:dataloaded", () => scheduleRender(0));
-  document.addEventListener("bininga:languagechange", () => scheduleRender(80));
+  document.addEventListener("bininga:languagechange", () => scheduleRender(0));
   window.addEventListener("hashchange", () => scheduleRender(0));
 })();
