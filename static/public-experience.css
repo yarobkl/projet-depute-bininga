@@ -282,3 +282,21 @@ body.theme-light .experience-empty{border-color:rgba(139,10,30,.15);color:rgba(2
   .rev,.rev-l,.rev-r,.motion-reveal{opacity:1!important;transform:none!important}
   .mission-card,.mission-card::after,.mission-card a::after,.experience-read-link::after{transition:none!important}
 }
+
+/* Les sections hors écran ne sont composées qu'à l'approche du viewport. */
+@supports(content-visibility:auto){
+  body:not(.route-page-active) #about,
+  body:not(.route-page-active) #parcours,
+  body:not(.route-page-active) #publication,
+  body:not(.route-page-active) #missions,
+  body:not(.route-page-active) #programme,
+  body:not(.route-page-active) #ewo-dashboard,
+  body:not(.route-page-active) #galerie,
+  body:not(.route-page-active) #actu,
+  body:not(.route-page-active) #video-section,
+  body:not(.route-page-active) #engagement,
+  body:not(.route-page-active) #contact{
+    content-visibility:auto;
+    contain-intrinsic-size:auto 780px;
+  }
+}
