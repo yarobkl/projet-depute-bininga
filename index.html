@@ -103,7 +103,7 @@ body.theme-light .lang-btn:hover{border-color:rgba(139,10,30,.22);background:rgb
 body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);background:rgba(139,10,30,.08);box-shadow:0 0 0 2px rgba(200,16,46,.22)}
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
-<script src="static/i18n.js?v=20260901-mobile-performance" defer></script>
+<script src="static/i18n.js?v=20260901-public-experience"></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -117,23 +117,17 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 </div>
 <script>
 (function(){
-  var seen = false;
-  try { seen = sessionStorage.getItem("bininga_seen") === "1"; } catch (_) {}
   function closeLoader(){
     var loader = document.getElementById("loader");
-    if (loader && !loader.classList.contains("done")) {
-      loader.classList.add("done");
-      try { sessionStorage.setItem("bininga_seen", "1"); } catch (_) {}
-    }
+    if (loader) loader.classList.add("done");
   }
-  var delay = seen ? 0 : 420;
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", function(){ setTimeout(closeLoader, delay); }, { once: true });
+    document.addEventListener("DOMContentLoaded", function(){ setTimeout(closeLoader, 900); }, { once: true });
   } else {
-    setTimeout(closeLoader, delay);
+    setTimeout(closeLoader, 900);
   }
-  window.addEventListener("load", function(){ setTimeout(closeLoader, seen ? 0 : 120); }, { once: true });
-  setTimeout(closeLoader, 1600);
+  window.addEventListener("load", function(){ setTimeout(closeLoader, 250); }, { once: true });
+  setTimeout(closeLoader, 3600);
 })();
 </script>
 
@@ -189,12 +183,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   <div class="hero-video-bg"></div>
   <div class="hero-noise"></div>
   <div class="hero-img-side">
-    <picture>
-      <source media="(min-width:901px)" srcset="images/bininga-hero.webp" type="image/webp">
-      <img loading="eager" fetchpriority="high" decoding="async"
-        src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
-        width="1010" height="1488" alt="Ange Aimé Wilfrid BININGA">
-    </picture>
+    <img loading="eager" src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA">
   </div>
   <div class="hero-content">
     <div class="hero-eyebrow">
@@ -267,8 +256,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   <div class="about-grid">
     <div class="about-img-wrap rev-l">
       <div class="about-img-frame">
-        <img loading="lazy" decoding="async" src="images/bininga-hero.webp"
-          width="1010" height="1488" alt="Aimé BININGA">
+        <img loading="lazy" src="images/bininga.jpg" alt="Aimé BININGA">
       </div>
       <div class="about-img-deco"></div>
       <div class="about-img-deco2"></div>
@@ -482,7 +470,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
         id="main-video"
         controls
         preload="none"
-        poster="images/bininga-hero.webp"
+        poster="images/bininga.jpg"
         muted
         playsinline
         style="width:100%;aspect-ratio:16/9;border-radius:12px;display:block;background:#000">
@@ -768,12 +756,12 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   </a>
 </nav>
 
-<script src="static/i18n-data.en.js?v=20260901-mobile-performance" defer></script>
-<script src="static/i18n-data.es.js?v=20260901-mobile-performance" defer></script>
-<script src="static/i18n-data.zh.js?v=20260901-mobile-performance" defer></script>
-<script src="static/i18n-data.ru.js?v=20260901-mobile-performance" defer></script>
-<script src="static/index.js?v=20260901-mobile-performance" defer></script>
-<script src="static/public-experience.js?v=20260901-mobile-performance" defer></script>
+<script src="static/i18n-data.en.js?v=20260619-theme-mode"></script>
+<script src="static/i18n-data.es.js?v=20260619-theme-mode"></script>
+<script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
+<script src="static/i18n-data.ru.js?v=20260619-theme-mode"></script>
+<script src="static/index.js?v=20260901-public-experience" defer></script>
+<script src="static/public-experience.js?v=20260901-motion-suite4" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 

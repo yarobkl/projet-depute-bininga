@@ -139,15 +139,7 @@ class PublicHandler(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", mime)
         self.send_header("Content-Length", str(len(data)))
-        if ext == ".html":
-            cache_control = "no-cache, no-store, must-revalidate"
-        elif ext in (".css", ".js") and urlparse(self.path).query:
-            cache_control = "public, max-age=31536000, immutable"
-        elif ext in (".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif", ".mp4", ".webm"):
-            cache_control = "public, max-age=604800, stale-while-revalidate=86400"
-        else:
-            cache_control = "public, max-age=3600, must-revalidate"
-        self.send_header("Cache-Control", cache_control)
+        self.send_header("Cache-Control", "public, max-age=3600")
         _cors_headers(self)
         self.end_headers()
         self.wfile.write(data)

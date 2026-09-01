@@ -88,11 +88,6 @@ def main() -> None:
     assert 'aria-label="Image suivante"' in core
     assert 'aria-label="Afficher l\'image ${i+1}"' in core
     assert core.count('decoding="async"') >= 8
-    assert 'media="(min-width:901px)" srcset="images/bininga-hero.webp"' in html
-    assert 'fetchpriority="high"' in html
-    assert 'sessionStorage.getItem("bininga_seen")' in html
-    assert "content-visibility:auto" in motion_css
-    assert "max-age=31536000, immutable" in server
     assert re.search(r'<div class="social-row"\s+hidden\s+aria-hidden="true">', html)
     assert 'id="contact-phone-item" hidden' in html
     assert 'id="contact-social-item" hidden' in html

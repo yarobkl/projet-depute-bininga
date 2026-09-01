@@ -196,13 +196,7 @@ def _get_build_version():
 BUILD_VERSION = _get_build_version()
 
 def _version_static_assets(text: str) -> str:
-    for asset in (
-        "admin.js", "admin.css", "mobile.css", "index.js", "index.css",
-        "i18n.js", "i18n-data.en.js", "i18n-data.es.js",
-        "i18n-data.zh.js", "i18n-data.ru.js", "public-experience.js",
-        "public-experience.css", "chat.js", "chat.css",
-        "public-form-hardening.js",
-    ):
+    for asset in ("admin.js", "admin.css", "mobile.css", "index.js", "index.css"):
         text = re.sub(
             rf"static/{re.escape(asset)}(?:\?v=[^\"'<\s]*)?",
             f"static/{asset}?v={BUILD_VERSION}",
@@ -2668,7 +2662,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                         self.send_header("Content-Range", f"bytes {start}-{end}/{file_size}")
                         self.send_header("Content-Length", length)
                         self.send_header("Accept-Ranges", "bytes")
-                        self.send_header("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400")
+                        self.send_header("Cache-Control", "public, max-age=86400")
                         if origin:
                             self.send_header("Access-Control-Allow-Origin", origin)
                         self._security_headers()
@@ -2703,7 +2697,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_header("Content-Length", len(content))
                 if is_video:
                     self.send_header("Accept-Ranges", "bytes")
-                    self.send_header("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400")
+                    self.send_header("Cache-Control", "public, max-age=86400")
                 if can_gzip:
                     self.send_header("Content-Encoding", "gzip")
                     self.send_header("Vary", "Accept-Encoding")
@@ -2713,12 +2707,9 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if mime.startswith("text/html") or mime == "application/json":
                     self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 elif mime.startswith("image/"):
-                    self.send_header("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400")
+                    self.send_header("Cache-Control", "public, max-age=86400")
                 elif mime in ("text/css", "text/javascript"):
-                    if urlparse(self.path).query:
-                        self.send_header("Cache-Control", "public, max-age=31536000, immutable")
-                    else:
-                        self.send_header("Cache-Control", "public, max-age=3600, must-revalidate")
+                    self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
                 self._security_headers()
                 self.end_headers()
                 self.wfile.write(content)
