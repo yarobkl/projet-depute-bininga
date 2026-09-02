@@ -79,6 +79,15 @@ def test_login_shell_exposes_forgot_password_and_first_login_redirect():
     assert "/static/admin-first-login.html" in shell
 
 
+def test_private_admin_path_is_only_returned_after_successful_login():
+    shell = _read(os.path.join(STATIC, "admin-login-shell.html"))
+    flow = _read(os.path.join(ROOT, "admin_auth_flow.py"))
+    assert "cabinet-bininga-" not in shell
+    assert "data.admin_path" in shell
+    assert 'payload["admin_path"]' in flow
+    assert "ADMIN_SECRET_PATH" in flow
+
+
 def test_reset_and_first_login_pages_are_real_api_flows():
     reset = _read(os.path.join(STATIC, "admin-reset-password.html"))
     first = _read(os.path.join(STATIC, "admin-first-login.html"))
