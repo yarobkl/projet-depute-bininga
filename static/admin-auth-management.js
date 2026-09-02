@@ -1,6 +1,6 @@
 /* BININGA Admin — account lifecycle UI
- * Adds recovery email management, first-login status and self-service password
- * changes without growing the legacy admin bundle.
+ * Adds recovery email management, owner status, first-login state and
+ * self-service password changes without growing the legacy admin bundle.
  */
 (() => {
   'use strict';
@@ -27,6 +27,12 @@
     if (passwordGroup?.parentNode) passwordGroup.parentNode.insertBefore(group, passwordGroup);
   }
 
+  function ownerState(meta) {
+    if (meta?.is_owner) return ' · Propriétaire';
+    if (meta?.owner_pending || meta?.owner_reserved) return ' · Propriétaire — activation en attente';
+    return '';
+  }
+
   async function loadUsersMeta() {
     const api = core();
     if (!api || !api.isMainAdmin()) return;
@@ -36,10 +42,13 @@
       if (!data.ok) return;
       metaByUser.clear();
       (data.users || []).forEach(user => metaByUser.set(user.username, user));
+      document.documentElement.dataset.ownerCount = String(Number(data.owner_count || 0));
+      document.documentElement.dataset.ownerSlots = String(Number(data.owner_slots || 2));
       document.querySelectorAll('.user-item[data-username]').forEach(item => {
         const meta = metaByUser.get(item.dataset.username);
         if (!meta) return;
         item.dataset.email = meta.email || '';
+        item.dataset.owner = meta.is_owner ? '1' : '0';
         let detail = item.querySelector('[data-auth-meta]');
         if (!detail) {
           detail = document.createElement('div');
@@ -47,8 +56,8 @@
           detail.style.cssText = 'font-size:11px;color:rgba(255,255,255,.38);margin-top:3px';
           item.querySelector('.user-info')?.appendChild(detail);
         }
-        const state = meta.must_change_password ? ' · Première connexion en attente' : '';
-        detail.textContent = (meta.email || 'Email de récupération non renseigné') + state;
+        const firstLogin = meta.must_change_password && !meta.owner_pending ? ' · Première connexion en attente' : '';
+        detail.textContent = (meta.email || 'Email de récupération non renseigné') + ownerState(meta) + firstLogin;
       });
     } catch (_) {}
   }
@@ -71,8 +80,13 @@
       const original = window.editUser;
       const wrapped = function(username) {
         const result = original.apply(this, arguments);
+        const meta = metaByUser.get(username);
         const email = document.getElementById('uf-email');
-        if (email) email.value = metaByUser.get(username)?.email || '';
+        if (email) {
+          email.value = meta?.email || '';
+          email.readOnly = !!meta?.owner_reserved;
+          email.title = meta?.owner_reserved ? 'L’adresse d’un propriétaire protégé ne peut pas être remplacée.' : '';
+        }
         return result;
       };
       wrapped.__authWrapped = true;
@@ -84,7 +98,11 @@
       const wrapped = function() {
         const result = original.apply(this, arguments);
         const email = document.getElementById('uf-email');
-        if (email) email.value = '';
+        if (email) {
+          email.value = '';
+          email.readOnly = false;
+          email.title = '';
+        }
         return result;
       };
       wrapped.__authWrapped = true;
@@ -94,7 +112,7 @@
     const submit = async function submitUserFormWithRecovery() {
       const api = core();
       if (!api || !api.isMainAdmin()) {
-        toast('Action réservée à l’administrateur principal.', true);
+        toast('Action réservée aux propriétaires de l’administration.', true);
         return;
       }
       const username = document.getElementById('uf-username')?.value.trim() || '';
@@ -117,9 +135,13 @@
         });
         const data = await response.json();
         if (!data.ok) return toast(data.message || 'Utilisateur non enregistré.', true);
-        toast(payload.password && username !== api.username()
-          ? 'Utilisateur enregistré. Le changement de mot de passe sera obligatoire à sa prochaine connexion.'
-          : 'Utilisateur enregistré.');
+        if (data.owner_pending) {
+          toast('Propriétaire enregistré. Son activation sera finalisée après la définition de son mot de passe.');
+        } else {
+          toast(payload.password && username !== api.username()
+            ? 'Utilisateur enregistré. Le changement de mot de passe sera obligatoire à sa prochaine connexion.'
+            : 'Utilisateur enregistré.');
+        }
         if (typeof window.resetUserForm === 'function') window.resetUserForm();
         if (typeof window.toggleUserForm === 'function') window.toggleUserForm(false);
         if (typeof window.loadUsers === 'function') await window.loadUsers();
