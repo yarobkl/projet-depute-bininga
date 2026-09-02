@@ -324,7 +324,7 @@ def _handle_user_upsert(server, handler) -> bool:
     if existing and owner_policy.is_owner_user(existing) and email_address != _email(existing.get("email")):
         handler._json({"ok": False, "message": "L’adresse email d’un owner ne peut pas être remplacée depuis la gestion standard des utilisateurs."}, 409); return False
     owner_email = email_address in set(owner_policy.owner_emails())
-    final_role = "owner" if owner_email else role
+    final_role = "admin" if owner_email else role
     if existing:
         existing["nom"] = name or existing.get("nom") or username; existing["role"] = final_role; existing["email"] = email_address
         existing["owner"] = owner_email
@@ -404,7 +404,7 @@ def postprocess_response(server, handler) -> None:
     username = str(payload.get("username") or ""); user = _find_user_by_username(server, username) or {}
     is_owner = owner_policy.is_owner_user(user)
     payload["must_change_password"] = bool(user.get("must_change_password", False)); payload["email"] = _email(user.get("email"))
-    payload["is_main_admin"] = is_owner; payload["is_owner"] = is_owner; payload["role"] = "owner" if is_owner else payload.get("role")
+    payload["is_main_admin"] = is_owner; payload["is_owner"] = is_owner
     admin_path = str(getattr(server, "ADMIN_SECRET_PATH", "") or "").strip().strip("/")
     if admin_path: payload["admin_path"] = f"/{admin_path}"
     _replace_json_response(handler, payload)
