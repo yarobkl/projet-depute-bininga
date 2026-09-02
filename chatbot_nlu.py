@@ -124,6 +124,7 @@ CAPABILITY_PATTERNS = (
     r"\b(?:tu|vous) (?:peux|pouvez) faire quoi\b",
     r"\bqu[' ]?est ce que (?:je|on) (?:peux|peut) (?:te|vous) demander\b",
     r"\ba quoi (?:tu|vous) (?:sers|servez)\b",
+    r"\b(?:tu|vous) (?:sers|servez) a quoi\b",
     r"\b(?:tes|vos) capacites\b",
     r"\bque sais (?:tu|vous) faire\b",
     r"\bcomment (?:tu|vous) (?:peux|pouvez) (?:m|nous)[' ]?aider\b",
@@ -154,7 +155,10 @@ FOLLOWUP_PATTERNS = (
 def _norm(text: str) -> str:
     value = unicodedata.normalize("NFKD", text or "")
     value = "".join(ch for ch in value if not unicodedata.combining(ch)).lower()
-    value = value.replace("’", "'").replace("-", " ")
+    # Les tournures françaises sont indexées sous leur forme lexicale
+    # ("j ai", "qu il", "d accord") afin que apostrophes droites et
+    # typographiques donnent exactement le même résultat.
+    value = value.replace("’", "'").replace("'", " ").replace("-", " ")
     value = re.sub(r"[^a-z0-9'\s]", " ", value)
     return re.sub(r"\s+", " ", value).strip()
 
@@ -257,13 +261,13 @@ def detect_intent(question: str, history: Optional[Sequence[dict]] = None, base_
     else:
         base = "unknown"
 
-    semantic = domain_intent(question)
-    if semantic:
-        return semantic
-
     act = conversation_act(question)
     if act and act != "followup":
         return act
+
+    semantic = domain_intent(question)
+    if semantic:
+        return semantic
 
     if base not in {"unknown", "empty"}:
         return base

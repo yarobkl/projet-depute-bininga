@@ -3038,7 +3038,8 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 if _chat_has(qn, ["bonjour", "bonsoir", "salut", "coucou", "hey", "ca va", "comment tu vas", "tu vas bien"]) and not _chat_has(qn, ["hello", "hi", "how are", "english", "speak"]):
                     reply = (
                         f"Bonjour, ça va merci, et vous ? Je suis DA, l'assistant virtuel du site officiel de {nom}. "
-                        "Je peux vous aider sur sa biographie, son parcours, son programme, ses actualités, les demandes d'audience ou le contact."
+                        "Je peux vous aider sur sa biographie, son parcours, son programme, ses actualités, les demandes d'audience ou le contact. "
+                        "Que puis-je faire pour vous aider ?"
                     )
 
                 # ── Qui est DA ────────────────────────────────────────────────
