@@ -63,10 +63,19 @@ def test_email_matching_is_case_insensitive():
         admin_owners._OWNER_EMAIL_SHA256 = original
 
 
-def test_legacy_admin_is_never_owner_without_reserved_email():
-    original, _, _ = _with_test_owner_fingerprints()
+def test_legacy_admin_is_only_temporary_bootstrap_owner_before_first_activation():
+    original, email1, _ = _with_test_owner_fingerprints()
     try:
         server = DummyServer([{"username": "legacy-admin", "role": "admin"}])
+        assert admin_owners.is_owner_session(server, {"username": "legacy-admin"})
+
+        server.users.append({
+            "username": "owner-one",
+            "email": email1,
+            "role": "admin",
+            "owner_pending": False,
+        })
+        assert admin_owners.is_owner_session(server, {"username": "owner-one"})
         assert not admin_owners.is_owner_session(server, {"username": "legacy-admin"})
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
@@ -80,7 +89,7 @@ def test_pending_designated_owner_does_not_take_control_early():
             {"username": "pending", "email": email1, "role": "admin", "owner_pending": True},
         ])
         assert not admin_owners.is_owner_session(server, {"username": "pending"})
-        assert not admin_owners.is_owner_session(server, {"username": "legacy-admin"})
+        assert admin_owners.is_owner_session(server, {"username": "legacy-admin"})
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
 
