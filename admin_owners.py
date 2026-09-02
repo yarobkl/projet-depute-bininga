@@ -1,14 +1,12 @@
 """Authoritative two-owner policy for the BININGA administration.
 
 The repository is public, so the owners' email addresses are deliberately not
-stored in clear text here.  Ownership is matched against SHA-256 fingerprints
-of normalized email addresses.  The actual address only enters the persistent
-users store when its owner activates the account through the password-recovery
-flow.
+stored in clear text here. Ownership is matched against SHA-256 fingerprints of
+normalized email addresses.
 
-There are exactly two designated owner identities.  The historical
-``ADMIN_USER`` remains a recovery owner only until at least one designated
-owner has been activated, preventing an accidental lockout during migration.
+Exactly two designated identities can ever become Owner. Other administration
+accounts may be created by an Owner and receive delegated roles, but a username
+or the legacy ``ADMIN_USER`` value alone never grants Owner privileges.
 """
 from __future__ import annotations
 
@@ -17,7 +15,7 @@ import secrets
 from datetime import datetime, timezone
 
 
-# SHA-256(normalized_email).  Do not replace these with plaintext addresses.
+# SHA-256(normalized_email). Do not replace these with plaintext addresses.
 _OWNER_EMAIL_SHA256 = frozenset({
     "cb127353222654d317816f817a1b3c401faa9877d22d54d1f0f38c818b0ab545",
     "02a930477769090baa89da084f1737a68bef6205d711f432c3622e809b597225",
@@ -90,32 +88,15 @@ def find_user_by_email(server, email: object):
 
 
 def is_owner_user(server, user: object) -> bool:
-    """Return true for an active designated owner.
-
-    During the migration only, the historical ADMIN_USER keeps recovery-owner
-    rights while no designated owner has completed activation.  As soon as one
-    designated owner becomes active, the legacy username no longer grants
-    top-level privileges by itself.
-    """
-    if not isinstance(user, dict):
-        return False
-    if is_active_designated_owner_user(user):
-        return True
-    if active_designated_owners(server):
-        return False
-    return user.get("username") == getattr(server, "ADMIN_USER", "admin")
+    """Only an activated designated owner identity has Owner privileges."""
+    return is_active_designated_owner_user(user)
 
 
 def is_owner_session(server, session: object) -> bool:
     if not isinstance(session, dict):
         return False
     user = find_user_by_username(server, session.get("username"))
-    if user:
-        return is_owner_user(server, user)
-    # Recovery compatibility for a process-local historical admin session.
-    if not active_designated_owners(server):
-        return session.get("username") == getattr(server, "ADMIN_USER", "admin")
-    return False
+    return bool(user and is_owner_user(server, user))
 
 
 def is_protected_owner_user(user: object) -> bool:
@@ -124,11 +105,11 @@ def is_protected_owner_user(user: object) -> bool:
 
 
 def provision_pending_owner(server, email: object):
-    """Create a pending owner account after one of the two reserved emails claims it.
+    """Create one of the two reserved Owner accounts for first activation.
 
-    No usable temporary password is exposed: a random password hash is written
-    and the account must complete the one-time reset link before it becomes an
-    active owner.
+    No usable temporary password is exposed. A random password hash is stored
+    and the designated email must complete the one-time password link before
+    the account becomes an active Owner.
     """
     normalized = normalize_email(email)
     if not is_designated_owner_email(normalized):
@@ -150,6 +131,7 @@ def provision_pending_owner(server, email: object):
         if existing.get("role") != "admin":
             existing["role"] = "admin"
             changed = True
+        existing["owner_reserved"] = True
         if changed:
             server.save_users(users)
         return existing
@@ -164,7 +146,7 @@ def provision_pending_owner(server, email: object):
         "role": "admin",
         "nom": "Propriétaire BININGA",
         "email": normalized,
-        "created_by": "owner-claim",
+        "created_by": "owner-first-login",
         "must_change_password": True,
         "password_changed_at": "",
         "owner_pending": True,
@@ -192,3 +174,7 @@ def owner_count(server) -> int:
 
 def owner_slots() -> int:
     return len(_OWNER_EMAIL_SHA256)
+
+
+def first_login_available(server) -> bool:
+    return owner_count(server) < owner_slots()
