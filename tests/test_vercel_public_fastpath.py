@@ -46,6 +46,7 @@ def main() -> None:
     html = gzip.decompress(body).decode("utf-8")
     assert "/static/index-core.js?v=" in html
     assert "/static/public-form-hardening.js?v=" in html
+    assert '<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">' in html
 
     status, headers, body = request("/static/index.css", "v=contract")
     assert status == "200 OK"
@@ -57,6 +58,11 @@ def main() -> None:
     status, headers, body = request("/images/bininga.jpg")
     assert status == "200 OK" and body.startswith(b"\xff\xd8")
     assert "stale-while-revalidate" in headers["Cache-Control"]
+
+    status, headers, body = request("/images/favicon.svg")
+    assert status == "200 OK"
+    assert headers["Content-Type"] == "image/svg+xml"
+    assert b"Ange Aim" in body
 
     # Les contenus dynamiques et sensibles restent sur l'application complète.
     assert vercel_entrypoint.try_serve({"REQUEST_METHOD": "GET", "PATH_INFO": "/data.json"}, None) is None

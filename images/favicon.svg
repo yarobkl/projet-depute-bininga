@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ange Aimé Wilfrid Bininga">
+  <rect width="64" height="64" rx="14" fill="#080706"/>
+  <path d="M8 10h48v44H8z" fill="none" stroke="#c8102e" stroke-width="2"/>
+  <text x="32" y="40" text-anchor="middle" fill="#f4c430" font-family="Georgia, serif" font-size="26" font-weight="700">AB</text>
+  <circle cx="51" cy="14" r="3" fill="#c8102e"/>
+</svg>
