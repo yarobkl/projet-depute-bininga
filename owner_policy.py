@@ -5,7 +5,6 @@ centralizes owner recognition so every privileged endpoint uses the same rule.
 """
 from __future__ import annotations
 
-import json
 import os
 import secrets
 
@@ -39,9 +38,7 @@ def user_email(user: dict) -> str:
 
 
 def is_owner_user(user: dict | None) -> bool:
-    if not isinstance(user, dict):
-        return False
-    return user_email(user) in set(owner_emails())
+    return isinstance(user, dict) and user_email(user) in set(owner_emails())
 
 
 def user_for_session(server, session: dict | None) -> dict | None:
@@ -91,12 +88,12 @@ def _write_marker(server) -> None:
 
 
 def ensure_owner_accounts(server) -> None:
-    """Persist exactly the two configured owner identities without resetting passwords.
+    """Persist the two owner identities while preserving the current admin secret.
 
-    The existing ADMIN_USER account is assigned to the first owner when it has
-    no owner email yet, preserving its current password. A missing second owner
-    receives a random unknown credential and must activate the account through
-    the password-reset flow.
+    If the historical ADMIN_USER exists, its current password hash is retained
+    and the account becomes the first owner. A missing second owner starts with
+    the same *hash* only as a migration bridge and is forced to choose a unique
+    password on first login. No plaintext credential is copied or logged.
     """
     if _marker_present(server):
         return
@@ -114,6 +111,7 @@ def ensure_owner_accounts(server) -> None:
         first = next((user for user in users if str(user.get("username") or "") == admin_username), None)
         if first:
             first["email"] = emails[0]
+            first["nom"] = first.get("nom") or "Rodrin Bakala"
             changed = True
         else:
             first = {
@@ -126,15 +124,17 @@ def ensure_owner_accounts(server) -> None:
             users.append(first)
             changed = True
 
+    bridge_hash = str(first.get("password_hash") or "") or server._hash_new(secrets.token_urlsafe(48))
     by_email = {user_email(user): user for user in users if user_email(user)}
     second = by_email.get(emails[1])
     if not second:
         second = {
             "username": emails[1],
             "email": emails[1],
-            "password_hash": server._hash_new(secrets.token_urlsafe(48)),
+            "password_hash": bridge_hash,
             "nom": "Elie Bakala",
             "must_change_password": True,
+            "password_changed_at": "",
         }
         users.append(second)
         changed = True
