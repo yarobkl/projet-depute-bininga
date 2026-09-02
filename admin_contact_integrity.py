@@ -6,7 +6,7 @@ hardens the legacy contact/CRM handlers without rewriting the large server.py:
 * legacy form records receive stable deterministic IDs;
 * source/type aliases are normalized consistently;
 * contact updates are validated before they reach the legacy handler;
-* destructive contact operations are main-admin only;
+* destructive contact operations are owner-only;
 * read/modify/write mutations are serialized to avoid lost updates.
 
 The public form endpoints and their existing CSRF/auth/rate-limit behaviour stay
@@ -21,6 +21,8 @@ import io
 import json
 import threading
 from typing import Any, Dict, Iterable, List
+
+import admin_owners
 
 _ALLOWED_CONTACT_STATUS = {"en_attente", "en_cours", "traite", "non_lu", "lu"}
 _CONTACT_MUTATIONS = {"/api/contacts/update", "/api/contacts/clear"}
@@ -104,8 +106,6 @@ def normalize_contacts(rows: Any) -> List[Dict[str, Any]]:
 
         source = _canonical_source(item.get("source") or item.get("type"))
         if source:
-            # Public endpoints already store both. Filling a missing or legacy
-            # alias keeps old imports compatible with the current API filters.
             item["source"] = source
             item["type"] = source
 
@@ -130,8 +130,6 @@ def install(server) -> None:
     _original_load_contacts = server.load_contacts
     _original_save_contacts = server.save_contacts
 
-    # RLock is deliberate: append_contact/public CRM already acquire these
-    # locks internally, while WSGI mutation_guard may acquire them externally.
     server._CONTACT_LOCK = threading.RLock()
     server._CRM_LOCK = threading.RLock()
 
@@ -182,12 +180,7 @@ def _sanitize_notes(notes: Any) -> List[Dict[str, str]]:
 
 
 def guard_request(server, handler) -> bool:
-    """Validate dangerous contact mutations before server.py handles them.
-
-    ``False`` means a response has already been emitted by this guard.
-    Authentication/CSRF failures are intentionally left to the legacy handler
-    so its normal logging and rate-limit behaviour is preserved.
-    """
+    """Validate dangerous contact mutations before server.py handles them."""
     if handler.command != "POST":
         return True
 
@@ -200,20 +193,17 @@ def guard_request(server, handler) -> bool:
     if not session:
         return True
 
-    # Destructive global operations are intentionally reserved to the same
-    # main administrator that owns the System panels in the UI.
     if path in {"/api/contacts/clear", "/api/reset"}:
-        if session.get("username") != server.ADMIN_USER:
+        if not admin_owners.is_owner_session(server, session):
             server.audit_log(
                 "AUTHZ_REJECT",
                 handler.client_address[0],
                 f"Opération destructive refusée sur {path} pour {session.get('username', '?')}",
             )
-            handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+            handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
             return False
         return True
 
-    # Keep the legacy CSRF rejection path authoritative.
     if not _csrf_is_valid(server, handler, session):
         return True
 
@@ -275,7 +265,6 @@ def mutation_guard(server, handler):
         if path in _CONTACT_MUTATIONS:
             stack.enter_context(server._CONTACT_LOCK)
         elif path == "/api/reset":
-            # Fixed acquisition order across the adapter.
             stack.enter_context(server._CONTACT_LOCK)
             stack.enter_context(server._CRM_LOCK)
         elif path == "/api/crm/import":
