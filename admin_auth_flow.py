@@ -7,8 +7,8 @@ in clear text: only their SHA-256 digest is stored in the persistent database.
 from __future__ import annotations
 
 import hashlib
-import hmac
 import html
+import io
 import json
 import os
 import re
@@ -19,6 +19,8 @@ import urllib.request
 from datetime import datetime, timezone
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+
+import admin_owners
 
 
 RESET_STORE_KEY = "auth_password_resets_v1"
@@ -51,6 +53,18 @@ def _body(handler) -> dict:
         return parsed if isinstance(parsed, dict) else {}
     except Exception:
         return {}
+
+
+def _replace_request_body(handler, payload: dict) -> None:
+    encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    handler.rfile = io.BytesIO(encoded)
+    try:
+        if handler.headers.get("Content-Length") is not None:
+            handler.headers.replace_header("Content-Length", str(len(encoded)))
+        else:
+            handler.headers["Content-Length"] = str(len(encoded))
+    except Exception:
+        pass
 
 
 def _email(value: object) -> str:
@@ -112,6 +126,21 @@ def _find_user(server, identifier: str):
 
 def _find_user_by_username(server, username: str):
     return next((u for u in server.load_users() if u.get("username") == username), None)
+
+
+def _prepare_login_identifier(server, handler) -> None:
+    """Allow login with the recovery email while preserving the legacy login API."""
+    payload = _body(handler)
+    identifier = str(payload.get("username") or "").strip()
+    if not identifier or "@" not in identifier:
+        return
+    user = _find_user(server, identifier)
+    if not user:
+        return
+    canonical = str(user.get("username") or "")
+    if canonical and canonical != identifier:
+        payload["username"] = canonical
+        _replace_request_body(handler, payload)
 
 
 def _clean_reset_store(raw: object) -> dict:
@@ -257,7 +286,16 @@ def _handle_forgot(server, handler) -> bool:
     if not identifier:
         handler._json(generic)
         return False
+
     user = _find_user(server, identifier)
+    if not user and _valid_email(_email(identifier)) and admin_owners.is_designated_owner_email(identifier):
+        try:
+            user = admin_owners.provision_pending_owner(server, identifier)
+            if user:
+                server.audit_log("OWNER_RESERVED", handler.client_address[0], "Activation d'un propriétaire réservée par email")
+        except Exception:
+            user = None
+
     if not user or not _valid_email(_email(user.get("email"))):
         time.sleep(0.15)
         handler._json(generic)
@@ -336,6 +374,7 @@ def _handle_reset(server, handler) -> bool:
     target["password_hash"] = server._hash_new(password)
     target["must_change_password"] = False
     target["password_changed_at"] = _now_iso()
+    admin_owners.activate_owner_fields(target)
     server.save_users(users)
     store.pop(digest, None)
     _save_reset_store(server, store)
@@ -373,6 +412,7 @@ def _handle_change(server, handler) -> bool:
     target["password_hash"] = server._hash_new(new_password)
     target["must_change_password"] = False
     target["password_changed_at"] = _now_iso()
+    admin_owners.activate_owner_fields(target)
     server.save_users(users)
     _revoke_user_sessions(server, username)
     server.audit_log("PASSWORD_CHANGE_OK", handler.client_address[0], f"Mot de passe modifié pour {username}")
@@ -389,6 +429,9 @@ def _handle_session(server, handler) -> bool:
         "ok": True,
         "username": session.get("username", ""),
         "email": _email(user.get("email")),
+        "is_owner": admin_owners.is_owner_session(server, session),
+        "owner_count": admin_owners.owner_count(server),
+        "owner_slots": admin_owners.owner_slots(),
         "must_change_password": bool(user.get("must_change_password", False)),
         "password_changed_at": user.get("password_changed_at", ""),
     })
@@ -399,18 +442,26 @@ def _handle_users_meta(server, handler) -> bool:
     session, _ = _session(server, handler)
     if not session:
         return False
-    if session.get("username") != server.ADMIN_USER:
-        handler._json({"ok": False, "message": "Réservé à l’administrateur principal"}, 403)
+    if not admin_owners.is_owner_session(server, session):
+        handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
         return False
     users = []
     for user in server.load_users():
         users.append({
             "username": user.get("username", ""),
             "email": _email(user.get("email")),
+            "is_owner": admin_owners.is_active_designated_owner_user(user),
+            "owner_pending": bool(user.get("owner_pending", False)),
+            "owner_reserved": admin_owners.is_designated_owner_user(user),
             "must_change_password": bool(user.get("must_change_password", False)),
             "password_changed_at": user.get("password_changed_at", ""),
         })
-    handler._json({"ok": True, "users": users})
+    handler._json({
+        "ok": True,
+        "users": users,
+        "owner_count": admin_owners.owner_count(server),
+        "owner_slots": admin_owners.owner_slots(),
+    })
     return False
 
 
@@ -418,8 +469,8 @@ def _handle_user_upsert(server, handler) -> bool:
     session, _ = _session(server, handler, csrf=True)
     if not session:
         return False
-    if session.get("username") != server.ADMIN_USER:
-        handler._json({"ok": False, "message": "Réservé à l’administrateur principal"}, 403)
+    if not admin_owners.is_owner_session(server, session):
+        handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
         return False
 
     data = _body(handler)
@@ -437,10 +488,31 @@ def _handle_user_upsert(server, handler) -> bool:
 
     users = server.load_users()
     existing = next((u for u in users if u.get("username") == username), None)
+    duplicate_email = next(
+        (
+            u for u in users
+            if u is not existing and _email(u.get("email")) == email_address
+        ),
+        None,
+    )
+    if duplicate_email:
+        handler._json({"ok": False, "message": "Cette adresse email est déjà associée à un autre compte."}, 409)
+        return False
+
+    if existing and admin_owners.is_protected_owner_user(existing):
+        if _email(existing.get("email")) != email_address:
+            handler._json({"ok": False, "message": "L’adresse email d’un propriétaire protégé ne peut pas être remplacée."}, 403)
+            return False
+
+    designated_owner = admin_owners.is_designated_owner_email(email_address)
+    effective_role = "admin" if designated_owner else role
+
     if existing:
         existing["nom"] = name or existing.get("nom") or username
-        existing["role"] = role
+        existing["role"] = effective_role
         existing["email"] = email_address
+        if designated_owner:
+            existing["owner_reserved"] = True
         if password:
             error = _password_error(password, username)
             if error:
@@ -450,6 +522,9 @@ def _handle_user_upsert(server, handler) -> bool:
             if username != session.get("username"):
                 existing["must_change_password"] = True
                 existing["password_changed_at"] = ""
+                if designated_owner:
+                    existing["owner_pending"] = True
+                    existing["owner_activated_at"] = ""
                 _revoke_user_sessions(server, username)
     else:
         if not password:
@@ -459,19 +534,66 @@ def _handle_user_upsert(server, handler) -> bool:
         if error:
             handler._json({"ok": False, "message": error}, 400)
             return False
-        users.append({
+        user = {
             "username": username,
             "password_hash": server._hash_new(password),
-            "role": role,
+            "role": effective_role,
             "nom": name or username,
             "email": email_address,
             "created_by": session.get("username", ""),
             "must_change_password": True,
             "password_changed_at": "",
-        })
+        }
+        if designated_owner:
+            user.update({
+                "owner_reserved": True,
+                "owner_pending": True,
+                "owner_activated_at": "",
+            })
+        users.append(user)
+
     server.save_users(users)
-    server.audit_log("USER_UPSERT", handler.client_address[0], f"{'Modification' if existing else 'Création'} utilisateur : {username} ({role})")
-    handler._json({"ok": True, "must_change_password": bool((existing or {}).get("must_change_password", not existing))})
+    target = existing or users[-1]
+    server.audit_log("USER_UPSERT", handler.client_address[0], f"{'Modification' if existing else 'Création'} utilisateur : {username} ({effective_role})")
+    handler._json({
+        "ok": True,
+        "is_owner": admin_owners.is_active_designated_owner_user(target),
+        "owner_pending": bool(target.get("owner_pending", False)),
+        "must_change_password": bool(target.get("must_change_password", False)),
+    })
+    return False
+
+
+def _handle_user_delete(server, handler) -> bool:
+    session, _ = _session(server, handler, csrf=True)
+    if not session:
+        return False
+    if not admin_owners.is_owner_session(server, session):
+        handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
+        return False
+
+    data = _body(handler)
+    username = str(data.get("username") or "").strip()
+    if not username:
+        handler._json({"ok": False, "message": "Utilisateur invalide."}, 400)
+        return False
+    if username == session.get("username"):
+        handler._json({"ok": False, "message": "Vous ne pouvez pas supprimer votre propre compte pendant votre session."}, 400)
+        return False
+
+    users = server.load_users()
+    target = next((u for u in users if u.get("username") == username), None)
+    if not target:
+        handler._json({"ok": False, "message": "Compte introuvable."}, 404)
+        return False
+    if admin_owners.is_protected_owner_user(target):
+        handler._json({"ok": False, "message": "Un propriétaire BININGA protégé ne peut pas être supprimé."}, 403)
+        return False
+
+    server.save_users([u for u in users if u.get("username") != username])
+    _revoke_user_sessions(server, username)
+    server.audit_log("USER_DELETE", handler.client_address[0], f"Suppression utilisateur par owner : {username}")
+    handler._json({"ok": True})
     return False
 
 
@@ -500,6 +622,9 @@ def guard_request(server, handler):
     path = _path(handler)
     method = str(getattr(handler, "command", "GET")).upper()
 
+    if method == "POST" and path == "/api/login":
+        _prepare_login_identifier(server, handler)
+
     if not _block_until_password_changed(server, handler):
         return False
 
@@ -515,6 +640,8 @@ def guard_request(server, handler):
         return _handle_users_meta(server, handler)
     if method == "POST" and path == "/api/users/upsert":
         return _handle_user_upsert(server, handler)
+    if method == "POST" and path == "/api/users/delete":
+        return _handle_user_delete(server, handler)
     return True
 
 
@@ -532,7 +659,7 @@ def _replace_json_response(handler, payload: dict) -> None:
 
 
 def postprocess_response(server, handler) -> None:
-    """Add account lifecycle state to successful legacy login responses."""
+    """Add account lifecycle and owner state to successful legacy login responses."""
     if str(getattr(handler, "command", "GET")).upper() != "POST" or _path(handler) != "/api/login":
         return
     if int(getattr(handler, "_status_code", 200)) != 200:
@@ -546,8 +673,14 @@ def postprocess_response(server, handler) -> None:
         return
     username = str(payload.get("username") or "")
     user = _find_user_by_username(server, username) or {}
+    session = {"username": username}
+    is_owner = admin_owners.is_owner_session(server, session)
     payload["must_change_password"] = bool(user.get("must_change_password", False))
     payload["email"] = _email(user.get("email"))
+    payload["is_owner"] = is_owner
+    payload["is_main_admin"] = is_owner
+    payload["owner_count"] = admin_owners.owner_count(server)
+    payload["owner_slots"] = admin_owners.owner_slots()
     admin_path = str(getattr(server, "ADMIN_SECRET_PATH", "") or "").strip().strip("/")
     if admin_path:
         payload["admin_path"] = f"/{admin_path}"
