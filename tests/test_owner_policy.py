@@ -55,11 +55,13 @@ def test_owner_accounts_are_protected_from_standard_delete_and_email_reassignmen
     assert "L’adresse email d’un owner ne peut pas être remplacée" in source
 
 
-def test_login_response_exposes_owner_state_to_existing_admin_ui():
+def test_login_response_exposes_owner_state_without_breaking_legacy_admin_role():
     source = open(os.path.join(ROOT, "admin_auth_flow.py"), encoding="utf-8").read()
+    policy = open(os.path.join(ROOT, "owner_policy.py"), encoding="utf-8").read()
     assert 'payload["is_main_admin"] = is_owner' in source
     assert 'payload["is_owner"] = is_owner' in source
-    assert 'payload["role"] = "owner" if is_owner' in source
+    assert 'payload["role"] = "owner"' not in source
+    assert 'user["role"] = "admin"' in policy
 
 
 def test_second_owner_migration_uses_hash_only_and_forces_unique_password_after_first_login():
