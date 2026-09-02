@@ -1347,32 +1347,41 @@ setTimeout(closePageLoader, 3200);
 
 // ── TRACKING VISITEURS (côté serveur) ────────────────────
 (function(){
-  fetch("/api/track-visit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ page: "/", kind: "visit" })
-  }).catch(()=>{});
+  if (!window.BiningaConsent) return;
+  window.BiningaConsent.onAnalytics(() => {
+    fetch("/api/track-visit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: location.pathname, kind: "visit" })
+    }).catch(()=>{});
+  });
 })();
 
 // ── TRACKING LECTURES DU PROGRAMME ───────────────────────
 (function(){
-  const progEl = document.getElementById("programme");
-  if(!progEl || !("IntersectionObserver" in window)) return;
-  let tracked = false;
-  const obs = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if(e.isIntersecting && !tracked){
-        tracked = true;
-        fetch("/api/track-visit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ kind: "prog" })
-        }).catch(()=>{});
-        obs.disconnect();
-      }
-    });
-  }, { threshold: 0.2 });
-  obs.observe(progEl);
+  if (!window.BiningaConsent) return;
+  window.BiningaConsent.onAnalytics(() => {
+    const progEl = document.getElementById("programme");
+    if(!progEl || !("IntersectionObserver" in window)) return;
+    let tracked = false;
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if(e.isIntersecting && !tracked){
+          tracked = true;
+          fetch("/api/track-visit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ kind: "prog" })
+          }).catch(()=>{});
+          if (window.BiningaAnalytics) {
+            window.BiningaAnalytics.track("programme_view", { section: "programme" });
+          }
+          obs.disconnect();
+        }
+      });
+    }, { threshold: 0.2 });
+    obs.observe(progEl);
+  });
 })();
 
 // ── LIGHTBOX GALERIE ──────────────────────────────────────
@@ -1472,8 +1481,9 @@ function showOrderForm() {
   document.getElementById("achat-step-2").style.display = "block";
 }
 function trackBuy(platform) {
-  try { window.plausible && window.plausible("Achat Livre", { props: { plateforme: platform } }); } catch(_){}
-  try { const l=JSON.parse(localStorage.getItem("bininga_livre_clics")||"[]"); l.push({platform,_date:new Date().toLocaleString("fr-FR")}); localStorage.setItem("bininga_livre_clics",JSON.stringify(l)); } catch(_){}
+  if (window.BiningaAnalytics) {
+    window.BiningaAnalytics.track("book_purchase_click", { platform: String(platform || "unknown") });
+  }
 }
 async function submitOrder(e, f) {
   e.preventDefault();

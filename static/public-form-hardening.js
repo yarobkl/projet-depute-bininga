@@ -121,6 +121,9 @@
       if (data.tracking_code && typeof window.showTrackingReceipt === "function") {
         window.showTrackingReceipt(data.tracking_code);
       }
+      if (window.BiningaAnalytics) {
+        window.BiningaAnalytics.track("generate_lead", { lead_type: String(storageKey || "public_form") });
+      }
 
       setTimeout(() => {
         const form = btn.closest("form");
@@ -178,6 +181,9 @@
       }
       ok.style.color = "#2ecc71";
       ok.style.display = "block";
+      if (window.BiningaAnalytics) {
+        window.BiningaAnalytics.track("generate_lead", { lead_type: "book_order" });
+      }
     } catch (err) {
       ok.textContent = err && err.message ? err.message : "Commande non enregistrée. Réessayez plus tard.";
       ok.style.color = "#e74c3c";
@@ -218,6 +224,9 @@
       ok.textContent = "Inscription enregistrée.";
       ok.style.color = "#2ecc71";
       ok.style.display = "block";
+      if (window.BiningaAnalytics) {
+        window.BiningaAnalytics.track("sign_up", { method: "newsletter" });
+      }
     } catch (err) {
       ok.textContent = err && err.message ? err.message : "Inscription non enregistrée. Réessayez plus tard.";
       ok.style.color = "#e74c3c";

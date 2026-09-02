@@ -25,6 +25,7 @@ PUBLIC_TEXT_ASSETS = (
     "i18n.js", "i18n-data.en.js", "i18n-data.es.js", "i18n-data.zh.js",
     "i18n-data.ru.js", "index.js", "index-core.js",
     "public-experience.js", "chat.js", "public-form-hardening.js",
+    "analytics-consent.css", "analytics-consent.js",
 )
 TEXT_MIMES = {"text/css", "text/javascript", "application/javascript"}
 MEDIA_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".svg",
@@ -47,14 +48,17 @@ BUILD_VERSION = _build_version()
 
 def _security_headers() -> list[tuple[str, str]]:
     csp = (
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
         "img-src 'self' data: blob: https://*.tile.openstreetmap.org "
-        "https://www.openstreetmap.org; "
+        "https://www.openstreetmap.org https://www.google-analytics.com "
+        "https://www.googletagmanager.com; "
         "frame-src https://www.openstreetmap.org https://www.youtube.com "
         "https://www.youtube-nocookie.com; "
-        "connect-src 'self' https://nominatim.openstreetmap.org; "
+        "connect-src 'self' https://nominatim.openstreetmap.org "
+        "https://www.google-analytics.com https://*.google-analytics.com "
+        "https://www.googletagmanager.com; "
         "media-src 'self'; "
         "object-src 'none'; base-uri 'self'; form-action 'self'; "
         "upgrade-insecure-requests"

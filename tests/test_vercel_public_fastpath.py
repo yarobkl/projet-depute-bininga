@@ -46,6 +46,8 @@ def main() -> None:
     html = gzip.decompress(body).decode("utf-8")
     assert "/static/index-core.js?v=" in html
     assert "/static/public-form-hardening.js?v=" in html
+    assert "/static/analytics-consent.css?v=" in html
+    assert "/static/analytics-consent.js?v=" in html
     assert '<link rel="icon" href="/images/favicon.svg" type="image/svg+xml">' in html
 
     status, headers, body = request("/static/index.css", "v=contract")
@@ -74,6 +76,8 @@ def main() -> None:
 
     assert "https://www.youtube.com" in headers.get("Content-Security-Policy", "")
     assert "https://nominatim.openstreetmap.org" in headers.get("Content-Security-Policy", "")
+    assert "https://www.googletagmanager.com" in headers.get("Content-Security-Policy", "")
+    assert "https://www.google-analytics.com" in headers.get("Content-Security-Policy", "")
 
     print("✅ Vercel public fast path — contrats valides")
 

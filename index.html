@@ -91,6 +91,7 @@
 <link rel="stylesheet" href="static/index.css?v=20260901-public-experience">
 <link rel="stylesheet" href="static/mobile.css?v=20260622-readable-drawer">
 <link rel="stylesheet" href="static/public-experience.css?v=20260901-motion-suite4">
+<link rel="stylesheet" href="static/analytics-consent.css?v=20260902-ga4-consent">
 <style>
 /* ── Sélecteur de langue ─────────────────────────────────── */
 .lang-switcher{display:flex;align-items:center;gap:4px;margin-left:10px}
@@ -107,6 +108,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 @media(max-width:900px){.lang-switcher{display:none}}
 </style>
 <script src="static/i18n.js?v=20260901-public-experience"></script>
+<script src="static/analytics-consent.js?v=20260902-ga4-consent" defer></script>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -919,17 +921,17 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
     </div>
     <div class="lmodal-body">
       <h4 data-i18n="modal.privacy.collected.h">Données collectées</h4>
-      <p data-i18n-html="modal.privacy.collected.p">Ce site collecte des données personnelles uniquement via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message).</p>
+      <p data-i18n-html="modal.privacy.collected.p">Ce site collecte des données personnelles via ses formulaires : <strong>demande d'audience</strong> (nom, prénom, adresse, téléphone, objet) et <strong>formulaire de contact</strong> (nom, prénom, email, sujet, message). Avec votre accord, Google Analytics 4 mesure également les pages consultées, les interactions, le type d'appareil et l'origine générale du trafic. Le contenu des formulaires n'est jamais envoyé à Google Analytics.</p>
       <h4 data-i18n="modal.privacy.purpose.h">Finalité du traitement</h4>
-      <p data-i18n-html="modal.privacy.purpose.p">Les données collectées sont utilisées exclusivement pour <strong>répondre à vos demandes</strong> et assurer le suivi de votre contact avec l'équipe du Député. Elles ne font l'objet d'aucune cession à des tiers ni d'aucune utilisation commerciale.</p>
+      <p data-i18n-html="modal.privacy.purpose.p">Les données des formulaires sont utilisées pour <strong>répondre à vos demandes</strong> et assurer leur suivi. Les données de mesure d'audience servent uniquement à comprendre la fréquentation et à améliorer les contenus du site. Elles ne sont pas utilisées à des fins publicitaires.</p>
       <h4 data-i18n="modal.privacy.storage.h">Stockage des données</h4>
-      <p data-i18n-html="modal.privacy.storage.p">Les soumissions sont conservées dans l'espace d'administration sécurisé du site. Elles ne sont accessibles qu'aux membres habilités de la cellule de communication.</p>
+      <p data-i18n-html="modal.privacy.storage.p">Les soumissions sont conservées dans l'espace d'administration sécurisé du site et ne sont accessibles qu'aux membres habilités. Après consentement, les données de fréquentation sont traitées au moyen de <strong>Google Analytics 4</strong>, fourni par Google.</p>
       <h4 data-i18n="modal.privacy.duration.h">Durée de conservation</h4>
-      <p data-i18n-html="modal.privacy.duration.p">Les données sont conservées pour la durée nécessaire au traitement de votre demande, et au maximum <strong>12 mois</strong> à compter de la soumission.</p>
+      <p data-i18n-html="modal.privacy.duration.p">Les formulaires sont conservés pendant la durée nécessaire à leur traitement, au maximum <strong>12 mois</strong>. Les cookies Google Analytics sont configurés pour une durée maximale de <strong>13 mois</strong>. Votre choix de consentement est redemandé après six mois.</p>
       <h4 data-i18n="modal.privacy.rights.h">Vos droits</h4>
-      <p data-i18n-html="modal.privacy.rights.p">Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Pour exercer ces droits, contactez-nous via le formulaire du site.</p>
+      <p data-i18n-html="modal.privacy.rights.p">Conformément aux réglementations applicables, vous disposez d'un droit d'accès, de rectification et de suppression de vos données. Vous pouvez également retirer à tout moment votre consentement à la mesure d'audience depuis la rubrique Cookies. Pour exercer vos autres droits, contactez-nous via le formulaire du site.</p>
       <h4 data-i18n="modal.privacy.cookies.h">Cookies</h4>
-      <p data-i18n-html="modal.privacy.cookies.p">Ce site n'utilise pas de cookies de suivi ou publicitaires. Des cookies techniques essentiels au fonctionnement du site peuvent être utilisés.</p>
+      <p data-i18n-html="modal.privacy.cookies.p">Les cookies de mesure d'audience Google Analytics ne sont déposés qu'après votre accord. Les stockages publicitaires, le reciblage et la personnalisation des annonces restent désactivés.</p>
     </div>
   </div>
 </div>
@@ -947,12 +949,12 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
       <p data-i18n-html="modal.cookies.what.p">Un cookie est un petit fichier déposé sur votre terminal lors de la visite d'un site. Il permet de mémoriser des informations relatives à votre navigation.</p>
       <h4 data-i18n="modal.cookies.used.h">Cookies utilisés sur ce site</h4>
       <p data-i18n-html="modal.cookies.technical.p"><strong>Cookies techniques (essentiels) :</strong> nécessaires au fonctionnement du site (navigation, sécurité). Ils ne peuvent pas être désactivés.</p>
-      <p data-i18n-html="modal.cookies.analytics.p"><strong>Cookies de mesure d'audience :</strong> ce site n'utilise pas de cookies de mesure d'audience ou d'analyse de comportement.</p>
-      <p data-i18n-html="modal.cookies.advertising.p"><strong>Cookies publicitaires :</strong> ce site ne dépose aucun cookie publicitaire ou de reciblage.</p>
+      <p data-i18n-html="modal.cookies.analytics.p"><strong>Cookies de mesure d'audience :</strong> après votre accord, Google Analytics 4 mesure les pages consultées, les interactions et l'origine générale du trafic afin d'améliorer le site. Il n'est pas chargé avant votre consentement.</p>
+      <p data-i18n-html="modal.cookies.advertising.p"><strong>Cookies publicitaires :</strong> les stockages Google Ads, le reciblage et la personnalisation publicitaire sont désactivés.</p>
       <h4 data-i18n="modal.cookies.storage.h">Données stockées localement</h4>
-      <p data-i18n-html="modal.cookies.storage.p">Ce site utilise le <strong>stockage local (localStorage)</strong> de votre navigateur uniquement pour la gestion interne de l'administration du site. Ces données ne sont pas transmises à des tiers.</p>
+      <p data-i18n-html="modal.cookies.storage.p">Ce site utilise le <strong>stockage local (localStorage)</strong> pour mémoriser la langue, le thème et votre choix de consentement. Le refus d'Analytics n'empêche pas le fonctionnement du site.</p>
       <h4 data-i18n="modal.cookies.choices.h">Vos choix</h4>
-      <p data-i18n-html="modal.cookies.choices.p">Vous pouvez à tout moment supprimer les données stockées via les paramètres de votre navigateur (<em>Outils → Confidentialité → Effacer les données de navigation</em>).</p>
+      <p data-i18n-html="modal.cookies.choices.p">Vous pouvez accepter, refuser ou modifier votre choix à tout moment. Le retrait du consentement désactive la mesure d'audience et supprime les cookies Analytics accessibles depuis ce site.</p>
     </div>
   </div>
 </div>
