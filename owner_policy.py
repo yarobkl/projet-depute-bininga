@@ -1,7 +1,8 @@
 """BININGA multi-owner authorization policy.
 
-The administration has exactly two business owners by email. This module
-centralizes owner recognition so every privileged endpoint uses the same rule.
+The administration has exactly two business owners by email. Owner is an
+authorization level layered on top of the legacy ``admin`` role so existing
+role checks remain fully compatible.
 """
 from __future__ import annotations
 
@@ -118,6 +119,7 @@ def ensure_owner_accounts(server) -> None:
                 "username": admin_username,
                 "email": emails[0],
                 "password_hash": server._hash_new(secrets.token_urlsafe(48)),
+                "role": "admin",
                 "nom": "Rodrin Bakala",
                 "must_change_password": True,
             }
@@ -132,6 +134,7 @@ def ensure_owner_accounts(server) -> None:
             "username": emails[1],
             "email": emails[1],
             "password_hash": bridge_hash,
+            "role": "admin",
             "nom": "Elie Bakala",
             "must_change_password": True,
             "password_changed_at": "",
@@ -141,13 +144,15 @@ def ensure_owner_accounts(server) -> None:
 
     for user in users:
         email = user_email(user)
-        desired_role = "owner" if email in emails else ("admin" if user.get("role") == "owner" else user.get("role", "lecteur"))
-        if user.get("role") != desired_role:
-            user["role"] = desired_role
-            changed = True
         if email in emails:
+            if user.get("role") != "admin":
+                user["role"] = "admin"
+                changed = True
             user["owner"] = True
         else:
+            if user.get("role") == "owner":
+                user["role"] = "admin"
+                changed = True
             user.pop("owner", None)
 
     if changed:
