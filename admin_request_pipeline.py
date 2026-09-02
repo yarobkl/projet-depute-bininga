@@ -9,6 +9,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import Callable, Iterator, Optional
 
+import admin_access_model
 import admin_auth_flow
 import admin_contact_integrity
 import admin_system_authz
@@ -23,6 +24,7 @@ LegacyAuthorization = Optional[Callable[[object], bool]]
 
 _GUARDS: tuple[Guard, ...] = (
     admin_system_authz.guard_request,
+    admin_access_model.guard_request,
     admin_auth_flow.guard_request,
     admin_contact_integrity.guard_request,
     backup_download.guard_request,
@@ -57,6 +59,7 @@ def mutation_context(server, handler) -> Iterator[None]:
 def process_response(server, handler) -> None:
     """Apply response-only enrichments after the authoritative handler ran."""
     admin_auth_flow.postprocess_response(server, handler)
+    admin_access_model.postprocess_response(server, handler)
 
 
 def guard_names() -> tuple[str, ...]:
