@@ -2,6 +2,7 @@
 from __future__ import annotations
 import hashlib, json, os, re, unicodedata
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+import owner_policy
 
 JO_OFFICIEL_URL = "https://sgg.cg/en/journal-officiel/le-journal-officiel.html"
 INTENT_TERMS: Dict[str, Sequence[str]] = {
@@ -294,13 +295,13 @@ def guard_request(server:Any,h:Any)->bool:
     if not path.startswith("/api/chatbot/"):return True
     s=_session(server,h)
     if not s:h._json({"ok":False,"message":"Non autorisé"},401);return False
-    if s.get("role") not in {"admin","ministre"}:h._json({"ok":False,"message":"Non autorisé"},403);return False
+    if s.get("role") not in {"admin","ministre","owner"} and not owner_policy.is_owner_session(server,s):h._json({"ok":False,"message":"Non autorisé"},403);return False
     try:
         if h.command=="GET" and path=="/api/chatbot/status":h._json(_status(server));return False
         if h.command=="GET" and path=="/api/chatbot/knowledge":h._json(_admin_list(server));return False
         if h.command=="GET" and path=="/api/chatbot/unanswered":h._json(_admin_list(server,True));return False
         if h.command=="POST":
-            if s.get("username")!=server.ADMIN_USER:h._json({"ok":False,"message":"Réservé à l'administrateur principal"},403);return False
+            if not owner_policy.is_owner_session(server,s):h._json({"ok":False,"message":"Réservé aux propriétaires de l’administration"},403);return False
             if not _csrf(h,s):h._json({"ok":False,"message":"Jeton CSRF invalide"},403);return False
             p=_body(h)
             if path=="/api/chatbot/knowledge/upsert":r=_upsert(server,p);event="CHATBOT_KNOWLEDGE_SAVE"
