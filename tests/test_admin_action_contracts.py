@@ -30,7 +30,7 @@ def _admin_sources() -> str:
 
 def _server_sources() -> str:
     names = (
-        "server.py", "passenger_wsgi.py", "admin_system_authz.py",
+        "server.py", "passenger_wsgi.py", "admin_request_pipeline.py", "admin_system_authz.py",
         "admin_contact_integrity.py", "editorial_publish_integrity.py", "chatbot_hardening.py",
     )
     return "\n".join(_read(os.path.join(ROOT, name)) for name in names if os.path.exists(os.path.join(ROOT, name)))
@@ -107,6 +107,8 @@ def test_security_copy_does_not_claim_fake_counts_in_production():
 
 def test_session_hardening_loads_production_actions():
     session = _read(os.path.join(STATIC, "admin-session-hardening.js"))
+    assert "admin-core.js" in session and "data-bininga-admin-core" in session
+    assert session.index("admin-core.js") < session.index("admin-production.js")
     assert "admin-production.js" in session and "data-bininga-production-hardening" in session
 
 
@@ -133,14 +135,17 @@ def test_system_crm_ux_is_loaded_and_server_remains_authoritative():
 
 
 def test_server_side_system_authorization_stays_enabled():
-    passenger = _read(os.path.join(ROOT, "passenger_wsgi.py")); authz = _read(os.path.join(ROOT, "admin_system_authz.py"))
-    assert "admin_system_authz.guard_request" in passenger
+    passenger = _read(os.path.join(ROOT, "passenger_wsgi.py"))
+    pipeline = _read(os.path.join(ROOT, "admin_request_pipeline.py"))
+    authz = _read(os.path.join(ROOT, "admin_system_authz.py"))
+    assert "admin_request_pipeline.allow_request" in passenger
+    assert "admin_system_authz.guard_request" in pipeline
     assert '"/api/security"' in authz and '"/api/backups"' in authz and '"/api/crm"' in authz and '"/api/logs"' in authz
 
 
 def test_editorial_publish_is_a_real_server_side_publication():
     passenger = _read(os.path.join(ROOT, "passenger_wsgi.py")); editorial = _read(os.path.join(ROOT, "editorial_publish_integrity.py"))
-    assert "import editorial_publish_integrity" in passenger and "editorial_publish_integrity.guard_request" in passenger
+    assert "import editorial_publish_integrity" in passenger and "editorial_publish_integrity.migrate_editorial_vedettes" in passenger
     assert '"/api/editorial/save"' in editorial and 'server.save_data(site_data)' in editorial and 'server._pg_save("editorial", rows)' in editorial
     assert '"publication_source": "editorial_ia"' in editorial and '"EDITORIAL_PUBLISH"' in editorial
 

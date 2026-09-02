@@ -13,27 +13,17 @@
   if (window.__BININGA_ADMIN_PRODUCTION__) return;
   window.__BININGA_ADMIN_PRODUCTION__ = true;
 
-  const apiPath = value => {
-    try {
-      const u = new URL(String(value), window.location.href);
-      return u.origin === window.location.origin ? u.pathname : '';
-    } catch (_) {
-      return '';
-    }
-  };
+  const core = window.BiningaAdminCore;
+  if (!core) {
+    console.error('[BININGA Admin] Noyau admin indisponible — protections production non initialisées.');
+    document.documentElement.dataset.adminProductionReady = 'degraded';
+    return;
+  }
 
-  const token = () => {
-    try { return typeof SESSION_TOKEN !== 'undefined' ? String(SESSION_TOKEN || '') : ''; }
-    catch (_) { return ''; }
-  };
-  const csrf = () => {
-    try { return typeof SESSION_CSRF !== 'undefined' ? String(SESSION_CSRF || '') : ''; }
-    catch (_) { return ''; }
-  };
-  const isMainAdmin = () => {
-    try { return typeof SESSION_IS_MAIN_ADMIN !== 'undefined' && !!SESSION_IS_MAIN_ADMIN; }
-    catch (_) { return false; }
-  };
+  const apiPath = core.apiPath;
+  const token = core.token;
+  const csrf = core.csrf;
+  const isMainAdmin = core.isMainAdmin;
 
   function toast(message, error = false) {
     if (typeof window.showToast === 'function') {
@@ -239,6 +229,7 @@
     restoreLoginInteraction();
     enforceDestructiveControls();
     auditInteractiveControls();
+    document.documentElement.dataset.adminProductionReady = '1';
 
     const login = document.getElementById('login');
     if (login) {

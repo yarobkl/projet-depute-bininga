@@ -30,12 +30,10 @@ import preimport_security  # noqa: F401
 
 import server as bininga_server
 import admin_contact_integrity
-import admin_system_authz
 import admin_bootstrap_hardening
+import admin_request_pipeline
 import request_identity
-import chatbot_hardening
 import editorial_publish_integrity
-import backup_download
 
 # Install the small compatibility/integrity layer after server.py has finished
 # bootstrapping, before the first WSGI request is handled.
@@ -256,7 +254,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-notification-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260823-session-7" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260902-architecture-1" defer></script>\n'
     if b"static/admin-chatbot.js" not in patched:
         scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
     if scripts:
@@ -302,20 +300,12 @@ _bootstrap()
 def application(environ, start_response):
     handler = _PassengerHandler(environ)
     try:
-        if not _harden_admin_authorization(handler):
-            pass
-        elif not admin_system_authz.guard_request(bininga_server, handler):
-            pass
-        elif not admin_contact_integrity.guard_request(bininga_server, handler):
-            pass
-        elif not backup_download.guard_request(bininga_server, handler):
-            pass
-        elif not editorial_publish_integrity.guard_request(bininga_server, handler):
-            pass
-        elif not chatbot_hardening.guard_request(bininga_server, handler):
-            pass
-        else:
-            with admin_contact_integrity.mutation_guard(bininga_server, handler):
+        if admin_request_pipeline.allow_request(
+            bininga_server,
+            handler,
+            legacy_authorization=_harden_admin_authorization,
+        ):
+            with admin_request_pipeline.mutation_context(bininga_server, handler):
                 _dispatch_request(handler)
     except Exception as exc:
         body = f"Internal Server Error: {exc}".encode("utf-8")
