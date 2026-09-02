@@ -63,19 +63,10 @@ def test_email_matching_is_case_insensitive():
         admin_owners._OWNER_EMAIL_SHA256 = original
 
 
-def test_legacy_admin_is_only_recovery_owner_before_first_activation():
-    original, email1, _ = _with_test_owner_fingerprints()
+def test_legacy_admin_is_never_owner_without_reserved_email():
+    original, _, _ = _with_test_owner_fingerprints()
     try:
         server = DummyServer([{"username": "legacy-admin", "role": "admin"}])
-        assert admin_owners.is_owner_session(server, {"username": "legacy-admin"})
-
-        server.users.append({
-            "username": "owner-one",
-            "email": email1,
-            "role": "admin",
-            "owner_pending": False,
-        })
-        assert admin_owners.is_owner_session(server, {"username": "owner-one"})
         assert not admin_owners.is_owner_session(server, {"username": "legacy-admin"})
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
@@ -89,7 +80,7 @@ def test_pending_designated_owner_does_not_take_control_early():
             {"username": "pending", "email": email1, "role": "admin", "owner_pending": True},
         ])
         assert not admin_owners.is_owner_session(server, {"username": "pending"})
-        assert admin_owners.is_owner_session(server, {"username": "legacy-admin"})
+        assert not admin_owners.is_owner_session(server, {"username": "legacy-admin"})
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
 
@@ -107,6 +98,7 @@ def test_reserved_owner_can_be_provisioned_without_usable_temporary_password():
         assert owner["owner_reserved"] is True
         assert str(owner["password_hash"]).startswith("hash:")
         assert admin_owners.owner_count(server) == 0
+        assert admin_owners.first_login_available(server) is True
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
 
@@ -122,6 +114,19 @@ def test_successful_password_setup_activates_designated_owner():
         server = DummyServer([user])
         assert admin_owners.owner_count(server) == 1
         assert admin_owners.is_owner_session(server, {"username": "owner-one"})
+    finally:
+        admin_owners._OWNER_EMAIL_SHA256 = original
+
+
+def test_first_login_disappears_after_both_reserved_owners_are_active():
+    original, email1, email2 = _with_test_owner_fingerprints()
+    try:
+        server = DummyServer([
+            {"username": "o1", "email": email1, "role": "admin", "owner_pending": False},
+            {"username": "o2", "email": email2, "role": "admin", "owner_pending": False},
+        ])
+        assert admin_owners.owner_count(server) == 2
+        assert admin_owners.first_login_available(server) is False
     finally:
         admin_owners._OWNER_EMAIL_SHA256 = original
 
