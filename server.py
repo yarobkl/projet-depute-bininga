@@ -4247,9 +4247,16 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 payload = json.loads(body.decode("utf-8")) if body.strip() else {}
                 custom_query = (payload.get("query") or "").strip()
 
-                import veille_serverless
                 data = load_news()
-                nouveaux = veille_serverless.run_news_quick(data, custom_query, budget_s=8.0)
+                # La CI valide le déclenchement et la persistance sans dépendre
+                # de flux RSS tiers, dont la latence rendrait les tests
+                # aléatoires. Le cycle réel reste strictement inchangé hors
+                # du mode de test explicite.
+                if BININGA_TEST:
+                    nouveaux = []
+                else:
+                    import veille_serverless
+                    nouveaux = veille_serverless.run_news_quick(data, custom_query, budget_s=8.0)
                 if nouveaux:
                     data.setdefault("items", []).extend(nouveaux)
                 data["last_run"] = datetime.now(timezone.utc).isoformat()
