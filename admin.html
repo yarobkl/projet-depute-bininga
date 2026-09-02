@@ -1262,6 +1262,7 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
         <div class="panel-header">
           <div class="panel-title">Sauvegardes — Données & Photos</div>
           <div class="card-actions">
+            <button class="sbtn sbtn-progress" id="btn-download-backup" onclick="downloadBackup()">Télécharger une archive de reprise</button>
             <button class="sbtn sbtn-progress" id="btn-run-backup" onclick="runBackupNow()">Créer une sauvegarde maintenant</button>
             <button class="sbtn sbtn-read" onclick="loadBackups()">Actualiser</button>
           </div>
@@ -1271,7 +1272,7 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
           <div class="kpi-card red">
             <div class="kpi-label">Dernière sauvegarde</div>
             <div class="kpi-val" id="backup-last-date" style="font-size:22px">—</div>
-            <div class="kpi-sub">créée automatiquement ou manuellement</div>
+            <div class="kpi-sub">copie créée sur le serveur</div>
           </div>
           <div class="kpi-card blue">
             <div class="kpi-label">Photos protégées</div>
@@ -1279,9 +1280,9 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
             <div class="kpi-sub">images exportées depuis la base</div>
           </div>
           <div class="kpi-card orange">
-            <div class="kpi-label">Copies conservées</div>
+            <div class="kpi-label">Copies sur ce serveur</div>
             <div class="kpi-val" id="backup-copy-count">—</div>
-            <div class="kpi-sub">rotation locale sur o2switch</div>
+            <div class="kpi-sub" id="backup-storage-label">persistance à vérifier</div>
           </div>
         </div>
 
@@ -1290,7 +1291,7 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
             <div class="card-title">Historique des sauvegardes</div>
           </div>
           <p style="font-size:12px;color:rgba(255,255,255,.4);margin-bottom:16px">
-            Chaque sauvegarde contient le contenu du site, les utilisateurs, contacts, CRM et les photos stockées en base. Une tâche automatique tourne tous les jours à 02:17.
+            L'archive de reprise contient le contenu, les comptes, les contacts, le CRM et les photos stockées en base. Les sessions actives et les clés d'API en sont exclues par sécurité. Conservez-la dans un emplacement sécurisé distinct du site. Les copies listées ci-dessous dépendent du stockage du serveur.
           </p>
           <div id="backup-list" class="msg-empty">Chargement…</div>
         </div>

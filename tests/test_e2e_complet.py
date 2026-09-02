@@ -513,9 +513,15 @@ def test_e2e_complet():
 
 if __name__ == "__main__":
     import os
+    import atexit
+    import shutil
+    import tempfile
     os.environ["BININGA_TEST"] = "1"
     os.environ["BININGA_FORCE_HTTP"] = "1"
     os.environ["BININGA_PASS"] = "test123"
+    test_data_dir = tempfile.mkdtemp(prefix="bininga_e2e_")
+    atexit.register(lambda: shutil.rmtree(test_data_dir, ignore_errors=True))
+    os.environ["DATA_DIR"] = test_data_dir
 
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -525,8 +531,13 @@ if __name__ == "__main__":
     import json
     import server as srv
 
-    USERS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "users.json")
-    SESSIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "sessions.json")
+    project_data = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data.json")
+    srv.DATA_FILE = os.path.join(test_data_dir, "data.json")
+    shutil.copy2(project_data, srv.DATA_FILE)
+    srv._DATA_CACHE = None
+    srv._DATA_CACHE_AT = 0
+    USERS_FILE = srv.USERS_FILE
+    SESSIONS_FILE = srv.SESSIONS_FILE
 
     test_users = [{"username": "admin", "password_hash": srv._hash_new("test123"), "role": "admin", "nom": "Admin Test"}]
     with open(USERS_FILE, "w") as f:

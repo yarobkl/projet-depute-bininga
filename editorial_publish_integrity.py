@@ -17,12 +17,13 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import threading
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 _LOCK = threading.RLock()
-_ALLOWED_ROLES = {"admin", "ministre", "editeur"}
+_ALLOWED_ROLES = {"admin", "ministre"}
 
 
 def _csrf_valid(server, handler, session: Dict[str, Any]) -> bool:
@@ -64,6 +65,32 @@ def _save_editorial(server, rows: List[Dict[str, Any]]) -> None:
             pass
 
 
+def _publication_validation(article: Dict[str, Any]) -> str:
+    """Retourne un motif de blocage, ou une chaîne vide si publiable."""
+    if str(article.get("statut") or "") not in {"valide", "publie"}:
+        return "L'article doit être validé avant publication"
+    if not str(article.get("titre") or "").strip():
+        return "Le titre est requis avant publication"
+    if not str(article.get("resume") or "").strip():
+        return "Le résumé est requis avant publication"
+    if not str(article.get("article") or article.get("contenu") or "").strip():
+        return "Le contenu de l'article est requis avant publication"
+
+    sources = article.get("sources")
+    source_values = [str(value).strip() for value in sources] if isinstance(sources, list) else []
+    source_values.extend([
+        str(article.get("source_url") or "").strip(),
+        str(article.get("source_nom") or "").strip(),
+    ])
+    if not any(source_values):
+        return "Une source doit être renseignée avant publication"
+
+    source_url = str(article.get("source_url") or "").strip()
+    if source_url and not source_url.startswith(("https://", "http://")):
+        return "L'adresse de la source doit commencer par https:// ou http://"
+    return ""
+
+
 _MONTHS_FR = ["JAN", "FÉV", "MAR", "AVR", "MAI", "JUN",
               "JUL", "AOÛ", "SEP", "OCT", "NOV", "DÉC"]
 
@@ -78,6 +105,17 @@ def _public_record(article: Dict[str, Any], published_at: str) -> Dict[str, Any]
     summary = str(article.get("resume") or "").strip()
     body = str(article.get("article") or summary).strip()
     desc = (summary or body)[:230]
+    sources = article.get("sources") if isinstance(article.get("sources"), list) else []
+    source_url = str(article.get("source_url") or "").strip()
+    if not source_url:
+        for source in sources:
+            match = re.search(r"https?://[^\s]+", str(source))
+            if match:
+                source_url = match.group(0).rstrip(".,;)")
+                break
+    source_label = str(article.get("source_nom") or "").strip()
+    if not source_label and sources:
+        source_label = re.split(r"\s+[—-]\s+https?://", str(sources[0]), maxsplit=1)[0].strip()
     try:
         dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
     except Exception:
@@ -92,6 +130,11 @@ def _public_record(article: Dict[str, Any], published_at: str) -> Dict[str, Any]
         "year": str(dt.year),
         "title": title,
         "desc": desc,
+        "body": body,
+        "tags": [str(tag).strip() for tag in article.get("tags", []) if str(tag).strip()][:8]
+                if isinstance(article.get("tags"), list) else [],
+        "sourceUrl": source_url,
+        "sourceLabel": source_label,
         "published_at": published_at,
         "publication_source": "editorial_ia",
     }
@@ -204,9 +247,17 @@ def guard_request(server, handler) -> bool:
 
     token = handler.headers.get("X-Admin-Token", "")
     session = server.get_session(token) if token else None
-    if not session or session.get("role") not in _ALLOWED_ROLES or not _csrf_valid(server, handler, session):
+    if not session or not _csrf_valid(server, handler, session):
         # Preserve the legacy route's authoritative auth/CSRF error semantics.
         return True
+    if session.get("role") not in _ALLOWED_ROLES:
+        server.audit_log(
+            "EDITORIAL_PUBLISH_REJECT",
+            handler.client_address[0],
+            f"Rôle non autorisé : {session.get('role', '?')}",
+        )
+        handler._json({"ok": False, "message": "Publication réservée à l'administrateur ou au député"}, 403)
+        return False
 
     article_id = str(payload.get("id", "")).strip()
     if not article_id:
@@ -214,25 +265,28 @@ def guard_request(server, handler) -> bool:
         return False
 
     with _LOCK:
-        articles = _load_editorial(server)
+        articles = copy.deepcopy(_load_editorial(server))
         found = next((row for row in articles if isinstance(row, dict) and str(row.get("id", "")) == article_id), None)
         if not found:
             handler._json({"ok": False, "message": "Article éditorial introuvable"}, 404)
             return False
 
-        old_site = copy.deepcopy(server.load_data())
-        old_articles = copy.deepcopy(articles)
-        site_data = copy.deepcopy(old_site)
-        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
-        public = _public_record(found, now)
-        _upsert_public_article(site_data, public)
-
         # Apply the small editable field set accepted by the legacy route before
-        # publishing, then force the authoritative publication metadata.
-        for field in ("titre", "resume", "article", "points_cles", "sources"):
+        # validating and publishing, then force the authoritative metadata.
+        for field in ("titre", "resume", "article", "contenu", "points_cles", "sources", "source_url", "source_nom"):
             if field in payload:
                 found[field] = payload[field]
-        # Rebuild once more in case the same request carried edits.
+
+        validation_error = _publication_validation(found)
+        if validation_error:
+            server.audit_log("EDITORIAL_PUBLISH_REJECT", handler.client_address[0], f"{article_id}: {validation_error}")
+            handler._json({"ok": False, "message": validation_error}, 409)
+            return False
+
+        old_site = copy.deepcopy(server.load_data())
+        old_articles = copy.deepcopy(_load_editorial(server))
+        site_data = copy.deepcopy(old_site)
+        now = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
         public = _public_record(found, now)
         _upsert_public_article(site_data, public)
         found["statut"] = "publie"

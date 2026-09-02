@@ -58,6 +58,12 @@ def post(path, data, token=None, csrf=None):
             return e.code, {}
 
 
+def _isolated_news_file():
+    """Utilise le même fichier temporaire que le serveur de test."""
+    import server as srv
+    return srv.NEWS_FILE
+
+
 # ── Tests ─────────────────────────────────────────────────────
 
 def test_index_accessible():
@@ -435,7 +441,7 @@ def test_news_mark_read():
     token, csrf = _get_admin_token()
     # Injecter un article de test dans news_monitor.json
     import os, json as _json
-    news_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "news_monitor.json")
+    news_file = _isolated_news_file()
     test_item = {"id": "test_read_001", "title": "Test", "url": "https://example.com", "source": "test",
                  "published": "", "found_at": "", "summary": "", "read": False, "category": "bininga"}
     data = {"items": [test_item], "last_run": None, "stats": {}}
@@ -455,7 +461,7 @@ def test_news_mark_all_read():
     """Marquer tous les articles comme lus."""
     token, csrf = _get_admin_token()
     import os, json as _json
-    news_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "news_monitor.json")
+    news_file = _isolated_news_file()
     items = [
         {"id": f"test_all_{i}", "title": f"Art {i}", "url": "https://example.com",
          "source": "test", "published": "", "found_at": "", "summary": "", "read": False, "category": "bininga"}
@@ -474,7 +480,7 @@ def test_news_delete_item():
     """Supprimer un article de la veille."""
     token, csrf = _get_admin_token()
     import os, json as _json
-    news_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "news_monitor.json")
+    news_file = _isolated_news_file()
     items = [
         {"id": "del_001", "title": "A supprimer", "url": "https://example.com",
          "source": "test", "published": "", "found_at": "", "summary": "", "read": False, "category": "bininga"},

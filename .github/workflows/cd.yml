@@ -1,17 +1,13 @@
-name: CD — Déploiement en production
+name: CD — Déploiement SSH manuel (héritage)
 
-# Se déclenche UNIQUEMENT sur push vers master (branche principale)
-on:
-  push:
-    branches: [master, main]
+# La production active est déployée par l'intégration Vercel. Ce workflow SSH
+# historique reste disponible uniquement à la demande pour l'ancien serveur.
+on: workflow_dispatch
 
 jobs:
   deploy:
     name: Déploiement sur le serveur
     runs-on: ubuntu-latest
-    # Ne déploie que si les tests CI ont réussi
-    needs: []
-
     steps:
       - name: Checkout du code
         uses: actions/checkout@v4
@@ -32,7 +28,7 @@ jobs:
           script: |
             echo "📦 Mise à jour du code..."
             cd /var/www/bininga
-            git pull origin master
+            git pull --ff-only origin main
 
             echo "🔄 Redémarrage du serveur..."
             pkill -f "python3 server.py" || true

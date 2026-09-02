@@ -8,19 +8,36 @@ Exporte la base MySQL/PostgreSQL dans backups/ avec :
 """
 
 import argparse
-import base64
+import hashlib
+import io
 import json
 import os
 import re
 import shutil
 import sys
-from datetime import datetime
+import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parent
-BACKUP_ROOT = BASE_DIR / "backups"
 KEEP_DEFAULT = 14
+EXCLUDED_STORE_KEYS = {"sessions", "app_config"}
+
+
+def backup_root() -> Path:
+    """Répertoire des copies serveur, configurable et compatible Vercel."""
+    explicit = os.environ.get("BININGA_BACKUP_DIR", "").strip()
+    if explicit:
+        return Path(explicit).expanduser().resolve()
+    data_dir = os.environ.get("DATA_DIR", "").strip()
+    if data_dir and data_dir != ".":
+        return (Path(data_dir).expanduser().resolve() / "backups")
+    return BASE_DIR / "backups"
+
+
+# Compatibilité avec les tâches cron existantes qui importent cette constante.
+BACKUP_ROOT = backup_root()
 
 
 def load_env_file() -> None:
@@ -101,75 +118,177 @@ def connect_db():
     return "postgresql", conn
 
 
-def export_backup() -> Path:
+def _sha256(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def collect_snapshot():
+    """Collecte une sauvegarde cohérente sans écrire sur le disque.
+
+    Le résultat alimente aussi bien les copies serveur historiques que
+    l'archive téléchargeable depuis l'administration.
+    """
     load_env_file()
     backend, conn = connect_db()
-
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    dest = BACKUP_ROOT / f"bininga-{stamp}"
-    photos_dir = dest / "photos"
-    photos_dir.mkdir(parents=True, exist_ok=False)
-
+    created = datetime.now(timezone.utc).replace(microsecond=0)
+    stamp = created.strftime("%Y%m%d-%H%M%SZ")
     manifest = {
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "format": "bininga-backup",
+        "format_version": 2,
+        "created_at": created.isoformat().replace("+00:00", "Z"),
         "backend": backend,
         "store_count": 0,
         "photo_count": 0,
         "photos": [],
+        "files": {},
+        "excluded_store_keys": sorted(EXCLUDED_STORE_KEYS),
     }
+    files = {}
+    try:
+        with conn.cursor() as cur:
+            key_col = "`key`" if backend == "mysql" else "key"
+            cur.execute(f"SELECT {key_col}, data FROM bininga_store ORDER BY {key_col}")
+            store = {}
+            for key, data in cur.fetchall():
+                if str(key) in EXCLUDED_STORE_KEYS:
+                    continue
+                try:
+                    store[str(key)] = json.loads(data) if isinstance(data, str) else data
+                except Exception:
+                    store[str(key)] = data
+            store_bytes = (json.dumps(store, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+            files["bininga_store.json"] = store_bytes
+            manifest["store_count"] = len(store)
 
-    with conn.cursor() as cur:
-        key_col = "`key`" if backend == "mysql" else "key"
-        cur.execute(f"SELECT {key_col}, data FROM bininga_store ORDER BY {key_col}")
-        rows = cur.fetchall()
-        store = {}
-        for key, data in rows:
-            try:
-                store[key] = json.loads(data)
-            except Exception:
-                store[key] = data
-        manifest["store_count"] = len(store)
-        (dest / "bininga_store.json").write_text(
-            json.dumps(store, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-
-        cur.execute("SELECT id, data, content_type FROM bininga_photos ORDER BY id")
-        for photo_id, blob, content_type in cur.fetchall():
-            raw = bytes(blob)
-            ext = {
-                "image/jpeg": ".jpg",
-                "image/png": ".png",
-                "image/webp": ".webp",
-                "image/gif": ".gif",
-                "image/svg+xml": ".svg",
-            }.get(content_type, ".bin")
-            filename = safe_name(str(photo_id)) + ext
-            (photos_dir / filename).write_bytes(raw)
-            manifest["photos"].append({
-                "id": photo_id,
-                "file": f"photos/{filename}",
-                "content_type": content_type,
-                "bytes": len(raw),
-            })
-
-    manifest["photo_count"] = len(manifest["photos"])
-    (dest / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+            cur.execute("SELECT id, data, content_type FROM bininga_photos ORDER BY id")
+            used_names = set()
+            for photo_id, blob, content_type in cur.fetchall():
+                raw = bytes(blob)
+                ext = {
+                    "image/jpeg": ".jpg",
+                    "image/png": ".png",
+                    "image/webp": ".webp",
+                    "image/gif": ".gif",
+                    "image/svg+xml": ".svg",
+                }.get(content_type, ".bin")
+                filename = safe_name(str(photo_id)) + ext
+                if filename in used_names:
+                    filename = f"{safe_name(str(photo_id))}-{_sha256(raw)[:8]}{ext}"
+                used_names.add(filename)
+                relative = f"photos/{filename}"
+                files[relative] = raw
+                manifest["photos"].append({
+                    "id": str(photo_id),
+                    "file": relative,
+                    "content_type": str(content_type or "application/octet-stream"),
+                    "bytes": len(raw),
+                    "sha256": _sha256(raw),
+                })
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
     data_json = BASE_DIR / "data.json"
     if data_json.exists():
-        shutil.copy2(data_json, dest / "data.json.snapshot")
+        files["data.json.snapshot"] = data_json.read_bytes()
 
+    manifest["photo_count"] = len(manifest["photos"])
+    manifest["files"] = {
+        name: {"bytes": len(content), "sha256": _sha256(content)}
+        for name, content in sorted(files.items())
+    }
+    return f"bininga-{stamp}", manifest, files
+
+
+def build_backup_archive():
+    """Produit une archive ZIP complète et vérifiable en mémoire."""
+    name, manifest, files = collect_snapshot()
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as archive:
+        for relative, content in sorted(files.items()):
+            archive.writestr(relative, content)
+        archive.writestr(
+            "manifest.json",
+            (json.dumps(manifest, ensure_ascii=False, indent=2) + "\n").encode("utf-8"),
+        )
+    return f"{name}.zip", stream.getvalue(), manifest
+
+
+def export_backup() -> Path:
+    """Crée une copie serveur. Sur Vercel elle est temporaire (/tmp)."""
+    name, manifest, files = collect_snapshot()
+    dest = backup_root() / name
+    photos_dir = dest / "photos"
+    photos_dir.mkdir(parents=True, exist_ok=False)
+    for relative, content in files.items():
+        target = dest / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+    (dest / "manifest.json").write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
     return dest
 
 
+def verify_backup(source: Path):
+    """Vérifie structure, compteurs et empreintes d'un dossier ou ZIP."""
+    source = Path(source)
+    archive = None
+    if source.is_dir():
+        manifest = json.loads((source / "manifest.json").read_text(encoding="utf-8"))
+
+        def read_file(name):
+            target = (source / name).resolve()
+            target.relative_to(source.resolve())
+            return target.read_bytes()
+    elif source.is_file() and zipfile.is_zipfile(source):
+        archive = zipfile.ZipFile(source, "r")
+        try:
+            names = set(archive.namelist())
+            if any(name.startswith(("/", "\\")) or ".." in Path(name).parts for name in names):
+                raise ValueError("Archive invalide : chemin dangereux")
+            manifest = json.loads(archive.read("manifest.json").decode("utf-8"))
+        except Exception:
+            archive.close()
+            raise
+
+        def read_file(name):
+            return archive.read(name)
+    else:
+        raise ValueError("Sauvegarde introuvable ou format non reconnu")
+
+    try:
+        if manifest.get("format") != "bininga-backup" or int(manifest.get("format_version", 0)) < 2:
+            raise ValueError("Format de sauvegarde non reconnu")
+        expected_files = manifest.get("files")
+        if not isinstance(expected_files, dict) or "bininga_store.json" not in expected_files:
+            raise ValueError("Manifest incomplet")
+        for name, expected in expected_files.items():
+            content = read_file(name)
+            if len(content) != int(expected.get("bytes", -1)):
+                raise ValueError(f"Taille invalide : {name}")
+            if _sha256(content) != expected.get("sha256"):
+                raise ValueError(f"Empreinte invalide : {name}")
+        store = json.loads(read_file("bininga_store.json").decode("utf-8"))
+        if len(store) != int(manifest.get("store_count", -1)):
+            raise ValueError("Compteur de données incohérent")
+        photos = manifest.get("photos", [])
+        if len(photos) != int(manifest.get("photo_count", -1)):
+            raise ValueError("Compteur de photos incohérent")
+        return manifest
+    finally:
+        if archive is not None:
+            archive.close()
+
+
 def prune_old_backups(keep: int) -> None:
-    if keep <= 0 or not BACKUP_ROOT.exists():
+    root = backup_root()
+    if keep <= 0 or not root.exists():
         return
-    backups = sorted(p for p in BACKUP_ROOT.glob("bininga-*") if p.is_dir())
+    backups = sorted(p for p in root.glob("bininga-*") if p.is_dir())
     for old in backups[:-keep]:
         shutil.rmtree(old, ignore_errors=True)
 
@@ -177,7 +296,28 @@ def prune_old_backups(keep: int) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Sauvegarde DB/photos BININGA")
     parser.add_argument("--keep", type=int, default=KEEP_DEFAULT, help="Nombre de sauvegardes à conserver")
+    parser.add_argument("--archive", type=Path, help="Créer également une archive ZIP téléchargeable")
+    parser.add_argument("--verify", type=Path, help="Vérifier une sauvegarde existante sans la restaurer")
     args = parser.parse_args()
+
+    if args.verify:
+        manifest = verify_backup(args.verify)
+        print(
+            f"OK vérifiée={args.verify} store={manifest['store_count']} "
+            f"photos={manifest['photo_count']}"
+        )
+        return 0
+
+    if args.archive:
+        filename, content, manifest = build_backup_archive()
+        target = args.archive / filename if args.archive.is_dir() else args.archive
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(content)
+        print(
+            f"OK archive={target} store={manifest['store_count']} "
+            f"photos={manifest['photo_count']}"
+        )
+        return 0
 
     dest = export_backup()
     prune_old_backups(args.keep)

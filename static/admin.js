@@ -709,7 +709,7 @@ function renderActuSlides() {
   el.innerHTML = slides.map((s, i) => `
     <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Slide ${i+1}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${s.sourceUrl ? "#2ecc71" : "#f39c12"}">Slide ${i+1} · ${s.sourceUrl ? "source renseignée" : "source manquante"}</div>
         <button class="btn-danger" onclick="delActuSlide(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -720,6 +720,8 @@ function renderActuSlides() {
         <div class="form-group" style="margin:0;grid-column:span 2"><label>Date / lieu</label><input type="text" value="${esc(s.date||'')}" oninput="updActuSlide(${i},'date',this.value)"></div>
         <div class="form-group" style="margin:0;grid-column:span 2"><label>Titre (\\n pour saut de ligne)</label><input type="text" value="${esc(s.title||'')}" oninput="updActuSlide(${i},'title',this.value)"></div>
         <div class="form-group" style="margin:0;grid-column:span 2"><label>Sous-titre</label><textarea rows="2" oninput="updActuSlide(${i},'subtitle',this.value)">${esc(s.subtitle||'')}</textarea></div>
+        <div class="form-group" style="margin:0"><label>Nom de la source</label><input type="text" value="${esc(s.source||'')}" placeholder="Ex. Ministère de la Justice" oninput="updActuSlide(${i},'source',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>URL de la source</label><input type="url" value="${esc(s.sourceUrl||'')}" placeholder="https://…" oninput="updActuSlide(${i},'sourceUrl',this.value)"></div>
       </div>
     </div>`).join('');
 }
@@ -733,7 +735,7 @@ function uploadForActuSlide(i) {
 }
 function addActuSlide() {
   if (!siteData.actus.slides) siteData.actus.slides = [];
-  siteData.actus.slides.push({ image:"", alt:"", chip:"", chipColor:"", date:"", title:"", subtitle:"" });
+  siteData.actus.slides.push({ image:"", alt:"", chip:"", chipColor:"", date:"", title:"", subtitle:"", source:"", sourceUrl:"" });
   renderActuSlides();
 }
 function delActuSlide(i) {
@@ -751,7 +753,7 @@ function renderActuVedettes() {
   el.innerHTML = vedettes.map((v, i) => `
     <div style="background:var(--n3);border-radius:8px;padding:16px;margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Article ${i+1}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${v.sourceUrl ? "#2ecc71" : "#f39c12"}">Article ${i+1} · ${v.sourceUrl ? "source renseignée" : "source manquante"}</div>
         <button class="btn-danger" onclick="delActuVedette(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -769,6 +771,8 @@ function renderActuVedettes() {
           <label>Tags (un par ligne)</label>
           <textarea rows="3" oninput="updActuVedetteTags(${i},this.value)">${esc((v.tags||[]).join('\n'))}</textarea>
         </div>
+        <div class="form-group" style="margin:0"><label>Nom de la source</label><input type="text" value="${esc(v.source||'')}" placeholder="Ex. Ministère de la Justice" oninput="updActuVedette(${i},'source',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>URL de la source</label><input type="url" value="${esc(v.sourceUrl||'')}" placeholder="https://…" oninput="updActuVedette(${i},'sourceUrl',this.value)"></div>
         <div style="grid-column:span 2;font-size:11px;color:rgba(255,255,255,.25);margin-top:4px">Si pas d'image : renseignez les champs ci-dessous pour le placeholder</div>
         <div class="form-group" style="margin:0"><label>Visuel de remplacement</label><input type="text" value="${esc(v.placeholderEmoji||'')}" placeholder="Icône" oninput="updActuVedette(${i},'placeholderEmoji',this.value)" style="max-width:80px"></div>
         <div class="form-group" style="margin:0"><label>Titre placeholder (\\n = saut)</label><input type="text" value="${esc(v.placeholderTitle||'')}" oninput="updActuVedette(${i},'placeholderTitle',this.value)"></div>
@@ -788,7 +792,7 @@ function uploadForActuVedette(i) {
 function updActuVedetteTags(i, val) { if (siteData.actus.vedettes[i]) siteData.actus.vedettes[i].tags = val.split('\n').map(t=>t.trim()).filter(t=>t); }
 function addActuVedette() {
   if (!siteData.actus.vedettes) siteData.actus.vedettes = [];
-  siteData.actus.vedettes.push({ image:"", badge:"", tag:"", date:"", title:"", text1:"", quote:"", text2:"", tags:[] });
+  siteData.actus.vedettes.push({ image:"", badge:"", tag:"", date:"", title:"", text1:"", quote:"", text2:"", tags:[], source:"", sourceUrl:"" });
   renderActuVedettes();
 }
 function delActuVedette(i) {
@@ -806,7 +810,7 @@ function renderActuCards() {
   el.innerHTML = cards.map((c, i) => `
     <div style="background:var(--n3);border-radius:8px;padding:14px;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.3)">Carte ${i+1}</div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:${c.sourceUrl ? "#2ecc71" : "#f39c12"}">Carte ${i+1} · ${c.sourceUrl ? "source renseignée" : "source manquante"}</div>
         <button class="btn-danger" onclick="delActuCard(${i})" title="Supprimer">Supprimer</button>
       </div>
       <div style="display:grid;grid-template-columns:50px 50px 70px 1fr 1fr auto;gap:8px;align-items:start">
@@ -821,13 +825,15 @@ function renderActuCards() {
         <div class="form-group" style="margin:0"><label>Couleur bordure (vide = défaut)</label><input type="text" value="${esc(c.borderColor||'')}" placeholder="rgba(46,125,50,.25)" oninput="updActuCard(${i},'borderColor',this.value)"></div>
         <div class="form-group" style="margin:0;grid-column:span 2"><label>Titre</label><input type="text" value="${esc(c.title||'')}" oninput="updActuCard(${i},'title',this.value)"></div>
         <div class="form-group" style="margin:0;grid-column:span 2"><label>Description</label><textarea rows="2" oninput="updActuCard(${i},'desc',this.value)">${esc(c.desc||'')}</textarea></div>
+        <div class="form-group" style="margin:0"><label>Nom de la source</label><input type="text" value="${esc(c.source||'')}" placeholder="Ex. Présidence de la République" oninput="updActuCard(${i},'source',this.value)"></div>
+        <div class="form-group" style="margin:0"><label>URL de la source</label><input type="url" value="${esc(c.sourceUrl||'')}" placeholder="https://…" oninput="updActuCard(${i},'sourceUrl',this.value)"></div>
       </div>
     </div>`).join('');
 }
 function updActuCard(i, f, v) { if (siteData.actus.cards[i]) siteData.actus.cards[i][f] = v; }
 function addActuCard() {
   if (!siteData.actus.cards) siteData.actus.cards = [];
-  siteData.actus.cards.push({ icon:"", day:"", month:"", year:"", cat:"", catColor:"", borderColor:"", title:"", desc:"" });
+  siteData.actus.cards.push({ icon:"", day:"", month:"", year:"", cat:"", catColor:"", borderColor:"", title:"", desc:"", source:"", sourceUrl:"" });
   renderActuCards();
 }
 function delActuCard(i) {
@@ -2128,9 +2134,9 @@ async function loadAuditLogs() {
     if (!data.ok) { el.innerHTML = '<div class="msg-empty">Erreur de chargement.</div>'; return; }
     if (!data.logs.length) { el.innerHTML = '<div class="msg-empty">Aucune entrée pour le moment.</div>'; return; }
 
-    const icons  = { LOGIN_OK:"OK", LOGIN_FAIL:"NO", SAVE:"SV", UPLOAD:"UP", USER_UPSERT:"US", USER_DELETE:"DL" };
-    const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", UPLOAD:"Upload image", USER_UPSERT:"Utilisateur créé / modifié", USER_DELETE:"Utilisateur supprimé" };
-    const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", UPLOAD:"upload", USER_UPSERT:"ok", USER_DELETE:"fail" };
+    const icons  = { LOGIN_OK:"OK", LOGIN_FAIL:"NO", SAVE:"SV", BACKUP:"BK", BACKUP_EXPORT:"DL", UPLOAD:"UP", USER_UPSERT:"US", USER_DELETE:"DL" };
+    const labels = { LOGIN_OK:"Connexion réussie", LOGIN_FAIL:"Tentative échouée", SAVE:"Sauvegarde", BACKUP:"Copie serveur créée", BACKUP_EXPORT:"Archive de reprise téléchargée", UPLOAD:"Upload image", USER_UPSERT:"Utilisateur créé / modifié", USER_DELETE:"Utilisateur supprimé" };
+    const cls    = { LOGIN_OK:"ok", LOGIN_FAIL:"fail", SAVE:"save", BACKUP:"save", BACKUP_EXPORT:"save", UPLOAD:"upload", USER_UPSERT:"ok", USER_DELETE:"fail" };
 
     el.innerHTML = data.logs.map(log => `
       <div class="log-item">
@@ -2161,6 +2167,9 @@ async function loadBackups() {
     setText("backup-last-date", latest.created_at ? latest.created_at.replace("T", " ").slice(0, 16) : "—");
     setText("backup-photo-count", latest.photo_count ?? "—");
     setText("backup-copy-count", data.count || 0);
+    setText("backup-storage-label", data.storage?.durable
+      ? "stockage persistant configuré"
+      : "copies temporaires — téléchargez l'archive");
     if (!el) return;
     if (!data.backups.length) {
       el.innerHTML = '<div class="msg-empty">Aucune sauvegarde trouvée.</div>';
@@ -2177,12 +2186,47 @@ async function loadBackups() {
             · ${Number(b.photo_count || 0)} photo(s)
             · ${Number(b.store_count || 0)} bloc(s) données
           </div>
-          <div class="log-meta">${esc(b.path || "")}</div>
+          <div class="log-meta">${data.storage?.durable ? "Copie persistante" : "Copie temporaire sur ce serveur"}</div>
         </div>
       </div>
     `).join("");
   } catch (e) {
     if (el) el.innerHTML = `<div class="msg-empty">Erreur serveur : ${esc(e.message)}</div>`;
+  }
+}
+
+async function downloadBackup() {
+  const btn = document.getElementById("btn-download-backup");
+  if (btn) { btn.disabled = true; btn.textContent = "Préparation de l'archive…"; }
+  try {
+    const res = await apiFetch("/api/backups/export", {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({})
+    });
+    if (!res.ok) {
+      let message = "Export impossible";
+      try { message = (await res.json()).message || message; } catch (_) {}
+      throw new Error(message);
+    }
+    const disposition = res.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename="?([^";]+)"?/i);
+    const filename = (match?.[1] || `bininga-${new Date().toISOString().slice(0,10)}.zip`)
+      .replace(/[^A-Za-z0-9_.-]/g, "_");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    showToast("Archive de reprise téléchargée — conservez-la hors du site");
+  } catch (e) {
+    showToast(e.message || "Export impossible", true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = "Télécharger une archive de reprise"; }
   }
 }
 
@@ -3400,20 +3444,29 @@ function renderEditorialList() {
   const statutBadge = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
   list.innerHTML = arts.map(a => {
     const sb  = statutBadge[a.statut] || ['#888','?'];
-    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">- ${p}</div>`).join("");
-    return `<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openEdModal('${a.id}')">
+    const pts = (a.points_cles || []).slice(0,2).map(p => `<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:2px">- ${esc(p)}</div>`).join("");
+    const hasSource = editorialHasSource(a);
+    return `<div data-article-id="${esc(a.id)}" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px 14px;cursor:pointer" onclick="openEdModal(this.dataset.articleId)">
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
-        <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${a.titre || "Sans titre"}</div>
+        <div style="flex:1;font-size:13px;font-weight:700;color:#fff;line-height:1.4">${esc(a.titre || "Sans titre")}</div>
         <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:${sb[0]}22;color:${sb[0]};border:1px solid ${sb[0]}44">${sb[1]}</span>
       </div>
-      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px;line-height:1.5">${(a.resume || "").slice(0,120)}${(a.resume||"").length>120?"…":""}</div>
+      <div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:6px;line-height:1.5">${esc((a.resume || "").slice(0,120))}${(a.resume||"").length>120?"…":""}</div>
       ${pts}
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
-        <span style="font-size:10px;color:rgba(255,255,255,.25)">${a.source_nom||""} · ${a.created_at||""}</span>
+        <span style="font-size:10px;color:${hasSource ? "rgba(46,204,113,.7)" : "#f39c12"}">${hasSource ? "Source renseignée" : "Source manquante"} · ${esc(a.created_at||"")}</span>
         <span style="font-size:10px;color:rgba(255,255,255,.35)">Voir →</span>
       </div>
     </div>`;
   }).join("");
+}
+
+function editorialHasSource(article) {
+  return Boolean(
+    String(article?.source_url || "").trim() ||
+    String(article?.source_nom || "").trim() ||
+    (Array.isArray(article?.sources) && article.sources.some(value => String(value || "").trim()))
+  );
 }
 
 function openEdModal(id) {
@@ -3422,26 +3475,34 @@ function openEdModal(id) {
   const sb = { brouillon: ['#f39c12','Brouillon'], valide: ['#2ecc71','Validé'], publie: ['#3498db','Publié'] };
   const s  = sb[a.statut] || ['#888','?'];
   document.getElementById("ed-modal-titre-h").textContent = a.titre || "Article éditorial";
-  const pts = (a.points_cles || []).map(p => `<li style="margin-bottom:4px">${p}</li>`).join("");
-  const srcs= (a.sources || []).map(s => `<div style="font-size:11px;color:#3498db;word-break:break-all">${s}</div>`).join("");
+  const pts = (a.points_cles || []).map(p => `<li style="margin-bottom:4px">${esc(p)}</li>`).join("");
+  const sourceValues = [...(Array.isArray(a.sources) ? a.sources : []), a.source_url].filter(Boolean);
+  const srcs = sourceValues.map(value => `<div style="font-size:11px;color:#3498db;word-break:break-all">${esc(value)}</div>`).join("");
+  const canPublish = SESSION_ROLE === "admin" || SESSION_ROLE === "ministre";
+  const contentReady = Boolean(String(a.titre || "").trim() && String(a.resume || "").trim() && String(a.article || a.contenu || "").trim());
+  const publishReady = canPublish && editorialHasSource(a) && contentReady && (a.statut === "valide" || a.statut === "publie");
+  const publishHint = !canPublish ? "Publication réservée à l'administrateur ou au député" :
+    !editorialHasSource(a) ? "Renseignez une source avant publication" :
+    !contentReady ? "Titre, résumé et contenu sont requis" :
+    a.statut === "brouillon" ? "Validez d'abord cet article" : "Publier sur le site";
   document.getElementById("ed-modal-body").innerHTML = `
     <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;background:${s[0]}22;color:${s[0]};border:1px solid ${s[0]}44">${s[1]}</span>
-      <span style="font-size:11px;color:rgba(255,255,255,.3)">${a.source_nom||""}</span>
-      <span style="font-size:11px;color:rgba(255,255,255,.25)">${a.created_at||""}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.3)">${esc(a.source_nom||"")}</span>
+      <span style="font-size:11px;color:rgba(255,255,255,.25)">${esc(a.created_at||"")}</span>
     </div>
-    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4">${a.titre||""}</div>
+    <div style="font-size:15px;font-weight:700;color:#fff;margin-bottom:10px;line-height:1.4">${esc(a.titre||"")}</div>
     <div style="background:rgba(52,152,219,.06);border-left:3px solid #3498db;padding:10px 12px;border-radius:0 6px 6px 0;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700;color:#3498db;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px">Résumé</div>
-      <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6">${(a.resume||"").replace(/\n/g,"<br>")}</div>
+      <div style="font-size:13px;color:rgba(255,255,255,.75);line-height:1.6">${esc(a.resume||"").replace(/\n/g,"<br>")}</div>
     </div>
-    <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${a.article||""}</div>
+    <div style="font-size:12px;color:rgba(255,255,255,.7);line-height:1.7;margin-bottom:14px;white-space:pre-wrap">${esc(a.article||a.contenu||"")}</div>
     ${pts ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Points clés</div><ul style="padding-left:16px;margin:0;color:rgba(255,255,255,.65);font-size:12px;line-height:1.6">${pts}</ul></div>` : ""}
     ${srcs ? `<div style="margin-bottom:14px"><div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sources</div>${srcs}</div>` : ""}
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.08)">
-      <button onclick="changeEdStatut('${a.id}','valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">Valider</button>
-      <button onclick="changeEdStatut('${a.id}','publie')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:pointer">Publier</button>
-      <button onclick="deleteEdArticle('${a.id}')" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">Supprimer</button>
+      <button data-article-id="${esc(a.id)}" onclick="changeEdStatut(this.dataset.articleId,'valide')" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(46,204,113,.3);background:rgba(46,204,113,.08);color:#2ecc71;font-size:12px;font-weight:700;cursor:pointer">Valider</button>
+      <button data-article-id="${esc(a.id)}" onclick="changeEdStatut(this.dataset.articleId,'publie')" ${publishReady ? "" : "disabled"} title="${esc(publishHint)}" style="flex:1;min-width:100px;padding:9px;border-radius:8px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.08);color:#3498db;font-size:12px;font-weight:700;cursor:${publishReady ? "pointer" : "not-allowed"};opacity:${publishReady ? "1" : ".45"}">Publier</button>
+      <button data-article-id="${esc(a.id)}" onclick="deleteEdArticle(this.dataset.articleId)" style="padding:9px 14px;border-radius:8px;border:1px solid rgba(231,76,60,.3);background:rgba(231,76,60,.08);color:#e74c3c;font-size:12px;cursor:pointer">Supprimer</button>
     </div>`;
   document.getElementById("ed-modal").style.display = "";
   document.body.style.overflow = "hidden";
@@ -3453,6 +3514,10 @@ function closeEdModal() {
 }
 
 async function changeEdStatut(id, statut) {
+  if (statut === "publie" && !(SESSION_ROLE === "admin" || SESSION_ROLE === "ministre")) {
+    showToast("Publication réservée à l'administrateur ou au député", true);
+    return;
+  }
   try {
     const res  = await apiFetch("/api/editorial/save", { method: "POST", headers: authHeaders(), body: JSON.stringify({ id, statut }) });
     const data = await res.json();
@@ -3759,7 +3824,7 @@ async function loadMonReport() {
   } catch { box.innerHTML = '<p style="color:#e74c3c">Erreur réseau.</p>'; }
 }
 
-function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 
 // ══════════════════════════════════════════════════════════════════════════
 //  NOTIFICATIONS TEMPS RÉEL (SSE)

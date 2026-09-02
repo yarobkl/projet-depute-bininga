@@ -303,7 +303,7 @@
       slug: slugify(((baseActus.cards || [])[index] || {}).title || item.title),
       title: item.title || "",
       summary: item.desc || "",
-      body2: "",
+      body2: item.body || item.article || "",
       quote: "",
       category: item.cat || "",
       date: dateForCard(item),
@@ -311,7 +311,7 @@
       month: item.month || "",
       year: item.year || "",
       image: safeImage(item.image),
-      tags: [],
+      tags: Array.isArray(item.tags) ? item.tags : [],
       sourceUrl: safeExternalUrl(item.sourceUrl),
       sourceLabel: item.sourceLabel || item.source || ""
     })).filter(item => !featuredSlugs.has(item.slug));
@@ -586,6 +586,14 @@
         <span class="article-aside-label">${escapeHtml(copy.source)}</span>
         <p class="article-source-note">${escapeHtml(copy.sourceNote)}</p>
         <a class="article-source-link" href="${escapeHtml(record.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(copy.sourceLink)} · ${escapeHtml(label)}</a>
+        <div class="article-tags">${record.tags.map(tag => `<span class="article-tag">${escapeHtml(tag)}</span>`).join("")}</div>
+      </aside>`;
+    }
+    if (record.sourceLabel) {
+      return `<aside class="article-aside">
+        <span class="article-aside-label">${escapeHtml(copy.source)}</span>
+        <p class="article-source-note">${escapeHtml(copy.sourceNote)}</p>
+        <strong class="article-source-link">${escapeHtml(record.sourceLabel)}</strong>
         <div class="article-tags">${record.tags.map(tag => `<span class="article-tag">${escapeHtml(tag)}</span>`).join("")}</div>
       </aside>`;
     }

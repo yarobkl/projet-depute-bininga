@@ -1434,16 +1434,35 @@ window.addEventListener("scroll", () => { pxTarget = window.scrollY; }, { passiv
   nextFrame(parallaxLoop);
 })();
 
-// modales légales
-function openLegal(id){document.getElementById("modal-"+id).classList.add("open");document.body.style.overflow="hidden"}
-function closeLegal(id){document.getElementById("modal-"+id).classList.remove("open");document.body.style.overflow=""}
+// Modales légales — focus rendu au déclencheur et navigation clavier contenue.
+function openModalOverlay(overlay) {
+  if (!overlay) return;
+  overlay._returnFocus = document.activeElement;
+  overlay.classList.add("open");
+  overlay.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  requestAnimationFrame(() => {
+    const target = overlay.querySelector(".lmodal-close") || overlay.querySelector("[role='dialog']");
+    if (target) target.focus();
+  });
+}
+function closeModalOverlay(overlay) {
+  if (!overlay) return;
+  overlay.classList.remove("open");
+  overlay.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  const returnFocus = overlay._returnFocus;
+  if (returnFocus && returnFocus.isConnected) returnFocus.focus();
+}
+function openLegal(id){openModalOverlay(document.getElementById("modal-"+id))}
+function closeLegal(id){closeModalOverlay(document.getElementById("modal-"+id))}
 
 // ── ACHAT LIVRE ────────────────────────────────────────────
 function openAchat() {
-  document.getElementById("modal-achat").classList.add("open");
-  document.body.style.overflow = "hidden";
+  openModalOverlay(document.getElementById("modal-achat"));
   showBuyOptions();
 }
+function closeAchat() { closeModalOverlay(document.getElementById("modal-achat")); }
 function showBuyOptions() {
   document.getElementById("achat-step-1").style.display = "block";
   document.getElementById("achat-step-2").style.display = "none";
@@ -1517,8 +1536,31 @@ function loadVideo(placeholder) {
   placeholder.remove();
   wrap.appendChild(iframe);
 }
-document.querySelectorAll(".lmodal-overlay").forEach(o=>o.addEventListener("click",e=>{if(e.target===o){const id=o.id.replace("modal-","");closeLegal(id)}}));
-document.addEventListener("keydown",e=>{if(e.key==="Escape")document.querySelectorAll(".lmodal-overlay.open").forEach(o=>o.classList.remove("open"))&&(document.body.style.overflow="")});
+document.querySelectorAll(".lmodal-overlay").forEach(overlay => {
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) closeModalOverlay(overlay);
+  });
+});
+document.addEventListener("keydown", event => {
+  const overlay = document.querySelector(".lmodal-overlay.open");
+  if (!overlay) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeModalOverlay(overlay);
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = [...overlay.querySelectorAll(
+    'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+  )].filter(node => node.offsetParent !== null);
+  if (!focusable.length) return;
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault(); last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault(); first.focus();
+  }
+});
 
 // ── BOTTOM TABBAR — active state selon le scroll ──────────
 (function(){

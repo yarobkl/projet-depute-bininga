@@ -1,6 +1,6 @@
-// Bootstrap correctif — conserve le script historique intact dans index-core.js.
-// Le rendu dynamique utilisait rObs hors de sa portée lexicale, ce qui arrêtait
-// loadContent() avant la Galerie et les Actualités.
+// Bootstrap correctif exécuté avant index-core.js.
+// Le cœur est désormais chargé par une balise defer standard : aucun XHR
+// synchrone ne bloque plus le fil principal du navigateur.
 (function () {
   if (window.__BININGA_INDEX_CORE_LOADED__) return;
   window.__BININGA_INDEX_CORE_LOADED__ = true;
@@ -23,20 +23,4 @@
     }
   }
 
-  try {
-    // Chargement synchrone volontaire ici : index.js est déjà un script defer.
-    // Le cœur doit être exécuté avant DOMContentLoaded pour préserver tous ses listeners.
-    var xhr = new XMLHttpRequest();
-    xhr.open("GET", "/static/index-core.js?v=20260901-public-experience", false);
-    xhr.send(null);
-    if (xhr.status < 200 || xhr.status >= 300) {
-      throw new Error("index-core.js HTTP " + xhr.status);
-    }
-    var core = document.createElement("script");
-    core.text = xhr.responseText;
-    document.head.appendChild(core);
-    core.remove();
-  } catch (err) {
-    console.error("Chargement du script principal impossible", err);
-  }
 })();

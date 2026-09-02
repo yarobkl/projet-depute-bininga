@@ -9,6 +9,8 @@
 <meta name="keywords" content="Bininga, Ange Aimé Wilfrid Bininga, Député Ewo, Garde des Sceaux Congo, Ministre Justice Congo, Cuvette-Ouest, PCT, Congo-Brazzaville">
 <meta name="author" content="Ange Aimé Wilfrid BININGA">
 <meta name="robots" content="index, follow">
+<meta name="theme-color" content="#060606">
+<meta name="color-scheme" content="dark light">
 <link rel="canonical" href="https://projet-depute-bininga.vercel.app/">
 
 <!-- Open Graph (Facebook, WhatsApp, LinkedIn) -->
@@ -16,9 +18,11 @@
 <meta property="og:url" content="https://projet-depute-bininga.vercel.app/">
 <meta property="og:title" content="Ange Aimé Wilfrid BININGA, Ministre · Député d'Ewo">
 <meta property="og:description" content="Site officiel d'Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député de la 1re circonscription d'Ewo (Cuvette-Ouest).">
-<meta property="og:image" content="https://projet-depute-bininga.vercel.app/images/og-bininga.jpg">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image" content="https://projet-depute-bininga.vercel.app/images/bininga.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1010">
+<meta property="og:image:height" content="1488">
+<meta property="og:image:alt" content="Portrait d'Ange Aimé Wilfrid BININGA">
 <meta property="og:locale" content="fr_CG">
 <meta property="og:site_name" content="Ange Aimé Wilfrid BININGA">
 
@@ -26,7 +30,8 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Ange Aimé Wilfrid BININGA, Ministre · Député d'Ewo">
 <meta name="twitter:description" content="Site officiel d'Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, Député de la 1re circonscription d'Ewo.">
-<meta name="twitter:image" content="https://projet-depute-bininga.vercel.app/images/og-bininga.jpg">
+<meta name="twitter:image" content="https://projet-depute-bininga.vercel.app/images/bininga.jpg">
+<meta name="twitter:image:alt" content="Portrait d'Ange Aimé Wilfrid BININGA">
 
 <!-- Données structurées JSON-LD (Google Rich Results) -->
 <script type="application/ld+json">
@@ -38,7 +43,7 @@
   "jobTitle": "Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones",
   "description": "Député de la 1re circonscription d'Ewo (Cuvette-Ouest, Congo-Brazzaville), membre du Parti Congolais du Travail (PCT).",
   "url": "https://projet-depute-bininga.vercel.app/",
-  "image": "https://projet-depute-bininga.vercel.app/images/og-bininga.jpg",
+  "image": "https://projet-depute-bininga.vercel.app/images/bininga.jpg",
   "nationality": {
     "@type": "Country",
     "name": "République du Congo"
@@ -67,10 +72,7 @@
     "contactType": "Bureau du Député",
     "email": "contact@wude3801.odns.fr",
     "availableLanguage": "French"
-  },
-  "sameAs": [
-    "https://projet-depute-bininga.vercel.app/"
-  ]
+  }
 }
 </script>
 
@@ -113,7 +115,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   <div class="loader-logo">AB<span>.</span></div>
   <div class="loader-bar"><div class="loader-fill"></div></div>
   <div class="loader-txt">Ange Aimé Wilfrid BININGA</div>
-  <div class="loader-dev">Développé par <span>Rodrin Bakala Mouengue</span></div>
+  <div class="loader-dev">Développé par <span>YaroConsulting</span></div>
 </div>
 <script>
 (function(){
@@ -156,13 +158,13 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   </ul>
   <!-- Sélecteur de langue -->
   <div class="lang-switcher" id="lang-switcher">
-    <button class="lang-btn lang-active" data-lang="fr" onclick="applyI18n('fr')" title="Français">FR</button>
-    <button class="lang-btn" data-lang="en" onclick="applyI18n('en')" title="English">EN</button>
-    <button class="lang-btn" data-lang="es" onclick="applyI18n('es')" title="Español">ES</button>
-    <button class="lang-btn" data-lang="zh" onclick="applyI18n('zh')" title="中文">ZH</button>
-    <button class="lang-btn" data-lang="ru" onclick="applyI18n('ru')" title="Русский">RU</button>
+    <button type="button" class="lang-btn lang-active" data-lang="fr" onclick="applyI18n('fr')" title="Français">FR</button>
+    <button type="button" class="lang-btn" data-lang="en" onclick="applyI18n('en')" title="English">EN</button>
+    <button type="button" class="lang-btn" data-lang="es" onclick="applyI18n('es')" title="Español">ES</button>
+    <button type="button" class="lang-btn" data-lang="zh" onclick="applyI18n('zh')" title="中文">ZH</button>
+    <button type="button" class="lang-btn" data-lang="ru" onclick="applyI18n('ru')" title="Русский">RU</button>
   </div>
-  <button class="hbg" id="hbg" aria-label="Ouvrir le menu" aria-expanded="false" data-i18n="aria.menu.open" data-i18n-attr="aria-label">
+  <button type="button" class="hbg" id="hbg" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="mobNav" data-i18n="aria.menu.open" data-i18n-attr="aria-label">
     <span class="hbg-label">Menu</span>
     <span class="hbg-lines" aria-hidden="true"><span></span><span></span><span></span></span>
   </button>
@@ -210,7 +212,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
       <a href="#programme" class="btn btn-o" id="dyn-hero-btn2" data-i18n="hero.btn2">Notre programme</a>
     </div>
   </div>
-  <a href="#about" class="hero-scroll">
+  <a href="#about" class="hero-scroll" aria-label="Découvrir la biographie">
     <div class="hero-scroll-line"></div>
     <span data-i18n="hero.scroll">Découvrir</span>
   </a>
@@ -338,7 +340,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
         <div class="pub-buy-price">40 € <span data-i18n="pub.buy.shipping">port en sus selon destination</span></div>
         <div class="pub-buy-note" data-i18n="pub.buy.note">Disponible en librairie et en ligne · Paiement sécurisé</div>
         <div class="pub-buy-btns">
-          <button class="pub-btn-primary" onclick="openAchat()" data-i18n="pub.buy.btn">Acheter ce livre</button>
+          <button type="button" class="pub-btn-primary" onclick="openAchat()" data-i18n="pub.buy.btn">Acheter ce livre</button>
         </div>
       </div>
 
@@ -761,16 +763,17 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 <script src="static/i18n-data.zh.js?v=20260619-theme-mode"></script>
 <script src="static/i18n-data.ru.js?v=20260619-theme-mode"></script>
 <script src="static/index.js?v=20260901-public-experience" defer></script>
+<script src="static/index-core.js?v=20260901-public-experience" defer></script>
 <script src="static/public-experience.js?v=20260901-motion-suite4" defer></script>
 
 <!-- ══ MODALES LÉGALES ══════════════════════════════════════════════ -->
 
 <!-- Mentions légales -->
-<div class="lmodal-overlay" id="modal-mentions">
-  <div class="lmodal">
+<div class="lmodal-overlay" id="modal-mentions" aria-hidden="true">
+  <div class="lmodal" role="dialog" aria-modal="true" aria-labelledby="modal-mentions-title" tabindex="-1">
     <div class="lmodal-head">
-      <h3 data-i18n="modal.mentions.title">Mentions légales</h3>
-      <button class="lmodal-close" onclick="closeLegal('mentions')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
+      <h3 id="modal-mentions-title" data-i18n="modal.mentions.title">Mentions légales</h3>
+      <button type="button" class="lmodal-close" onclick="closeLegal('mentions')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
       <h4 data-i18n="modal.mentions.publisher.h">Éditeur du site</h4>
@@ -790,11 +793,11 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 </div>
 
 <!-- Modal achat du livre -->
-<div class="lmodal-overlay" id="modal-achat">
-  <div class="lmodal" style="max-width:560px">
+<div class="lmodal-overlay" id="modal-achat" aria-hidden="true">
+  <div class="lmodal" role="dialog" aria-modal="true" aria-labelledby="modal-achat-title" tabindex="-1" style="max-width:560px">
     <div class="lmodal-head">
-      <h3 data-i18n="pub.modal.title">Acheter le livre, 40 €</h3>
-      <button class="lmodal-close" onclick="document.getElementById('modal-achat').classList.remove('open');document.body.style.overflow=''" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
+      <h3 id="modal-achat-title" data-i18n="pub.modal.title">Acheter le livre, 40 €</h3>
+      <button type="button" class="lmodal-close" onclick="closeAchat()" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body" id="achat-step-1">
       <!-- Aperçu livre -->
@@ -878,7 +881,7 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 
     <!-- Formulaire commande locale (caché par défaut) -->
     <div class="lmodal-body" id="achat-step-2" style="display:none">
-      <button onclick="showBuyOptions()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0" data-i18n="pub.order.back">← Retour aux options</button>
+      <button type="button" onclick="showBuyOptions()" style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:13px;margin-bottom:16px;padding:0" data-i18n="pub.order.back">← Retour aux options</button>
       <p style="font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px" data-i18n="pub.order.note">Notre équipe vous contacte sous 48h pour confirmer la commande et organiser la livraison.</p>
       <form class="order-form" onsubmit="submitOrder(event,this)">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -907,11 +910,11 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 </div>
 
 <!-- Confidentialité -->
-<div class="lmodal-overlay" id="modal-confidentialite">
-  <div class="lmodal">
+<div class="lmodal-overlay" id="modal-confidentialite" aria-hidden="true">
+  <div class="lmodal" role="dialog" aria-modal="true" aria-labelledby="modal-confidentialite-title" tabindex="-1">
     <div class="lmodal-head">
-      <h3 data-i18n="modal.privacy.title">Politique de confidentialité</h3>
-      <button class="lmodal-close" onclick="closeLegal('confidentialite')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
+      <h3 id="modal-confidentialite-title" data-i18n="modal.privacy.title">Politique de confidentialité</h3>
+      <button type="button" class="lmodal-close" onclick="closeLegal('confidentialite')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
       <h4 data-i18n="modal.privacy.collected.h">Données collectées</h4>
@@ -932,11 +935,11 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 
 
 <!-- Cookies -->
-<div class="lmodal-overlay" id="modal-cookies">
-  <div class="lmodal">
+<div class="lmodal-overlay" id="modal-cookies" aria-hidden="true">
+  <div class="lmodal" role="dialog" aria-modal="true" aria-labelledby="modal-cookies-title" tabindex="-1">
     <div class="lmodal-head">
-      <h3 data-i18n="modal.cookies.title">Gestion des cookies</h3>
-      <button class="lmodal-close" onclick="closeLegal('cookies')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
+      <h3 id="modal-cookies-title" data-i18n="modal.cookies.title">Gestion des cookies</h3>
+      <button type="button" class="lmodal-close" onclick="closeLegal('cookies')" aria-label="Fermer" data-i18n="aria.close" data-i18n-attr="aria-label">✕</button>
     </div>
     <div class="lmodal-body">
       <h4 data-i18n="modal.cookies.what.h">Qu'est-ce qu'un cookie ?</h4>
@@ -958,11 +961,11 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 
 <div class="chat-bubble" id="chatBubble" onclick="document.getElementById('chatBubble').classList.remove('visible');toggleChat()">
   Bonjour, je suis là pour vous aider.<span class="bubble-dots"><span></span><span></span><span></span></span>
-  <button class="chat-bubble-close" onclick="event.stopPropagation();document.getElementById('chatBubble').classList.remove('visible')" aria-label="Fermer">✕</button>
+  <button type="button" class="chat-bubble-close" onclick="event.stopPropagation();document.getElementById('chatBubble').classList.remove('visible')" aria-label="Fermer">✕</button>
   <div class="chat-bubble-arrow"></div>
 </div>
 <div class="chat-fab-ring" id="chatFabRing"></div>
-<button class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant DA">
+<button type="button" class="chat-fab" id="chatFab" onclick="toggleChat()" aria-label="Ouvrir l'assistant DA">
   <span class="chat-fab-mono" id="chatFabMono">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
     <span style="font-size:9px;letter-spacing:1.5px;color:#fff;font-weight:800;margin-top:1px">DA</span>
@@ -971,29 +974,30 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
   <span class="chat-fab-badge" id="chatFabBadge" style="display:none">1</span>
 </button>
 
-<div class="chat-window" id="chatWindow" aria-hidden="true">
+<div class="chat-window" id="chatWindow" role="dialog" aria-label="Assistant virtuel DA" aria-hidden="true">
   <div class="chat-header">
     <div class="chat-header-mono">DA</div>
     <div class="chat-header-info">
       <div class="chat-header-name">DA — Assistant virtuel</div>
       <div class="chat-header-status"><span class="chat-dot"></span> En ligne</div>
     </div>
-    <button class="chat-tts-toggle" id="chatTtsBtn" onclick="toggleTTS()" aria-label="Activer/désactiver la voix" title="Voix DA">
+    <button type="button" class="chat-tts-toggle" id="chatTtsBtn" onclick="toggleTTS()" aria-label="Activer/désactiver la voix" title="Voix DA">
       <svg id="chatTtsIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
     </button>
-    <button class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
+    <button type="button" class="chat-header-close" onclick="toggleChat()" aria-label="Fermer">✕</button>
   </div>
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-input-area">
     <input type="text" class="chat-input" id="chatInput" placeholder="Votre question…" maxlength="500"
       onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat();}">
-    <button class="chat-send" id="chatSend" onclick="sendChat()" aria-label="Envoyer">
+    <button type="button" class="chat-send" id="chatSend" onclick="sendChat()" aria-label="Envoyer">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
 </div>
 
 <script src="static/chat.js?v=20260623-stable-da" defer></script>
+<script src="static/public-form-hardening.js?v=20260819-privacy-1" defer></script>
 
 <style>
 /* ── ANTI-SCROLL HORIZONTAL ────────────────────────── */

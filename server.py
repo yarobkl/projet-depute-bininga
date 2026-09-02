@@ -21,6 +21,8 @@ from email.parser import BytesParser
 from email.policy import default as email_policy_default
 from urllib.parse import urlparse, unquote, parse_qs
 
+import content_integrity
+
 def _load_env_file():
     """Charge un fichier .env local si présent, sans écraser l'environnement."""
     env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
@@ -196,7 +198,11 @@ def _get_build_version():
 BUILD_VERSION = _get_build_version()
 
 def _version_static_assets(text: str) -> str:
-    for asset in ("admin.js", "admin.css", "mobile.css", "index.js", "index.css"):
+    for asset in (
+        "admin.js", "admin.css", "mobile.css", "index.js", "index-core.js",
+        "index.css", "public-experience.js", "public-experience.css", "chat.js",
+        "chat.css", "public-form-hardening.js",
+    ):
         text = re.sub(
             rf"static/{re.escape(asset)}(?:\?v=[^\"'<\s]*)?",
             f"static/{asset}?v={BUILD_VERSION}",
@@ -832,8 +838,15 @@ def load_attacks(limit=200):
 
 # ── Validation MIME par magic bytes ────────────────────────
 def _is_valid_image(data: bytes) -> bool:
-    """Vérifie les magic bytes pour JPEG, PNG, GIF, WebP."""
+    """Vérifie la signature et refuse les charges exécutables embarquées."""
     if len(data) < 12:
+        return False
+    lowered = data.lower()
+    executable_markers = (
+        b"<?php", b"<?=", b"<%", b"<script", b"#!/usr/bin/php",
+        b"base64_decode(", b"shell_exec(", b"passthru(",
+    )
+    if any(marker in lowered for marker in executable_markers):
         return False
     if data[:3] == b'\xff\xd8\xff':                          # JPEG
         return True
@@ -1065,7 +1078,7 @@ def _public_article_by_slug(slug: str):
 def _public_article_image_url(image: str) -> str:
     value = str(image or "").strip()
     if not value:
-        return f"{PUBLIC_SITE_URL}/images/og-bininga.jpg"
+        return f"{PUBLIC_SITE_URL}/images/bininga.jpg"
     parsed = urlparse(value)
     if parsed.scheme in ("http", "https"):
         return value
@@ -1114,9 +1127,20 @@ def _inject_public_article_metadata(text: str, article: dict, slug: str) -> str:
     replace_meta("og:title", headline, "property")
     replace_meta("og:description", description, "property")
     replace_meta("og:image", image, "property")
+    replace_meta("og:image:alt", f"Illustration de l'article : {headline}", "property")
     replace_meta("twitter:title", headline)
     replace_meta("twitter:description", description)
     replace_meta("twitter:image", image)
+    replace_meta("twitter:image:alt", f"Illustration de l'article : {headline}")
+
+    # Les dimensions de l'image de partage de la page d'accueil ne sont pas
+    # forcément celles de l'illustration propre à l'article.
+    text = re.sub(
+        r'<meta\s+property="og:image:(?:width|height)"\s+content="[^"]*"\s*/?>\s*',
+        "",
+        text,
+        flags=re.I,
+    )
 
     schema = {
         "@context": "https://schema.org",
@@ -1567,7 +1591,8 @@ def _pg_load_photo(photo_id: str):
 
 def list_backups(limit: int = 20):
     """Retourne les sauvegardes locales créées par backup_bininga.py."""
-    backup_root = os.path.join(BASE_DIR, "backups")
+    import backup_bininga
+    backup_root = str(backup_bininga.backup_root())
     rows = []
     if not os.path.isdir(backup_root):
         return rows
@@ -1585,11 +1610,24 @@ def list_backups(limit: int = 20):
                 "backend": manifest.get("backend", ""),
                 "store_count": manifest.get("store_count", 0),
                 "photo_count": manifest.get("photo_count", 0),
-                "path": path,
             })
         except Exception as e:
-            rows.append({"name": name, "error": str(e), "path": path})
+            rows.append({"name": name, "error": str(e)})
     return rows[:limit]
+
+
+def backup_storage_status():
+    """Décrit honnêtement la persistance des copies créées sur le serveur."""
+    import backup_bininga
+    root = backup_bininga.backup_root()
+    try:
+        temporary = bool(os.environ.get("VERCEL")) or str(root.resolve()).startswith("/tmp/")
+    except Exception:
+        temporary = bool(os.environ.get("VERCEL"))
+    return {
+        "durable": not temporary,
+        "label": "stockage persistant" if not temporary else "stockage temporaire du serveur",
+    }
 
 def run_backup_now():
     """Lance une sauvegarde DB/photos immédiatement."""
@@ -1601,7 +1639,6 @@ def run_backup_now():
         manifest = json.load(f)
     return {
         "name": os.path.basename(str(dest)),
-        "path": str(dest),
         "created_at": manifest.get("created_at", ""),
         "backend": manifest.get("backend", ""),
         "store_count": manifest.get("store_count", 0),
@@ -1893,8 +1930,10 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
             "font-src 'self' https://fonts.gstatic.com; "
             "img-src 'self' data: blob: https://*.tile.openstreetmap.org "
             "https://www.openstreetmap.org; "
-            "frame-src https://www.openstreetmap.org; "
-            "connect-src 'self'; "
+            "frame-src https://www.openstreetmap.org https://www.youtube.com "
+            "https://www.youtube-nocookie.com; "
+            "connect-src 'self' https://nominatim.openstreetmap.org; "
+            "media-src 'self'; "
             "object-src 'none'; "
             "base-uri 'self'; "
             "form-action 'self'"
@@ -2173,6 +2212,7 @@ class BiningaHandler(http.server.SimpleHTTPRequestHandler):
                 "latest": latest,
                 "count": len(backups),
                 "database": _db_label(),
+                "storage": backup_storage_status(),
             })
             return
 
@@ -4133,9 +4173,13 @@ Réponds UNIQUEMENT avec ce tableau JSON (sans markdown) :
                 data    = json.loads(body.decode("utf-8"))
                 session = get_session(token)
                 role    = session["role"] if session else "lecteur"
+                existing = load_data()
+                source_error = content_integrity.validate_news_source_change(existing, data)
+                if source_error:
+                    self._json({"ok": False, "message": source_error}, 400)
+                    return
                 # Si non-admin : on préserve les clés sensibles de data.json existant
                 if role != "admin":
-                    existing = load_data()
                     for key in ADMIN_ONLY_KEYS:
                         if key in existing:
                             data[key] = existing[key]
@@ -4400,6 +4444,16 @@ Réponds UNIQUEMENT avec ce format JSON (sans markdown, sans commentaire) :
                 return
             try:
                 payload    = json.loads(body.decode("utf-8"))
+                if payload.get("statut") == "publie":
+                    # En Passenger/Vercel, editorial_publish_integrity intercepte
+                    # cette transition et publie réellement la carte publique.
+                    # Un lancement direct de server.py ne doit jamais afficher un
+                    # faux succès qui ne modifierait que le statut interne.
+                    self._json({
+                        "ok": False,
+                        "message": "Publication sécurisée indisponible sur ce mode serveur",
+                    }, 409)
+                    return
                 article_id = payload.get("id", "")
                 arts = _pg_load("editorial") or []
                 if not arts and os.path.exists(EDITORIAL_FILE):

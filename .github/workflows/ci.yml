@@ -20,11 +20,21 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Installer le moteur de tests
+        run: python -m pip install "pytest>=8,<9"
+
       # ── 1. Syntaxe Python ──────────────────────────────────
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py passenger_wsgi.py admin_system_authz.py editorial_publish_integrity.py
+          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py backup_download.py content_integrity.py admin_system_authz.py editorial_publish_integrity.py
           echo "✅ Python — syntaxe OK"
+
+      - name: Vérification syntaxe JavaScript
+        run: |
+          node --check static/index.js
+          node --check static/index-core.js
+          node --check static/public-experience.js
+          node --check static/admin.js
 
       # ── 2. Validation JSON ─────────────────────────────────
       - name: Validation data.json
@@ -65,12 +75,34 @@ jobs:
           python tests/test_admin_action_contracts.py
           python tests/test_editorial_publish_integrity.py
           python tests/test_public_experience.py
+          python tests/test_vercel_public_fastpath.py
+          python tests/test_backup_download.py
+          python tests/test_content_integrity.py
+
+      - name: Tests unitaires chatbot et point d'entrée Vercel
+        env:
+          BININGA_TEST: "1"
+        run: |
+          pytest -q \
+            tests/test_chat.py \
+            tests/test_chatbot_hardening.py \
+            tests/test_chatbot_nlu.py \
+            tests/test_vercel_chat_entrypoint.py
+
+      - name: Qualité institutionnelle et SEO
+        run: python scripts/quality_gate.py
 
       # ── 5. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP
         env:
           BININGA_PASS: bininga2025
-        run: python tests/test_server.py
+          BININGA_TEST: "1"
+        run: |
+          BININGA_CI_DATA="$(mktemp -d)"
+          DATA_DIR="$BININGA_CI_DATA" python tests/test_server.py
+
+      - name: Parcours end-to-end complet
+        run: python tests/test_e2e_complet.py
 
       # ── 6. Sécurité complète ───────────────────────────────
       - name: Suite de sécurité admin

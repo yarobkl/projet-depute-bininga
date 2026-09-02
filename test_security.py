@@ -465,9 +465,8 @@ def test_upload():
     else:
         _fail("Null byte dans filename → comportement inattendu", f"status={status}")
 
-    # Upload admin — JPEG polyglote (magic bytes OK + contenu PHP)
-    # Ce fichier a un header JPEG valide mais contient du code PHP après
-    # Le serveur l'accepte car les magic bytes sont corrects — comportement documenté
+    # Upload admin — JPEG polyglotte (magic bytes OK + contenu PHP)
+    # La signature d'image seule ne suffit pas : le contenu exécutable doit être refusé.
     polyglot = make_jpeg() + b"\n<?php echo 'xss'; ?>\n"
     token, csrf, _ = login()
     body_mp, ct = make_multipart("polyglot.jpg", polyglot)
@@ -475,9 +474,9 @@ def test_upload():
                           headers={"X-Admin-Token": token, "X-CSRF-Token": csrf})
     d = json.loads(body)
     if status == 200 and d.get("ok"):
-        _warn("Upload polyglote JPEG+PHP accepté", "magic bytes valides — non exécutable car pas de PHP-FPM")
+        _fail("Upload polyglotte JPEG+PHP accepté", "contenu exécutable détectable")
     else:
-        _ok("Upload polyglote rejeté")
+        _ok("Upload polyglotte JPEG+PHP rejeté")
 
 # ══════════════════════════════════════════════════════════════
 #  6. CONTRÔLE D'ACCÈS PAR RÔLE

@@ -98,6 +98,32 @@ def test_publish_requires_existing_article():
     assert server.site["actus"].get("cards", []) == []
 
 
+def test_publish_requires_validation_and_source():
+    server = Server()
+    server.editorial[0]["statut"] = "brouillon"
+    handler = Handler({"id": "ed-1", "statut": "publie"})
+    assert epi.guard_request(server, handler) is False
+    assert handler.status == 409
+    assert "validé" in handler.response["message"]
+
+    server.editorial[0]["statut"] = "valide"
+    server.editorial[0]["sources"] = []
+    server.editorial[0]["source_nom"] = ""
+    handler = Handler({"id": "ed-1", "statut": "publie"})
+    assert epi.guard_request(server, handler) is False
+    assert handler.status == 409
+    assert "source" in handler.response["message"].lower()
+
+
+def test_editor_cannot_publish_without_decision_maker():
+    server = Server()
+    server.sessions["tok"]["role"] = "editeur"
+    handler = Handler({"id": "ed-1", "statut": "publie"})
+    assert epi.guard_request(server, handler) is False
+    assert handler.status == 403
+    assert server.site["actus"].get("cards", []) == []
+
+
 def test_publish_creates_public_actualite_and_marks_editorial_published():
     server = Server()
     handler = Handler({"id": "ed-1", "statut": "publie"})
@@ -112,6 +138,8 @@ def test_publish_creates_public_actualite_and_marks_editorial_published():
     assert public["title"] == "Une nouvelle route pour Ewo"
     assert public["publication_source"] == "editorial_ia"
     assert public["desc"]
+    assert public["body"] == server.editorial[0]["article"]
+    assert public["sourceLabel"] == "Cabinet"
     assert public["day"] and public["month"] and public["year"]
 
     editorial = server.editorial[0]
@@ -184,6 +212,8 @@ if __name__ == "__main__":
     tests = [
         test_non_publish_request_is_left_to_legacy_handler,
         test_publish_requires_existing_article,
+        test_publish_requires_validation_and_source,
+        test_editor_cannot_publish_without_decision_maker,
         test_publish_creates_public_actualite_and_marks_editorial_published,
         test_republish_is_idempotent_and_does_not_duplicate_public_article,
         test_invalid_csrf_is_not_intercepted_so_legacy_security_remains_authoritative,
