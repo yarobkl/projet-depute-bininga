@@ -4,9 +4,11 @@ The repository is public, so the owners' email addresses are deliberately not
 stored in clear text here. Ownership is matched against SHA-256 fingerprints of
 normalized email addresses.
 
-Exactly two designated identities can ever become Owner. Other administration
-accounts may be created by an Owner and receive delegated roles, but a username
-or the legacy ``ADMIN_USER`` value alone never grants Owner privileges.
+Exactly two designated identities can be permanent Owners. Other administration
+accounts may be created by an Owner and receive delegated roles. During migration
+only, the historical ADMIN_USER keeps temporary bootstrap-owner privileges while
+no designated Owner has completed activation; that exception disappears
+immediately after the first designated Owner is active.
 """
 from __future__ import annotations
 
@@ -88,15 +90,25 @@ def find_user_by_email(server, email: object):
 
 
 def is_owner_user(server, user: object) -> bool:
-    """Only an activated designated owner identity has Owner privileges."""
-    return is_active_designated_owner_user(user)
+    """Return Owner status, including the one-time migration bootstrap account."""
+    if not isinstance(user, dict):
+        return False
+    if is_active_designated_owner_user(user):
+        return True
+    if active_designated_owners(server):
+        return False
+    return user.get("username") == getattr(server, "ADMIN_USER", "admin")
 
 
 def is_owner_session(server, session: object) -> bool:
     if not isinstance(session, dict):
         return False
     user = find_user_by_username(server, session.get("username"))
-    return bool(user and is_owner_user(server, user))
+    if user:
+        return is_owner_user(server, user)
+    if active_designated_owners(server):
+        return False
+    return session.get("username") == getattr(server, "ADMIN_USER", "admin")
 
 
 def is_protected_owner_user(user: object) -> bool:
