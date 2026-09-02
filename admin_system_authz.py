@@ -4,6 +4,8 @@ import gzip
 import io
 import os
 
+import owner_policy
+
 
 _MAIN_ADMIN_GET = {
     "/api/users",
@@ -56,23 +58,15 @@ def _set_response_body(handler, body: bytes) -> None:
 
 
 def _ensure_public_form_hardening(server) -> None:
-    """Inject the privacy layer after public HTML, including gzip responses.
-
-    The legacy public bundle is intentionally left untouched. Wrapping the base
-    handler here keeps the patch isolated and also avoids depending on the
-    client's Accept-Encoding value.
-    """
     handler_cls = server.BiningaHandler
     if getattr(handler_cls, "_bininga_public_forms_wrapped", False):
         return
-
     original_get = handler_cls.do_GET
 
     def hardened_get(self):
         original_get(self)
         if getattr(self, "_status_code", 200) != 200:
             return
-
         raw = self.wfile.getvalue()
         encoding = _response_header(self, "Content-Encoding").lower()
         was_gzip = encoding == "gzip"
@@ -80,12 +74,10 @@ def _ensure_public_form_hardening(server) -> None:
             body = gzip.decompress(raw) if was_gzip else raw
         except Exception:
             return
-
         if b"static/index.js" not in body or b"Espace Administration" in body:
             return
         if b"static/public-form-hardening.js" in body or b"</body>" not in body:
             return
-
         patched = body.replace(b"</body>", _PUBLIC_FORM_SCRIPT + b"</body>", 1)
         if was_gzip:
             patched = gzip.compress(patched, compresslevel=6)
@@ -96,68 +88,46 @@ def _ensure_public_form_hardening(server) -> None:
 
 
 def _guard_serverless_durability(server, handler, path: str, method: str) -> bool:
-    """Reject durable mutations on Vercel when no persistent DB is configured."""
     if method != "POST" or not os.environ.get("VERCEL"):
         return True
     if not path.startswith("/api/") or path in _STATELESS_POSTS_WITHOUT_DB:
         return True
-
     try:
         backend, _ = server._db_config()
     except Exception:
         backend = None
     if backend:
         return True
-
     try:
-        server.audit_log(
-            "PERSISTENCE_REJECT",
-            handler.client_address[0],
-            f"Mutation refusée sans base persistante : {path}",
-        )
+        server.audit_log("PERSISTENCE_REJECT", handler.client_address[0], f"Mutation refusée sans base persistante : {path}")
     except Exception:
         pass
-
     handler._json({
         "ok": False,
         "code": "PERSISTENCE_REQUIRED",
         "retryable": True,
-        "message": (
-            "Enregistrement temporairement indisponible. "
-            "La demande n'a pas été enregistrée ; veuillez réessayer dans quelques instants."
-        ),
+        "message": "Enregistrement temporairement indisponible. La demande n'a pas été enregistrée ; veuillez réessayer dans quelques instants.",
     }, 503)
     return False
 
 
 def guard_request(server, handler):
-    """Apply public-form hardening, durability and System/CRM authorization."""
     _ensure_public_form_hardening(server)
-
     path = handler.path.split("?", 1)[0]
     method = handler.command.upper()
-
     if not _guard_serverless_durability(server, handler, path, method):
         return False
-
     protected = path in _MAIN_ADMIN_GET if method == "GET" else (
         method == "POST" and any(path.startswith(prefix) for prefix in _MAIN_ADMIN_POST_PREFIXES)
     )
     if not protected:
         return True
-
     token = handler.headers.get("X-Admin-Token", "")
     session = server.get_session(token) if token else None
     if not session:
         return True
-
-    if session.get("username") == server.ADMIN_USER:
+    if owner_policy.is_owner_session(server, session):
         return True
-
-    server.audit_log(
-        "AUTHZ_REJECT",
-        handler.client_address[0],
-        f"Accès système refusé à {path} pour {session.get('username', '?')}",
-    )
-    handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+    server.audit_log("AUTHZ_REJECT", handler.client_address[0], f"Accès système refusé à {path} pour {session.get('username', '?')}")
+    handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
     return False
