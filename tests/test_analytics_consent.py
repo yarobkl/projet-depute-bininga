@@ -56,6 +56,7 @@ def test_legal_copy_describes_analytics_in_every_language() -> None:
 
 
 def test_operational_tracking_and_leads_respect_consent() -> None:
+    bootstrap = read("static/index.js")
     core = read("static/index-core.js")
     forms = read("static/public-form-hardening.js")
     assert core.count("BiningaConsent.onAnalytics") >= 2
@@ -63,7 +64,31 @@ def test_operational_tracking_and_leads_respect_consent() -> None:
     assert 'BiningaAnalytics.track("book_purchase_click"' in core
     assert 'BiningaAnalytics.track("generate_lead"' in forms
     assert 'BiningaAnalytics.track("sign_up"' in forms
+    for event in (
+        "language_change",
+        "audience_cta_click",
+        "programme_cta_click",
+        "contact_section_click",
+        "gallery_open",
+        "article_open",
+        "contact_click",
+        "social_click",
+        "outbound_click",
+    ):
+        assert f'track("{event}"' in bootstrap
     assert "bininga_livre_clics" not in core
+
+
+def test_mobile_optimisation_keeps_real_hero_image() -> None:
+    html = read("index.html")
+    bootstrap = read("static/index.js")
+    assert 'src="images/bininga.jpg" alt="Ange Aimé Wilfrid BININGA"' in html
+    assert "bininga-hero.webp" not in bootstrap
+    assert "data:image/gif;base64" not in bootstrap
+    assert 'heroImage.setAttribute("fetchpriority", "high")' in bootstrap
+    assert 'heroImage.decoding = "async"' in bootstrap
+    assert "content-visibility:auto" in bootstrap
+    assert 'sessionStorage.getItem("bininga_seen")' in bootstrap
 
 
 def test_security_policies_allow_only_required_google_endpoints() -> None:
@@ -82,8 +107,9 @@ def main() -> None:
     test_consent_is_reversible_and_does_not_collect_form_values()
     test_legal_copy_describes_analytics_in_every_language()
     test_operational_tracking_and_leads_respect_consent()
+    test_mobile_optimisation_keeps_real_hero_image()
     test_security_policies_allow_only_required_google_endpoints()
-    print("✅ Google Analytics 4 — consentement et confidentialité valides")
+    print("✅ Google Analytics 4 — consentement, événements et mobile valides")
 
 
 if __name__ == "__main__":
