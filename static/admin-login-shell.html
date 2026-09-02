@@ -5,75 +5,109 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <title>BININGA — Connexion</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}body{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:manipulation}.box{width:min(100%,420px);background:#111722;border:1px solid #263247;border-radius:18px;padding:34px 28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;pointer-events:auto;touch-action:manipulation}.logo{width:62px;height:62px;margin:0 auto 22px;border-radius:14px;background:#bb1232;display:grid;place-items:center;font:700 30px Georgia,serif}.box h1{font-size:22px;margin:0 0 8px}.box p{margin:0 0 28px;color:#8d95a4;font-size:14px}.field{display:block;width:100%;height:56px;margin:0 0 14px;padding:0 16px;border:1px solid #344056;border-radius:12px;background:#192231;color:#fff;font-size:16px;outline:none;-webkit-appearance:none;appearance:none;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;caret-color:#fff}.field:focus{border-color:#bb1232;box-shadow:0 0 0 3px rgba(187,18,50,.14)}.btn{display:block;width:100%;height:54px;border:0;border-radius:12px;background:#123f33;color:#7df0aa;font-size:17px;font-weight:800;-webkit-appearance:none;appearance:none;touch-action:manipulation;pointer-events:auto}.btn:disabled{opacity:.55}.err{min-height:20px;margin-top:12px;color:#ff7f8d;font-size:13px}.hidden{display:none}@media(max-width:520px){body{align-items:flex-start;padding:12vh 18px 32px}.box{padding:30px 22px 26px}}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#050505;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-text-size-adjust:100%}body{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;-webkit-overflow-scrolling:touch;touch-action:manipulation}.box{width:min(100%,420px);background:#111722;border:1px solid #263247;border-radius:18px;padding:34px 28px 30px;box-shadow:0 30px 80px rgba(0,0,0,.45);text-align:center;pointer-events:auto;touch-action:manipulation}.logo{width:62px;height:62px;margin:0 auto 22px;border-radius:14px;background:#bb1232;display:grid;place-items:center;font:700 30px Georgia,serif}.box h1{font-size:22px;margin:0 0 8px}.box p{margin:0 0 28px;color:#8d95a4;font-size:14px;line-height:1.5}.field{display:block;width:100%;height:56px;margin:0 0 14px;padding:0 16px;border:1px solid #344056;border-radius:12px;background:#192231;color:#fff;font-size:16px;outline:none;-webkit-appearance:none;appearance:none;pointer-events:auto!important;touch-action:manipulation!important;-webkit-user-select:text!important;user-select:text!important;caret-color:#fff}.field:focus{border-color:#bb1232;box-shadow:0 0 0 3px rgba(187,18,50,.14)}.btn{display:block;width:100%;height:54px;border:0;border-radius:12px;background:#123f33;color:#7df0aa;font-size:17px;font-weight:800;-webkit-appearance:none;appearance:none;touch-action:manipulation;pointer-events:auto;cursor:pointer}.btn:disabled{opacity:.55}.err{min-height:20px;margin-top:12px;color:#ff7f8d;font-size:13px;line-height:1.5}.ok{color:#7df0aa}.hidden{display:none!important}.linkbtn{border:0;background:transparent;color:#b9c2d0;font-size:13px;margin:14px 0 0;padding:7px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}.back{margin-top:14px}.status{margin:0 0 18px;padding:11px 12px;border:1px solid rgba(125,240,170,.25);background:rgba(18,63,51,.35);color:#9af3bc;border-radius:10px;font-size:13px;line-height:1.4}.small{font-size:12px!important;margin-bottom:20px!important}@media(max-width:520px){body{align-items:flex-start;padding:12vh 18px 32px}.box{padding:30px 22px 26px}}
 </style>
 </head>
 <body>
-<form class="box" id="form" autocomplete="on">
+<div class="box">
   <div class="logo">B</div>
-  <h1>Espace Administration</h1>
-  <p>Administration du site BININGA · Accès sécurisé</p>
-  <input class="field" id="u" name="username" type="text" inputmode="text" placeholder="Identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" required>
-  <input class="field" id="p" name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
-  <input class="field hidden" id="totp" name="totp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code 2FA (6 chiffres)" autocomplete="one-time-code">
-  <button class="btn" id="btn" type="submit">Connexion</button>
-  <div class="err" id="err" role="alert" aria-live="polite"></div>
-</form>
+  <section id="login-view">
+    <h1>Espace Administration</h1>
+    <p>Administration du site BININGA · Accès sécurisé</p>
+    <div class="status hidden" id="status"></div>
+    <form id="form" autocomplete="on">
+      <input class="field" id="u" name="username" type="text" inputmode="text" placeholder="Identifiant" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+      <input class="field" id="p" name="password" type="password" placeholder="Mot de passe" autocomplete="current-password" required>
+      <input class="field hidden" id="totp" name="totp" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="Code 2FA (6 chiffres)" autocomplete="one-time-code">
+      <button class="btn" id="btn" type="submit">Connexion</button>
+      <button class="linkbtn" id="forgot-open" type="button">Mot de passe oublié ?</button>
+      <div class="err" id="err" role="alert" aria-live="polite"></div>
+    </form>
+  </section>
+  <section id="forgot-view" class="hidden">
+    <h1>Mot de passe oublié</h1>
+    <p class="small">Saisissez votre identifiant ou l’adresse email associée au compte. Si le compte existe, vous recevrez un lien valable 30 minutes.</p>
+    <form id="forgot-form">
+      <input class="field" id="identifier" type="text" autocomplete="username" placeholder="Identifiant ou adresse email" required>
+      <button class="btn" id="forgot-btn" type="submit">Envoyer le lien de réinitialisation</button>
+      <button class="linkbtn back" id="forgot-back" type="button">← Retour à la connexion</button>
+      <div class="err" id="forgot-msg" role="alert" aria-live="polite"></div>
+    </form>
+  </section>
+</div>
 <script>
 (() => {
   'use strict';
   const KEY='bininga_session';
   const ADMIN_PATH='/cabinet-bininga-Ff4wjckb0MG7XRvv';
+  const loginView=document.getElementById('login-view');
+  const forgotView=document.getElementById('forgot-view');
   const form=document.getElementById('form');
   const u=document.getElementById('u');
   const p=document.getElementById('p');
   const totp=document.getElementById('totp');
   const btn=document.getElementById('btn');
   const err=document.getElementById('err');
+  const status=document.getElementById('status');
+  const forgotForm=document.getElementById('forgot-form');
+  const identifier=document.getElementById('identifier');
+  const forgotBtn=document.getElementById('forgot-btn');
+  const forgotMsg=document.getElementById('forgot-msg');
+  const params=new URLSearchParams(location.search);
 
-  // Some iOS in-app webviews occasionally fail to promote the first tap into
-  // an editable focus. Explicitly focusing the native input on pointer/touch
-  // preserves the normal keyboard path without intercepting text events.
-  [u,p,totp].forEach((input)=>{
+  if(params.has('reset')||params.has('first_login_done')||params.has('password_changed')){
+    status.textContent=params.has('reset')?'Votre mot de passe a été réinitialisé. Vous pouvez vous connecter.':'Votre nouveau mot de passe est enregistré. Reconnectez-vous pour continuer.';
+    status.classList.remove('hidden');
+  }
+
+  [u,p,totp,identifier].forEach((input)=>{
     const focusNative=()=>{
-      if(input.classList.contains('hidden')) return;
+      if(input.classList.contains('hidden'))return;
       try{input.focus({preventScroll:true});}catch(_){try{input.focus();}catch(__){}}
     };
     input.addEventListener('pointerdown',focusNative,{passive:true});
     input.addEventListener('touchstart',focusNative,{passive:true});
   });
 
+  document.getElementById('forgot-open').addEventListener('click',()=>{
+    loginView.classList.add('hidden');forgotView.classList.remove('hidden');forgotMsg.textContent='';identifier.focus();
+  });
+  document.getElementById('forgot-back').addEventListener('click',()=>{
+    forgotView.classList.add('hidden');loginView.classList.remove('hidden');forgotMsg.textContent='';u.focus();
+  });
+
+  forgotForm.addEventListener('submit',async(e)=>{
+    e.preventDefault();forgotMsg.className='err';forgotMsg.textContent='';forgotBtn.disabled=true;forgotBtn.textContent='Envoi…';
+    try{
+      const res=await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({identifier:identifier.value.trim()}),cache:'no-store'});
+      const data=await res.json();
+      forgotMsg.textContent=data.message||'Si un compte correspond, un email de réinitialisation sera envoyé.';
+      forgotMsg.classList.add(data.ok?'ok':'');
+    }catch(_){forgotMsg.textContent='Service de récupération momentanément indisponible.';}
+    finally{forgotBtn.disabled=false;forgotBtn.textContent='Envoyer le lien de réinitialisation';}
+  });
+
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    err.textContent='';
-    btn.disabled=true;
-    btn.textContent='Connexion…';
+    err.textContent='';btn.disabled=true;btn.textContent='Connexion…';
     try {
       const payload={username:u.value.trim(),password:p.value};
-      if(!totp.classList.contains('hidden') && totp.value.trim()) payload.totp_code=totp.value.trim();
+      if(!totp.classList.contains('hidden') && totp.value.trim())payload.totp_code=totp.value.trim();
       const res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store'});
       const data=await res.json();
       if(data.ok){
         const ttlSeconds=Math.max(60,Number(data.session_ttl||72*3600));
-        const saved={token:data.token,csrf:data.csrf_token||data.csrf||'',role:data.role,nom:data.nom,username:data.username||'',is_main_admin:data.is_main_admin||false,has_2fa:data.has_2fa||false,trusted_ip:data.trusted_ip||false,session_duration:data.session_duration||'',expires_at:Date.now()+ttlSeconds*1000};
+        const saved={token:data.token,csrf:data.csrf_token||data.csrf||'',role:data.role,nom:data.nom,username:data.username||'',is_main_admin:data.is_main_admin||false,has_2fa:data.has_2fa||false,trusted_ip:data.trusted_ip||false,session_duration:data.session_duration||'',must_change_password:!!data.must_change_password,email:data.email||'',expires_at:Date.now()+ttlSeconds*1000};
         try{localStorage.removeItem(KEY);}catch(_){}
         sessionStorage.setItem(KEY,JSON.stringify(saved));
-        window.location.replace(ADMIN_PATH);
-        return;
+        if(saved.must_change_password){window.location.replace('/static/admin-first-login.html');return;}
+        window.location.replace(ADMIN_PATH);return;
       }
       if(data.require_2fa){
-        totp.classList.remove('hidden');
-        totp.focus();
-        err.textContent="Entrez votre code d'authentification à 6 chiffres.";
-      } else {
-        err.textContent=data.message||'Identifiant ou mot de passe incorrect.';
-      }
-    } catch(_) {
-      err.textContent='Connexion serveur impossible.';
-    } finally {
-      btn.disabled=false;
-      btn.textContent='Connexion';
-    }
+        totp.classList.remove('hidden');totp.focus();err.textContent="Entrez votre code d'authentification à 6 chiffres.";
+      }else{err.textContent=data.message||'Identifiant ou mot de passe incorrect.';}
+    }catch(_){err.textContent='Connexion serveur impossible.';}
+    finally{btn.disabled=false;btn.textContent='Connexion';}
   });
 })();
 </script>

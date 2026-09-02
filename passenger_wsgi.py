@@ -17,15 +17,10 @@ os.chdir(APP_DIR)
 if APP_DIR not in sys.path:
     sys.path.insert(0, APP_DIR)
 
-# Vercel serverless functions expose the deployed code as read-only.
-# Keep the app's transient JSON/session files in /tmp so importing server.py
-# cannot crash while preserving the normal o2switch/Railway behaviour.
 if os.environ.get("VERCEL"):
     os.environ.setdefault("DATA_DIR", "/tmp/bininga")
     os.makedirs(os.environ["DATA_DIR"], exist_ok=True)
 
-# Must run before server.py: the legacy module performs an admin bootstrap at
-# import time, so post-import wrappers are too late to suppress credential logs.
 import preimport_security  # noqa: F401
 
 import server as bininga_server
@@ -35,30 +30,17 @@ import admin_request_pipeline
 import request_identity
 import editorial_publish_integrity
 
-# Install the small compatibility/integrity layer after server.py has finished
-# bootstrapping, before the first WSGI request is handled.
 admin_contact_integrity.install(bininga_server)
 admin_bootstrap_hardening.install(bininga_server)
-# Migration unique : publications éditoriales déplacées des vedettes vers la
-# grille de cartes (marqueur en base, ne se rejoue jamais).
 editorial_publish_integrity.migrate_editorial_vedettes(bininga_server)
 
 
 def _bootstrap() -> None:
-    """Initialise only the lightweight state needed to answer web requests.
-
-    Passenger imports this module inside its app worker. Long-running helper
-    processes and background schedulers are intentionally opt-in here: cPanel
-    can otherwise keep the worker busy during boot and leave requests hanging.
-    """
     for name in ("init_users", "load_blocked_ips", "load_attack_scores"):
         fn = getattr(bininga_server, name, None)
         if callable(fn):
             fn()
 
-    # Hydrate les clés IA (Gemini/Groq/Claude) depuis la base si absentes de
-    # l'environnement, pour que chatbot/éditorial/veille voient les clés
-    # enregistrées via l'admin.
     try:
         bininga_server.hydrate_ia_keys()
     except Exception:
@@ -137,7 +119,6 @@ class _PassengerHandler(bininga_server.BiningaHandler):
 
 
 def _main_admin_session(handler: _PassengerHandler):
-    """Return the authenticated main-admin session, otherwise ``None``."""
     token = handler.headers.get("X-Admin-Token", "")
     session = bininga_server.get_session(token) if token else None
     if not session:
@@ -148,16 +129,6 @@ def _main_admin_session(handler: _PassengerHandler):
 
 
 def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
-    """Apply server-side authorization rules that the legacy handler under-enforces.
-
-    Returns ``True`` when the request may continue into ``server.py`` and ``False``
-    when a response has already been emitted.
-
-    Two dangerous gaps are closed here without rewriting the large legacy server:
-      * user creation/deletion is reserved to the main administrator;
-      * Hero/About/Parcours data really is main-admin-only, even if a secondary
-        admin bypasses the UI and calls ``/api/save`` directly.
-    """
     if handler.command != "POST":
         return True
 
@@ -165,13 +136,9 @@ def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
     token = handler.headers.get("X-Admin-Token", "")
     session = bininga_server.get_session(token) if token else None
 
-    # Let the legacy handler deal with unauthenticated requests so its normal
-    # 401/rate-limit/audit behaviour remains unchanged.
     if not session:
         return True
 
-    # The Users panel is visible only to the main admin. Enforce the same rule
-    # on the API so a minister/secondary admin cannot create an administrator.
     if path in ("/api/users/upsert", "/api/users/delete"):
         if not _main_admin_session(handler):
             bininga_server.audit_log(
@@ -183,15 +150,11 @@ def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
             return False
         return True
 
-    # server.py already labels these keys as main-admin-only, but its legacy
-    # role check only distinguishes "admin" from other roles. Sanitize the
-    # body before handing it over, preserving the authoritative stored values.
     if path == "/api/save" and session.get("username") != bininga_server.ADMIN_USER:
         raw = handler.rfile.getvalue()
         try:
             payload = json.loads(raw.decode("utf-8"))
         except Exception:
-            # Preserve the legacy validation/error response for malformed JSON.
             return True
 
         if isinstance(payload, dict):
@@ -223,7 +186,6 @@ def _replace_response_body(handler: _PassengerHandler, patched: bytes) -> None:
 
 
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
-    """Load admin hardening and redirect unauthenticated browsers before heavy UI boot."""
     if handler.command != "GET" or handler._status_code != 200:
         return
 
@@ -232,14 +194,9 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
         return
 
     patched = body
-
-    # Execute before linked CSS and the very large admin DOM are parsed. The browser
-    # owns sessionStorage, so this must be client-side, but placing it at the start
-    # of <head> lets unauthenticated iOS/Safari/Chrome abandon the heavy document
-    # immediately and open the native login shell instead.
     preboot_marker = b"data-bininga-admin-preboot"
     if preboot_marker not in patched and b"<head>" in patched:
-        preboot = b'''\n<script data-bininga-admin-preboot>\n(function(){\n  try {\n    var raw=sessionStorage.getItem('bininga_session');\n    var s=raw?JSON.parse(raw):null;\n    if(!s||!s.token||Date.now()>Number(s.expires_at||0)){\n      try{sessionStorage.removeItem('bininga_session');}catch(_){}\n      try{localStorage.removeItem('bininga_session');}catch(_){}\n      location.replace('/static/admin-login-shell.html');\n    }\n  } catch(e) {\n    location.replace('/static/admin-login-shell.html');\n  }\n})();\n</script>\n'''
+        preboot = b'''\n<script data-bininga-admin-preboot>\n(function(){\n  try {\n    var raw=sessionStorage.getItem('bininga_session');\n    var s=raw?JSON.parse(raw):null;\n    if(!s||!s.token||Date.now()>Number(s.expires_at||0)){\n      try{sessionStorage.removeItem('bininga_session');}catch(_){}\n      try{localStorage.removeItem('bininga_session');}catch(_){}\n      location.replace('/static/admin-login-shell.html');\n      return;\n    }\n    if(s.must_change_password){location.replace('/static/admin-first-login.html');}\n  } catch(e) {\n    location.replace('/static/admin-login-shell.html');\n  }\n})();\n</script>\n'''
         patched = patched.replace(b"<head>", b"<head>" + preboot, 1)
 
     marker = b"</body>"
@@ -254,7 +211,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-notification-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260902-architecture-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260902-auth-lifecycle-1" defer></script>\n'
     if b"static/admin-chatbot.js" not in patched:
         scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
     if scripts:
@@ -265,7 +222,6 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
 
 
 def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
-    """Load the public form privacy layer after the legacy public bundle."""
     if handler.command != "GET" or handler._status_code != 200:
         return
 
@@ -307,6 +263,7 @@ def application(environ, start_response):
         ):
             with admin_request_pipeline.mutation_context(bininga_server, handler):
                 _dispatch_request(handler)
+            admin_request_pipeline.process_response(bininga_server, handler)
     except Exception as exc:
         body = f"Internal Server Error: {exc}".encode("utf-8")
         start_response(

@@ -23,10 +23,9 @@ jobs:
       - name: Installer le moteur de tests
         run: python -m pip install "pytest>=8,<9"
 
-      # ── 1. Syntaxe Python ──────────────────────────────────
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py passenger_wsgi.py admin_request_pipeline.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py backup_download.py content_integrity.py admin_system_authz.py editorial_publish_integrity.py
+          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py backup_download.py content_integrity.py admin_system_authz.py admin_request_pipeline.py admin_auth_flow.py editorial_publish_integrity.py
           echo "✅ Python — syntaxe OK"
 
       - name: Vérification syntaxe JavaScript
@@ -39,9 +38,8 @@ jobs:
           node --check static/admin.js
           node --check static/admin-core.js
           node --check static/admin-session-hardening.js
-          node --check static/admin-production.js
+          node --check static/admin-auth-management.js
 
-      # ── 2. Validation JSON ─────────────────────────────────
       - name: Validation data.json
         run: |
           python -c "
@@ -60,12 +58,11 @@ jobs:
               sys.exit(1)
           "
 
-      # ── 3. Fichiers essentiels présents ───────────────────
       - name: Vérification des fichiers requis
         run: |
           python -c "
           import os, sys
-          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-core.js', 'static/admin-production.js', 'admin_request_pipeline.py', 'docs/ARCHITECTURE.md']
+          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-auth-management.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py']
           missing = [f for f in required if not os.path.isfile(f)]
           if missing:
               print(f'❌ Fichiers manquants: {missing}')
@@ -73,12 +70,12 @@ jobs:
           print('✅ Tous les fichiers requis sont présents')
           "
 
-      # ── 4. Contrats UI admin ───────────────────────────────
       - name: Contrats actions admin
         run: |
           python tests/test_admin_ui.py
           python tests/test_admin_action_contracts.py
           python tests/test_architecture_contracts.py
+          python tests/test_admin_auth_flow.py
           python tests/test_editorial_publish_integrity.py
           python tests/test_public_experience.py
           python tests/test_analytics_consent.py
@@ -99,7 +96,6 @@ jobs:
       - name: Qualité institutionnelle et SEO
         run: python scripts/quality_gate.py
 
-      # ── 5. Tests serveur HTTP ─────────────────────────────
       - name: Tests du serveur HTTP
         env:
           BININGA_PASS: bininga2025
@@ -111,7 +107,6 @@ jobs:
       - name: Parcours end-to-end complet
         run: python tests/test_e2e_complet.py
 
-      # ── 6. Sécurité complète ───────────────────────────────
       - name: Suite de sécurité admin
         env:
           BININGA_FORCE_HTTP: "1"

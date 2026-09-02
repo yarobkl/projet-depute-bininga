@@ -9,6 +9,7 @@
 
   const KEY = 'bininga_session';
   const LOGIN_SHELL = '/static/admin-login-shell.html';
+  const FIRST_LOGIN = '/static/admin-first-login.html';
 
   function clearSessionCopies() {
     try { localStorage.removeItem(KEY); } catch (_) {}
@@ -50,7 +51,8 @@
       token: data.token, csrf: data.csrf_token || data.csrf || '', role: data.role,
       nom: data.nom, username: data.username || '', is_main_admin: data.is_main_admin || false,
       has_2fa: data.has_2fa || false, trusted_ip: data.trusted_ip || false,
-      session_duration: data.session_duration || '', expires_at: Date.now() + ttlSeconds * 1000
+      session_duration: data.session_duration || '', must_change_password: !!data.must_change_password,
+      email: data.email || '', expires_at: Date.now() + ttlSeconds * 1000
     };
     try { localStorage.removeItem(KEY); } catch (_) {}
     sessionStorage.setItem(KEY, JSON.stringify(payload));
@@ -60,6 +62,10 @@
   window.restoreStoredSession = function restoreStoredSessionHardened() {
     const saved = readValidSession();
     if (!saved) return false;
+    if (saved.must_change_password) {
+      if (location.pathname !== FIRST_LOGIN) location.replace(FIRST_LOGIN);
+      return false;
+    }
     _applySession(saved, true);
     return true;
   };
@@ -69,6 +75,10 @@
   const existingSession = readValidSession();
   if (!existingSession) {
     if (location.pathname !== LOGIN_SHELL) location.replace(LOGIN_SHELL);
+    return;
+  }
+  if (existingSession.must_change_password) {
+    if (location.pathname !== FIRST_LOGIN) location.replace(FIRST_LOGIN);
     return;
   }
 
@@ -114,10 +124,9 @@
     return ok;
   }
 
-  // Load the shared runtime first. Feature modules must consume this core instead
-  // of creating their own token/CSRF/role helpers.
   const modules = [
     ['data-bininga-admin-core','/static/admin-core.js?v=20260902-architecture-1'],
+    ['data-bininga-admin-auth-management','/static/admin-auth-management.js?v=20260902-auth-lifecycle-1'],
     ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260823-nav-desktop-sidebar-3'],
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],

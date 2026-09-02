@@ -10,6 +10,7 @@
   if (window.BiningaAdminCore) return;
 
   const SESSION_KEY = 'bininga_session';
+  const FIRST_LOGIN = '/static/admin-first-login.html';
 
   function token() {
     try { return typeof SESSION_TOKEN !== 'undefined' ? String(SESSION_TOKEN || '') : ''; }
@@ -47,8 +48,17 @@
 
   function clearSessionStorage() {
     try { sessionStorage.removeItem(SESSION_KEY); } catch (_) {}
-    // Remove only a legacy copy. New sessions must never be persisted here.
     try { localStorage.removeItem(SESSION_KEY); } catch (_) {}
+  }
+
+  function markPasswordChangeRequired() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
+      if (saved) {
+        saved.must_change_password = true;
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(saved));
+      }
+    } catch (_) {}
   }
 
   function authHeaders(extra = {}) {
@@ -85,7 +95,13 @@
 
   async function request(url, opts = {}) {
     const response = await window.fetch(url, opts);
-    if (response.status === 401 && apiPath(url).startsWith('/api/')) {
+    const path = apiPath(url);
+    if (response.status === 428 && path.startsWith('/api/')) {
+      markPasswordChangeRequired();
+      if (location.pathname !== FIRST_LOGIN) window.setTimeout(() => location.replace(FIRST_LOGIN), 50);
+      return response;
+    }
+    if (response.status === 401 && path.startsWith('/api/')) {
       if (typeof window.showToast === 'function') {
         window.showToast('Session expirée — reconnexion…', true);
       }
@@ -106,12 +122,10 @@
     request,
     clearSessionStorage,
     expireSessionUI,
+    markPasswordChangeRequired,
   });
 
   window.BiningaAdminCore = core;
-
-  // Compatibility bridge for legacy handlers. New modules should consume
-  // BiningaAdminCore directly instead of creating another API/session helper.
   window.authHeaders = authHeaders;
   window.apiFetch = request;
 
