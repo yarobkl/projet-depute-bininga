@@ -548,4 +548,7 @@ def postprocess_response(server, handler) -> None:
     user = _find_user_by_username(server, username) or {}
     payload["must_change_password"] = bool(user.get("must_change_password", False))
     payload["email"] = _email(user.get("email"))
+    admin_path = str(getattr(server, "ADMIN_SECRET_PATH", "") or "").strip().strip("/")
+    if admin_path:
+        payload["admin_path"] = f"/{admin_path}"
     _replace_json_response(handler, payload)
