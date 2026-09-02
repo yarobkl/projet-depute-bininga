@@ -11,6 +11,7 @@ from typing import Callable, Iterator, Optional
 
 import admin_access_model
 import admin_auth_flow
+import admin_bootstrap_transition
 import admin_contact_integrity
 import admin_system_authz
 import backup_download
@@ -24,6 +25,7 @@ LegacyAuthorization = Optional[Callable[[object], bool]]
 
 _GUARDS: tuple[Guard, ...] = (
     admin_system_authz.guard_request,
+    admin_bootstrap_transition.guard_request,
     admin_access_model.guard_request,
     admin_auth_flow.guard_request,
     admin_contact_integrity.guard_request,
