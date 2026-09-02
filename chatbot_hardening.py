@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib, json, os, re, unicodedata
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+import admin_owners
+
 JO_OFFICIEL_URL = "https://sgg.cg/en/journal-officiel/le-journal-officiel.html"
 INTENT_TERMS: Dict[str, Sequence[str]] = {
     "greeting": ("bonjour","bonsoir","salut","coucou","hey","comment tu vas","ca va"),
@@ -157,6 +159,7 @@ def _context(f:dict,k:Sequence[dict])->str:
     return "\n\n".join(parts)[:9000]
 
 def _knowledge_reply(k:Sequence[dict])->str:
+    if not k:return ""
     x=k[0]; r=f"D'après {x.get('source') or 'une source validée'} : {str(x.get('content') or '')[:650].strip()}"
     return r+(f" Source : {x.get('source_url')}" if x.get("source_url") else "")
 
@@ -300,7 +303,7 @@ def guard_request(server:Any,h:Any)->bool:
         if h.command=="GET" and path=="/api/chatbot/knowledge":h._json(_admin_list(server));return False
         if h.command=="GET" and path=="/api/chatbot/unanswered":h._json(_admin_list(server,True));return False
         if h.command=="POST":
-            if s.get("username")!=server.ADMIN_USER:h._json({"ok":False,"message":"Réservé à l'administrateur principal"},403);return False
+            if not admin_owners.is_owner_session(server,s):h._json({"ok":False,"message":"Réservé aux propriétaires de l’administration"},403);return False
             if not _csrf(h,s):h._json({"ok":False,"message":"Jeton CSRF invalide"},403);return False
             p=_body(h)
             if path=="/api/chatbot/knowledge/upsert":r=_upsert(server,p);event="CHATBOT_KNOWLEDGE_SAVE"
