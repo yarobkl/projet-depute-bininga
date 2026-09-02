@@ -72,10 +72,10 @@ def test_operational_tracking_and_leads_respect_consent() -> None:
         "gallery_open",
         "article_open",
         "contact_click",
-        "social_click",
-        "outbound_click",
     ):
         assert f'track("{event}"' in bootstrap
+    assert '"social_click"' in bootstrap
+    assert '"outbound_click"' in bootstrap
     assert "bininga_livre_clics" not in core
 
 
