@@ -4,6 +4,8 @@ import gzip
 import io
 import os
 
+import admin_owners
+
 
 _MAIN_ADMIN_GET = {
     "/api/users",
@@ -151,7 +153,7 @@ def guard_request(server, handler):
     if not session:
         return True
 
-    if session.get("username") == server.ADMIN_USER:
+    if admin_owners.is_owner_session(server, session):
         return True
 
     server.audit_log(
@@ -159,5 +161,5 @@ def guard_request(server, handler):
         handler.client_address[0],
         f"Accès système refusé à {path} pour {session.get('username', '?')}",
     )
-    handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+    handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
     return False
