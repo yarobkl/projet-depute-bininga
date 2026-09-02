@@ -1,9 +1,4 @@
-"""Passenger entrypoint for the o2switch deployment.
-
-The project uses a custom ``http.server`` handler in ``server.py``.  cPanel
-Passenger expects a WSGI callable, so this adapter feeds WSGI requests into the
-existing handler without starting a second HTTP server.
-"""
+"""Passenger entrypoint for the o2switch deployment."""
 
 import http
 import io
@@ -29,9 +24,11 @@ import admin_bootstrap_hardening
 import admin_request_pipeline
 import request_identity
 import editorial_publish_integrity
+import owner_policy
 
 admin_contact_integrity.install(bininga_server)
 admin_bootstrap_hardening.install(bininga_server)
+owner_policy.ensure_owner_accounts(bininga_server)
 editorial_publish_integrity.migrate_editorial_vedettes(bininga_server)
 
 
@@ -40,21 +37,17 @@ def _bootstrap() -> None:
         fn = getattr(bininga_server, name, None)
         if callable(fn):
             fn()
-
     try:
         bininga_server.hydrate_ia_keys()
     except Exception:
         pass
-
     if os.environ.get("BININGA_PASSENGER_BOOT_SERVICES") != "1":
         return
-
     try:
         for name in ("start_monitor", "_monitor_watchdog"):
             fn = getattr(bininga_server, name, None)
             if callable(fn):
                 fn()
-
         mon = getattr(bininga_server, "_MON", None)
         if mon and hasattr(mon, "init_db") and hasattr(mon, "start_scheduler"):
             mon.init_db()
@@ -67,8 +60,6 @@ def _bootstrap() -> None:
 
 
 class _PassengerHandler(bininga_server.BiningaHandler):
-    """Small response-capturing subclass used by the WSGI adapter."""
-
     def __init__(self, environ):
         self.environ = environ
         self.command = environ.get("REQUEST_METHOD", "GET").upper()
@@ -98,65 +89,42 @@ class _PassengerHandler(bininga_server.BiningaHandler):
             headers["Content-Length"] = environ["CONTENT_LENGTH"]
         for key, value in environ.items():
             if key.startswith("HTTP_"):
-                header = key[5:].replace("_", "-").title()
-                headers[header] = value
+                headers[key[5:].replace("_", "-").title()] = value
         return headers
 
-    def send_response(self, code, message=None):
-        self._status_code = int(code)
-
-    def send_response_only(self, code, message=None):
-        self._status_code = int(code)
-
-    def send_header(self, keyword, value):
-        self._response_headers.append((str(keyword), str(value)))
-
-    def end_headers(self):
-        return None
-
-    def log_message(self, fmt, *args):
-        return None
+    def send_response(self, code, message=None): self._status_code = int(code)
+    def send_response_only(self, code, message=None): self._status_code = int(code)
+    def send_header(self, keyword, value): self._response_headers.append((str(keyword), str(value)))
+    def end_headers(self): return None
+    def log_message(self, fmt, *args): return None
 
 
-def _main_admin_session(handler: _PassengerHandler):
+def _owner_session(handler: _PassengerHandler):
     token = handler.headers.get("X-Admin-Token", "")
     session = bininga_server.get_session(token) if token else None
-    if not session:
-        return None
-    if session.get("username") != bininga_server.ADMIN_USER:
-        return None
-    return session
+    return session if session and owner_policy.is_owner_session(bininga_server, session) else None
 
 
 def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
     if handler.command != "POST":
         return True
-
     path = handler.path.split("?", 1)[0]
     token = handler.headers.get("X-Admin-Token", "")
     session = bininga_server.get_session(token) if token else None
-
     if not session:
         return True
-
     if path in ("/api/users/upsert", "/api/users/delete"):
-        if not _main_admin_session(handler):
-            bininga_server.audit_log(
-                "AUTHZ_REJECT",
-                handler.client_address[0],
-                f"Accès refusé à {path} pour {session.get('username', '?')}",
-            )
-            handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+        if not _owner_session(handler):
+            bininga_server.audit_log("AUTHZ_REJECT", handler.client_address[0], f"Accès refusé à {path} pour {session.get('username', '?')}")
+            handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
             return False
         return True
-
-    if path == "/api/save" and session.get("username") != bininga_server.ADMIN_USER:
+    if path == "/api/save" and not owner_policy.is_owner_session(bininga_server, session):
         raw = handler.rfile.getvalue()
         try:
             payload = json.loads(raw.decode("utf-8"))
         except Exception:
             return True
-
         if isinstance(payload, dict):
             existing = bininga_server.load_data()
             admin_only_keys = ("hero", "about", "parcours", "parcoursSection")
@@ -165,89 +133,61 @@ def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
                     payload[key] = existing[key]
                 else:
                     payload.pop(key, None)
-
             patched = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             handler.rfile = io.BytesIO(patched)
             if handler.headers.get("Content-Length") is not None:
                 handler.headers.replace_header("Content-Length", str(len(patched)))
             else:
                 handler.headers["Content-Length"] = str(len(patched))
-
     return True
 
 
 def _replace_response_body(handler: _PassengerHandler, patched: bytes) -> None:
     handler.wfile = io.BytesIO(patched)
-    handler._response_headers = [
-        (key, value) for key, value in handler._response_headers
-        if key.lower() != "content-length"
-    ]
+    handler._response_headers = [(key, value) for key, value in handler._response_headers if key.lower() != "content-length"]
     handler._response_headers.append(("Content-Length", str(len(patched))))
 
 
 def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if handler.command != "GET" or handler._status_code != 200:
         return
-
     body = handler.wfile.getvalue()
     if b"static/admin.js" not in body or b"Espace Administration" not in body:
         return
-
     patched = body
-    preboot_marker = b"data-bininga-admin-preboot"
-    if preboot_marker not in patched and b"<head>" in patched:
-        preboot = b'''\n<script data-bininga-admin-preboot>\n(function(){\n  try {\n    var raw=sessionStorage.getItem('bininga_session');\n    var s=raw?JSON.parse(raw):null;\n    if(!s||!s.token||Date.now()>Number(s.expires_at||0)){\n      try{sessionStorage.removeItem('bininga_session');}catch(_){}\n      try{localStorage.removeItem('bininga_session');}catch(_){}\n      location.replace('/static/admin-login-shell.html');\n      return;\n    }\n    if(s.must_change_password){location.replace('/static/admin-first-login.html');}\n  } catch(e) {\n    location.replace('/static/admin-login-shell.html');\n  }\n})();\n</script>\n'''
+    if b"data-bininga-admin-preboot" not in patched and b"<head>" in patched:
+        preboot = b'''\n<script data-bininga-admin-preboot>\n(function(){\n  try {\n    var raw=sessionStorage.getItem('bininga_session');\n    var s=raw?JSON.parse(raw):null;\n    if(!s||!s.token||Date.now()>Number(s.expires_at||0)){\n      try{sessionStorage.removeItem('bininga_session');}catch(_){}\n      try{localStorage.removeItem('bininga_session');}catch(_){}\n      location.replace('/static/admin-login-shell.html');\n      return;\n    }\n    if(s.must_change_password){location.replace('/static/admin-first-login.html');}\n  } catch(e) {location.replace('/static/admin-login-shell.html');}\n})();\n</script>\n'''
         patched = patched.replace(b"<head>", b"<head>" + preboot, 1)
-
     marker = b"</body>"
     if marker not in patched:
-        if patched != body:
-            _replace_response_body(handler, patched)
+        if patched != body: _replace_response_body(handler, patched)
         return
-
     scripts = b""
-    if b"static/admin-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
-    if b"static/admin-notification-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
-    if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260902-auth-lifecycle-1" defer></script>\n'
-    if b"static/admin-chatbot.js" not in patched:
-        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
-    if scripts:
-        patched = patched.replace(marker, scripts + marker, 1)
-
-    if patched != body:
-        _replace_response_body(handler, patched)
+    if b"static/admin-hardening.js" not in patched: scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
+    if b"static/admin-notification-hardening.js" not in patched: scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
+    if b"static/admin-session-hardening.js" not in patched: scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260902-auth-lifecycle-1" defer></script>\n'
+    if b"static/admin-chatbot.js" not in patched: scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
+    if scripts: patched = patched.replace(marker, scripts + marker, 1)
+    if patched != body: _replace_response_body(handler, patched)
 
 
 def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
     if handler.command != "GET" or handler._status_code != 200:
         return
-
     body = handler.wfile.getvalue()
-    if b"static/index.js" not in body or b"Espace Administration" in body:
+    if b"static/index.js" not in body or b"Espace Administration" in body or b"static/public-form-hardening.js" in body:
         return
-    if b"static/public-form-hardening.js" in body:
-        return
-
     marker = b"</body>"
-    if marker not in body:
-        return
-
-    script = b'\n<script src="/static/public-form-hardening.js?v=20260819-privacy-1" defer></script>\n'
-    _replace_response_body(handler, body.replace(marker, script + marker, 1))
+    if marker in body:
+        script = b'\n<script src="/static/public-form-hardening.js?v=20260819-privacy-1" defer></script>\n'
+        _replace_response_body(handler, body.replace(marker, script + marker, 1))
 
 
 def _dispatch_request(handler: _PassengerHandler) -> None:
-    if handler.command == "GET":
-        handler.do_GET()
-    elif handler.command == "POST":
-        handler.do_POST()
-    elif handler.command == "OPTIONS":
-        handler.do_OPTIONS()
-    else:
-        handler.send_error(405, "Method Not Allowed")
+    if handler.command == "GET": handler.do_GET()
+    elif handler.command == "POST": handler.do_POST()
+    elif handler.command == "OPTIONS": handler.do_OPTIONS()
+    else: handler.send_error(405, "Method Not Allowed")
 
 
 _bootstrap()
@@ -256,25 +196,16 @@ _bootstrap()
 def application(environ, start_response):
     handler = _PassengerHandler(environ)
     try:
-        if admin_request_pipeline.allow_request(
-            bininga_server,
-            handler,
-            legacy_authorization=_harden_admin_authorization,
-        ):
+        if admin_request_pipeline.allow_request(bininga_server, handler, legacy_authorization=_harden_admin_authorization):
             with admin_request_pipeline.mutation_context(bininga_server, handler):
                 _dispatch_request(handler)
             admin_request_pipeline.process_response(bininga_server, handler)
     except Exception as exc:
         body = f"Internal Server Error: {exc}".encode("utf-8")
-        start_response(
-            "500 Internal Server Error",
-            [("Content-Type", "text/plain; charset=utf-8"), ("Content-Length", str(len(body)))],
-        )
+        start_response("500 Internal Server Error", [("Content-Type", "text/plain; charset=utf-8"), ("Content-Length", str(len(body)))])
         return [body]
-
     _inject_admin_hardening(handler)
     _inject_public_form_hardening(handler)
-
     status = handler._status_code
     reason = http.HTTPStatus(status).phrase if status in http.HTTPStatus._value2member_map_ else "OK"
     start_response(f"{status} {reason}", handler._response_headers)
