@@ -1,4 +1,4 @@
-"""Contracts for the strict Owner + delegated collaborator access model."""
+"""Contracts for the Owner + delegated collaborator access model."""
 from __future__ import annotations
 
 import io
@@ -119,11 +119,12 @@ def test_pipeline_places_access_model_before_legacy_auth_flow():
     assert "admin_access_model.postprocess_response" in pipeline
 
 
-def test_legacy_admin_fallback_is_removed_from_owner_policy():
+def test_migration_fallback_is_explicitly_temporary():
     owners = _read(os.path.join(ROOT, "admin_owners.py"))
-    assert "legacy ``ADMIN_USER`` value alone never grants Owner privileges" in owners
-    assert "return bool(user and is_owner_user(server, user))" in owners
-    assert "active_designated_owners(server):\n        return False" not in owners
+    assert "temporary bootstrap-owner privileges" in owners
+    assert "if active_designated_owners(server):" in owners
+    assert 'return user.get("username") == getattr(server, "ADMIN_USER", "admin")' in owners
+    assert "disappears" in owners
 
 
 if __name__ == "__main__":
