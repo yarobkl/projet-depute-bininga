@@ -39,7 +39,6 @@
 (() => {
   'use strict';
   const KEY='bininga_session';
-  const ADMIN_PATH='/cabinet-bininga-Ff4wjckb0MG7XRvv';
   const loginView=document.getElementById('login-view');
   const forgotView=document.getElementById('forgot-view');
   const form=document.getElementById('form');
@@ -101,7 +100,9 @@
         try{localStorage.removeItem(KEY);}catch(_){}
         sessionStorage.setItem(KEY,JSON.stringify(saved));
         if(saved.must_change_password){window.location.replace('/static/admin-first-login.html');return;}
-        window.location.replace(ADMIN_PATH);return;
+        const adminPath=typeof data.admin_path==='string'&&/^\/[A-Za-z0-9._~-]+$/.test(data.admin_path)?data.admin_path:'';
+        if(!adminPath){sessionStorage.removeItem(KEY);err.textContent='Accès administrateur indisponible. Contactez l’administrateur principal.';return;}
+        window.location.replace(adminPath);return;
       }
       if(data.require_2fa){
         totp.classList.remove('hidden');totp.focus();err.textContent="Entrez votre code d'authentification à 6 chiffres.";
