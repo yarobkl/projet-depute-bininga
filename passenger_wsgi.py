@@ -26,6 +26,7 @@ import preimport_security  # noqa: F401
 import server as bininga_server
 import admin_contact_integrity
 import admin_bootstrap_hardening
+import admin_owners
 import admin_request_pipeline
 import request_identity
 import editorial_publish_integrity
@@ -119,11 +120,12 @@ class _PassengerHandler(bininga_server.BiningaHandler):
 
 
 def _main_admin_session(handler: _PassengerHandler):
+    """Compatibility name: returns a session only when it has owner rights."""
     token = handler.headers.get("X-Admin-Token", "")
     session = bininga_server.get_session(token) if token else None
     if not session:
         return None
-    if session.get("username") != bininga_server.ADMIN_USER:
+    if not admin_owners.is_owner_session(bininga_server, session):
         return None
     return session
 
@@ -146,11 +148,11 @@ def _harden_admin_authorization(handler: _PassengerHandler) -> bool:
                 handler.client_address[0],
                 f"Accès refusé à {path} pour {session.get('username', '?')}",
             )
-            handler._json({"ok": False, "message": "Réservé à l'administrateur principal"}, 403)
+            handler._json({"ok": False, "message": "Réservé aux propriétaires de l’administration"}, 403)
             return False
         return True
 
-    if path == "/api/save" and session.get("username") != bininga_server.ADMIN_USER:
+    if path == "/api/save" and not admin_owners.is_owner_session(bininga_server, session):
         raw = handler.rfile.getvalue()
         try:
             payload = json.loads(raw.decode("utf-8"))
