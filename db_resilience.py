@@ -32,17 +32,31 @@ def _backend(server) -> str:
 
 
 def _probe_once(server) -> tuple[bool, str]:
+    """Run a real database round-trip without mutating application data."""
     backend = _backend(server)
     if not backend:
         return False, "database_not_configured"
-    loader = getattr(server, "_pg_load", None)
-    if not callable(loader):
-        return False, "persistent_loader_unavailable"
+    connector = getattr(server, "_pg", None)
+    if not callable(connector):
+        return False, "persistent_connection_unavailable"
     try:
-        # Existing key keeps this read harmless and avoids any schema mutation.
-        loader("users")
+        conn = connector()
+        if not conn:
+            return False, "database_unreachable"
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+            row = cur.fetchone()
+        if not row or int(row[0]) != 1:
+            return False, "unexpected_probe_result"
         return True, ""
     except Exception as exc:
+        # Force the legacy connection helper to reconnect on the next probe.
+        try:
+            local = getattr(server, "_pg_local", None)
+            if local is not None:
+                local.conn = None
+        except Exception:
+            pass
         return False, exc.__class__.__name__
 
 
