@@ -35,11 +35,15 @@ def _load_legacy_application():
 
         import chatbot_hardening
         import chatbot_nlu
+        import first_person_content_migration
         import passenger_wsgi
         import vercel_session_persistence
 
         chatbot_nlu.install(chatbot_hardening)
         vercel_session_persistence.install(passenger_wsgi.bininga_server)
+        migration = first_person_content_migration.apply(passenger_wsgi.bininga_server)
+        if not migration.get("ok"):
+            print(f"[EDITORIAL MIGRATION] first-person migration skipped: {migration.get('error')}", flush=True)
 
         def legacy_application(environ, start_response):
             method = (environ.get("REQUEST_METHOD") or "GET").upper()
