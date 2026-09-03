@@ -227,4 +227,82 @@ body.theme-light #contact .ct-item {
   }
 }
 
-/* production redeploy trigger: 2026-08-20 login-touch-fix */
+/* Admin SYSTÈME mobile — topbar compacte et contenu immédiatement visible.
+   Sur iPhone <=430px l'ancienne grille 3 colonnes laissait le bouton thème
+   créer une ligne supplémentaire, d'où le header géant observé en production. */
+@media (max-width: 768px) {
+  .topbar {
+    display:grid !important;
+    grid-template-columns:44px minmax(0,1fr) 44px !important;
+    grid-template-rows:auto !important;
+    min-height:60px !important;
+    height:auto !important;
+    padding:8px 10px !important;
+    gap:8px !important;
+    align-items:center !important;
+  }
+  .hamburger {
+    grid-column:1 !important;
+    grid-row:1 !important;
+  }
+  .topbar-title {
+    grid-column:2 !important;
+    grid-row:1 !important;
+    min-width:0 !important;
+    overflow:hidden !important;
+    white-space:nowrap !important;
+    text-overflow:ellipsis !important;
+  }
+  /* Le changement de thème reste disponible sur desktop. Sur mobile, on
+     privilégie un header stable; la sidebar conserve les commandes essentielles. */
+  #theme-toggle-btn {
+    display:none !important;
+  }
+  .notif-bell-wrap {
+    grid-column:3 !important;
+    grid-row:1 !important;
+    margin-left:0 !important;
+    justify-self:end !important;
+  }
+  #autosave-indicator:not(:empty) {
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+  }
+  .content {
+    padding-top:12px !important;
+  }
+  #panel-monitoring,
+  #panel-backups,
+  #panel-logs,
+  #panel-users,
+  #panel-security {
+    margin-top:0 !important;
+    padding-top:0 !important;
+  }
+  #panel-monitoring > :first-child,
+  #panel-backups > :first-child,
+  #panel-logs > :first-child,
+  #panel-users > :first-child,
+  #panel-security > :first-child {
+    margin-top:0 !important;
+  }
+
+  /* Les actions "Enregistrer le contenu / Restaurer" concernent le CMS,
+     jamais les écrans SYSTÈME. */
+  body:has(#panel-monitoring.active) #admin-actionbar,
+  body:has(#panel-backups.active) #admin-actionbar,
+  body:has(#panel-logs.active) #admin-actionbar,
+  body:has(#panel-users.active) #admin-actionbar,
+  body:has(#panel-security.active) #admin-actionbar {
+    display:none !important;
+  }
+  body:has(#panel-monitoring.active) .content,
+  body:has(#panel-backups.active) .content,
+  body:has(#panel-logs.active) .content,
+  body:has(#panel-users.active) .content,
+  body:has(#panel-security.active) .content {
+    padding-bottom:32px !important;
+  }
+}
+
+/* production redeploy trigger: 2026-09-03 system-mobile-chrome-fix */
