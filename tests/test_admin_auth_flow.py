@@ -40,6 +40,7 @@ def test_password_reset_email_is_french_and_supports_resend_with_smtp_fallback()
     assert "RESEND_API_KEY" in source
     assert "AUTH_SMTP_HOST" in source
     assert "_send_via_resend" in source and "_send_via_smtp" in source
+    assert '"User-Agent": "bininga-auth/1.0"' in source
 
 
 def test_public_forgot_flow_does_not_enumerate_accounts():

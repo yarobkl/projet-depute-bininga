@@ -234,7 +234,11 @@ def _send_via_resend(to_email: str, subject: str, html_body: str) -> bool:
         "https://api.resend.com/emails",
         data=payload,
         method="POST",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": "bininga-auth/1.0",
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as response:

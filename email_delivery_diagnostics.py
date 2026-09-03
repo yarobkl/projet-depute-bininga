@@ -16,6 +16,7 @@ from email.mime.text import MIMEText
 
 
 _INSTALLED = False
+_RESEND_USER_AGENT = "bininga-auth/1.0"
 
 
 def _present(name: str) -> bool:
@@ -69,7 +70,11 @@ def _resend_sender(to_email: str, subject: str, html_body: str) -> bool:
         "https://api.resend.com/emails",
         data=payload,
         method="POST",
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        headers={
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "User-Agent": _RESEND_USER_AGENT,
+        },
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as response:

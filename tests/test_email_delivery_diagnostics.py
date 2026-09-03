@@ -3,6 +3,7 @@ import io
 import os
 import pathlib
 import sys
+from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -105,6 +106,33 @@ def test_unconfigured_provider_returns_503_without_fake_success():
         assert any(event == "EMAIL_DELIVERY_UNAVAILABLE" for event, _, _ in server.audit)
 
 
+def test_resend_request_includes_explicit_user_agent():
+    class Response:
+        status = 200
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+    captured = {}
+
+    def fake_urlopen(request, timeout):
+        captured["request"] = request
+        captured["timeout"] = timeout
+        return Response()
+
+    with clean_email_env():
+        os.environ["RESEND_API_KEY"] = "secret-value-never-log"
+        os.environ["AUTH_EMAIL_FROM"] = "BININGA <onboarding@resend.dev>"
+        with mock.patch.object(diag.urllib.request, "urlopen", side_effect=fake_urlopen):
+            assert diag._resend_sender("recipient@example.test", "subject", "<p>x</p>") is True
+
+    assert captured["request"].get_header("User-agent") == "bininga-auth/1.0"
+    assert captured["timeout"] == 10
+
+
 def test_source_never_logs_sensitive_fields():
     source = (ROOT / "email_delivery_diagnostics.py").read_text(encoding="utf-8")
     assert '"api_key", "password", "recipient", "to_email", "token", "reset_url"' in source
@@ -117,5 +145,6 @@ if __name__ == "__main__":
     test_presence_only_status()
     test_install_and_missing_config_logs_are_safe()
     test_unconfigured_provider_returns_503_without_fake_success()
+    test_resend_request_includes_explicit_user_agent()
     test_source_never_logs_sensitive_fields()
     print("✅ Diagnostic email sécurisé — OK")
