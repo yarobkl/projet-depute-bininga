@@ -33,13 +33,16 @@ def _load_legacy_application():
         if _LEGACY_APP is not None:
             return _LEGACY_APP
 
+        import admin_auth_flow
         import chatbot_hardening
         import chatbot_nlu
+        import email_delivery_diagnostics
         import first_person_content_migration
         import passenger_wsgi
         import vercel_session_persistence
 
         chatbot_nlu.install(chatbot_hardening)
+        email_delivery_diagnostics.install(admin_auth_flow)
         vercel_session_persistence.install(passenger_wsgi.bininga_server)
         migration = first_person_content_migration.apply(passenger_wsgi.bininga_server)
         if not migration.get("ok"):
