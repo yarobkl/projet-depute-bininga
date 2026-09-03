@@ -14,7 +14,8 @@ _PERMISSION_RULES = {
     ("GET", "/api/logs"): "logs.read", ("GET", "/api/security"): "security.read",
     ("GET", "/api/security/bouclier"): "security.read", ("GET", "/api/monitoring/summary"): "monitoring.read",
     ("GET", "/api/monitoring/alerts"): "monitoring.read", ("GET", "/api/monitoring/endpoints"): "monitoring.read",
-    ("GET", "/api/monitoring/requests"): "monitoring.read", ("GET", "/api/monitoring/exceptions"): "monitoring.read",
+    ("GET", "/api/monitoring/requests"): "monitoring.read", ("GET", "/api/monitoring/errors"): "monitoring.read",
+    ("GET", "/api/monitoring/report"): "monitoring.read",
 }
 _PREFIX_PERMISSION_RULES = (
     ("POST", "/api/crm/", "crm.write"), ("POST", "/api/backups/", "backup.create"),
