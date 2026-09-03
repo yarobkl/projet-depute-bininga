@@ -61,7 +61,17 @@
     });
   }
 
+  function ensureUserRoles(){
+    const select=q('#uf-role');if(!select)return;
+    if(!select.querySelector('option[value="ministre"]')){
+      const option=document.createElement('option');
+      option.value='ministre';option.textContent='Député — espace du Député';
+      select.appendChild(option);
+    }
+  }
+
   function hardenUserForm(){
+    ensureUserRoles();
     const original=window.submitUserForm;if(typeof original!=='function'||original.__biningaWrapped)return;
     const wrapped=async function(){
       if(!mainAdmin()){toast('Gestion des utilisateurs réservée à l’administrateur principal.',true);return;}
