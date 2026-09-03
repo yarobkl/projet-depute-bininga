@@ -1,4 +1,4 @@
-"""Database resilience behavior tests using a fake persistent loader."""
+"""Database resilience behavior tests using a fake database connection."""
 from __future__ import annotations
 
 import os
@@ -11,12 +11,25 @@ if ROOT not in sys.path:
 import db_resilience
 
 
+class FakeCursor:
+    def __init__(self, ok=True): self.ok = ok; self.executed = []
+    def __enter__(self): return self
+    def __exit__(self, *args): return False
+    def execute(self, sql):
+        self.executed.append(sql)
+        if not self.ok: raise RuntimeError("db down")
+    def fetchone(self): return (1,) if self.ok else None
+
+
+class FakeConnection:
+    def __init__(self, ok=True): self.ok = ok
+    def cursor(self): return FakeCursor(self.ok)
+
+
 class FakeServer:
     def __init__(self, ok=True): self.ok = ok
-    def _db_config(self): return ("postgres", "fake")
-    def _pg_load(self, key):
-        if not self.ok: raise RuntimeError("db down")
-        return []
+    def _db_config(self): return ("postgresql", {"url": "fake"})
+    def _pg(self): return FakeConnection(self.ok)
 
 
 def reset_state():
@@ -35,6 +48,12 @@ def test_failed_probe_opens_circuit_and_fails_closed():
     assert db_resilience.can_persist(server) is False
     status = db_resilience.public_status(server)
     assert status["ok"] is False and status["database"] == "down" and status["circuit_open"] is True
+
+
+def test_probe_is_real_select_one_round_trip():
+    source = open(os.path.join(ROOT, "db_resilience.py"), "r", encoding="utf-8").read()
+    assert 'cur.execute("SELECT 1")' in source
+    assert '_pg_load("users")' not in source
 
 
 if __name__ == "__main__":
