@@ -33,6 +33,14 @@ def test_session_rows_never_return_bearer_token():
     assert any(row["current"] for row in rows)
 
 
+def test_high_impact_owner_actions_require_2fa_but_setup_remains_reachable():
+    assert account_incident_response._requires_owner_2fa("/api/users") is True
+    assert account_incident_response._requires_owner_2fa("/api/security/block") is True
+    assert account_incident_response._requires_owner_2fa("/api/backups/run") is True
+    assert account_incident_response._requires_owner_2fa("/api/2fa/setup") is False
+    assert account_incident_response._requires_owner_2fa("/api/auth/revoke-sessions") is False
+
+
 if __name__ == "__main__":
     tests = [fn for name, fn in sorted(globals().items()) if name.startswith("test_") and callable(fn)]
     for test in tests:
