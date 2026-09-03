@@ -1,16 +1,14 @@
 """Durable audit log bridge for BININGA.
 
 Vercel uses /tmp for DATA_DIR, so ``audit.log`` alone disappears across cold
-starts.  This module keeps the legacy JSONL file as a local fallback while
+starts. This module keeps the legacy JSONL file as a local fallback while
 mirroring the latest audit entries into the application's durable KV database.
 """
-
 from __future__ import annotations
 
 from datetime import datetime
 import threading
 from typing import Any
-
 
 _DURABLE_KEY = "audit_log"
 _MAX_DURABLE_ENTRIES = 1000
@@ -63,11 +61,14 @@ def install(server: Any) -> None:
         row = _entry(action, ip, detail)
         durable_ok = False
 
-        # Serialise writes inside one runtime. The persistent store remains the
-        # source of truth across cold starts; local JSONL is kept for diagnostics.
+        # Serialise writes inside one runtime. When the durable key does not
+        # exist yet, seed it with the very first event instead of silently
+        # falling back to Vercel's ephemeral /tmp filesystem.
         with _LOCK:
             rows = _load_durable(server)
-            if rows is not None:
+            if rows is None:
+                durable_ok = _save_durable(server, [row])
+            else:
                 rows.append(row)
                 durable_ok = _save_durable(server, rows)
 
