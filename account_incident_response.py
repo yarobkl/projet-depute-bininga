@@ -21,6 +21,16 @@ _HIGH_IMPACT_PREFIXES = (
     "/api/users", "/api/security", "/api/backups", "/api/crm/export",
     "/api/monitoring/", "/api/ia/key",
 )
+# Consultation des tableaux de bord : l'utilisateur est déjà authentifié et les
+# permissions serveur s'appliquent. Le 2FA reste obligatoire pour les mutations
+# sensibles (POST) et pour l'export CRM contenant des données personnelles.
+_OWNER_SAFE_READ_PATHS = {
+    "/api/users",
+    "/api/security",
+    "/api/security/bouclier",
+    "/api/backups",
+    "/api/ia/key",
+}
 
 
 def _path(handler) -> str:
@@ -82,9 +92,19 @@ def _requires_owner_2fa(path: str) -> bool:
     return any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in _HIGH_IMPACT_PREFIXES)
 
 
+def _is_safe_owner_read(path: str, method: str) -> bool:
+    method = str(method or "GET").upper()
+    if method not in {"GET", "HEAD"}:
+        return False
+    if path in _OWNER_SAFE_READ_PATHS:
+        return True
+    return path.startswith("/api/monitoring/")
+
+
 def _enforce_owner_2fa(server, handler, session: object) -> bool:
     if not isinstance(session, dict) or not admin_owners.is_owner_session(server, session): return True
-    path = _path(handler)
+    path = _path(handler); method = str(getattr(handler, "command", "GET")).upper()
+    if _is_safe_owner_read(path, method): return True
     if not _requires_owner_2fa(path) or _owner_has_2fa(server, session): return True
     try: server.audit_log("OWNER_2FA_REQUIRED", handler.client_address[0], f"Action bloquée sans 2FA : {path}")
     except Exception: pass
