@@ -30,7 +30,9 @@ import admin_owners
 import admin_request_pipeline
 import request_identity
 import editorial_publish_integrity
+import persistent_audit
 
+persistent_audit.install(bininga_server)
 admin_contact_integrity.install(bininga_server)
 admin_bootstrap_hardening.install(bininga_server)
 editorial_publish_integrity.migrate_editorial_vedettes(bininga_server)
