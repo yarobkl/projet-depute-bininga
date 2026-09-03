@@ -51,7 +51,7 @@
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260823-cases-actionbar-3'],
-    ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260821-system-1'],
+    ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260903-system-lifecycle-1'],
     ['data-bininga-advanced-security','/static/admin-advanced-security.js?v=20260903-architecture-90']
   ];
 
