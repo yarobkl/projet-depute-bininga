@@ -38,6 +38,11 @@ def provider_status() -> dict:
     }
 
 
+def delivery_available() -> bool:
+    status = provider_status()
+    return bool(status["resend_configured"] or status["smtp_configured"])
+
+
 def _log(event: str, **fields) -> None:
     safe = {"event": event}
     for key, value in fields.items():
@@ -133,6 +138,34 @@ def _smtp_sender(to_email: str, subject: str, html_body: str) -> bool:
         return False
 
 
+def _wrap_forgot_handler(auth_module):
+    original = auth_module._handle_forgot
+
+    def guarded_handle_forgot(server, handler):
+        # Provider availability is global, so returning 503 here does not reveal
+        # whether the submitted account/email exists.
+        if not delivery_available():
+            status = provider_status()
+            _log("delivery_unavailable", **status)
+            try:
+                server.audit_log(
+                    "EMAIL_DELIVERY_UNAVAILABLE",
+                    handler.client_address[0],
+                    "Aucun fournisseur d'email transactionnel n'est configuré",
+                )
+            except Exception:
+                pass
+            handler._json({
+                "ok": False,
+                "code": "EMAIL_DELIVERY_NOT_CONFIGURED",
+                "message": "Le service d’envoi d’emails de l’administration n’est pas encore configuré. Aucun email n’a été envoyé.",
+            }, 503)
+            return False
+        return original(server, handler)
+
+    auth_module._handle_forgot = guarded_handle_forgot
+
+
 def install(auth_module) -> dict:
     """Install secure observable senders into admin_auth_flow exactly once."""
     global _INSTALLED
@@ -141,6 +174,7 @@ def install(auth_module) -> dict:
         auth_module._send_via_resend = _resend_sender
         auth_module._send_via_smtp = _smtp_sender
         auth_module.email_provider_status = provider_status
+        _wrap_forgot_handler(auth_module)
         _INSTALLED = True
     _log("provider_status", **status)
     return status
