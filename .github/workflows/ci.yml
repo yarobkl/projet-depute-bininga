@@ -41,6 +41,7 @@ jobs:
           node --check static/admin-dashboard-hardening.js
           node --check static/admin-dashboard-priority.js
           node --check static/admin-system-ux.js
+          node --check static/admin-system-layout.js
           node --check static/admin-auth-management.js
           node --check static/admin-collaborator-management.js
           node --check static/admin-advanced-security.js
@@ -67,7 +68,7 @@ jobs:
         run: |
           python -c "
           import os, sys
-          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-dashboard-hardening.js', 'static/admin-dashboard-priority.js', 'static/admin-system-ux.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'email_delivery_diagnostics.py', 'serverless_monitor_restart.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
+          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-dashboard-hardening.js', 'static/admin-dashboard-priority.js', 'static/admin-system-ux.js', 'static/admin-system-layout.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'email_delivery_diagnostics.py', 'serverless_monitor_restart.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
           missing = [f for f in required if not os.path.isfile(f)]
           if missing:
               print(f'❌ Fichiers manquants: {missing}')
@@ -81,6 +82,7 @@ jobs:
           python tests/test_admin_action_contracts.py
           python tests/test_admin_dashboard_priority.py
           python tests/test_system_panel_lifecycle.py
+          python tests/test_system_layout.py
           python tests/test_architecture_contracts.py
           python tests/test_admin_auth_flow.py
           python tests/test_admin_owners.py
