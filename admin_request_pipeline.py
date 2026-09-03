@@ -1,31 +1,26 @@
-"""Central request guard pipeline for BININGA.
-
-The WSGI adapter should translate HTTP, not own business/security policy. This
-module keeps the ordered guard chain in one place so adding a new protection
-cannot silently create a second, divergent request path.
-"""
+"""Central request guard pipeline for BININGA."""
 from __future__ import annotations
 
 from contextlib import contextmanager
 from typing import Callable, Iterator, Optional
 
+import account_incident_response
 import admin_access_model
 import admin_auth_flow
-import admin_bootstrap_transition
 import admin_contact_integrity
 import admin_system_authz
 import backup_download
 import chatbot_hardening
+import db_health_endpoint
 import editorial_publish_integrity
-
 
 Guard = Callable[[object, object], object]
 LegacyAuthorization = Optional[Callable[[object], bool]]
 
-
 _GUARDS: tuple[Guard, ...] = (
+    db_health_endpoint.guard_request,
     admin_system_authz.guard_request,
-    admin_bootstrap_transition.guard_request,
+    account_incident_response.guard_request,
     admin_access_model.guard_request,
     admin_auth_flow.guard_request,
     admin_contact_integrity.guard_request,
@@ -36,15 +31,8 @@ _GUARDS: tuple[Guard, ...] = (
 
 
 def allow_request(server, handler, legacy_authorization: LegacyAuthorization = None) -> bool:
-    """Run every request guard in its authoritative order.
-
-    A guard returning exactly ``False`` has already emitted the response and
-    stops the pipeline. Any other return value preserves the legacy convention
-    and lets the request continue.
-    """
     if legacy_authorization is not None and legacy_authorization(handler) is False:
         return False
-
     for guard in _GUARDS:
         if guard(server, handler) is False:
             return False
@@ -53,17 +41,14 @@ def allow_request(server, handler, legacy_authorization: LegacyAuthorization = N
 
 @contextmanager
 def mutation_context(server, handler) -> Iterator[None]:
-    """Expose the single mutation integrity context used by dynamic requests."""
     with admin_contact_integrity.mutation_guard(server, handler):
         yield
 
 
 def process_response(server, handler) -> None:
-    """Apply response-only enrichments after the authoritative handler ran."""
     admin_auth_flow.postprocess_response(server, handler)
     admin_access_model.postprocess_response(server, handler)
 
 
 def guard_names() -> tuple[str, ...]:
-    """Stable diagnostic surface used by tests and operational tooling."""
     return tuple(f"{guard.__module__}.{guard.__name__}" for guard in _GUARDS)
