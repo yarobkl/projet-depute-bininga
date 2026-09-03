@@ -13,6 +13,7 @@ import backup_download
 import chatbot_hardening
 import db_health_endpoint
 import editorial_publish_integrity
+import serverless_monitor_restart
 
 Guard = Callable[[object, object], object]
 LegacyAuthorization = Optional[Callable[[object], bool]]
@@ -27,6 +28,7 @@ _GUARDS: tuple[Guard, ...] = (
     backup_download.guard_request,
     editorial_publish_integrity.guard_request,
     chatbot_hardening.guard_request,
+    serverless_monitor_restart.guard_request,
 )
 
 
