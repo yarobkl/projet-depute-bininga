@@ -12,7 +12,30 @@ import email_delivery_diagnostics as diag
 
 
 class DummyAuth:
-    pass
+    @staticmethod
+    def _handle_forgot(server, handler):
+        handler.original_called = True
+        return False
+
+
+class DummyServer:
+    def __init__(self):
+        self.audit = []
+
+    def audit_log(self, event, ip, message):
+        self.audit.append((event, ip, message))
+
+
+class DummyHandler:
+    def __init__(self):
+        self.client_address = ("127.0.0.1", 0)
+        self.status = None
+        self.payload = None
+        self.original_called = False
+
+    def _json(self, payload, status=200):
+        self.payload = payload
+        self.status = status
 
 
 @contextlib.contextmanager
@@ -50,6 +73,7 @@ def test_presence_only_status():
 
 def test_install_and_missing_config_logs_are_safe():
     with clean_email_env():
+        diag._INSTALLED = False
         auth = DummyAuth()
         buffer = io.StringIO()
         with contextlib.redirect_stdout(buffer):
@@ -64,6 +88,23 @@ def test_install_and_missing_config_logs_are_safe():
         assert "secret-value-never-log" not in output
 
 
+def test_unconfigured_provider_returns_503_without_fake_success():
+    with clean_email_env():
+        diag._INSTALLED = False
+        auth = DummyAuth()
+        server = DummyServer()
+        handler = DummyHandler()
+        diag.install(auth)
+        result = auth._handle_forgot(server, handler)
+        assert result is False
+        assert handler.status == 503
+        assert handler.payload["ok"] is False
+        assert handler.payload["code"] == "EMAIL_DELIVERY_NOT_CONFIGURED"
+        assert "Aucun email n’a été envoyé" in handler.payload["message"]
+        assert handler.original_called is False
+        assert any(event == "EMAIL_DELIVERY_UNAVAILABLE" for event, _, _ in server.audit)
+
+
 def test_source_never_logs_sensitive_fields():
     source = (ROOT / "email_delivery_diagnostics.py").read_text(encoding="utf-8")
     assert '"api_key", "password", "recipient", "to_email", "token", "reset_url"' in source
@@ -75,5 +116,6 @@ def test_source_never_logs_sensitive_fields():
 if __name__ == "__main__":
     test_presence_only_status()
     test_install_and_missing_config_logs_are_safe()
+    test_unconfigured_provider_returns_503_without_fake_success()
     test_source_never_logs_sensitive_fields()
     print("✅ Diagnostic email sécurisé — OK")
