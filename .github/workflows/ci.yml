@@ -25,7 +25,7 @@ jobs:
 
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py restore_bininga.py backup_download.py content_integrity.py admin_system_authz.py admin_request_pipeline.py admin_auth_flow.py admin_access_model.py admin_bootstrap_transition.py admin_owners.py admin_permissions.py account_incident_response.py db_resilience.py db_health_endpoint.py editorial_publish_integrity.py first_person_content_migration.py
+          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py restore_bininga.py backup_download.py content_integrity.py admin_system_authz.py admin_request_pipeline.py admin_auth_flow.py admin_access_model.py admin_bootstrap_transition.py admin_owners.py admin_permissions.py account_incident_response.py db_resilience.py db_health_endpoint.py editorial_publish_integrity.py first_person_content_migration.py email_delivery_diagnostics.py
           echo "✅ Python — syntaxe OK"
 
       - name: Vérification syntaxe JavaScript
@@ -64,7 +64,7 @@ jobs:
         run: |
           python -c "
           import os, sys
-          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
+          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'email_delivery_diagnostics.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
           missing = [f for f in required if not os.path.isfile(f)]
           if missing:
               print(f'❌ Fichiers manquants: {missing}')
@@ -87,6 +87,7 @@ jobs:
           python tests/test_restore_bininga.py
           python tests/test_editorial_publish_integrity.py
           python tests/test_first_person_content.py
+          python tests/test_email_delivery_diagnostics.py
           python tests/test_public_experience.py
           python tests/test_analytics_consent.py
           python tests/test_vercel_public_fastpath.py
