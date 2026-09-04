@@ -1,16 +1,21 @@
-"""Reliable monitoring writes for serverless BININGA runtimes.
+"""Reliable monitoring writes and on-demand analysis for serverless BININGA.
 
 The regular monitoring module batches writes in a daemon thread for low latency
-on long-lived hosts.  A Vercel invocation may be frozen before that thread gets
-its 0.5 s flush window, so metrics can be lost.  On serverless runtimes this
-bridge writes the small monitoring event synchronously to the configured SQL
-backend before the invocation returns.  Long-lived hosts keep the existing
-async writer unchanged.
+on long-lived hosts. A Vercel invocation may be frozen before that thread gets
+its 0.5 s flush window, so metrics can be lost. On serverless runtimes this
+bridge writes each small monitoring event synchronously to the configured SQL
+backend before the invocation returns.
+
+Long-lived hosts also run a scheduler that periodically computes system status
+and alert rules. Vercel does not keep such a scheduler alive, so this bridge
+refreshes that analysis on demand (throttled per warm instance) when the admin
+reads Monitoring.
 """
 from __future__ import annotations
 
 from datetime import datetime
 import os
+import time
 from typing import Any
 
 
@@ -30,6 +35,8 @@ def install(server: Any) -> None:
         "error": getattr(mon, "record_error", None),
         "visit": getattr(mon, "record_visit", None),
         "prog_view": getattr(mon, "record_prog_view", None),
+        "summary": getattr(mon, "get_summary", None),
+        "alerts": getattr(mon, "get_alerts", None),
     }
 
     try:
@@ -80,8 +87,39 @@ def install(server: Any) -> None:
         if not _write(item) and callable(originals["prog_view"]):
             originals["prog_view"](ip)
 
+    last_analysis = {"at": 0.0, "sessions": 0, "blocked": 0}
+
+    def _refresh_analysis(active_sessions: int = 0, blocked_ips: int = 0) -> None:
+        now = time.monotonic()
+        if now - last_analysis["at"] < 30:
+            return
+        last_analysis["at"] = now
+        last_analysis["sessions"] = int(active_sessions or 0)
+        last_analysis["blocked"] = int(blocked_ips or 0)
+        try:
+            mon.analyze_metrics(last_analysis["sessions"], last_analysis["blocked"])
+        except Exception as exc:
+            print(f"[MON] Analyse serverless à la demande ignorée: {type(exc).__name__}", flush=True)
+
+    def get_summary(active_sessions: int = 0, blocked_ips: int = 0):
+        _refresh_analysis(active_sessions, blocked_ips)
+        if callable(originals["summary"]):
+            return originals["summary"](active_sessions, blocked_ips)
+        return {"global_status": "UNKNOWN", "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+
+    def get_alerts(include_resolved: bool = False, limit: int = 100):
+        # If alerts are requested before summary in a parallel admin refresh,
+        # compute once with the latest known counters rather than returning a
+        # perpetually empty list on a serverless runtime without scheduler.
+        _refresh_analysis(last_analysis["sessions"], last_analysis["blocked"])
+        if callable(originals["alerts"]):
+            return originals["alerts"](include_resolved, limit)
+        return []
+
     mon.record_request = record_request
     mon.record_error = record_error
     mon.record_visit = record_visit
     mon.record_prog_view = record_prog_view
+    mon.get_summary = get_summary
+    mon.get_alerts = get_alerts
     mon._bininga_serverless_sync_installed = True
