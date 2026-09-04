@@ -9,7 +9,9 @@
   let serverlessMode=null;
 
   const q=id=>document.getElementById(id);
-  const escText=value=>String(value??'');
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
   const fmtBytes=n=>{
     const bytes=Number(n||0);if(!bytes)return '—';
     if(bytes<1024)return `${bytes} o`;
@@ -78,7 +80,7 @@
       else if(originalLoad)return await originalLoad();
     }catch(err){
       if(originalLoad)return await originalLoad();
-      if(list)list.innerHTML=`<div class="msg-empty">Erreur : ${escText(err.message)}</div>`;
+      if(list)list.innerHTML=`<div class="msg-empty">Erreur : ${esc(err.message)}</div>`;
     }
   }
 
