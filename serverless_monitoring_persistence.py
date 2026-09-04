@@ -39,23 +39,24 @@ def install(server: Any) -> None:
         "alerts": getattr(mon, "get_alerts", None),
     }
 
-    try:
-        mon.init_db()
-    except Exception:
-        pass
-
     def _write(item) -> bool:
         try:
             backend, _ = mon._db_config()
             if backend:
+                # _sql_conn() initializes the persistent monitoring tables on
+                # the first actual metric, not merely because a page loaded.
                 conn, actual_backend = mon._sql_conn()
                 if conn is None:
                     return False
                 mon._execute_write(conn, actual_backend, item)
                 return True
 
-            # Local fallback remains useful for development-like serverless
-            # previews without DATABASE_URL, even though /tmp is not durable.
+            # Development-like serverless preview without DATABASE_URL: only
+            # initialize the local SQLite fallback when an event really occurs.
+            try:
+                mon.init_db()
+            except Exception:
+                pass
             conn = mon.sqlite3.connect(mon.DB_FILE, timeout=5)
             try:
                 mon._execute_write(conn, None, item)
@@ -108,9 +109,6 @@ def install(server: Any) -> None:
         return {"global_status": "UNKNOWN", "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
 
     def get_alerts(include_resolved: bool = False, limit: int = 100):
-        # If alerts are requested before summary in a parallel admin refresh,
-        # compute once with the latest known counters rather than returning a
-        # perpetually empty list on a serverless runtime without scheduler.
         _refresh_analysis(last_analysis["sessions"], last_analysis["blocked"])
         if callable(originals["alerts"]):
             return originals["alerts"](include_resolved, limit)
