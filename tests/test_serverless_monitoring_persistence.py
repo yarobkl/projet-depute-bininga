@@ -13,6 +13,7 @@ class FakeMon:
         self.rows = []
         self.fallback_calls = []
         self.init_calls = 0
+        self.analysis_calls = []
         self.sqlite3 = SimpleNamespace(connect=lambda *a, **k: None)
         self.DB_FILE = ":memory:"
 
@@ -41,6 +42,15 @@ class FakeMon:
 
     def record_prog_view(self, *args):
         self.fallback_calls.append(("prog_view", args))
+
+    def analyze_metrics(self, active_sessions=0, blocked_ips=0):
+        self.analysis_calls.append((active_sessions, blocked_ips))
+
+    def get_summary(self, active_sessions=0, blocked_ips=0):
+        return {"global_status": "OK", "system": {"cpu_percent": 12.5}, "active_sessions": active_sessions, "blocked_ips": blocked_ips}
+
+    def get_alerts(self, include_resolved=False, limit=100):
+        return [{"level": "WARNING"}] if include_resolved else []
 
 
 class FakeServer:
@@ -94,15 +104,32 @@ def test_failed_direct_write_falls_back_to_existing_writer():
     with_vercel(run)
 
 
+def test_summary_triggers_on_demand_analysis_once_per_window():
+    def run():
+        mon = FakeMon()
+        bridge.install(FakeServer(mon))
+        summary = mon.get_summary(3, 2)
+        assert summary["global_status"] == "OK"
+        assert summary["system"]["cpu_percent"] == 12.5
+        assert mon.analysis_calls == [(3, 2)]
+        # Immediate follow-up (e.g. parallel alerts fetch) must not duplicate analysis.
+        mon.get_alerts(False, 100)
+        mon.get_summary(3, 2)
+        assert mon.analysis_calls == [(3, 2)]
+    with_vercel(run)
+
+
 def test_non_serverless_keeps_existing_monitoring_functions():
     old_vercel = os.environ.pop("VERCEL", None)
     old_env = os.environ.pop("VERCEL_ENV", None)
     try:
         mon = FakeMon()
         original = mon.record_request
+        original_summary = mon.get_summary
         bridge.install(FakeServer(mon))
         # Bound methods are recreated on access, compare their function objects.
         assert mon.record_request.__func__ is original.__func__
+        assert mon.get_summary.__func__ is original_summary.__func__
         assert mon.init_calls == 0
     finally:
         if old_vercel is not None:
@@ -116,6 +143,7 @@ def run_all():
         test_serverless_request_is_written_immediately,
         test_all_public_monitoring_events_use_direct_write,
         test_failed_direct_write_falls_back_to_existing_writer,
+        test_summary_triggers_on_demand_analysis_once_per_window,
         test_non_serverless_keeps_existing_monitoring_functions,
     ):
         test()
