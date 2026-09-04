@@ -13,6 +13,7 @@ import backup_download
 import chatbot_hardening
 import db_health_endpoint
 import editorial_publish_integrity
+import serverless_backup_history
 import serverless_monitor_restart
 
 Guard = Callable[[object, object], object]
@@ -26,6 +27,7 @@ _GUARDS: tuple[Guard, ...] = (
     admin_auth_flow.guard_request,
     admin_contact_integrity.guard_request,
     backup_download.guard_request,
+    serverless_backup_history.guard_request,
     editorial_publish_integrity.guard_request,
     chatbot_hardening.guard_request,
     serverless_monitor_restart.guard_request,
