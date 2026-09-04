@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 import os
+import sys
 from types import SimpleNamespace
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
 
 import serverless_monitoring_persistence as bridge
 
@@ -112,7 +117,6 @@ def test_summary_triggers_on_demand_analysis_once_per_window():
         assert summary["global_status"] == "OK"
         assert summary["system"]["cpu_percent"] == 12.5
         assert mon.analysis_calls == [(3, 2)]
-        # Immediate follow-up (e.g. parallel alerts fetch) must not duplicate analysis.
         mon.get_alerts(False, 100)
         mon.get_summary(3, 2)
         assert mon.analysis_calls == [(3, 2)]
@@ -127,7 +131,6 @@ def test_non_serverless_keeps_existing_monitoring_functions():
         original = mon.record_request
         original_summary = mon.get_summary
         bridge.install(FakeServer(mon))
-        # Bound methods are recreated on access, compare their function objects.
         assert mon.record_request.__func__ is original.__func__
         assert mon.get_summary.__func__ is original_summary.__func__
         assert mon.init_calls == 0
