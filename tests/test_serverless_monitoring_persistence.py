@@ -75,12 +75,13 @@ def with_vercel(fn):
             os.environ["VERCEL"] = old
 
 
-def test_serverless_request_is_written_immediately():
+def test_serverless_request_is_written_immediately_without_eager_init():
     def run():
         mon = FakeMon()
         bridge.install(FakeServer(mon))
+        assert mon.init_calls == 0
         mon.record_request("GET", "/api/stats", 200, 12.3, "127.0.0.1")
-        assert mon.init_calls == 1
+        assert mon.init_calls == 0  # SQL connection initializes its tables lazily.
         assert len(mon.rows) == 1
         assert mon.rows[0][0] == "request"
         assert mon.rows[0][2] == "/api/stats"
@@ -143,7 +144,7 @@ def test_non_serverless_keeps_existing_monitoring_functions():
 
 def run_all():
     for test in (
-        test_serverless_request_is_written_immediately,
+        test_serverless_request_is_written_immediately_without_eager_init,
         test_all_public_monitoring_events_use_direct_write,
         test_failed_direct_write_falls_back_to_existing_writer,
         test_summary_triggers_on_demand_analysis_once_per_window,
