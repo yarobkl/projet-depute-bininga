@@ -8,6 +8,36 @@ import backup_bininga
 
 
 ROUTE = "/api/backups/export"
+_HISTORY_KEY = "backup_history"
+_HISTORY_LIMIT = 50
+
+
+def _record_history(server, filename: str, content: bytes, manifest: dict, session: dict) -> None:
+    """Conserve uniquement les métadonnées de l'archive, jamais le ZIP en base."""
+    loader = getattr(server, "_pg_load", None)
+    saver = getattr(server, "_pg_save", None)
+    if not callable(saver):
+        return
+    try:
+        rows = loader(_HISTORY_KEY) if callable(loader) else []
+    except Exception:
+        rows = []
+    if not isinstance(rows, list):
+        rows = []
+    rows.append({
+        "name": filename,
+        "created_at": manifest.get("created_at"),
+        "backend": manifest.get("backend"),
+        "store_count": int(manifest.get("store_count") or 0),
+        "photo_count": int(manifest.get("photo_count") or 0),
+        "bytes": len(content),
+        "downloaded_by": str(session.get("username") or session.get("nom") or "admin"),
+        "kind": "downloaded_archive",
+    })
+    try:
+        saver(_HISTORY_KEY, rows[-_HISTORY_LIMIT:])
+    except Exception:
+        pass
 
 
 def guard_request(server, handler) -> bool:
@@ -33,6 +63,7 @@ def guard_request(server, handler) -> bool:
 
     try:
         filename, content, manifest = backup_bininga.build_backup_archive()
+        _record_history(server, filename, content, manifest, session)
         handler.send_response(200)
         handler.send_header("Content-Type", "application/zip")
         handler.send_header("Content-Disposition", f'attachment; filename="{filename}"')
