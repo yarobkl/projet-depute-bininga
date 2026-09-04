@@ -25,7 +25,7 @@ jobs:
 
       - name: Vérification syntaxe Python
         run: |
-          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py restore_bininga.py backup_download.py content_integrity.py admin_system_authz.py admin_request_pipeline.py admin_auth_flow.py admin_access_model.py admin_bootstrap_transition.py admin_owners.py admin_permissions.py account_incident_response.py db_resilience.py db_health_endpoint.py editorial_publish_integrity.py first_person_content_migration.py email_delivery_diagnostics.py serverless_monitor_restart.py persistent_audit.py persistent_security_state.py
+          python -m py_compile server.py passenger_wsgi.py vercel_entrypoint.py vercel_public_fastpath.py backup_bininga.py restore_bininga.py backup_download.py content_integrity.py admin_system_authz.py admin_request_pipeline.py admin_auth_flow.py admin_access_model.py admin_bootstrap_transition.py admin_owners.py admin_permissions.py account_incident_response.py db_resilience.py db_health_endpoint.py editorial_publish_integrity.py first_person_content_migration.py email_delivery_diagnostics.py serverless_monitor_restart.py serverless_backup_history.py persistent_audit.py persistent_security_state.py
           echo "✅ Python — syntaxe OK"
 
       - name: Vérification syntaxe JavaScript
@@ -42,6 +42,7 @@ jobs:
           node --check static/admin-dashboard-priority.js
           node --check static/admin-system-ux.js
           node --check static/admin-system-layout.js
+          node --check static/admin-backup-ux.js
           node --check static/admin-auth-management.js
           node --check static/admin-collaborator-management.js
           node --check static/admin-advanced-security.js
@@ -68,7 +69,7 @@ jobs:
         run: |
           python -c "
           import os, sys
-          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'persistent_audit.py', 'persistent_security_state.py', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-dashboard-hardening.js', 'static/admin-dashboard-priority.js', 'static/admin-system-ux.js', 'static/admin-system-layout.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'email_delivery_diagnostics.py', 'serverless_monitor_restart.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
+          required = ['index.html', 'admin.html', 'server.py', 'data.json', 'persistent_audit.py', 'persistent_security_state.py', 'serverless_backup_history.py', 'static/admin-production.js', 'static/admin-core.js', 'static/admin-dashboard-hardening.js', 'static/admin-dashboard-priority.js', 'static/admin-system-ux.js', 'static/admin-system-layout.js', 'static/admin-backup-ux.js', 'static/admin-auth-management.js', 'static/admin-collaborator-management.js', 'static/admin-advanced-security.js', 'static/admin-reset-password.html', 'static/admin-first-login.html', 'admin_auth_flow.py', 'admin_access_model.py', 'admin_bootstrap_transition.py', 'admin_owners.py', 'admin_permissions.py', 'account_incident_response.py', 'db_resilience.py', 'restore_bininga.py', 'first_person_content_migration.py', 'email_delivery_diagnostics.py', 'serverless_monitor_restart.py', 'docs/SECURITY_AND_ACCESS_MODEL.md']
           missing = [f for f in required if not os.path.isfile(f)]
           if missing:
               print(f'❌ Fichiers manquants: {missing}')
@@ -85,6 +86,7 @@ jobs:
           python tests/test_system_layout.py
           python tests/test_persistent_audit.py
           python tests/test_persistent_security_state.py
+          python tests/test_serverless_backup_history.py
           python tests/test_architecture_contracts.py
           python tests/test_admin_auth_flow.py
           python tests/test_admin_owners.py
