@@ -15,6 +15,7 @@ import db_health_endpoint
 import editorial_publish_integrity
 import serverless_backup_history
 import serverless_monitor_restart
+import serverless_monitoring_persistence
 
 Guard = Callable[[object, object], object]
 LegacyAuthorization = Optional[Callable[[object], bool]]
@@ -35,6 +36,10 @@ _GUARDS: tuple[Guard, ...] = (
 
 
 def allow_request(server, handler, legacy_authorization: LegacyAuthorization = None) -> bool:
+    # On serverless runtimes monitoring must be made synchronous before the
+    # request handler emits any metrics; install() is idempotent and a no-op
+    # elsewhere.
+    serverless_monitoring_persistence.install(server)
     if legacy_authorization is not None and legacy_authorization(handler) is False:
         return False
     for guard in _GUARDS:
