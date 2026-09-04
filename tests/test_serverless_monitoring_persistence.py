@@ -36,6 +36,9 @@ class FakeMon:
     def _execute_write(self, conn, backend, item):
         self.rows.append(item)
 
+    def _disk_percent(self):
+        return 100.0
+
     def record_request(self, *args):
         self.fallback_calls.append(("request", args))
 
@@ -52,10 +55,21 @@ class FakeMon:
         self.analysis_calls.append((active_sessions, blocked_ips))
 
     def get_summary(self, active_sessions=0, blocked_ips=0):
-        return {"global_status": "OK", "system": {"cpu_percent": 12.5}, "active_sessions": active_sessions, "blocked_ips": blocked_ips}
+        return {
+            "global_status": "OK",
+            "system": {"cpu_percent": 12.5, "disk_percent": 100.0},
+            "active_sessions": active_sessions,
+            "blocked_ips": blocked_ips,
+        }
 
     def get_alerts(self, include_resolved=False, limit=100):
-        return [{"level": "WARNING"}] if include_resolved else []
+        if include_resolved:
+            return [{"level": "WARNING", "rule": "OLD"}]
+        return [
+            {"level": "WARNING", "rule": "SAME"},
+            {"level": "WARNING", "rule": "SAME"},
+            {"level": "CRITICAL", "rule": "OTHER"},
+        ]
 
 
 class FakeServer:
@@ -124,6 +138,31 @@ def test_summary_triggers_on_demand_analysis_once_per_window():
     with_vercel(run)
 
 
+def test_vercel_disk_is_non_actionable_and_active_alerts_are_deduped():
+    def run():
+        mon = FakeMon()
+        assert mon._disk_percent() == 100.0
+        bridge.install(FakeServer(mon))
+        assert mon._disk_percent() == 0.0
+        summary = mon.get_summary(1, 0)
+        assert summary["system"]["disk_percent"] is None
+        assert summary["system"]["disk_ephemeral"] is True
+        assert summary["system"]["disk_actionable"] is False
+        alerts = mon.get_alerts(False, 100)
+        assert [row["rule"] for row in alerts] == ["SAME", "OTHER"]
+    with_vercel(run)
+
+
+def test_serverless_disk_ui_is_loaded():
+    session_path = os.path.join(ROOT, "static", "admin-session-hardening.js")
+    ui_path = os.path.join(ROOT, "static", "admin-monitoring-serverless.js")
+    session = open(session_path, encoding="utf-8").read()
+    ui = open(ui_path, encoding="utf-8").read()
+    assert "admin-monitoring-serverless.js" in session
+    assert "Disque éphémère" in ui
+    assert "N/A" in ui
+
+
 def test_non_serverless_keeps_existing_monitoring_functions():
     old_vercel = os.environ.pop("VERCEL", None)
     old_env = os.environ.pop("VERCEL_ENV", None)
@@ -131,9 +170,11 @@ def test_non_serverless_keeps_existing_monitoring_functions():
         mon = FakeMon()
         original = mon.record_request
         original_summary = mon.get_summary
+        original_disk = mon._disk_percent
         bridge.install(FakeServer(mon))
         assert mon.record_request.__func__ is original.__func__
         assert mon.get_summary.__func__ is original_summary.__func__
+        assert mon._disk_percent.__func__ is original_disk.__func__
         assert mon.init_calls == 0
     finally:
         if old_vercel is not None:
@@ -148,6 +189,8 @@ def run_all():
         test_all_public_monitoring_events_use_direct_write,
         test_failed_direct_write_falls_back_to_existing_writer,
         test_summary_triggers_on_demand_analysis_once_per_window,
+        test_vercel_disk_is_non_actionable_and_active_alerts_are_deduped,
+        test_serverless_disk_ui_is_loaded,
         test_non_serverless_keeps_existing_monitoring_functions,
     ):
         test()
