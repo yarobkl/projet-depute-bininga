@@ -52,6 +52,7 @@
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260823-cases-actionbar-3'],
     ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260903-system-lifecycle-1'],
+    ['data-bininga-monitoring-serverless','/static/admin-monitoring-serverless.js?v=20260904-serverless-disk-na-1'],
     ['data-bininga-system-layout','/static/admin-system-layout.js?v=20260903-system-layout-1'],
     ['data-bininga-backup-ux','/static/admin-backup-ux.js?v=20260904-backup-download-first-1'],
     ['data-bininga-advanced-security','/static/admin-advanced-security.js?v=20260903-architecture-90']
