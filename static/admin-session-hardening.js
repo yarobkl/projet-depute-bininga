@@ -51,6 +51,7 @@
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260823-cases-actionbar-3'],
+    ['data-bininga-crm-sync','/static/admin-crm-sync.js?v=20260904-crm-autosync-1'],
     ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260903-system-lifecycle-1'],
     ['data-bininga-monitoring-serverless','/static/admin-monitoring-serverless.js?v=20260904-serverless-disk-na-1'],
     ['data-bininga-system-layout','/static/admin-system-layout.js?v=20260903-system-layout-1'],
