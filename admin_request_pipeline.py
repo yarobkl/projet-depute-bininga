@@ -11,6 +11,7 @@ import admin_contact_integrity
 import admin_system_authz
 import backup_download
 import chatbot_hardening
+import crm_auto_sync
 import db_health_endpoint
 import editorial_publish_integrity
 import serverless_backup_history
@@ -27,6 +28,7 @@ _GUARDS: tuple[Guard, ...] = (
     admin_access_model.guard_request,
     admin_auth_flow.guard_request,
     admin_contact_integrity.guard_request,
+    crm_auto_sync.guard_request,
     backup_download.guard_request,
     serverless_backup_history.guard_request,
     editorial_publish_integrity.guard_request,
