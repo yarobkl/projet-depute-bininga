@@ -47,6 +47,7 @@ class Handler:
     def __init__(self):
         self.headers = {"X-Admin-Token": "tok"}
         self.response = None
+        self._status_code = 200
 
     def _json(self, payload, status=200):
         self.response = (status, payload)
@@ -155,10 +156,13 @@ def test_same_person_keeps_distinct_cases_and_full_evidence():
     contact = server.crm["contacts"][0]
     assert len(contact["dossiers"]) == 2
     by_case = {d["id"]: d for d in contact["dossiers"]}
-    assert by_case["aud-case"]["tracking_code"] == "BIN-2026-ABC123"
-    assert by_case["aud-case"]["photo_url"] == "/api/sinistre-photo/photo123"
-    assert by_case["aud-case"]["geo_label"] == "Ewo, test"
-    assert by_case["aud-case"]["geo_maps_url"] == "https://maps.example/test"
+    aud = by_case["aud-case"]
+    assert aud["tracking_code"] == "BIN-2026-ABC123"
+    assert aud["photo_url"] == "/api/sinistre-photo/photo123"
+    assert aud["geo_label"] == "Ewo, test"
+    assert aud["geo_maps_url"] == "https://maps.example/test"
+    assert aud["prenom"] == "E2E" and aud["nom"] == "Citoyen"
+    assert aud["email"] == "e2e@example.com" and aud["telephone"] == "+242060000001"
 
     server.rows[0]["_status"] = "en_cours"
     server.rows[0]["decision"] = "favorable"
@@ -177,6 +181,37 @@ def test_same_person_keeps_distinct_cases_and_full_evidence():
     assert aud["decision"] == "favorable"
     assert aud["decision_note"] == "Traitement validé"
     assert aud["appointment"]["place"] == "Cabinet"
+
+
+def test_phone_only_followup_merges_with_same_named_person_even_if_crm_has_email():
+    crm = {"contacts": [{
+        "id": "person-1", "prenom": "Léa", "nom": "Mpassi", "email": "lea@example.com",
+        "telephone": "+242 06 111 22 33", "source": "contact", "statut": "nouveau",
+        "tags": ["contact"], "newsletter": False, "notes": [], "dossiers": [],
+    }], "newsletters": []}
+    server = FakeServer([{
+        "_id": "phone-case", "type": "bininga_audiences", "prenom": "Léa", "nom": "Mpassi",
+        "telephone": "+242061112233", "objet": "Demande d'audience", "ts": "2026-09-05 12:00:00",
+    }], crm)
+    result = crm_auto_sync.sync_contacts_to_crm(server)
+    assert result["added"] == 0
+    assert result["merged"] == 1
+    assert len(server.crm["contacts"]) == 1
+    assert server.crm["contacts"][0]["dossiers"][0]["id"] == "phone-case"
+
+
+def test_shared_phone_does_not_merge_different_named_people():
+    crm = {"contacts": [
+        {"id": "a", "prenom": "Alice", "nom": "A", "email": "a@example.com", "telephone": "+242061234567", "source": "contact", "tags": [], "notes": []},
+        {"id": "b", "prenom": "Bob", "nom": "B", "email": "b@example.com", "telephone": "+242061234567", "source": "contact", "tags": [], "notes": []},
+    ], "newsletters": []}
+    server = FakeServer([{
+        "_id": "c-case", "type": "bininga_contacts", "prenom": "Charlie", "nom": "C",
+        "telephone": "+242061234567", "message": "Bonjour", "ts": "2026-09-05 13:00:00",
+    }], crm)
+    result = crm_auto_sync.sync_contacts_to_crm(server)
+    assert result["added"] == 1
+    assert len(server.crm["contacts"]) == 3
 
 
 def test_book_and_newsletter_origins_remain_editable_in_legacy_crm():
@@ -209,6 +244,29 @@ def test_guard_returns_reconciled_snapshot_directly():
     assert server.audit and server.audit[0][0] == "CRM_AUTO_SYNC"
 
 
+def test_successful_public_submission_is_reconciled_before_request_ends():
+    server = FakeServer([{
+        "_id": "submit-1", "type": "bininga_audiences", "objet": "Réclamation",
+        "prenom": "Prod", "nom": "Smoke", "email": "prod@example.com",
+        "tracking_code": "BIN-2026-SMOKE1", "photo_url": "/api/sinistre-photo/p1",
+        "geo_label": "Adresse manuelle test", "geo_maps_url": "https://www.google.com/maps/search/?api=1&query=test",
+    }])
+    handler = Handler()
+    handler.command = "POST"
+    handler.path = "/api/contact"
+    handler._status_code = 200
+    crm_auto_sync.postprocess_response(server, handler)
+    assert server.saved == 1
+    assert len(server.crm["contacts"]) == 1
+    dossier = server.crm["contacts"][0]["dossiers"][0]
+    assert dossier["id"] == "submit-1"
+    assert dossier["source"] == "reclamation"
+    assert dossier["tracking_code"] == "BIN-2026-SMOKE1"
+    assert dossier["photo_url"] == "/api/sinistre-photo/p1"
+    assert dossier["geo_label"] == "Adresse manuelle test"
+    assert any(action == "CRM_SUBMISSION_SYNC" for action, _, _ in server.audit)
+
+
 def test_unrelated_get_does_nothing():
     server = FakeServer([
         {"_id": "aud-4", "type": "bininga_audiences", "email": "x@example.com"},
@@ -224,10 +282,13 @@ def test_navigation_directly_triggers_crm_loader_and_cache_is_busted():
     navigation = open(os.path.join(ROOT, "static", "admin-navigation.js"), encoding="utf-8").read()
     session = open(os.path.join(ROOT, "static", "admin-session-hardening.js"), encoding="utf-8").read()
     passenger = open(os.path.join(ROOT, "passenger_wsgi.py"), encoding="utf-8").read()
+    pipeline = open(os.path.join(ROOT, "admin_request_pipeline.py"), encoding="utf-8").read()
     assert "crm: () => typeof window.loadCrm === 'function' ? window.loadCrm(1) : null" in navigation
     assert "_triggerPanelLoader(name)" in navigation
     assert "/static/admin-navigation.js?v=20260905-admin-perf-2" in session
-    assert "/static/admin-session-hardening.js?v=20260905-case-flow-1" in passenger
+    assert "/static/admin-crm-integrity.js?v=20260905-crm-integrity-1" in session
+    assert "/static/admin-session-hardening.js?v=20260905-crm-integrity-1" in passenger
+    assert "crm_auto_sync.postprocess_response(server, handler)" in pipeline
 
 
 def test_crm_secondary_listener_is_fallback_only():
