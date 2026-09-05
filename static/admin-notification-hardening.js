@@ -106,7 +106,11 @@
     pollTimer = null;
     primed = false;
     seenIds = new Set();
-    pollOnce();
+
+    // L'initialisation de l'admin synchronise déjà /api/contacts. Ne pas lancer
+    // une seconde requête identique au même instant : sur un cold start Vercel,
+    // cela réveille plusieurs workers et ralentit fortement le premier écran.
+    scheduleNext();
   };
 
   console.info('[BININGA Admin] Notification transport hardened');
