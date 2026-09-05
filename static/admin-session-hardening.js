@@ -61,7 +61,22 @@
 
   (async()=>{
     const failed=[];
-    for(const [marker,src] of modules){ if(!(await loadOne(marker,src)))failed.push(src); }
+
+    // Les quatre fondations restent ordonnées : elles définissent les helpers,
+    // droits et navigation utilisés par les modules suivants.
+    for(const [marker,src] of modules.slice(0,4)){
+      if(!(await loadOne(marker,src))) failed.push(src);
+    }
+
+    // Les modules métier suivants n'ont pas besoin de bloquer le téléchargement
+    // les uns des autres. Les charger en parallèle évite une longue chaîne réseau
+    // sur Safari mobile, tout en conservant async=false pour leur ordre d'exécution.
+    const optionalResults=await Promise.all(modules.slice(4).map(async ([marker,src])=>({
+      src,
+      ok: await loadOne(marker,src)
+    })));
+    optionalResults.forEach(result=>{ if(!result.ok) failed.push(result.src); });
+
     if(failed.length){ document.documentElement.dataset.adminModulesReady='degraded'; document.documentElement.dataset.adminModulesFailed=String(failed.length); window.dispatchEvent(new CustomEvent('bininga:admin-modules-degraded',{detail:{failed}})); return; }
     document.documentElement.dataset.adminModulesReady='1'; document.documentElement.removeAttribute('data-admin-modules-failed'); window.dispatchEvent(new CustomEvent('bininga:admin-modules-ready'));
   })();
