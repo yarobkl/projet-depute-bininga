@@ -17,7 +17,6 @@
   async function refreshCrm(){
     if(_loading){ _queued=true; return; }
     if(typeof window.loadCrm!=='function'){
-      // admin.js can finish a few ms after this module on a cold mobile load.
       setTimeout(refreshCrm,120);
       return;
     }
@@ -39,8 +38,6 @@
     const panel=document.getElementById('panel-crm');
     if(!panel)return;
 
-    // CRM is operational data, not site-content editing: hide the global CMS
-    // action bar whenever this panel is active (including mobile Safari).
     if(!document.getElementById('bininga-crm-sync-css')){
       const style=document.createElement('style');
       style.id='bininga-crm-sync-css';
@@ -74,8 +71,8 @@
       }
     }
 
-    // If the page was restored directly while CRM is already active, load it.
-    if(panel.classList.contains('active')) refreshCrm();
+    // Fallback uniquement si la navigation centrale n'est pas installée.
+    if(panel.classList.contains('active') && !window.__BININGA_ADMIN_NAVIGATION__) refreshCrm();
   }
 
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',install,{once:true});
@@ -83,9 +80,8 @@
 
   window.addEventListener('bininga:admin-modules-ready',install);
   window.addEventListener('admin:panelchange',(event)=>{
-    if(event?.detail?.name==='crm') refreshCrm();
+    if(event?.detail?.name==='crm' && !window.__BININGA_ADMIN_NAVIGATION__) refreshCrm();
   });
 
-  // Exposed for the manual "Synchroniser maintenant" button and tests.
   window.refreshCrmFromServer=refreshCrm;
 })();
