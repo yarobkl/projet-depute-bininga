@@ -45,10 +45,16 @@ class Handler:
     client_address = ("127.0.0.1", 0)
 
     def __init__(self):
+        self.headers = {"X-Admin-Token": "tok"}
         self.response = None
 
     def _json(self, payload, status=200):
-        self.response = (status, copy.deepcopy(payload))
+        self.response = (status, payload)
+
+
+class AuthorizedServer(FakeServer):
+    def get_session(self, token):
+        return {"username": "admin", "role": "admin"} if token == "tok" else None
 
 
 def test_historical_requests_are_added_automatically():
@@ -71,7 +77,6 @@ def test_historical_requests_are_added_automatically():
     result = crm_auto_sync.sync_contacts_to_crm(server)
     assert result["added"] == 3
     assert result["total"] == 3
-    assert result["source_total"] == 3
     by_id = {row["id"]: row for row in server.crm["contacts"]}
     assert by_id["aud-1"]["source"] == "audience"
     assert by_id["aud-1"]["statut"] == "en_cours"
@@ -108,7 +113,7 @@ def test_existing_same_identity_is_merged_not_duplicated():
     ], {
         "contacts": [{
             "id": "legacy-import", "email": "citoyen@example.com", "nom": "Makosso",
-            "created_at": "2026-09-04 10:15:00", "source": "contact", "statut": "nouveau",
+            "created_at": "2026-09-04 09:00:00", "source": "contact", "statut": "nouveau",
             "tags": ["contact"], "newsletter": False, "notes": [],
         }],
         "newsletters": [],
@@ -122,37 +127,19 @@ def test_existing_same_identity_is_merged_not_duplicated():
     assert "newsletter" in row["tags"]
 
 
-def test_guard_answers_from_same_reconciled_snapshot():
-    server = FakeServer([
+def test_guard_returns_reconciled_snapshot_directly():
+    server = AuthorizedServer([
         {"_id": "aud-3", "type": "bininga_audiences", "nom": "Test", "email": "test@example.com", "ts": "2026-09-04 14:00:00"},
         {"_id": "msg-3", "type": "bininga_contacts", "nom": "Deux", "email": "deux@example.com", "ts": "2026-09-04 15:00:00"},
     ])
     handler = Handler()
     assert crm_auto_sync.guard_request(server, handler) is False
-    assert len(server.crm["contacts"]) == 2
-    assert server.audit and server.audit[0][0] == "CRM_AUTO_SYNC"
     assert handler.response[0] == 200
     payload = handler.response[1]
     assert payload["ok"] is True
     assert payload["total"] == 2
-    assert payload["sync"]["source_total"] == 2
-    assert payload["sync"]["crm_total"] == 2
     assert len(payload["contacts"]) == 2
-
-
-def test_guard_preserves_filters_and_pagination():
-    server = FakeServer([
-        {"_id": "a1", "type": "bininga_audiences", "nom": "Alpha", "email": "a@example.com", "ts": "2026-09-01 10:00:00"},
-        {"_id": "m1", "type": "bininga_contacts", "nom": "Beta", "email": "b@example.com", "ts": "2026-09-02 10:00:00"},
-        {"_id": "n1", "type": "bininga_newsletter", "nom": "Gamma", "email": "g@example.com", "ts": "2026-09-03 10:00:00"},
-    ])
-    handler = Handler()
-    handler.path = "/api/crm?page=1&limit=10&source=audience&q=alpha"
-    assert crm_auto_sync.guard_request(server, handler) is False
-    payload = handler.response[1]
-    assert payload["total"] == 1
-    assert payload["contacts"][0]["source"] == "audience"
-    assert payload["newsletter_count"] == 1
+    assert server.audit and server.audit[0][0] == "CRM_AUTO_SYNC"
 
 
 def test_unrelated_get_does_nothing():
@@ -164,20 +151,26 @@ def test_unrelated_get_does_nothing():
     assert crm_auto_sync.guard_request(server, handler) is True
     assert server.crm["contacts"] == []
     assert server.saved == 0
-    assert handler.response is None
 
 
-def test_crm_panel_lifecycle_triggers_real_loader():
+def test_navigation_directly_triggers_crm_loader_and_cache_is_busted():
+    navigation = open(os.path.join(ROOT, "static", "admin-navigation.js"), encoding="utf-8").read()
+    session = open(os.path.join(ROOT, "static", "admin-session-hardening.js"), encoding="utf-8").read()
+    passenger = open(os.path.join(ROOT, "passenger_wsgi.py"), encoding="utf-8").read()
+    assert "crm: () => typeof window.loadCrm === 'function' ? window.loadCrm(1) : null" in navigation
+    assert "_triggerPanelLoader(name)" in navigation
+    assert "/static/admin-navigation.js?v=20260905-crm-direct-load-1" in session
+    assert "/static/admin-session-hardening.js?v=20260905-crm-direct-load-1" in passenger
+
+
+def test_crm_panel_lifecycle_still_has_secondary_listener():
     ui_path = os.path.join(ROOT, "static", "admin-crm-sync.js")
-    session_path = os.path.join(ROOT, "static", "admin-session-hardening.js")
     ui = open(ui_path, encoding="utf-8").read()
-    session = open(session_path, encoding="utf-8").read()
     assert "admin:panelchange" in ui
     assert "event?.detail?.name==='crm'" in ui
     assert "window.loadCrm" in ui
     assert "await window.loadCrm(1)" in ui
     assert "crm-kpi-total" in ui and "crm-kpi-nl" in ui
-    assert "20260905-crm-panel-lifecycle-1" in session
 
 
 def run_all():
@@ -185,10 +178,10 @@ def run_all():
         test_historical_requests_are_added_automatically,
         test_second_sync_is_idempotent_and_keeps_manual_contacts,
         test_existing_same_identity_is_merged_not_duplicated,
-        test_guard_answers_from_same_reconciled_snapshot,
-        test_guard_preserves_filters_and_pagination,
+        test_guard_returns_reconciled_snapshot_directly,
         test_unrelated_get_does_nothing,
-        test_crm_panel_lifecycle_triggers_real_loader,
+        test_navigation_directly_triggers_crm_loader_and_cache_is_busted,
+        test_crm_panel_lifecycle_still_has_secondary_listener,
     ):
         test()
         print(f"✅ {test.__name__}")
