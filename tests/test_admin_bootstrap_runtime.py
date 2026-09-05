@@ -1,6 +1,7 @@
 """Regression contracts for the authenticated admin bootstrap and page freezes."""
 from __future__ import annotations
 
+from html.parser import HTMLParser
 from pathlib import Path
 
 
@@ -9,6 +10,31 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def read(relative: str) -> str:
     return (ROOT / relative).read_text(encoding="utf-8")
+
+
+class _AdminStructureParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self.stack: list[tuple[str, dict[str, str | None]]] = []
+        self.panels_outside_content: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attributes = dict(attrs)
+        classes = (attributes.get("class") or "").split()
+        if tag == "div" and "panel" in classes:
+            inside_content = any(
+                "content" in (ancestor.get("class") or "").split()
+                for _, ancestor in self.stack
+            )
+            if not inside_content:
+                self.panels_outside_content.append(attributes.get("id") or "<anonymous>")
+        self.stack.append((tag, attributes))
+
+    def handle_endtag(self, tag: str) -> None:
+        for index in range(len(self.stack) - 1, -1, -1):
+            if self.stack[index][0] == tag:
+                del self.stack[index:]
+                return
 
 
 def test_one_injected_script_owns_authenticated_startup() -> None:
@@ -81,3 +107,9 @@ def test_active_session_and_expiry_use_one_navigation_model() -> None:
     assert "localStorage.setItem(KEY" not in bootstrap
     assert "location.replace(LOGIN_SHELL)" in core
     assert 'location.replace("/static/admin-login-shell.html")' in legacy
+
+
+def test_admin_content_stays_inside_main_on_mobile() -> None:
+    parser = _AdminStructureParser()
+    parser.feed(read("admin.html"))
+    assert parser.panels_outside_content == []
