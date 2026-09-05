@@ -14,6 +14,7 @@ import chatbot_hardening
 import crm_auto_sync
 import db_health_endpoint
 import editorial_publish_integrity
+import google_analytics_integration
 import serverless_backup_history
 import serverless_monitor_restart
 import serverless_monitoring_persistence
@@ -24,6 +25,7 @@ LegacyAuthorization = Optional[Callable[[object], bool]]
 _GUARDS: tuple[Guard, ...] = (
     db_health_endpoint.guard_request,
     admin_system_authz.guard_request,
+    google_analytics_integration.guard_request,
     account_incident_response.guard_request,
     admin_access_model.guard_request,
     admin_auth_flow.guard_request,
