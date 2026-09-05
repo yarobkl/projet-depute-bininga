@@ -40,7 +40,7 @@ class _AdminStructureParser(HTMLParser):
 def test_one_injected_script_owns_authenticated_startup() -> None:
     passenger = read("passenger_wsgi.py")
     injected = passenger[passenger.index('scripts = b""'):passenger.index("if scripts:")]
-    assert "admin-session-hardening.js?v=20260905-admin-boot-1" in injected
+    assert "admin-session-hardening.js?v=20260905-google-1" in injected
     for duplicate in (
         "admin-instant-boot.js",
         "admin-dashboard-priority.js",
