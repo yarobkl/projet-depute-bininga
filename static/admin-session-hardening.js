@@ -45,32 +45,25 @@
 
   const modules=[
     ['data-bininga-admin-core','/static/admin-core.js?v=20260903-architecture-90'],
-    ['data-bininga-admin-auth-management','/static/admin-auth-management.js?v=20260902-auth-lifecycle-1'],
+    ['data-bininga-admin-auth-management','/static/admin-auth-management.js?v=20260905-admin-perf-2'],
     ['data-bininga-admin-collaborators','/static/admin-collaborator-management.js?v=20260902-owner-collab-1'],
-    ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260905-crm-direct-load-1'],
+    ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260905-admin-perf-2'],
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260823-cases-actionbar-3'],
-    ['data-bininga-crm-sync','/static/admin-crm-sync.js?v=20260905-crm-panel-lifecycle-1'],
-    ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260903-system-lifecycle-1'],
+    ['data-bininga-crm-sync','/static/admin-crm-sync.js?v=20260905-admin-perf-2'],
+    ['data-bininga-system-ux','/static/admin-system-ux.js?v=20260905-admin-perf-2'],
     ['data-bininga-monitoring-serverless','/static/admin-monitoring-serverless.js?v=20260904-serverless-disk-na-1'],
     ['data-bininga-system-layout','/static/admin-system-layout.js?v=20260903-system-layout-1'],
-    ['data-bininga-backup-ux','/static/admin-backup-ux.js?v=20260904-backup-download-first-1'],
+    ['data-bininga-backup-ux','/static/admin-backup-ux.js?v=20260905-admin-perf-2'],
     ['data-bininga-advanced-security','/static/admin-advanced-security.js?v=20260903-architecture-90']
   ];
 
   (async()=>{
     const failed=[];
-
-    // Les quatre fondations restent ordonnées : elles définissent les helpers,
-    // droits et navigation utilisés par les modules suivants.
     for(const [marker,src] of modules.slice(0,4)){
       if(!(await loadOne(marker,src))) failed.push(src);
     }
-
-    // Les modules métier suivants n'ont pas besoin de bloquer le téléchargement
-    // les uns des autres. Les charger en parallèle évite une longue chaîne réseau
-    // sur Safari mobile, tout en conservant async=false pour leur ordre d'exécution.
     const optionalResults=await Promise.all(modules.slice(4).map(async ([marker,src])=>({
       src,
       ok: await loadOne(marker,src)
