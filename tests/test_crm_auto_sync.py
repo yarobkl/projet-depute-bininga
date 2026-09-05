@@ -136,6 +136,19 @@ def test_unrelated_get_does_nothing():
     assert server.saved == 0
 
 
+def test_crm_panel_lifecycle_triggers_real_loader():
+    ui_path = os.path.join(ROOT, "static", "admin-crm-sync.js")
+    session_path = os.path.join(ROOT, "static", "admin-session-hardening.js")
+    ui = open(ui_path, encoding="utf-8").read()
+    session = open(session_path, encoding="utf-8").read()
+    assert "admin:panelchange" in ui
+    assert "event?.detail?.name==='crm'" in ui
+    assert "window.loadCrm" in ui
+    assert "await window.loadCrm(1)" in ui
+    assert "crm-kpi-total" in ui and "crm-kpi-nl" in ui
+    assert "20260905-crm-panel-lifecycle-1" in session
+
+
 def run_all():
     for test in (
         test_historical_requests_are_added_automatically,
@@ -143,6 +156,7 @@ def run_all():
         test_existing_same_identity_is_merged_not_duplicated,
         test_guard_runs_on_crm_get_and_audits_changes,
         test_unrelated_get_does_nothing,
+        test_crm_panel_lifecycle_triggers_real_loader,
     ):
         test()
         print(f"✅ {test.__name__}")
