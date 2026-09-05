@@ -36,7 +36,7 @@ class _AdminStructureParser(HTMLParser):
 def test_one_injected_script_owns_authenticated_startup() -> None:
     passenger = read("passenger_wsgi.py")
     injected = passenger[passenger.index('scripts = b""'):passenger.index("if scripts:")]
-    assert "admin-session-hardening.js?v=20260905-case-flow-1" in injected
+    assert "admin-session-hardening.js?v=20260905-crm-integrity-1" in injected
     for duplicate in (
         "admin-instant-boot.js",
         "admin-dashboard-priority.js",
@@ -53,6 +53,7 @@ def test_bootstrap_sequence_paints_before_background_and_optional_modules() -> N
     start = source[source.index("async function startWithSession"):source.index("function start()")]
     assert start.index("window._applySession(saved, restored)") < start.index("await waitForPaint()")
     assert start.index("await waitForPaint()") < start.index("await loadCriticalModules()")
+    assert "admin-crm-integrity.js?v=20260905-crm-integrity-1" in source
     assert start.index("bininga:admin-background-starting") < start.index("window.init()")
     assert start.index("window.init()") < start.index("setPhase('ready')")
     assert start.index("setPhase('ready')") < start.index("loadOptionalModules()")
@@ -71,8 +72,10 @@ def test_legacy_bundle_no_longer_autostarts_or_hides_the_shell() -> None:
 def test_secondary_modules_cannot_create_self_triggering_observer_loops() -> None:
     monitoring = read("static/admin-monitoring-serverless.js")
     dashboard = read("static/admin-dashboard-hardening.js")
+    crm_integrity = read("static/admin-crm-integrity.js")
     assert "MutationObserver" not in monitoring
     assert "MutationObserver" not in dashboard
+    assert "MutationObserver" not in crm_integrity
     assert "patchMonitoringLoader" in monitoring
     assert "admin:panelchange" in monitoring
     assert "admin:panelchange" in dashboard
