@@ -4,7 +4,6 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -22,10 +21,7 @@ class _AdminStructureParser(HTMLParser):
         attributes = dict(attrs)
         classes = (attributes.get("class") or "").split()
         if tag == "div" and "panel" in classes:
-            inside_content = any(
-                "content" in (ancestor.get("class") or "").split()
-                for _, ancestor in self.stack
-            )
+            inside_content = any("content" in (ancestor.get("class") or "").split() for _, ancestor in self.stack)
             if not inside_content:
                 self.panels_outside_content.append(attributes.get("id") or "<anonymous>")
         self.stack.append((tag, attributes))
@@ -40,7 +36,7 @@ class _AdminStructureParser(HTMLParser):
 def test_one_injected_script_owns_authenticated_startup() -> None:
     passenger = read("passenger_wsgi.py")
     injected = passenger[passenger.index('scripts = b""'):passenger.index("if scripts:")]
-    assert "admin-session-hardening.js?v=20260905-google-1" in injected
+    assert "admin-session-hardening.js?v=20260905-case-flow-1" in injected
     for duplicate in (
         "admin-instant-boot.js",
         "admin-dashboard-priority.js",
