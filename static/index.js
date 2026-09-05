@@ -26,8 +26,7 @@
   }
 
   // ── Optimisation mobile sûre ─────────────────────────────
-  // L'ancienne tentative remplaçait la photo principale par une ressource
-  // WebP absente. On conserve donc bininga.jpg et on optimise uniquement
+  // Conserver la photo principale existante et optimiser uniquement
   // son décodage/priorité ainsi que le coût de rendu hors écran.
   var mobile = false;
   try { mobile = window.matchMedia("(max-width: 900px)").matches; } catch (_) {}
@@ -57,113 +56,98 @@
     }, seen ? 0 : 480);
   }
 
-  // ── Voix éditoriale : présentation personnelle en première personne ──
-  // Les actualités et contenus journalistiques restent volontairement à la
-  // troisième personne. Ce garde-fou ne s'applique qu'à la version française
-  // des surfaces où le candidat parle directement aux visiteurs.
-  var FIRST_PERSON_FR = {
-    heroSubtitle: "Je suis un homme de terrain, de conviction et de résultats. Mon engagement est au service du peuple congolais et de la Cuvette-Ouest.",
-    heroProgramme: "Mon programme",
-    aboutTag: "Qui suis-je ?",
-    aboutBadge: "Ma circonscription",
-    aboutTitle: 'Mon parcours, forgé par <span class="r">le terrain</span>',
-    aboutIntro: "Je suis Ange Aimé Wilfrid BININGA. Docteur en droit, Inspecteur principal du Trésor, Député d'Ewo et Garde des Sceaux, j'ai construit mon parcours autour d'une exigence : servir l'État et les citoyens avec rigueur, responsabilité et attachement à mon pays.",
-    aboutParagraphs: [
-      "Né à Brazzaville, j'ai grandi avec le sens du devoir et du service public. Titulaire d'un doctorat en droit, j'ai intégré la haute fonction publique et gravi les échelons à la Direction générale du Trésor public jusqu'au rang d'Inspecteur principal, une fonction qui exige rigueur, intégrité et maîtrise des finances de l'État. J'ai également mis mon expérience au service de la Direction générale de la Santé, où j'ai exercé des fonctions stratégiques de conseiller ministériel. Ce parcours m'a permis de construire une double expertise, juridique et administrative, au service de l'État.",
-      "En 2016, le Président de la République m'a confié le portefeuille de Ministre de la Fonction publique et de la Réforme de l'État. J'ai alors engagé mon action dans la modernisation de l'administration congolaise, l'emploi des jeunes fonctionnaires et les réformes structurelles nécessaires à la diversification économique nationale. Le 19 août 2017, les électeurs de la 1re circonscription d'Ewo m'ont accordé leur confiance en m'élisant Député à l'Assemblée Nationale. Cette confiance constitue pour moi une responsabilité durable envers Ewo et la Cuvette-Ouest.",
-      "En tant que Ministre de la Justice, j'ai porté en 2018 la loi instituant la Haute Autorité de lutte contre la corruption. Adopté par 107 voix pour, 6 contre et 1 abstention, ce texte a marqué une étape importante dans le renforcement du cadre institutionnel de lutte contre la corruption et l'impunité. Je considère cette réforme comme l'un des engagements majeurs de mon action publique.",
-      "Aujourd'hui, en qualité de Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones, je porte la voix du Congo dans les dossiers relevant de mes responsabilités, au niveau national comme international. En février 2026, j'ai conduit à Paris des échanges avec mon homologue français Gérald Darmanin afin de moderniser la coopération judiciaire entre le Congo et la France. Juriste, réformateur et homme de terrain, je défends une vision exigeante du service de l'État, fondée sur la responsabilité, la justice et l'efficacité publique."
-    ],
-    parcoursTag: "Mon parcours",
-    parcoursDescriptions: [
-      "Docteur en droit, j'ai bâti une carrière de cadre supérieur de l'État au sein de la Direction générale du Trésor public, avant de rejoindre la Santé comme conseiller stratégique du ministre.",
-      "Militant du Parti Congolais du Travail, je me suis engagé activement dans la vie politique d'Ewo et de la Cuvette-Ouest, avec la volonté de porter les aspirations de ma communauté.",
-      "Nommé par le Président de la République au sein du premier gouvernement de la nouvelle République, j'ai porté la modernisation de l'administration publique et l'emploi des jeunes, deux enjeux essentiels de la diversification économique nationale.",
-      "Le 19 août 2017, les électeurs de la 1re circonscription d'Ewo m'ont élu Député à l'Assemblée Nationale de la République du Congo. Depuis, je représente Ewo et la Cuvette-Ouest avec la responsabilité liée à cette confiance.",
-      "En tant que Ministre de la Justice, j'ai piloté l'adoption par 107 députés de la loi créant la Haute Autorité de lutte contre la corruption en 2018, institution indépendante dotée du droit de saisine directe des instances judiciaires.",
-      "À ce poste clé du gouvernement, je porte la diplomatie judiciaire du Congo. En février 2026 à Paris, j'ai notamment engagé la modernisation de la coopération judiciaire Congo-France, fondée sur un accord vieux de plus de cinquante ans.",
-      "Fort de mon expérience gouvernementale et de mon engagement à Ewo, je me présente aux prochaines élections législatives avec un programme ambitieux pour Ewo et le Congo."
-    ],
-    programmeTag: "Ma vision",
-    programmeHeroText: "Chaque engagement de mon programme est issu de mes échanges directs avec les habitants d'Ewo, les chefs de village, les jeunes, les femmes entrepreneures et les professionnels de santé et d'éducation.",
-    programmeEmployment: "Fort de mon expérience au Ministère de la Fonction publique, je porte un plan ambitieux pour l'emploi des jeunes et la dignité des travailleurs d'Ewo."
-  };
+  // ── Contenu éditorial : l'admin est l'unique source de vérité ───────
+  // Une ancienne protection réécrivait en permanence plusieurs textes
+  // français avec des constantes embarquées dans ce fichier. Résultat :
+  // des modifications pourtant sauvegardées depuis l'admin pouvaient être
+  // aussitôt remplacées dans le navigateur. Ce bootstrap ne contient plus
+  // aucune copie éditoriale. Il ne fait que corriger quelques détails de
+  // rendu après que index-core.js a chargé data.json depuis le serveur.
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
 
-  var firstPersonScheduled = false;
-  function setTextIfDifferent(id, value) {
-    var el = document.getElementById(id);
-    if (el && el.textContent !== value) el.textContent = value;
+  function editableMultilineHtml(value) {
+    var normalized = String(value == null ? "" : value)
+      .replace(/\\n/g, "\n")
+      .replace(/<br\s*\/?\s*>/gi, "\n");
+    return escapeHtml(normalized).replace(/\r?\n/g, "<br> ");
   }
-  function setHtmlIfDifferent(id, value) {
-    var el = document.getElementById(id);
-    if (el && el.innerHTML !== value) el.innerHTML = value;
-  }
-  function applyFirstPersonFrenchCopy() {
-    firstPersonScheduled = false;
+
+  function applyAdminContentCompatibility() {
     var lang = (document.documentElement.lang || "fr").slice(0, 2).toLowerCase();
-    if (lang !== "fr") return;
+    if (lang !== "fr") return true;
 
-    setTextIfDifferent("dyn-sub", FIRST_PERSON_FR.heroSubtitle);
-    setTextIfDifferent("dyn-hero-btn2", FIRST_PERSON_FR.heroProgramme);
-    setTextIfDifferent("dyn-about-tag", FIRST_PERSON_FR.aboutTag);
-    setTextIfDifferent("dyn-about-badge-lbl", FIRST_PERSON_FR.aboutBadge);
-    setHtmlIfDifferent("dyn-about-title", FIRST_PERSON_FR.aboutTitle);
-    setTextIfDifferent("dyn-about-intro", FIRST_PERSON_FR.aboutIntro);
-    setTextIfDifferent("dyn-parcours-tag", FIRST_PERSON_FR.parcoursTag);
-    setTextIfDifferent("dyn-prog-tag", FIRST_PERSON_FR.programmeTag);
+    var data = window._FR_DATA;
+    if (!data || typeof data !== "object") return false;
 
-    var aboutBody = document.getElementById("dyn-about-body");
-    if (aboutBody) {
-      var current = Array.from(aboutBody.querySelectorAll("p")).map(function (p) { return p.textContent; });
-      if (current.join("\n") !== FIRST_PERSON_FR.aboutParagraphs.join("\n")) {
-        aboutBody.innerHTML = FIRST_PERSON_FR.aboutParagraphs.map(function (text) {
-          var p = document.createElement("p");
-          p.className = "about-body";
-          p.textContent = text;
-          return p.outerHTML;
-        }).join("");
-      }
+    // Engagement : index-core.js historique essaye d'écrire innerHTML sur
+    // un Text node. On reconstruit uniquement ce titre à partir des données
+    // réellement sauvegardées par l'admin, sans texte codé en dur.
+    var engagement = data.engagement || {};
+    var engagementTitle = document.getElementById("dyn-eng-title");
+    if (engagementTitle && (engagement.title || engagement.titleAccent)) {
+      var accent = escapeHtml(engagement.titleAccent || "");
+      var desired = editableMultilineHtml(engagement.title || "") +
+        (accent ? ' <span class="g" id="dyn-eng-title-accent" data-i18n="eng.title.accent">' + accent + "</span>" : "") +
+        " ?";
+      if (engagementTitle.innerHTML !== desired) engagementTitle.innerHTML = desired;
     }
 
-    var timelineDescriptions = document.querySelectorAll("#dyn-parcours .tl-desc");
-    FIRST_PERSON_FR.parcoursDescriptions.forEach(function (text, index) {
-      var el = timelineDescriptions[index];
-      if (el && el.textContent !== text) el.textContent = text;
-    });
+    // Les champs ci-dessous sont édités comme texte. Accepter aussi bien un
+    // vrai saut de ligne qu'un « \\n » tapé dans l'admin, conformément aux
+    // indications affichées dans les formulaires.
+    var ctaTitle = document.getElementById("dyn-cta-title");
+    if (ctaTitle && data.cta && data.cta.title) {
+      var ctaHtml = editableMultilineHtml(data.cta.title);
+      if (ctaTitle.innerHTML !== ctaHtml) ctaTitle.innerHTML = ctaHtml;
+    }
 
-    var progHeroText = document.querySelector("#dyn-programme .prog-hero-sub");
-    if (progHeroText && progHeroText.textContent !== FIRST_PERSON_FR.programmeHeroText) {
-      progHeroText.textContent = FIRST_PERSON_FR.programmeHeroText;
+    var contactSidebar = document.getElementById("dyn-ct-sidebar-title");
+    if (contactSidebar && data.contact && data.contact.sidebarTitle) {
+      var contactHtml = editableMultilineHtml(data.contact.sidebarTitle);
+      if (contactSidebar.innerHTML !== contactHtml) contactSidebar.innerHTML = contactHtml;
     }
-    var employmentCard = Array.from(document.querySelectorAll("#dyn-programme .prog-card")).find(function (card) {
-      return /Emploi\s*&\s*Travail décent/i.test(card.querySelector(".prog-title")?.textContent || "");
-    });
-    var employmentText = employmentCard && employmentCard.querySelector(".prog-txt");
-    if (employmentText && employmentText.textContent !== FIRST_PERSON_FR.programmeEmployment) {
-      employmentText.textContent = FIRST_PERSON_FR.programmeEmployment;
+
+    var programmeHero = document.querySelector("#dyn-programme .prog-hero-title");
+    if (programmeHero && data.programme && data.programme.heroTitle) {
+      var programmeHtml = editableMultilineHtml(data.programme.heroTitle);
+      if (programmeHero.innerHTML !== programmeHtml) programmeHero.innerHTML = programmeHtml;
     }
+
+    return true;
   }
 
-  function scheduleFirstPersonFrenchCopy() {
-    if (firstPersonScheduled) return;
-    firstPersonScheduled = true;
-    Promise.resolve().then(applyFirstPersonFrenchCopy);
+  function waitForAdminContent(attempt) {
+    if (applyAdminContentCompatibility()) return;
+    if (attempt >= 30) return;
+    window.setTimeout(function () { waitForAdminContent(attempt + 1); }, 120);
+  }
+
+  function scheduleAdminContentCompatibility() {
+    window.setTimeout(function () { waitForAdminContent(0); }, 0);
+    window.setTimeout(applyAdminContentCompatibility, 250);
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", scheduleFirstPersonFrenchCopy, { once: true });
+    document.addEventListener("DOMContentLoaded", scheduleAdminContentCompatibility, { once: true });
   } else {
-    scheduleFirstPersonFrenchCopy();
+    scheduleAdminContentCompatibility();
   }
-  if ("MutationObserver" in window && document.documentElement) {
-    new MutationObserver(scheduleFirstPersonFrenchCopy).observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: ["lang"]
-    });
-  }
+  window.addEventListener("pageshow", scheduleAdminContentCompatibility);
+
+  // Lorsque l'utilisateur revient explicitement au français, index-core.js
+  // recharge data.json. Rejouer seulement la compatibilité de rendu ensuite.
+  document.addEventListener("click", function (event) {
+    var langButton = event.target && event.target.closest ? event.target.closest('[data-lang="fr"]') : null;
+    if (!langButton) return;
+    window.setTimeout(scheduleAdminContentCompatibility, 300);
+  }, { passive: true });
 
   // ── Analytics métier sans donnée personnelle ────────────
   function track(name, params) {
