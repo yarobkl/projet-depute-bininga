@@ -44,6 +44,12 @@ class Handler:
     path = "/api/crm?page=1&limit=50"
     client_address = ("127.0.0.1", 0)
 
+    def __init__(self):
+        self.response = None
+
+    def _json(self, payload, status=200):
+        self.response = (status, copy.deepcopy(payload))
+
 
 def test_historical_requests_are_added_automatically():
     server = FakeServer([
@@ -65,6 +71,7 @@ def test_historical_requests_are_added_automatically():
     result = crm_auto_sync.sync_contacts_to_crm(server)
     assert result["added"] == 3
     assert result["total"] == 3
+    assert result["source_total"] == 3
     by_id = {row["id"]: row for row in server.crm["contacts"]}
     assert by_id["aud-1"]["source"] == "audience"
     assert by_id["aud-1"]["statut"] == "en_cours"
@@ -101,7 +108,7 @@ def test_existing_same_identity_is_merged_not_duplicated():
     ], {
         "contacts": [{
             "id": "legacy-import", "email": "citoyen@example.com", "nom": "Makosso",
-            "created_at": "2026-09-04 09:00:00", "source": "contact", "statut": "nouveau",
+            "created_at": "2026-09-04 10:15:00", "source": "contact", "statut": "nouveau",
             "tags": ["contact"], "newsletter": False, "notes": [],
         }],
         "newsletters": [],
@@ -115,14 +122,37 @@ def test_existing_same_identity_is_merged_not_duplicated():
     assert "newsletter" in row["tags"]
 
 
-def test_guard_runs_on_crm_get_and_audits_changes():
+def test_guard_answers_from_same_reconciled_snapshot():
     server = FakeServer([
         {"_id": "aud-3", "type": "bininga_audiences", "nom": "Test", "email": "test@example.com", "ts": "2026-09-04 14:00:00"},
+        {"_id": "msg-3", "type": "bininga_contacts", "nom": "Deux", "email": "deux@example.com", "ts": "2026-09-04 15:00:00"},
     ])
     handler = Handler()
-    assert crm_auto_sync.guard_request(server, handler) is True
-    assert len(server.crm["contacts"]) == 1
+    assert crm_auto_sync.guard_request(server, handler) is False
+    assert len(server.crm["contacts"]) == 2
     assert server.audit and server.audit[0][0] == "CRM_AUTO_SYNC"
+    assert handler.response[0] == 200
+    payload = handler.response[1]
+    assert payload["ok"] is True
+    assert payload["total"] == 2
+    assert payload["sync"]["source_total"] == 2
+    assert payload["sync"]["crm_total"] == 2
+    assert len(payload["contacts"]) == 2
+
+
+def test_guard_preserves_filters_and_pagination():
+    server = FakeServer([
+        {"_id": "a1", "type": "bininga_audiences", "nom": "Alpha", "email": "a@example.com", "ts": "2026-09-01 10:00:00"},
+        {"_id": "m1", "type": "bininga_contacts", "nom": "Beta", "email": "b@example.com", "ts": "2026-09-02 10:00:00"},
+        {"_id": "n1", "type": "bininga_newsletter", "nom": "Gamma", "email": "g@example.com", "ts": "2026-09-03 10:00:00"},
+    ])
+    handler = Handler()
+    handler.path = "/api/crm?page=1&limit=10&source=audience&q=alpha"
+    assert crm_auto_sync.guard_request(server, handler) is False
+    payload = handler.response[1]
+    assert payload["total"] == 1
+    assert payload["contacts"][0]["source"] == "audience"
+    assert payload["newsletter_count"] == 1
 
 
 def test_unrelated_get_does_nothing():
@@ -134,6 +164,7 @@ def test_unrelated_get_does_nothing():
     assert crm_auto_sync.guard_request(server, handler) is True
     assert server.crm["contacts"] == []
     assert server.saved == 0
+    assert handler.response is None
 
 
 def test_crm_panel_lifecycle_triggers_real_loader():
@@ -154,7 +185,8 @@ def run_all():
         test_historical_requests_are_added_automatically,
         test_second_sync_is_idempotent_and_keeps_manual_contacts,
         test_existing_same_identity_is_merged_not_duplicated,
-        test_guard_runs_on_crm_get_and_audits_changes,
+        test_guard_answers_from_same_reconciled_snapshot,
+        test_guard_preserves_filters_and_pagination,
         test_unrelated_get_does_nothing,
         test_crm_panel_lifecycle_triggers_real_loader,
     ):
