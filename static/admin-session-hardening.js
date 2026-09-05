@@ -47,7 +47,7 @@
     ['data-bininga-admin-core','/static/admin-core.js?v=20260903-architecture-90'],
     ['data-bininga-admin-auth-management','/static/admin-auth-management.js?v=20260902-auth-lifecycle-1'],
     ['data-bininga-admin-collaborators','/static/admin-collaborator-management.js?v=20260902-owner-collab-1'],
-    ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260823-nav-desktop-sidebar-3'],
+    ['data-bininga-admin-navigation','/static/admin-navigation.js?v=20260905-crm-direct-load-1'],
     ['data-bininga-dashboard-hardening','/static/admin-dashboard-hardening.js?v=20260823-dashboard-3'],
     ['data-bininga-production-hardening','/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui','/static/admin-cases.js?v=20260823-cases-actionbar-3'],
