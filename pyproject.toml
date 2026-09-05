@@ -13,3 +13,6 @@ dependencies = [
 
 [tool.vercel]
 entrypoint = "vercel_entrypoint:application"
+
+[tool.vercel.scripts]
+build = "python scripts/build_vercel_public.py"
