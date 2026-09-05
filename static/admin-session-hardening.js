@@ -38,6 +38,7 @@
     ['data-bininga-production-hardening', '/static/admin-production.js?v=20260902-architecture-1'],
     ['data-bininga-cases-ui', '/static/admin-cases.js?v=20260823-cases-actionbar-3'],
     ['data-bininga-crm-sync', '/static/admin-crm-sync.js?v=20260905-admin-perf-2'],
+    ['data-bininga-google-analytics', '/static/admin-google-analytics.js?v=20260905-google-1'],
     ['data-bininga-system-ux', '/static/admin-system-ux.js?v=20260905-admin-perf-2'],
     ['data-bininga-monitoring-serverless', '/static/admin-monitoring-serverless.js?v=20260905-admin-boot-1'],
     ['data-bininga-system-layout', '/static/admin-system-layout.js?v=20260903-system-layout-1'],
