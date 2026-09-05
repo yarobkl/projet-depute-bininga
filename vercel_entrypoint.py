@@ -8,6 +8,8 @@ human-language understanding layer before any legacy chat handler can run.
 from __future__ import annotations
 
 import http
+import importlib
+import os
 import threading
 
 from vercel_public_fastpath import try_serve
@@ -24,6 +26,37 @@ def _finish(handler, start_response):
     return [handler.wfile.getvalue()]
 
 
+def _import_passenger_without_eager_image_copy():
+    """Importe l'app legacy sans recopier tout images/ à chaque cold start Vercel.
+
+    server.py conserve sa migration historique pour les hébergements persistants.
+    Sur Vercel, ré-uploader les mêmes images en PostgreSQL à chaque nouveau worker
+    est inutile et peut ajouter plusieurs secondes au premier appel admin. Les
+    écritures photo normales (upload/sauvegarde) ne sont pas modifiées.
+    """
+    if not os.environ.get("VERCEL"):
+        return importlib.import_module("passenger_wsgi")
+
+    original_walk = os.walk
+    images_root = os.path.realpath(os.path.join(os.getcwd(), "images"))
+
+    def serverless_walk(top, *args, **kwargs):
+        try:
+            current = os.path.realpath(os.fspath(top))
+        except Exception:
+            current = ""
+        if current == images_root:
+            print("[VERCEL BOOT] Migration eager de images/ ignorée sur cold start.", flush=True)
+            return iter(())
+        return original_walk(top, *args, **kwargs)
+
+    os.walk = serverless_walk
+    try:
+        return importlib.import_module("passenger_wsgi")
+    finally:
+        os.walk = original_walk
+
+
 def _load_legacy_application():
     """Initialise l'application complète uniquement pour une route dynamique."""
     global _LEGACY_APP
@@ -38,8 +71,9 @@ def _load_legacy_application():
         import chatbot_nlu
         import email_delivery_diagnostics
         import first_person_content_migration
-        import passenger_wsgi
         import vercel_session_persistence
+
+        passenger_wsgi = _import_passenger_without_eager_image_copy()
 
         chatbot_nlu.install(chatbot_hardening)
         email_delivery_diagnostics.install(admin_auth_flow)
