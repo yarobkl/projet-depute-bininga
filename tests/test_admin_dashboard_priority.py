@@ -11,13 +11,12 @@ def _read(path: str) -> str:
         return fh.read()
 
 
-def test_priority_script_is_injected_before_session_boot():
+def test_priority_script_is_loaded_by_the_single_session_bootstrap():
     passenger = _read("passenger_wsgi.py")
-    dashboard = passenger.index("static/admin-dashboard-hardening.js")
-    priority = passenger.index("static/admin-dashboard-priority.js")
-    session = passenger.index("static/admin-session-hardening.js")
-    assert dashboard < priority < session
-    assert 'data-bininga-dashboard-hardening data-loaded="1"' in passenger
+    session = _read("static/admin-session-hardening.js")
+    assert passenger.count("static/admin-session-hardening.js") == 2
+    assert "static/admin-dashboard-priority.js" not in passenger
+    assert session.index("admin-dashboard-priority.js") < session.index("const optionalModules")
 
 
 def test_priority_dashboard_renders_shell_before_network_completion():
@@ -26,7 +25,9 @@ def test_priority_dashboard_renders_shell_before_network_completion():
     assert "Activité opérationnelle" in js
     assert "Audience numérique" in js
     assert "Chargement…" in js
-    assert "ensureShell();\n      fastRefresh();\n      return original.apply" in js
+    assert "bininga:admin-background-starting" in js
+    assert "void fastRefresh()" in js
+    assert "window.init =" not in js
 
 
 def test_priority_refresh_does_not_wait_for_contacts_or_messages():
@@ -39,7 +40,7 @@ def test_priority_refresh_does_not_wait_for_contacts_or_messages():
 
 def run_all():
     tests = [
-        test_priority_script_is_injected_before_session_boot,
+        test_priority_script_is_loaded_by_the_single_session_bootstrap,
         test_priority_dashboard_renders_shell_before_network_completion,
         test_priority_refresh_does_not_wait_for_contacts_or_messages,
     ]

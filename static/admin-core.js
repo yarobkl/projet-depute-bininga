@@ -11,6 +11,7 @@
 
   const SESSION_KEY = 'bininga_session';
   const FIRST_LOGIN = '/static/admin-first-login.html';
+  const LOGIN_SHELL = '/static/admin-login-shell.html';
 
   function token() {
     try { return typeof SESSION_TOKEN !== 'undefined' ? String(SESSION_TOKEN || '') : ''; }
@@ -82,15 +83,7 @@
     try { SESSION_USERNAME = ''; } catch (_) {}
     try { SESSION_IS_MAIN_ADMIN = false; } catch (_) {}
 
-    const app = document.getElementById('app');
-    const login = document.getElementById('login');
-    if (app) app.classList.remove('visible');
-    if (login) login.classList.remove('hidden');
-
-    const user = document.getElementById('u');
-    const pass = document.getElementById('p');
-    if (user) user.value = '';
-    if (pass) pass.value = '';
+    if (location.pathname !== LOGIN_SHELL) location.replace(LOGIN_SHELL);
   }
 
   async function request(url, opts = {}) {

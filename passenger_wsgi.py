@@ -211,21 +211,12 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
             _replace_response_body(handler, patched)
         return
 
+    # One injected bootstrap owns the complete authenticated startup order.
+    # Feature modules are loaded from that bootstrap after the shell paints, so
+    # a secondary module can fail without preventing the dashboard from showing.
     scripts = b""
-    if b"static/admin-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
-    if b"static/admin-notification-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260905-admin-perf-1" defer></script>\n'
-    if b"static/admin-dashboard-hardening.js" not in patched:
-        scripts += b'\n<script data-bininga-dashboard-hardening data-loaded="1" src="/static/admin-dashboard-hardening.js?v=20260903-dashboard-priority-1" defer></script>\n'
-    if b"static/admin-dashboard-priority.js" not in patched:
-        scripts += b'\n<script src="/static/admin-dashboard-priority.js?v=20260903-dashboard-priority-1" defer></script>\n'
-    if b"static/admin-instant-boot.js" not in patched:
-        scripts += b'\n<script src="/static/admin-instant-boot.js?v=20260905-first-paint-1" defer></script>\n'
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-admin-perf-2" defer></script>\n'
-    if b"static/admin-chatbot.js" not in patched:
-        scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-admin-boot-1" defer></script>\n'
     if scripts:
         patched = patched.replace(marker, scripts + marker, 1)
 

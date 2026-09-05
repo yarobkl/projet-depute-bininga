@@ -4,7 +4,6 @@
 // ══════════════════════════════════════════════════════════════════════════
 // Session — jamais codée en dur ici. Le navigateur conserve l'accès 72h.
 const SESSION_STORAGE_KEY = "bininga_session";
-const SESSION_CLIENT_TTL_MS = 72 * 60 * 60 * 1000;
 let SESSION_TOKEN        = "";
 let SESSION_CSRF         = "";
 let SESSION_ROLE         = "";
@@ -46,12 +45,12 @@ function updateProfileUI() {
 }
 
 function _clearStoredSession() {
-  localStorage.removeItem(SESSION_STORAGE_KEY);
-  sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  try { sessionStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
 }
 
 function _storeSession(data) {
-  const ttlMs = Number(data.session_ttl || 72 * 3600) * 1000;
+  const ttlMs = Math.max(60, Number(data.session_ttl || 72 * 3600)) * 1000;
   const payload = {
     token: data.token,
     csrf: data.csrf_token || data.csrf || "",
@@ -62,9 +61,12 @@ function _storeSession(data) {
     has_2fa: data.has_2fa || false,
     trusted_ip: data.trusted_ip || false,
     session_duration: data.session_duration || "72 heures",
-    expires_at: Date.now() + Math.max(ttlMs, SESSION_CLIENT_TTL_MS),
+    must_change_password: !!data.must_change_password,
+    email: data.email || "",
+    expires_at: Date.now() + ttlMs,
   };
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) {}
+  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
   return payload;
 }
 
@@ -76,19 +78,22 @@ function _applySession(saved, restored = false) {
   SESSION_USERNAME      = saved.username || "";
   SESSION_IS_MAIN_ADMIN = saved.is_main_admin || false;
   window._sessionHas2fa = saved.has_2fa || false;
-  document.getElementById("login").classList.add("hidden");
-  document.getElementById("app").classList.add("visible");
+  const login = document.getElementById("login");
+  const app = document.getElementById("app");
+  if (!app) throw new Error("Admin shell #app introuvable");
+  if (login) login.classList.add("hidden");
+  app.classList.add("visible");
   if (window.innerWidth <= 768) closeSidebar();
-  document.getElementById("last-login").textContent = restored ? "Session restaurée" : new Date().toLocaleString("fr-FR");
+  const lastLogin = document.getElementById("last-login");
+  if (lastLogin) lastLogin.textContent = restored ? "Session restaurée" : new Date().toLocaleString("fr-FR");
   updateProfileUI();
   applyRoleUI(saved.role);
-  init();
-  initNotifications();
+  return true;
 }
 
 function restoreStoredSession() {
   try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY) || sessionStorage.getItem(SESSION_STORAGE_KEY);
+    const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
     if (!raw) return false;
     const saved = JSON.parse(raw);
     if (!saved.token || Date.now() > Number(saved.expires_at || 0)) {
@@ -120,10 +125,7 @@ async function apiFetch(url, opts = {}) {
     setTimeout(() => {
       SESSION_TOKEN = ""; SESSION_CSRF = ""; SESSION_ROLE = "";
       _clearStoredSession();
-      document.getElementById("app").classList.remove("visible");
-      document.getElementById("login").classList.remove("hidden");
-      document.getElementById("u").value = "";
-      document.getElementById("p").value = "";
+      location.replace("/static/admin-login-shell.html");
     }, 1500);
   }
   return res;
@@ -163,7 +165,19 @@ async function doLogin() {
       // Masquer le champ 2FA après connexion
       const totpRow = document.getElementById("totp-row");
       if (totpRow) totpRow.style.display = "none";
-      _applySession(savedSession, false);
+      if (savedSession.must_change_password) {
+        location.replace("/static/admin-first-login.html");
+        return;
+      }
+      if (window.BiningaAdminBootstrap) {
+        await window.BiningaAdminBootstrap.startWithSession(savedSession, false);
+      } else {
+        _applySession(savedSession, false);
+        init();
+        setTimeout(() => {
+          try { initNotifications(); } catch (_) {}
+        }, 300);
+      }
     } else if (data.require_2fa) {
       // Afficher le champ 2FA
       const totpRow = document.getElementById("totp-row");
@@ -195,18 +209,11 @@ async function logout() {
   if (_sseRetryTimer) { clearTimeout(_sseRetryTimer); _sseRetryTimer = null; }
   if (_sseSource) { try { _sseSource.close(); } catch {} _sseSource = null; }
   _clearStoredSession();
-  document.getElementById("login").classList.remove("hidden");
-  document.getElementById("app").classList.remove("visible");
-  document.getElementById("u").value = "";
-  document.getElementById("p").value = "";
+  location.replace("/static/admin-login-shell.html");
 }
 
 document.addEventListener("keydown", e => {
   if (e.key === "Enter" && !document.getElementById("login").classList.contains("hidden")) doLogin();
-});
-
-document.addEventListener("DOMContentLoaded", () => {
-  restoreStoredSession();
 });
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -364,6 +371,7 @@ async function deleteUser(username) {
 let siteData = {};
 
 let _contactsPoller = null;
+let _adminInitStarted = false;
 
 function _startContactsPoller() {
   if (_contactsPoller) clearInterval(_contactsPoller);
@@ -380,6 +388,8 @@ function _startContactsPoller() {
 }
 
 function init() {
+  if (_adminInitStarted) return;
+  _adminInitStarted = true;
   loadSiteData();
   syncMessages().then(() => refreshDashboard());
   startNewsPoller();
@@ -3834,6 +3844,7 @@ let _notifCount  = 0;
 let _sseSource   = null;
 let _audioCtx    = null;
 let _notifOpen   = false;
+let _notificationsInitialized = false;
 
 const _NOTIF_META = {
   visit:      { icon: "VI",  title: "Nouveau visiteur",   panel: "monitoring",   color: "#3498db" },
@@ -3844,7 +3855,11 @@ const _NOTIF_META = {
 };
 
 function initNotifications() {
-  if (Notification.permission === "default") Notification.requestPermission();
+  if (_notificationsInitialized) return;
+  _notificationsInitialized = true;
+  if ("Notification" in window && Notification.permission === "default") {
+    try { Notification.requestPermission(); } catch (_) {}
+  }
   _connectSSE();
   // Fermer le panel si clic en dehors
   document.addEventListener("click", e => {

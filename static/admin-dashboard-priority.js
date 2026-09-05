@@ -185,24 +185,16 @@
     }
   }
 
-  function patchInit() {
-    if (typeof window.init !== 'function' || window.init.__biningaDashboardPriority) return;
-    const original = window.init;
-    const wrapped = function (...args) {
-      ensureShell();
-      fastRefresh();
-      return original.apply(this, args);
-    };
-    wrapped.__biningaDashboardPriority = true;
-    window.init = wrapped;
+  let started = false;
+  function start() {
+    if (started) return;
+    started = true;
+    ensureShell();
+    void fastRefresh();
   }
 
+  // The canonical session bootstrap owns init(). This module only renders the
+  // dashboard skeleton and starts its independent, non-blocking stats request.
   ensureShell();
-  patchInit();
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      ensureShell();
-      patchInit();
-    }, { once: true });
-  }
+  window.addEventListener('bininga:admin-background-starting', start, { once: true });
 })();

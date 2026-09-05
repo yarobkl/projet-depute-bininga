@@ -16,12 +16,12 @@
     if(label&&label.textContent!=='Disque éphémère')label.textContent='Disque éphémère';
     if(val&&val.textContent!=='N/A'){
       val.textContent='N/A';
-      val.title='Le stockage local Vercel est éphémère et ne représente pas un disque serveur administrable.';
     }
+    if(val&&val.title!=='Le stockage local Vercel est éphémère et ne représente pas un disque serveur administrable.')val.title='Le stockage local Vercel est éphémère et ne représente pas un disque serveur administrable.';
     if(bar){
-      bar.style.width='0%';
-      bar.className='mon-bar';
-      bar.title='Non applicable sur Vercel';
+      if(bar.style.width!=='0%')bar.style.width='0%';
+      if(bar.className!=='mon-bar')bar.className='mon-bar';
+      if(bar.title!=='Non applicable sur Vercel')bar.title='Non applicable sur Vercel';
     }
   }
 
@@ -37,15 +37,19 @@
     }catch(_){}
   }
 
-  function installObserver(){
-    const panel=q('panel-monitoring');
-    if(!panel)return;
-    const obs=new MutationObserver(()=>apply());
-    obs.observe(panel,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['style','class']});
-    apply();
+  function patchMonitoringLoader(){
+    const original=window.loadMonitoring;
+    if(typeof original!=='function'||original.__biningaServerlessUi)return;
+    const wrapped=async function(...args){
+      try{return await original.apply(this,args)}
+      finally{apply()}
+    };
+    wrapped.__biningaServerlessUi=true;
+    window.loadMonitoring=wrapped;
   }
 
-  function init(){installObserver();detectFromServer();}
+  function init(){patchMonitoringLoader();apply();detectFromServer();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-  window.addEventListener('bininga:admin-modules-ready',()=>{apply();detectFromServer();});
+  window.addEventListener('admin:panelchange',event=>{if(event.detail&&event.detail.name==='monitoring')setTimeout(apply,0)});
+  window.addEventListener('bininga:admin-modules-ready',()=>{patchMonitoringLoader();apply();detectFromServer();});
 })();

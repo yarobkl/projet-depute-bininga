@@ -160,7 +160,7 @@ def test_navigation_directly_triggers_crm_loader_and_cache_is_busted():
     assert "crm: () => typeof window.loadCrm === 'function' ? window.loadCrm(1) : null" in navigation
     assert "_triggerPanelLoader(name)" in navigation
     assert "/static/admin-navigation.js?v=20260905-admin-perf-2" in session
-    assert "/static/admin-session-hardening.js?v=20260905-admin-perf-2" in passenger
+    assert "/static/admin-session-hardening.js?v=20260905-admin-boot-1" in passenger
 
 
 def test_crm_secondary_listener_is_fallback_only():

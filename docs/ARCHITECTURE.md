@@ -19,7 +19,7 @@ Règle : une nouvelle fonctionnalité publique autonome doit être ajoutée dans
 ### Noyau
 
 - `static/admin.js` : bundle historique de compatibilité et handlers visuels existants.
-- `static/admin-session-hardening.js` : stockage de session navigateur et bootstrap ordonné des modules authentifiés.
+- `static/admin-session-hardening.js` : propriétaire unique du bootstrap authentifié (session, premier affichage, modules critiques, `init()`, puis modules secondaires) et écran de reprise en cas d'erreur critique.
 - `static/admin-core.js` : source de vérité partagée pour token, CSRF, rôle, identité, chemins API et requêtes authentifiées.
 - `static/admin-production.js` : garde-fous de production, téléchargement authentifié et contrôle des actions sensibles.
 
@@ -39,6 +39,8 @@ Règles :
 2. Aucun nouveau code ne doit écrire `bininga_session` dans `localStorage`. Le stockage actif est `sessionStorage`; `localStorage` ne sert qu'à supprimer/migrer les anciennes sessions.
 3. Les contrôles de permissions dans l'interface ne remplacent jamais l'autorisation serveur.
 4. Une fonctionnalité métier importante doit vivre dans un fichier `static/admin-*.js` dédié plutôt que dans un nouveau bloc inline de `admin.html`.
+5. Aucun module secondaire ne doit envelopper `init()` ni piloter `#app`/`#login`. Il réagit aux événements du bootstrap (`bininga:admin-shell-ready`, `bininga:admin-background-starting`, `bininga:admin-ready`).
+6. Un `MutationObserver` ne doit jamais surveiller un attribut ou un sous-arbre que son callback réécrit. Les rafraîchissements métier utilisent les événements de navigation ou enveloppent uniquement leur chargeur dédié.
 
 ## Backend / requêtes dynamiques
 
