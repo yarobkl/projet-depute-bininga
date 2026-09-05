@@ -1,6 +1,6 @@
 """Passenger entrypoint for the o2switch deployment.
 
-The project uses a custom ``http.server`` handler in ``server.py``.  cPanel
+The project uses a custom ``http.server`` handler in ``server.py``. cPanel
 Passenger expects a WSGI callable, so this adapter feeds WSGI requests into the
 existing handler without starting a second HTTP server.
 """
@@ -211,12 +211,9 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
             _replace_response_body(handler, patched)
         return
 
-    # One injected bootstrap owns the complete authenticated startup order.
-    # Feature modules are loaded from that bootstrap after the shell paints, so
-    # a secondary module can fail without preventing the dashboard from showing.
     scripts = b""
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-google-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-case-flow-1" defer></script>\n'
     if scripts:
         patched = patched.replace(marker, scripts + marker, 1)
 
