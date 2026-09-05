@@ -3936,7 +3936,7 @@ function _addNotif(type, data) {
   }
 
   // Notification navigateur
-  if (Notification.permission === "granted" && document.visibilityState !== "visible") {
+  if ("Notification" in window && Notification.permission === "granted" && document.visibilityState !== "visible") {
     try {
       const n = new Notification("BININGA Admin — " + meta.title, {
         body: desc || "",

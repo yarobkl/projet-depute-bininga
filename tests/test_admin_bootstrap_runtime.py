@@ -67,7 +67,7 @@ def test_critical_failure_has_visible_recovery_actions() -> None:
 
 def test_notifications_are_optional_on_browsers_without_the_api() -> None:
     source = read("static/admin.js")
-    assert '"Notification" in window' in source
+    assert source.count('"Notification" in window') == 2
     assert "if (_notificationsInitialized) return" in source
 
 
