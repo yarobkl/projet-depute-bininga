@@ -1,11 +1,12 @@
 """Integrity guard for BININGA admin operational records.
 
-This module is intentionally small and loaded from ``passenger_wsgi.py``.  It
+This module is intentionally small and loaded from ``passenger_wsgi.py``. It
 hardens the legacy contact/CRM handlers without rewriting the large server.py:
 
 * legacy form records receive stable deterministic IDs;
 * source/type aliases are normalized consistently;
 * contact updates are validated before they reach the legacy handler;
+* every treatment field used by the admin is preserved and sanitized;
 * destructive contact operations are owner-only;
 * read/modify/write mutations are serialized to avoid lost updates.
 
@@ -20,11 +21,13 @@ import hashlib
 import io
 import json
 import threading
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 import admin_owners
 
 _ALLOWED_CONTACT_STATUS = {"en_attente", "en_cours", "traite", "non_lu", "lu"}
+_ALLOWED_DECISIONS = {"favorable", "defavorable", "reportee"}
+_ALLOWED_APPOINTMENT_TYPES = {"presentiel", "telephone"}
 _CONTACT_MUTATIONS = {"/api/contacts/update", "/api/contacts/clear"}
 _CRM_MUTATIONS = {
     "/api/crm/upsert",
@@ -88,36 +91,27 @@ def _base_legacy_id(entry: Dict[str, Any]) -> str:
 
 
 def normalize_contacts(rows: Any) -> List[Dict[str, Any]]:
-    """Return a normalized copy of contact rows with stable IDs.
-
-    Existing IDs are never changed. Exact duplicate legacy rows get a stable
-    occurrence suffix according to their persisted order.
-    """
+    """Return a normalized copy of contact rows with stable IDs."""
     if not isinstance(rows, list):
         return []
 
     result: List[Dict[str, Any]] = []
     seen_legacy: Dict[str, int] = {}
-
     for raw in rows:
         if not isinstance(raw, dict):
             continue
         item = dict(raw)
-
         source = _canonical_source(item.get("source") or item.get("type"))
         if source:
             item["source"] = source
             item["type"] = source
-
         current_id = str(item.get("_id") or "").strip()
         if not current_id:
             base = _base_legacy_id(item)
             occurrence = seen_legacy.get(base, 0)
             seen_legacy[base] = occurrence + 1
             item["_id"] = base if occurrence == 0 else f"{base}_{occurrence}"
-
         result.append(item)
-
     return result
 
 
@@ -129,7 +123,6 @@ def install(server) -> None:
 
     _original_load_contacts = server.load_contacts
     _original_save_contacts = server.save_contacts
-
     server._CONTACT_LOCK = threading.RLock()
     server._CRM_LOCK = threading.RLock()
 
@@ -179,8 +172,28 @@ def _sanitize_notes(notes: Any) -> List[Dict[str, str]]:
     return clean
 
 
+def _sanitize_appointment(value: Any) -> Dict[str, str]:
+    """Accept an empty dict to cancel an appointment, otherwise require a date."""
+    if not isinstance(value, dict):
+        raise ValueError("Format de rendez-vous invalide")
+    if not value:
+        return {}
+    date = str(value.get("date", "")).strip()[:120]
+    if not date:
+        raise ValueError("Date de rendez-vous requise")
+    kind = str(value.get("type", "presentiel")).strip().lower()
+    if kind not in _ALLOWED_APPOINTMENT_TYPES:
+        raise ValueError("Type de rendez-vous invalide")
+    return {
+        "date": date,
+        "type": kind,
+        "place": str(value.get("place", "")).strip()[:300],
+        "note": str(value.get("note", "")).strip()[:1000],
+    }
+
+
 def guard_request(server, handler) -> bool:
-    """Validate dangerous contact mutations before server.py handles them."""
+    """Validate contact mutations before server.py handles them."""
     if handler.command != "POST":
         return True
 
@@ -220,7 +233,6 @@ def guard_request(server, handler) -> bool:
     if not cid:
         handler._json({"ok": False, "message": "ID requis"}, 400)
         return False
-
     if not any(str(row.get("_id", "")) == cid for row in server.load_contacts()):
         handler._json({"ok": False, "message": "Dossier introuvable"}, 404)
         return False
@@ -245,9 +257,26 @@ def guard_request(server, handler) -> bool:
             handler._json({"ok": False, "message": "Valeur d'alerte invalide"}, 400)
             return False
         clean["pinged"] = payload["pinged"]
-
     if "pinged_date" in payload:
         clean["pinged_date"] = str(payload.get("pinged_date", ""))[:80]
+
+    if "decision" in payload:
+        decision = str(payload.get("decision", "")).strip().lower()
+        if decision not in _ALLOWED_DECISIONS:
+            handler._json({"ok": False, "message": "Décision invalide"}, 400)
+            return False
+        clean["decision"] = decision
+        clean["decision_note"] = str(payload.get("decision_note", "")).strip()[:500]
+    elif "decision_note" in payload:
+        handler._json({"ok": False, "message": "Une décision doit accompagner la note"}, 400)
+        return False
+
+    if "appointment" in payload:
+        try:
+            clean["appointment"] = _sanitize_appointment(payload.get("appointment"))
+        except ValueError as exc:
+            handler._json({"ok": False, "message": str(exc)}, 400)
+            return False
 
     if len(clean) == 1:
         handler._json({"ok": False, "message": "Aucune modification valide"}, 400)
