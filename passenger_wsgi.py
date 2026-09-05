@@ -213,7 +213,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
 
     scripts = b""
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-case-flow-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-crm-integrity-1" defer></script>\n'
     if scripts:
         patched = patched.replace(marker, scripts + marker, 1)
 
