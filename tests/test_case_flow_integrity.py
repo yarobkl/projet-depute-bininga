@@ -115,7 +115,7 @@ def test_public_forms_capture_expected_evidence_and_sources():
     for field_name in ("geo_lat", "geo_lng", "geo_label", "geo_maps_url"):
         assert f'name="{field_name}"' in page
     assert "photo-url" in core
-    assert 'name="photo-url"' in page
+    assert 'name="photo_url"' in page
     assert "entry.type = storageKey" in hardening
     assert 'type: "bininga_commande_livre"' in hardening
     assert 'type: "bininga_newsletter"' in hardening
