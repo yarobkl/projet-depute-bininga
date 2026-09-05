@@ -9,6 +9,14 @@ PORT = int(os.environ.get("PORT", "8080"))
 
 
 class RedirectHandler(BaseHTTPRequestHandler):
+    def _health(self) -> None:
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", "2")
+        self.end_headers()
+        if self.command != "HEAD":
+            self.wfile.write(b"OK")
+
     def _redirect(self) -> None:
         location = TARGET + self.path
         self.send_response(308)
@@ -18,9 +26,15 @@ class RedirectHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
+        if self.path.split("?", 1)[0] == "/health":
+            self._health()
+            return
         self._redirect()
 
     def do_HEAD(self) -> None:
+        if self.path.split("?", 1)[0] == "/health":
+            self._health()
+            return
         self._redirect()
 
     def do_POST(self) -> None:
