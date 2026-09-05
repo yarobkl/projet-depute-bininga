@@ -62,13 +62,47 @@ def test_unknown_admin_copy_is_never_overwritten():
     assert result == sample
 
 
-def test_public_guard_targets_only_french_personal_surfaces():
+def test_public_runtime_never_overwrites_admin_copy_with_hardcoded_french():
     source = open(os.path.join(ROOT, "static", "index.js"), "r", encoding="utf-8").read()
-    assert 'lang !== "fr"' in source
-    assert 'aboutTag: "Qui suis-je ?"' in source
-    assert 'parcoursTag: "Mon parcours"' in source
-    assert 'programmeTag: "Ma vision"' in source
-    assert "actualités et contenus journalistiques restent volontairement" in source
+
+    # La migration one-shot peut mettre les anciennes valeurs à la première
+    # personne, mais le navigateur ne doit jamais imposer ensuite sa propre
+    # copie éditoriale par-dessus les valeurs enregistrées dans l'admin.
+    assert "FIRST_PERSON_FR" not in source
+    assert "applyFirstPersonFrenchCopy" not in source
+    assert 'heroSubtitle: "Je suis un homme de terrain' not in source
+    assert 'aboutTitle: \'Mon parcours, forgé' not in source
+
+    # Les rares corrections de rendu doivent relire la donnée réellement
+    # chargée depuis data.json, jamais une constante éditoriale locale.
+    assert "applyAdminContentCompatibility" in source
+    assert "window._FR_DATA" in source
+    assert 'document.getElementById("dyn-eng-title")' in source
+    assert "editableMultilineHtml" in source
+
+
+def test_public_renderer_covers_all_editable_content_sections():
+    source = open(os.path.join(ROOT, "static", "index-core.js"), "r", encoding="utf-8").read()
+    expected_tokens = [
+        "d.hero",
+        "d.about",
+        "d.stats",
+        "d.actus",
+        "d.gallery",
+        "d.programmeSection",
+        "d.galerieSection",
+        "d.actusSection",
+        "d.engagement",
+        "d.cta",
+        "d.parcoursSection",
+        "d.parcours",
+        "d.programme",
+        "d.seo",
+        "d.contact",
+        "d.footer",
+    ]
+    missing = [token for token in expected_tokens if token not in source]
+    assert not missing, f"Sections admin sans rendu public détecté : {missing}"
 
 
 if __name__ == "__main__":
