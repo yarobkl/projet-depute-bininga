@@ -105,8 +105,13 @@
   window.runBackupNow=run;
 
   function init(){
-    if(q('panel-backups'))load().catch(()=>{});
+    const panel=q('panel-backups');
+    // Ne jamais charger /api/backups au simple démarrage de l'admin. La
+    // navigation centrale appellera loadBackups seulement à l'ouverture.
+    if(panel?.classList.contains('active') && !window.__BININGA_ADMIN_NAVIGATION__) load().catch(()=>{});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-  window.addEventListener('bininga:admin-modules-ready',()=>load().catch(()=>{}));
+  window.addEventListener('admin:panelchange',event=>{
+    if(event?.detail?.name==='backups' && !window.__BININGA_ADMIN_NAVIGATION__) load().catch(()=>{});
+  });
 })();
