@@ -38,7 +38,9 @@ def test_bootstrap_loads_cache_busted_system_layout():
     session = _read("static/admin-session-hardening.js")
     passenger = _read("passenger_wsgi.py")
     assert "/static/admin-system-layout.js?v=20260903-system-layout-1" in session
-    assert "/static/admin-session-hardening.js?v=20260903-system-layout-1" in passenger
+    # The session bootstrap version is intentionally bumped whenever a critical
+    # module URL changes, because Vercel serves static JS as immutable for one year.
+    assert "/static/admin-session-hardening.js?v=20260905-crm-direct-load-1" in passenger
 
 
 if __name__ == "__main__":
