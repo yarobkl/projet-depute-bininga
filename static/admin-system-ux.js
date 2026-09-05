@@ -44,8 +44,6 @@
 
   function clearSystemError(name){const old=q('#panel-'+name+' .system-error-state');if(old)old.remove()}
 
-  // PostgreSQL/server is authoritative. A stale browser backup must never
-  // silently repopulate an empty production CRM after a deploy or deletion.
   window._crmRestoreFromBackup = async function crmRestoreDisabled(){
     console.warn('[BININGA CRM] Restauration locale automatique désactivée; serveur autoritaire.');
     return 0;
@@ -123,8 +121,11 @@
   function onPanelChange(name){
     if(name!=='monitoring')stopMonitoringRefresh();
     if(!SYSTEM_PANELS.has(name))return;
-    // Le panneau doit être utilisable immédiatement : déclenchement au clic,
-    // sans dépendre de l'ancien showPanel() de admin.js qui a été remplacé.
+    // La navigation centrale est l'unique propriétaire des appels réseau.
+    // Ce module conserve seulement l'UX et sert de fallback ancien navigateur.
+    if(window.__BININGA_ADMIN_NAVIGATION__){
+      clearSystemError(name);setLoading(name,false);protectSystemPanels();return;
+    }
     invokeLoader(name);
   }
 
