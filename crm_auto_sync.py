@@ -1,12 +1,9 @@
 """Automatic reconciliation between citizen requests and the BININGA CRM.
 
-Historically, records received through public forms were stored in the contacts
-store and only copied to the CRM when an administrator pressed "Importer
-demandes". This bridge makes the CRM self-healing and, for GET /api/crm,
-returns the reconciled data directly so the UI cannot observe a stale zero
-between reconciliation and the legacy handler's second database read.
-
-The operation is idempotent and preserves manually-created CRM contacts.
+The CRM is person-centric while each public submission remains a distinct case.
+Every reconciliation keeps a ``dossiers`` history on the CRM contact so status,
+tracking, evidence, decision and appointment data cannot disappear when the same
+citizen contacts the cabinet more than once.
 """
 from __future__ import annotations
 
@@ -38,6 +35,17 @@ def _source(raw: dict) -> str:
         return "contact"
     if value == "signalement":
         return "signalement"
+    return "contact"
+
+
+def _crm_source(source: str) -> str:
+    """Use only sources accepted by the legacy CRM editor.
+
+    Newsletter and book-order origin remains available in ``origin_source`` and
+    in every dossier/tag, while their person record stays editable as contact.
+    """
+    if source in {"audience", "contact", "reclamation", "signalement", "manuel"}:
+        return source
     return "contact"
 
 
@@ -74,21 +82,59 @@ def _stable_id(raw: dict) -> str:
     return "crm_auto_" + hashlib.sha256(basis.encode("utf-8")).hexdigest()[:24]
 
 
-def _date_key(value: Any) -> str:
-    return str(value or "")[:10]
+def _email(row: dict) -> str:
+    return str(row.get("email") or "").strip().lower()
 
 
-def _identity_key(row: dict) -> tuple[str, str, str, str]:
-    email = str(row.get("email") or "").strip().lower()
-    phone = "".join(ch for ch in str(row.get("telephone") or row.get("tel") or "") if ch.isdigit())
-    name = " ".join(
-        p for p in [str(row.get("prenom") or "").strip().lower(), str(row.get("nom") or "").strip().lower()] if p
-    )
-    created = row.get("created_at") or row.get("ts") or row.get("_date") or ""
-    return email, phone, name, _date_key(created)
+def _phone(row: dict) -> str:
+    return "".join(ch for ch in str(row.get("telephone") or row.get("tel") or "") if ch.isdigit())
 
 
-def _merge_existing(existing: dict, raw: dict, source: str, now: str) -> bool:
+def _case_snapshot(raw: dict, source: str, cid: str, created: str) -> dict:
+    appointment = raw.get("appointment") if isinstance(raw.get("appointment"), dict) else {}
+    return {
+        "id": cid,
+        "tracking_code": _text(raw.get("tracking_code"), 80),
+        "source": source,
+        "created_at": created,
+        "statut": _crm_status(raw),
+        "sujet": _text(raw.get("sujet") or raw.get("objet"), 500),
+        "message": _text(raw.get("message") or raw.get("demande") or raw.get("raison") or raw.get("description"), 2000),
+        "decision": _text(raw.get("decision"), 40),
+        "decision_note": _text(raw.get("decision_note"), 500),
+        "appointment": {
+            "date": _text(appointment.get("date"), 120),
+            "type": _text(appointment.get("type"), 40),
+            "place": _text(appointment.get("place"), 300),
+            "note": _text(appointment.get("note"), 1000),
+        } if appointment else {},
+        "photo_url": _text(raw.get("photo_url") or raw.get("photo-url"), 500),
+        "geo_label": _text(raw.get("geo_label"), 500),
+        "geo_lat": _text(raw.get("geo_lat"), 80),
+        "geo_lng": _text(raw.get("geo_lng"), 80),
+        "geo_maps_url": _text(raw.get("geo_maps_url"), 1000),
+    }
+
+
+def _merge_case(existing: dict, snapshot: dict) -> bool:
+    dossiers = existing.get("dossiers")
+    if not isinstance(dossiers, list):
+        dossiers = []
+        existing["dossiers"] = dossiers
+    target = next((d for d in dossiers if isinstance(d, dict) and str(d.get("id") or "") == snapshot["id"]), None)
+    if target is None:
+        dossiers.append(snapshot)
+        if len(dossiers) > 250:
+            del dossiers[:-250]
+        return True
+    if target != snapshot:
+        target.clear()
+        target.update(snapshot)
+        return True
+    return False
+
+
+def _merge_existing(existing: dict, raw: dict, source: str, case: dict, now: str) -> bool:
     changed = False
     fill = {
         "nom": _text(raw.get("nom"), 200),
@@ -106,6 +152,13 @@ def _merge_existing(existing: dict, raw: dict, source: str, now: str) -> bool:
     if source == "newsletter" and not existing.get("newsletter"):
         existing["newsletter"] = True
         changed = True
+    if not existing.get("origin_source"):
+        existing["origin_source"] = source
+        changed = True
+    if str(existing.get("source") or "") not in {"audience", "contact", "reclamation", "signalement", "manuel"}:
+        existing["source"] = _crm_source(source)
+        changed = True
+
     tags = existing.setdefault("tags", [])
     if not isinstance(tags, list):
         tags = []
@@ -115,13 +168,16 @@ def _merge_existing(existing: dict, raw: dict, source: str, now: str) -> bool:
         if tag and tag not in tags:
             tags.append(tag)
             changed = True
+
+    if _merge_case(existing, case):
+        changed = True
     if changed:
         existing["updated_at"] = now
     return changed
 
 
 def sync_contacts_to_crm(server: Any) -> dict:
-    """Insert/merge citizen records that are missing from the CRM."""
+    """Insert or merge every citizen submission into a person + case CRM model."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with contextlib.ExitStack() as stack:
         contact_lock = getattr(server, "_CONTACT_LOCK", None)
@@ -142,13 +198,17 @@ def sync_contacts_to_crm(server: Any) -> dict:
         crm.setdefault("newsletters", [])
 
         by_id = {str(c.get("id") or "").strip(): c for c in contacts if isinstance(c, dict) and str(c.get("id") or "").strip()}
-        by_identity = {}
+        by_email = {}
+        by_phone = {}
         for c in contacts:
             if not isinstance(c, dict):
                 continue
-            key = _identity_key(c)
-            if key[0] or key[1]:
-                by_identity.setdefault(key, c)
+            email = _email(c)
+            phone = _phone(c)
+            if email:
+                by_email.setdefault(email, c)
+            if phone and not email:
+                by_phone.setdefault(phone, c)
 
         added = 0
         merged = 0
@@ -158,12 +218,17 @@ def sync_contacts_to_crm(server: Any) -> dict:
             cid = _stable_id(raw)
             source = _source(raw)
             created = _text(raw.get("ts") or raw.get("_date") or raw.get("created_at") or now, 80)
-            identity = _identity_key({**raw, "created_at": created})
+            case = _case_snapshot(raw, source, cid, created)
             existing = by_id.get(cid)
-            if existing is None and (identity[0] or identity[1]):
-                existing = by_identity.get(identity)
+            email = _email(raw)
+            phone = _phone(raw)
+            if existing is None and email:
+                existing = by_email.get(email)
+            if existing is None and not email and phone:
+                existing = by_phone.get(phone)
+
             if existing is not None:
-                if _merge_existing(existing, raw, source, now):
+                if _merge_existing(existing, raw, source, case, now):
                     merged += 1
                 by_id[cid] = existing
                 continue
@@ -184,16 +249,20 @@ def sync_contacts_to_crm(server: Any) -> dict:
                 "telephone": _text(raw.get("telephone") or raw.get("tel"), 50),
                 "sujet": _text(raw.get("sujet") or raw.get("objet"), 500),
                 "message": _text(raw.get("message") or raw.get("demande") or raw.get("raison") or raw.get("description"), 2000),
-                "source": source,
+                "source": _crm_source(source),
+                "origin_source": source,
                 "tags": tags,
                 "statut": _crm_status(raw),
                 "newsletter": source == "newsletter",
                 "notes": [],
+                "dossiers": [case],
             }
             contacts.append(contact)
             by_id[cid] = contact
-            if identity[0] or identity[1]:
-                by_identity[identity] = contact
+            if email:
+                by_email[email] = contact
+            elif phone:
+                by_phone[phone] = contact
             added += 1
 
         if added or merged:
@@ -204,13 +273,16 @@ def sync_contacts_to_crm(server: Any) -> dict:
 def _matches_query(contact: dict, query: str) -> bool:
     if not query:
         return True
-    haystack = " ".join(
-        str(contact.get(key) or "")
-        for key in ("nom", "prenom", "email", "telephone", "sujet", "message", "source", "statut")
-    ).lower()
+    haystack = " ".join(str(contact.get(key) or "") for key in ("nom", "prenom", "email", "telephone", "sujet", "message", "source", "origin_source", "statut")).lower()
     tags = contact.get("tags") or []
     if isinstance(tags, list):
         haystack += " " + " ".join(str(tag) for tag in tags).lower()
+    dossiers = contact.get("dossiers") or []
+    if isinstance(dossiers, list):
+        for dossier in dossiers:
+            if not isinstance(dossier, dict):
+                continue
+            haystack += " " + " ".join(str(dossier.get(key) or "") for key in ("id", "tracking_code", "source", "sujet", "message", "statut", "geo_label")).lower()
     return query in haystack
 
 
@@ -281,18 +353,11 @@ def guard_request(server: Any, handler: Any) -> bool:
             except Exception:
                 ip = "unknown"
             try:
-                server.audit_log(
-                    "CRM_AUTO_SYNC",
-                    ip,
-                    f"CRM synchronisé automatiquement : +{result['added']} ajout(s), {result['merged']} fusion(s)",
-                )
+                server.audit_log("CRM_AUTO_SYNC", ip, f"CRM synchronisé automatiquement : +{result['added']} ajout(s), {result['merged']} fusion(s)")
             except Exception:
                 pass
         handler._json(_response_payload(handler, result))
         return False
     except Exception as exc:
-        # Preserve availability by falling through to the legacy handler, but
-        # make the failure observable in Vercel logs instead of silently
-        # returning a stale zero forever.
         print(f"[CRM] Auto-sync fallback: {type(exc).__name__}: {exc}", flush=True)
         return True
