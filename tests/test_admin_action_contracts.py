@@ -32,6 +32,7 @@ def _server_sources() -> str:
     names = (
         "server.py", "passenger_wsgi.py", "admin_request_pipeline.py", "admin_system_authz.py",
         "admin_auth_flow.py", "admin_contact_integrity.py", "editorial_publish_integrity.py", "chatbot_hardening.py",
+        "google_analytics_integration.py",
     )
     return "\n".join(_read(os.path.join(ROOT, name)) for name in names if os.path.exists(os.path.join(ROOT, name)))
 
