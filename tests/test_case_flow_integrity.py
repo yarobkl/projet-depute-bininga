@@ -103,13 +103,19 @@ def test_frontend_treatment_is_server_first_and_manual_geo_is_visible():
 
 def test_public_forms_capture_expected_evidence_and_sources():
     core = open(os.path.join(ROOT, "static", "index-core.js"), encoding="utf-8").read()
+    page = open(os.path.join(ROOT, "index.html"), encoding="utf-8").read()
     hardening = open(os.path.join(ROOT, "static", "public-form-hardening.js"), encoding="utf-8").read()
     server = open(os.path.join(ROOT, "server.py"), encoding="utf-8").read()
     assert 'sendForm("bininga_audiences"' in core
     assert 'fetch("/api/upload-sinistre"' in core
-    for field in ("geo_lat", "geo_lng", "geo_label", "geo_maps_url"):
-        assert field in core
+    # JavaScript manipulates DOM ids with dashes; the submitted FormData keys are
+    # the hidden input names with underscores. Validate both sides of that bridge.
+    for dom_id in ("geo-lat", "geo-lng", "geo-label", "geo-maps-url"):
+        assert dom_id in core
+    for field_name in ("geo_lat", "geo_lng", "geo_label", "geo_maps_url"):
+        assert f'name="{field_name}"' in page
     assert "photo-url" in core
+    assert 'name="photo-url"' in page
     assert "entry.type = storageKey" in hardening
     assert 'type: "bininga_commande_livre"' in hardening
     assert 'type: "bininga_newsletter"' in hardening
