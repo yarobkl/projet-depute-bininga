@@ -159,15 +159,16 @@ def test_navigation_directly_triggers_crm_loader_and_cache_is_busted():
     passenger = open(os.path.join(ROOT, "passenger_wsgi.py"), encoding="utf-8").read()
     assert "crm: () => typeof window.loadCrm === 'function' ? window.loadCrm(1) : null" in navigation
     assert "_triggerPanelLoader(name)" in navigation
-    assert "/static/admin-navigation.js?v=20260905-crm-direct-load-1" in session
-    assert "/static/admin-session-hardening.js?v=20260905-admin-perf-1" in passenger
+    assert "/static/admin-navigation.js?v=20260905-admin-perf-2" in session
+    assert "/static/admin-session-hardening.js?v=20260905-admin-perf-2" in passenger
 
 
-def test_crm_panel_lifecycle_still_has_secondary_listener():
+def test_crm_secondary_listener_is_fallback_only():
     ui_path = os.path.join(ROOT, "static", "admin-crm-sync.js")
     ui = open(ui_path, encoding="utf-8").read()
     assert "admin:panelchange" in ui
     assert "event?.detail?.name==='crm'" in ui
+    assert "!window.__BININGA_ADMIN_NAVIGATION__" in ui
     assert "window.loadCrm" in ui
     assert "await window.loadCrm(1)" in ui
     assert "crm-kpi-total" in ui and "crm-kpi-nl" in ui
@@ -181,7 +182,7 @@ def run_all():
         test_guard_returns_reconciled_snapshot_directly,
         test_unrelated_get_does_nothing,
         test_navigation_directly_triggers_crm_loader_and_cache_is_busted,
-        test_crm_panel_lifecycle_still_has_secondary_listener,
+        test_crm_secondary_listener_is_fallback_only,
     ):
         test()
         print(f"✅ {test.__name__}")
