@@ -215,7 +215,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-hardening.js" not in patched:
         scripts += b'\n<script src="/static/admin-hardening.js?v=20260819-integrity-1" defer></script>\n'
     if b"static/admin-notification-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260819-token-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-notification-hardening.js?v=20260905-admin-perf-1" defer></script>\n'
     # Le dashboard métier doit être disponible avant DOMContentLoaded : l'ancien
     # chargeur session le récupérait comme 5e module, ce qui retardait son rendu.
     if b"static/admin-dashboard-hardening.js" not in patched:
@@ -223,7 +223,7 @@ def _inject_admin_hardening(handler: _PassengerHandler) -> None:
     if b"static/admin-dashboard-priority.js" not in patched:
         scripts += b'\n<script src="/static/admin-dashboard-priority.js?v=20260903-dashboard-priority-1" defer></script>\n'
     if b"static/admin-session-hardening.js" not in patched:
-        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-crm-direct-load-1" defer></script>\n'
+        scripts += b'\n<script src="/static/admin-session-hardening.js?v=20260905-admin-perf-1" defer></script>\n'
     if b"static/admin-chatbot.js" not in patched:
         scripts += b'\n<script src="/static/admin-chatbot.js?v=20260823-da-keys-2" defer></script>\n'
     if scripts:
