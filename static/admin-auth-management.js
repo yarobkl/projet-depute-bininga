@@ -135,19 +135,14 @@
         });
         const data = await response.json();
         if (!data.ok) return toast(data.message || 'Utilisateur non enregistré.', true);
-        if (data.owner_pending) {
-          toast('Propriétaire enregistré. Son activation sera finalisée après la définition de son mot de passe.');
-        } else {
-          toast(payload.password && username !== api.username()
-            ? 'Utilisateur enregistré. Le changement de mot de passe sera obligatoire à sa prochaine connexion.'
-            : 'Utilisateur enregistré.');
-        }
+        if (data.owner_pending) toast('Propriétaire enregistré. Son activation sera finalisée après la définition de son mot de passe.');
+        else toast(payload.password && username !== api.username()
+          ? 'Utilisateur enregistré. Le changement de mot de passe sera obligatoire à sa prochaine connexion.'
+          : 'Utilisateur enregistré.');
         if (typeof window.resetUserForm === 'function') window.resetUserForm();
         if (typeof window.toggleUserForm === 'function') window.toggleUserForm(false);
         if (typeof window.loadUsers === 'function') await window.loadUsers();
-      } catch (_) {
-        toast('Impossible d’enregistrer l’utilisateur.', true);
-      }
+      } catch (_) { toast('Impossible d’enregistrer l’utilisateur.', true); }
     };
     submit.__authLifecycle = true;
     window.submitUserForm = submit;
@@ -223,7 +218,8 @@
     patchUserManagement();
     buildPasswordModal();
     injectPasswordButton();
-    loadUsersMeta();
+    // Pas d'appel /api/auth/users-meta au démarrage : le wrapper loadUsers()
+    // le fera uniquement quand le panneau Utilisateurs sera réellement ouvert.
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
