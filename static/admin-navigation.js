@@ -9,10 +9,8 @@
   if (window.__BININGA_ADMIN_NAVIGATION__) return;
   window.__BININGA_ADMIN_NAVIGATION__ = true;
 
-  // ─── STATE ───
   let _currentPanel = null;
   let _sidebarOpen = false;
-
   const isMobile = () => window.matchMedia('(max-width: 768px)').matches;
 
   const refs = () => ({
@@ -31,7 +29,12 @@
       backups: () => typeof window.loadBackups === 'function' ? window.loadBackups() : null,
       logs: () => typeof window.loadAuditLogs === 'function' ? window.loadAuditLogs() : null,
       users: () => typeof window.loadUsers === 'function' ? window.loadUsers() : null,
-      security: () => typeof window.loadSecurity === 'function' ? window.loadSecurity() : null,
+      security: () => {
+        const tasks=[];
+        if(typeof window.loadSecurity==='function') tasks.push(window.loadSecurity());
+        if(typeof window.loadBouclier==='function') tasks.push(window.loadBouclier());
+        return tasks.length ? Promise.allSettled(tasks) : null;
+      },
     };
     const loader = loaders[name];
     if (!loader) return true;
@@ -48,10 +51,7 @@
   }
 
   function _triggerPanelLoader(name) {
-    // Premier essai immédiatement après activation du panneau.
     if (_runPanelLoader(name)) return;
-    // Si admin.js n'était pas encore complètement évalué, retenter pendant le
-    // bootstrap authentifié. Cela évite un panneau CRM à 0 sans requête réseau.
     let attempts = 0;
     const retry = () => {
       attempts += 1;
@@ -62,17 +62,13 @@
     setTimeout(retry, 100);
   }
 
-  // ─── MAIN EXPORTED FUNCTIONS ───
-
   window.showPanel = function showPanel(name, el) {
     if (!name) return;
     _currentPanel = name;
 
-    // 1. Nettoyer les panels
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
 
-    // 2. Afficher le bon panel
     const panel = document.getElementById('panel-' + name);
     if (!panel) {
       if (typeof window.showToast === 'function') window.showToast('Module indisponible', true);
@@ -82,57 +78,33 @@
     panel.classList.add('active');
     if (el) el.classList.add('active');
 
-    // 3. Mise à jour titre
     const titles = window.PANEL_TITLES || {};
     const title = document.getElementById('topbar-title');
     if (title) title.textContent = titles[name] || name;
 
-    // 4. Fermer sidebar sur mobile
     if (isMobile()) closeSidebar();
 
-    // 5. Dispatcher événement pour modules
+    // L'événement reste disponible pour l'UX, mais la navigation est l'unique
+    // propriétaire des appels réseau. Cela empêche CRM/Système de lancer deux
+    // requêtes identiques au même clic.
     window.dispatchEvent(new CustomEvent('admin:panelchange', { detail: { name } }));
-
-    // 6. Les panneaux dépendant de données serveur ne doivent jamais rester
-    // affichés avec leurs valeurs initiales simplement parce qu'un listener
-    // secondaire n'a pas été chargé. La navigation déclenche donc le loader.
     _triggerPanelLoader(name);
   };
 
   let _lastToggle = 0;
   window.toggleSidebar = function toggleSidebar(e) {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    // Anti double-fire : un tap mobile peut déclencher pointerup + click.
-    // Toute seconde invocation sous 350ms est le même geste — on l'ignore.
+    if (e) { e.preventDefault(); e.stopPropagation(); }
     const now = Date.now();
-    if (now - _lastToggle < 350) {
-      console.log('[BININGA Nav] toggleSidebar: doublon ignoré (' + (now - _lastToggle) + 'ms)');
-      return;
-    }
+    if (now - _lastToggle < 350) return;
     _lastToggle = now;
-    const mobile = isMobile();
-    if (!mobile) {
-      console.log('[BININGA Nav] toggleSidebar: not mobile, returning');
-      return;
-    }
-    if (_sidebarOpen) closeSidebar();
-    else openSidebar();
+    if (!isMobile()) return;
+    if (_sidebarOpen) closeSidebar(); else openSidebar();
   };
 
   window.openSidebar = function openSidebar() {
-    if (!isMobile()) {
-      console.log('[BININGA Nav] openSidebar: not mobile');
-      return;
-    }
+    if (!isMobile()) return;
     const { sidebar, overlay, hamburger, main, body } = refs();
-    if (!sidebar) {
-      console.log('[BININGA Nav] openSidebar: sidebar not found');
-      return;
-    }
-
+    if (!sidebar) return;
     _sidebarOpen = true;
     sidebar.classList.add('open');
     sidebar.style.setProperty('left', '0px', 'important');
@@ -149,7 +121,6 @@
   window.closeSidebar = function closeSidebar() {
     const { sidebar, overlay, hamburger, pull, main, body } = refs();
     if (!sidebar) return;
-
     _sidebarOpen = false;
     sidebar.classList.remove('open');
     sidebar.style.setProperty('left', 'calc(-1 * min(84vw, 304px))', 'important');
@@ -164,73 +135,41 @@
     body.classList.remove('sidebar-open');
   };
 
-  // ─── INSTALLATION ───
-
   function install() {
-    console.log('[BININGA Nav] install() called');
     const { sidebar, overlay, hamburger, main } = refs();
-    if (!sidebar || !hamburger) {
-      console.log('[BININGA Nav] install: sidebar or hamburger not found', { sidebar: !!sidebar, hamburger: !!hamburger });
-      return;
-    }
-    if (!main) {
-      console.log('[BININGA Nav] install: main element not found');
-      return;
-    }
-    console.log('[BININGA Nav] install: binding events');
+    if (!sidebar || !hamburger || !main) return;
 
-    // ⚠️ Le HTML porte des onclick inline (toggleSidebar/closeSidebar).
-    // On les retire AVANT de lier nos écouteurs, sinon un tap mobile
-    // déclenche pointerup + click → le menu s'ouvre puis se referme
-    // instantanément (symptôme : « le hamburger ne s'ouvre pas »).
     hamburger.removeAttribute('onclick');
     hamburger.onclick = null;
     hamburger.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      window.toggleSidebar();
+      e.preventDefault(); e.stopPropagation(); window.toggleSidebar();
     });
 
     if (overlay) {
       overlay.removeAttribute('onclick');
       overlay.onclick = null;
       overlay.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        window.closeSidebar();
+        e.preventDefault(); e.stopPropagation(); window.closeSidebar();
       });
     }
 
-    // Sidebar items close sidebar on mobile
     sidebar.querySelectorAll('.sb-item').forEach(item => {
-      item.addEventListener('click', () => {
-        if (isMobile()) closeSidebar();
-      }, { passive: true });
+      item.addEventListener('click', () => { if (isMobile()) closeSidebar(); }, { passive: true });
     });
 
-    // Resize: close sidebar si on passe desktop
     window.addEventListener('resize', () => {
       if (!isMobile() && _sidebarOpen) closeSidebar();
     }, { passive: true });
 
-    // Initial state
-    if (isMobile()) {
-      closeSidebar();
-    } else {
-      // Desktop : sidebar visible, aucun style inline qui cache
-      const { sidebar } = refs();
-      if (sidebar) {
-        sidebar.classList.remove('open');
-        sidebar.style.removeProperty('left');
-      }
+    if (isMobile()) closeSidebar();
+    else {
+      sidebar.classList.remove('open');
+      sidebar.style.removeProperty('left');
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', install, { once: true });
-  } else {
-    install();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install, { once: true });
+  else install();
 
   console.info('[BININGA Admin] Navigation centralisée chargée');
 })();
