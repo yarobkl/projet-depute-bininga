@@ -27,6 +27,7 @@
     ['data-bininga-admin-core', '/static/admin-core.js?v=20260905-admin-boot-1'],
     ['data-bininga-admin-navigation', '/static/admin-navigation.js?v=20260905-admin-perf-2'],
     ['data-bininga-admin-integrity', '/static/admin-hardening.js?v=20260819-integrity-1'],
+    ['data-bininga-case-treatment', '/static/admin-case-treatment.js?v=20260905-case-flow-1'],
     ['data-bininga-dashboard-priority', '/static/admin-dashboard-priority.js?v=20260905-admin-boot-1'],
   ];
 
