@@ -61,6 +61,10 @@ def mutation_context(server, handler) -> Iterator[None]:
 def process_response(server, handler) -> None:
     admin_auth_flow.postprocess_response(server, handler)
     admin_access_model.postprocess_response(server, handler)
+    # A successful public form must be reflected in the person-centric CRM
+    # before the request lifecycle ends. crm_auto_sync remains self-healing on
+    # GET /api/crm if this enrichment ever degrades.
+    crm_auto_sync.postprocess_response(server, handler)
 
 
 def guard_names() -> tuple[str, ...]:
