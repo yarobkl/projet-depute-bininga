@@ -2,8 +2,12 @@
 
 The CRM is person-centric while each public submission remains a distinct case.
 Every reconciliation keeps a ``dossiers`` history on the CRM contact so status,
-tracking, evidence, decision and appointment data cannot disappear when the same
-citizen contacts the cabinet more than once.
+tracking, evidence, decision, appointment and submitted identity cannot disappear
+when the same citizen contacts the cabinet more than once.
+
+The bridge runs both when the CRM is read and immediately after a successful
+public ``POST /api/contact``. This prevents a window where a request is persisted
+but not yet visible in the CRM.
 """
 from __future__ import annotations
 
@@ -39,11 +43,7 @@ def _source(raw: dict) -> str:
 
 
 def _crm_source(source: str) -> str:
-    """Use only sources accepted by the legacy CRM editor.
-
-    Newsletter and book-order origin remains available in ``origin_source`` and
-    in every dossier/tag, while their person record stays editable as contact.
-    """
+    """Use only sources accepted by the legacy CRM editor."""
     if source in {"audience", "contact", "reclamation", "signalement", "manuel"}:
         return source
     return "contact"
@@ -90,6 +90,37 @@ def _phone(row: dict) -> str:
     return "".join(ch for ch in str(row.get("telephone") or row.get("tel") or "") if ch.isdigit())
 
 
+def _name_key(row: dict) -> str:
+    return " ".join(
+        part for part in (
+            str(row.get("prenom") or "").strip().casefold(),
+            str(row.get("nom") or "").strip().casefold(),
+        ) if part
+    )
+
+
+def _phone_candidate(candidates: list[dict], raw: dict) -> dict | None:
+    """Resolve a phone match without merging unrelated people sharing a number."""
+    if not candidates:
+        return None
+    email = _email(raw)
+    name = _name_key(raw)
+
+    if name:
+        same_name = [candidate for candidate in candidates if _name_key(candidate) == name]
+        if len(same_name) == 1:
+            return same_name[0]
+
+    if not email and len(candidates) == 1:
+        return candidates[0]
+
+    if email:
+        without_email = [candidate for candidate in candidates if not _email(candidate)]
+        if len(without_email) == 1:
+            return without_email[0]
+    return None
+
+
 def _case_snapshot(raw: dict, source: str, cid: str, created: str) -> dict:
     appointment = raw.get("appointment") if isinstance(raw.get("appointment"), dict) else {}
     return {
@@ -98,6 +129,10 @@ def _case_snapshot(raw: dict, source: str, cid: str, created: str) -> dict:
         "source": source,
         "created_at": created,
         "statut": _crm_status(raw),
+        "nom": _text(raw.get("nom"), 200),
+        "prenom": _text(raw.get("prenom"), 200),
+        "email": _text(raw.get("email"), 200),
+        "telephone": _text(raw.get("telephone") or raw.get("tel"), 50),
         "sujet": _text(raw.get("sujet") or raw.get("objet"), 500),
         "message": _text(raw.get("message") or raw.get("demande") or raw.get("raison") or raw.get("description"), 2000),
         "decision": _text(raw.get("decision"), 40),
@@ -121,7 +156,10 @@ def _merge_case(existing: dict, snapshot: dict) -> bool:
     if not isinstance(dossiers, list):
         dossiers = []
         existing["dossiers"] = dossiers
-    target = next((d for d in dossiers if isinstance(d, dict) and str(d.get("id") or "") == snapshot["id"]), None)
+    target = next(
+        (d for d in dossiers if isinstance(d, dict) and str(d.get("id") or "") == snapshot["id"]),
+        None,
+    )
     if target is None:
         dossiers.append(snapshot)
         if len(dossiers) > 250:
@@ -197,9 +235,13 @@ def sync_contacts_to_crm(server: Any) -> dict:
             crm["contacts"] = contacts
         crm.setdefault("newsletters", [])
 
-        by_id = {str(c.get("id") or "").strip(): c for c in contacts if isinstance(c, dict) and str(c.get("id") or "").strip()}
-        by_email = {}
-        by_phone = {}
+        by_id = {
+            str(c.get("id") or "").strip(): c
+            for c in contacts
+            if isinstance(c, dict) and str(c.get("id") or "").strip()
+        }
+        by_email: dict[str, dict] = {}
+        by_phone: dict[str, list[dict]] = {}
         for c in contacts:
             if not isinstance(c, dict):
                 continue
@@ -207,8 +249,8 @@ def sync_contacts_to_crm(server: Any) -> dict:
             phone = _phone(c)
             if email:
                 by_email.setdefault(email, c)
-            if phone and not email:
-                by_phone.setdefault(phone, c)
+            if phone:
+                by_phone.setdefault(phone, []).append(c)
 
         added = 0
         merged = 0
@@ -224,13 +266,21 @@ def sync_contacts_to_crm(server: Any) -> dict:
             phone = _phone(raw)
             if existing is None and email:
                 existing = by_email.get(email)
-            if existing is None and not email and phone:
-                existing = by_phone.get(phone)
+            if existing is None and phone:
+                existing = _phone_candidate(by_phone.get(phone, []), raw)
 
             if existing is not None:
                 if _merge_existing(existing, raw, source, case, now):
                     merged += 1
                 by_id[cid] = existing
+                current_email = _email(existing)
+                current_phone = _phone(existing)
+                if current_email:
+                    by_email.setdefault(current_email, existing)
+                if current_phone:
+                    bucket = by_phone.setdefault(current_phone, [])
+                    if existing not in bucket:
+                        bucket.append(existing)
                 continue
 
             tags = [source] if source else []
@@ -261,19 +311,28 @@ def sync_contacts_to_crm(server: Any) -> dict:
             by_id[cid] = contact
             if email:
                 by_email[email] = contact
-            elif phone:
-                by_phone[phone] = contact
+            if phone:
+                by_phone.setdefault(phone, []).append(contact)
             added += 1
 
         if added or merged:
             server.save_crm(crm)
-        return {"added": added, "merged": merged, "total": len(contacts), "crm": crm, "source_total": len(rows) if isinstance(rows, list) else 0}
+        return {
+            "added": added,
+            "merged": merged,
+            "total": len(contacts),
+            "crm": crm,
+            "source_total": len(rows) if isinstance(rows, list) else 0,
+        }
 
 
 def _matches_query(contact: dict, query: str) -> bool:
     if not query:
         return True
-    haystack = " ".join(str(contact.get(key) or "") for key in ("nom", "prenom", "email", "telephone", "sujet", "message", "source", "origin_source", "statut")).lower()
+    haystack = " ".join(
+        str(contact.get(key) or "")
+        for key in ("nom", "prenom", "email", "telephone", "sujet", "message", "source", "origin_source", "statut")
+    ).lower()
     tags = contact.get("tags") or []
     if isinstance(tags, list):
         haystack += " " + " ".join(str(tag) for tag in tags).lower()
@@ -282,7 +341,13 @@ def _matches_query(contact: dict, query: str) -> bool:
         for dossier in dossiers:
             if not isinstance(dossier, dict):
                 continue
-            haystack += " " + " ".join(str(dossier.get(key) or "") for key in ("id", "tracking_code", "source", "sujet", "message", "statut", "geo_label")).lower()
+            haystack += " " + " ".join(
+                str(dossier.get(key) or "")
+                for key in (
+                    "id", "tracking_code", "source", "sujet", "message", "statut",
+                    "geo_label", "email", "telephone", "nom", "prenom", "decision",
+                )
+            ).lower()
     return query in haystack
 
 
@@ -304,8 +369,16 @@ def _response_payload(handler: Any, result: dict) -> dict:
 
     filtered = []
     for contact in all_contacts:
-        if source and str(contact.get("source") or "") != source:
-            continue
+        if source:
+            contact_sources = {str(contact.get("source") or ""), str(contact.get("origin_source") or "")}
+            dossiers = contact.get("dossiers") or []
+            if isinstance(dossiers, list):
+                contact_sources.update(
+                    str(dossier.get("source") or "")
+                    for dossier in dossiers if isinstance(dossier, dict)
+                )
+            if source not in contact_sources:
+                continue
         subscribed = bool(contact.get("newsletter"))
         if newsletter_filter == "oui" and not subscribed:
             continue
@@ -339,6 +412,23 @@ def _response_payload(handler: Any, result: dict) -> dict:
     }
 
 
+def _audit_sync(server: Any, handler: Any, result: dict, action: str = "CRM_AUTO_SYNC") -> None:
+    if not (result.get("added") or result.get("merged")):
+        return
+    try:
+        ip = handler.client_address[0]
+    except Exception:
+        ip = "unknown"
+    try:
+        server.audit_log(
+            action,
+            ip,
+            f"CRM synchronisé automatiquement : +{result['added']} ajout(s), {result['merged']} fusion(s)",
+        )
+    except Exception:
+        pass
+
+
 def guard_request(server: Any, handler: Any) -> bool:
     """Reconcile and answer GET /api/crm from the same in-memory snapshot."""
     path = str(getattr(handler, "path", "")).split("?", 1)[0]
@@ -347,17 +437,26 @@ def guard_request(server: Any, handler: Any) -> bool:
         return True
     try:
         result = sync_contacts_to_crm(server)
-        if result["added"] or result["merged"]:
-            try:
-                ip = handler.client_address[0]
-            except Exception:
-                ip = "unknown"
-            try:
-                server.audit_log("CRM_AUTO_SYNC", ip, f"CRM synchronisé automatiquement : +{result['added']} ajout(s), {result['merged']} fusion(s)")
-            except Exception:
-                pass
+        _audit_sync(server, handler, result)
         handler._json(_response_payload(handler, result))
         return False
     except Exception as exc:
         print(f"[CRM] Auto-sync fallback: {type(exc).__name__}: {exc}", flush=True)
         return True
+
+
+def postprocess_response(server: Any, handler: Any) -> None:
+    """Make a successful public submission visible in CRM before the request ends."""
+    path = str(getattr(handler, "path", "")).split("?", 1)[0]
+    method = str(getattr(handler, "command", "GET")).upper()
+    status = int(getattr(handler, "_status_code", 200) or 200)
+    if method != "POST" or path != "/api/contact" or status < 200 or status >= 300:
+        return
+    try:
+        result = sync_contacts_to_crm(server)
+        _audit_sync(server, handler, result, action="CRM_SUBMISSION_SYNC")
+    except Exception as exc:
+        # The citizen request is already persisted. CRM enrichment must not turn
+        # a successful public submission into an HTTP failure, but the issue is
+        # deliberately visible in runtime logs and self-heals on the next CRM GET.
+        print(f"[CRM] Submission sync deferred: {type(exc).__name__}: {exc}", flush=True)
