@@ -1,6 +1,8 @@
 /* BININGA Admin — Navigation centralisée
  * Source unique de vérité pour showPanel, toggleSidebar, closeSidebar, openSidebar
- * Tous les modules écoutent via CustomEvent, ne pas wrapper showPanel
+ * Tous les modules écoutent via CustomEvent. Les loaders critiques sont aussi
+ * déclenchés ici afin qu'un cache/module secondaire défaillant ne puisse pas
+ * laisser un panneau affiché avec des données factices.
  */
 (()=>{
   'use strict';
@@ -21,6 +23,44 @@
     main: document.querySelector('.main'),
     body: document.body
   });
+
+  function _runPanelLoader(name) {
+    const loaders = {
+      crm: () => typeof window.loadCrm === 'function' ? window.loadCrm(1) : null,
+      monitoring: () => typeof window.loadMonitoring === 'function' ? window.loadMonitoring() : null,
+      backups: () => typeof window.loadBackups === 'function' ? window.loadBackups() : null,
+      logs: () => typeof window.loadAuditLogs === 'function' ? window.loadAuditLogs() : null,
+      users: () => typeof window.loadUsers === 'function' ? window.loadUsers() : null,
+      security: () => typeof window.loadSecurity === 'function' ? window.loadSecurity() : null,
+    };
+    const loader = loaders[name];
+    if (!loader) return true;
+    try {
+      const result = loader();
+      if (result && typeof result.catch === 'function') {
+        result.catch(err => console.error('[BININGA Nav] loader ' + name + ' échoué', err));
+      }
+      return result !== null;
+    } catch (err) {
+      console.error('[BININGA Nav] loader ' + name + ' échoué', err);
+      return true;
+    }
+  }
+
+  function _triggerPanelLoader(name) {
+    // Premier essai immédiatement après activation du panneau.
+    if (_runPanelLoader(name)) return;
+    // Si admin.js n'était pas encore complètement évalué, retenter pendant le
+    // bootstrap authentifié. Cela évite un panneau CRM à 0 sans requête réseau.
+    let attempts = 0;
+    const retry = () => {
+      attempts += 1;
+      if (_currentPanel !== name) return;
+      if (_runPanelLoader(name)) return;
+      if (attempts < 6) setTimeout(retry, 200);
+    };
+    setTimeout(retry, 100);
+  }
 
   // ─── MAIN EXPORTED FUNCTIONS ───
 
@@ -52,6 +92,11 @@
 
     // 5. Dispatcher événement pour modules
     window.dispatchEvent(new CustomEvent('admin:panelchange', { detail: { name } }));
+
+    // 6. Les panneaux dépendant de données serveur ne doivent jamais rester
+    // affichés avec leurs valeurs initiales simplement parce qu'un listener
+    // secondaire n'a pas été chargé. La navigation déclenche donc le loader.
+    _triggerPanelLoader(name);
   };
 
   let _lastToggle = 0;
