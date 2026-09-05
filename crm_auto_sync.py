@@ -2,9 +2,9 @@
 
 Historically, records received through public forms were stored in the contacts
 store and only copied to the CRM when an administrator pressed "Importer
- demandes".  This bridge makes the CRM self-healing: every authenticated CRM
-read reconciles missing historical records before the legacy /api/crm handler
-returns its counters/list.
+demandes". This bridge makes the CRM self-healing and, for GET /api/crm,
+returns the reconciled data directly so the UI cannot observe a stale zero
+between reconciliation and the legacy handler's second database read.
 
 The operation is idempotent and preserves manually-created CRM contacts.
 """
@@ -13,8 +13,10 @@ from __future__ import annotations
 import contextlib
 import hashlib
 import json
+import math
 from datetime import datetime
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 
 def _text(value: Any, limit: int) -> str:
@@ -196,11 +198,77 @@ def sync_contacts_to_crm(server: Any) -> dict:
 
         if added or merged:
             server.save_crm(crm)
-        return {"added": added, "merged": merged, "total": len(contacts)}
+        return {"added": added, "merged": merged, "total": len(contacts), "crm": crm, "source_total": len(rows) if isinstance(rows, list) else 0}
+
+
+def _matches_query(contact: dict, query: str) -> bool:
+    if not query:
+        return True
+    haystack = " ".join(
+        str(contact.get(key) or "")
+        for key in ("nom", "prenom", "email", "telephone", "sujet", "message", "source", "statut")
+    ).lower()
+    tags = contact.get("tags") or []
+    if isinstance(tags, list):
+        haystack += " " + " ".join(str(tag) for tag in tags).lower()
+    return query in haystack
+
+
+def _response_payload(handler: Any, result: dict) -> dict:
+    crm = result.get("crm") if isinstance(result.get("crm"), dict) else {"contacts": [], "newsletters": []}
+    all_contacts = [c for c in crm.get("contacts", []) if isinstance(c, dict)]
+    qs = parse_qs(urlparse(str(getattr(handler, "path", ""))).query)
+    try:
+        page = max(1, int(qs.get("page", ["1"])[0]))
+    except Exception:
+        page = 1
+    try:
+        limit = min(5000, max(10, int(qs.get("limit", ["50"])[0])))
+    except Exception:
+        limit = 50
+    query = str(qs.get("q", [""])[0]).lower().strip()
+    source = str(qs.get("source", [""])[0]).strip()
+    newsletter_filter = str(qs.get("nl", [""])[0]).strip().lower()
+
+    filtered = []
+    for contact in all_contacts:
+        if source and str(contact.get("source") or "") != source:
+            continue
+        subscribed = bool(contact.get("newsletter"))
+        if newsletter_filter == "oui" and not subscribed:
+            continue
+        if newsletter_filter == "non" and subscribed:
+            continue
+        if not _matches_query(contact, query):
+            continue
+        filtered.append(contact)
+
+    filtered.sort(key=lambda c: str(c.get("updated_at") or c.get("created_at") or ""), reverse=True)
+    total = len(filtered)
+    pages = max(1, math.ceil(total / limit))
+    page = min(page, pages)
+    start = (page - 1) * limit
+    contacts = filtered[start:start + limit]
+    return {
+        "ok": True,
+        "contacts": contacts,
+        "newsletters": crm.get("newsletters", []) if isinstance(crm.get("newsletters"), list) else [],
+        "total": total,
+        "page": page,
+        "pages": pages,
+        "limit": limit,
+        "newsletter_count": sum(1 for c in all_contacts if c.get("newsletter") and c.get("email")),
+        "sync": {
+            "added": int(result.get("added") or 0),
+            "merged": int(result.get("merged") or 0),
+            "source_total": int(result.get("source_total") or 0),
+            "crm_total": len(all_contacts),
+        },
+    }
 
 
 def guard_request(server: Any, handler: Any) -> bool:
-    """Reconcile just before the authenticated legacy GET /api/crm response."""
+    """Reconcile and answer GET /api/crm from the same in-memory snapshot."""
     path = str(getattr(handler, "path", "")).split("?", 1)[0]
     method = str(getattr(handler, "command", "GET")).upper()
     if method != "GET" or path != "/api/crm":
@@ -220,7 +288,11 @@ def guard_request(server: Any, handler: Any) -> bool:
                 )
             except Exception:
                 pass
+        handler._json(_response_payload(handler, result))
+        return False
     except Exception as exc:
-        # A read must never become unavailable because reconciliation failed.
-        print(f"[CRM] Auto-sync ignorée: {type(exc).__name__}: {exc}", flush=True)
-    return True
+        # Preserve availability by falling through to the legacy handler, but
+        # make the failure observable in Vercel logs instead of silently
+        # returning a stale zero forever.
+        print(f"[CRM] Auto-sync fallback: {type(exc).__name__}: {exc}", flush=True)
+        return True
