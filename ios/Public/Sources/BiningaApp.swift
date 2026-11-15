@@ -5,19 +5,13 @@ import UIKit
     var body: some Scene { WindowGroup { Home().preferredColorScheme(.dark).tint(Color(red: 0.82, green: 0.19, blue: 0.32)) } }
 }
 
-private enum Route: Hashable { case audience, complaint, receipt(String), tracking(String) }
+enum Route: Hashable { case audience, complaint, receipt(String), tracking(String) }
 
 private struct Home: View {
     @State private var path: [Route] = []
     var body: some View {
         NavigationStack(path: $path) {
-            List {
-                Section("Mes démarches") {
-                    NavigationLink("Demander une audience", value: Route.audience)
-                    NavigationLink("Déposer une réclamation", value: Route.complaint)
-                    NavigationLink("Suivre ma demande", value: Route.tracking(""))
-                }
-            }.navigationTitle("BININGA")
+            PublicTabs()
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .audience, .complaint:
