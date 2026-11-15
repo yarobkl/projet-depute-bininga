@@ -40,8 +40,14 @@ private struct Home: View {
 private struct RequestForm: View {
     let complaint: Bool
     let completed: (String) -> Void
-    @State private var first = "", last = "", address = "", phone = "", email = "", reason = ""
-    @State private var busy = false, error: String?
+    @State private var first = ""
+    @State private var last = ""
+    @State private var address = ""
+    @State private var phone = ""
+    @State private var email = ""
+    @State private var reason = ""
+    @State private var busy = false
+    @State private var error: String?
     var eligible: Bool { [first,last,address,phone,reason].allSatisfy { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty } }
     var body: some View {
         Form {
@@ -70,7 +76,9 @@ private struct RequestForm: View {
 
 private struct Tracking: View {
     @State private var code: String
-    @State private var result: Dossier?, error: String?, busy = false
+    @State private var result: Dossier?
+    @State private var error: String?
+    @State private var busy = false
     init(initial: String) { _code = State(initialValue: initial) }
     var body: some View {
         Form {
