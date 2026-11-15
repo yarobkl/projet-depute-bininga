@@ -1,8 +1,10 @@
 import SwiftUI
 
 private let site = URL(string: "https://projet-depute-bininga.vercel.app")!
-private let cream = Color(red: 0.97, green: 0.92, blue: 0.83)
-private let wine = Color(red: 0.57, green: 0.035, blue: 0.16)
+private let cream = Color(red: 244 / 255, green: 240 / 255, blue: 234 / 255)
+private let charcoal = Color(red: 10 / 255, green: 10 / 255, blue: 10 / 255)
+private let indicator = Color(red: 0.88, green: 0.12, blue: 0.22)
+private let wine = Color(red: 122 / 255, green: 28 / 255, blue: 46 / 255)
 
 private struct Publication: Decodable, Hashable {
     let title: String
@@ -29,6 +31,7 @@ struct PublicTabs: View {
     @State private var content: PublicContent?
     @State private var warning: String?
     @State private var loading = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Namespace private var selection
     var body: some View {
         TabView(selection: $selected) {
@@ -39,24 +42,34 @@ struct PublicTabs: View {
                     Text("Député d’Ewo, République du Congo")
                         .font(.caption).foregroundStyle(cream.opacity(0.72))
                 }
-                GeometryReader { geometry in
-                    Image("Ewo")
-                        .resizable().scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .clipped()
-                        .overlay {
-                            LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .center, endPoint: .bottom)
+                Color.clear
+                    .aspectRatio(4 / 3, contentMode: .fit)
+                    .overlay {
+                        GeometryReader { geometry in
+                            Image("Ewo")
+                                .resizable().scaledToFill()
+                                .frame(width: geometry.size.width, height: geometry.size.height)
+                                .clipped()
                         }
-                        .overlay(alignment: .bottomLeading) {
-                            Text("Ewo, au cœur de notre action")
-                                .font(.system(.title, design: .serif).weight(.semibold))
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(20)
-                        }
-                }
-                .frame(height: 250)
-                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .accessibilityLabel("Ewo, au cœur de notre action")
+                    }
+                    .overlay {
+                        LinearGradient(
+                            stops: [.init(color: .clear, location: 0.3),
+                                    .init(color: .black.opacity(0.25), location: 0.55),
+                                    .init(color: .black.opacity(0.9), location: 1)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    }
+                    .overlay(alignment: .bottomLeading) {
+                        Text("Ewo, au cœur de notre action")
+                            .font(.system(.title, design: .serif).weight(.semibold))
+                            .tracking(-0.4)
+                            .lineSpacing(1)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(20)
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                    .accessibilityElement(children: .combine)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Servir Ewo avec écoute et responsabilité")
                         .font(.system(.title3, design: .serif).weight(.semibold))
@@ -114,25 +127,40 @@ struct PublicTabs: View {
         }.tabViewStyle(.page(indexDisplayMode:.never))
         .safeAreaInset(edge:.bottom,spacing:0) {
             HStack(spacing:0) { ForEach(SectionTab.allCases,id:\.self) { tab in
-                Button { withAnimation(.easeInOut(duration:0.22)){selected=tab} } label: {
+                Button { withAnimation(reduceMotion ? nil : .easeInOut(duration:0.22)){selected=tab} } label: {
                     VStack(spacing: 4) {
                         Image(systemName: tab.icon).font(.system(size: 20, weight: .medium))
                         Text(tab.rawValue).font(.caption2.weight(.medium))
                     }
                         .frame(maxWidth:.infinity,minHeight:52)
                         .background { if selected==tab { Capsule().fill(wine).matchedGeometryEffect(id:"selected",in:selection) } }
-                }.buttonStyle(.plain).accessibilityAddTraits(selected==tab ? .isSelected : [])
-            }}.padding(5).background(.ultraThinMaterial,in:Capsule()).padding(.horizontal,12)
+                }.buttonStyle(.plain).contentShape(Rectangle())
+                .accessibilityLabel(tab.rawValue)
+                .accessibilityAddTraits(selected==tab ? .isSelected : [])
+            }}.padding(5)
+                .background(.ultraThinMaterial, in: Capsule())
+                .overlay { Capsule().strokeBorder(cream.opacity(0.1), lineWidth: 0.5) }
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .padding(.bottom, 8)
         }.foregroundStyle(cream)
+        .background(charcoal.ignoresSafeArea())
         .toolbar(.hidden, for: .navigationBar)
         .task { await refresh() }
     }
     private func page<V:View>(_ title:String,@ViewBuilder _ contents:()->V)->some View {
         ScrollView { VStack(alignment:.leading,spacing:14) {
-            Text(title).font(.system(.largeTitle,design:.serif).weight(.semibold)).accessibilityAddTraits(.isHeader)
+            Text(title)
+                .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                .tracking(-0.5)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            RoundedRectangle(cornerRadius: 1)
+                .fill(indicator).frame(width: 34, height: 3)
+                .accessibilityHidden(true)
             contents()
         }.frame(maxWidth: 600, alignment: .leading)
-            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
@@ -141,7 +169,8 @@ struct PublicTabs: View {
         NavigationLink(value:route) { HStack { Label(name,systemImage:icon); Spacer(); Image(systemName:"chevron.right") }
             .font(.body.weight(.semibold))
             .frame(minHeight: 24).padding(.horizontal, 16).padding(.vertical, 14)
-            .background(primary ? wine : Color.white.opacity(0.09),in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
+            .background(primary ? wine : Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
+            .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(cream.opacity(primary ? 0.1 : 0.35), lineWidth: 0.5) } }.buttonStyle(.plain)
     }
     @ViewBuilder private func photo(_ item:Publication)->some View {
         if let raw=item.image,!raw.isEmpty, let url=URL(string:raw,relativeTo:site)?.absoluteURL, url.scheme=="https" {
