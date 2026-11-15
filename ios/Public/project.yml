@@ -1,0 +1,16 @@
+name: Bininga
+options:
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  Bininga:
+    type: application
+    platform: iOS
+    sources: [Sources]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: fr.yaroconsulting.bininga.publicapp
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: BININGA
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        SWIFT_VERSION: "5.0"
