@@ -2,7 +2,7 @@ name: BININGA internal TestFlight
 on:
   push:
     branches: [feature/ios-public-swiftui]
-    paths: ['.github/workflows/bininga-testflight.yml','ios/Public/release-trigger']
+    paths: ['.github/workflows/bininga-testflight.yml','ios/Public/**']
 permissions:
   contents: read
 jobs:
