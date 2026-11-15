@@ -14,3 +14,21 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: BININGA
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         SWIFT_VERSION: "5.0"
+  BiningaUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [UITests]
+    dependencies:
+      - target: Bininga
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: fr.yaroconsulting.bininga.publicapp.uitests
+schemes:
+  Bininga:
+    build:
+      targets:
+        Bininga: all
+    test:
+      targets:
+        - BiningaUITests
