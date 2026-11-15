@@ -11,6 +11,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fr.yaroconsulting.bininga.publicapp
         GENERATE_INFOPLIST_FILE: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: ""
         INFOPLIST_KEY_CFBundleDisplayName: BININGA
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         SWIFT_VERSION: "5.0"
