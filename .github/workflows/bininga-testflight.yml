@@ -1,0 +1,42 @@
+name: BININGA internal TestFlight
+on:
+  push:
+    branches: [feature/ios-public-swiftui]
+    paths: ['.github/workflows/bininga-testflight.yml','ios/Public/release-trigger']
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew list xcodegen >/dev/null || brew install xcodegen
+      - working-directory: ios/Public
+        run: |
+          xcodegen generate
+          xcodebuild -project Bininga.xcodeproj -scheme Bininga -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Bininga.xcarchive" CODE_SIGNING_ALLOWED=NO CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" archive
+          ditto -c -k --keepParent "$RUNNER_TEMP/Bininga.xcarchive" "$RUNNER_TEMP/Bininga.xcarchive.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bininga-Release-archive
+          path: ${{ runner.temp }}/Bininga.xcarchive.zip
+          retention-days: 7
+      - name: Sign and upload internal-only build
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        working-directory: ios/Public
+        run: |
+          if [[ -z "$ASC_PRIVATE_KEY" || -z "$ASC_KEY_ID" || -z "$ASC_ISSUER_ID" ]]; then
+            echo "::error::Archive prepared. App Store Connect signing credentials are required to upload."
+            exit 1
+          fi
+          umask 077
+          key="$RUNNER_TEMP/AuthKey.p8"
+          printf '%s\n' "$ASC_PRIVATE_KEY" > "$key"
+          trap 'rm -f "$key"' EXIT
+          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
+          xcodebuild -project Bininga.xcodeproj -scheme Bininga -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Signed.xcarchive" "${auth[@]}" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" archive
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Signed.xcarchive" -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist InternalExport.plist "${auth[@]}"

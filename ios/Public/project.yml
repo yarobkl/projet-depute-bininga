@@ -11,7 +11,11 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: fr.yaroconsulting.bininga.publicapp
         GENERATE_INFOPLIST_FILE: YES
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        DEVELOPMENT_TEAM: UK4UQCQ57G
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: 1
+        CODE_SIGN_STYLE: Automatic
         INFOPLIST_KEY_CFBundleDisplayName: BININGA
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         SWIFT_VERSION: "5.0"
