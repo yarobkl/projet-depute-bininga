@@ -24,11 +24,11 @@ private struct Home: View {
                     RequestForm(complaint: route == .complaint) { code in path = [.receipt(code)] }
                 case .receipt(let code):
                     List {
-                        Section("Votre référence") {
+                        Section {
                             Text(code).font(.headline.monospaced()).textSelection(.enabled)
                             Button("Copier la référence") { UIPasteboard.general.string = code }
                             NavigationLink("Suivre ma demande", value: Route.tracking(code))
-                        } footer: { Text("Conservez cette référence pour consulter le dossier depuis le site ou l’application.") }
+                        } header: { Text("Votre référence") } footer: { Text("Conservez cette référence pour consulter le dossier depuis le site ou l’application.") }
                     }.navigationTitle("Demande reçue")
                 case .tracking(let code): Tracking(initial: code)
                 }

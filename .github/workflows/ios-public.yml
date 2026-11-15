@@ -1,0 +1,15 @@
+name: Build public iPhone app
+on:
+  push:
+    branches: [feature/ios-public-swiftui]
+    paths: ['ios/Public/**', '.github/workflows/ios-public.yml']
+jobs:
+  simulator:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - run: brew list xcodegen >/dev/null || brew install xcodegen
+      - working-directory: ios/Public
+        run: |
+          xcodegen generate
+          xcodebuild -project Bininga.xcodeproj -scheme Bininga -configuration Debug -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
