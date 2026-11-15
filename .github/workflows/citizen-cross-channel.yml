@@ -1,0 +1,29 @@
+name: Citizen case round trip
+on:
+  push:
+    branches: [feature/ios-public-swiftui]
+    paths: ['tests/cross_channel/**', 'ios/Public/Sources/Cabinet.swift', '.github/workflows/citizen-cross-channel.yml']
+jobs:
+  roundtrip:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install playwright && python -m playwright install chromium
+      - name: Submit and track from Web and iOS Simulator against the same isolated cabinet
+        env:
+          BININGA_TEST: '1'
+          BININGA_PASS: isolated-e2e-only-no-production
+        run: |
+          export DATA_DIR="$(mktemp -d)"
+          device=$(xcrun simctl list devices available -j | python -c 'import json,sys; print(next(d["udid"] for rt,ds in json.load(sys.stdin)["devices"].items() if "iOS" in rt for d in ds if d["name"].startswith("iPhone")))')
+          xcrun simctl bootstatus "$device" -b
+          xcrun --sdk iphonesimulator swiftc -parse-as-library -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" -target "$(uname -m)-apple-ios17.0-simulator" ios/Public/Sources/Cabinet.swift tests/cross_channel/CitizenProbe.swift -o "$RUNNER_TEMP/CitizenProbe"
+          codesign --force --sign - "$RUNNER_TEMP/CitizenProbe"
+          python tests/cross_channel/server_local.py > "$RUNNER_TEMP/cabinet-test.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          python tests/cross_channel/check.py xcrun simctl spawn "$device" "$RUNNER_TEMP/CitizenProbe"
