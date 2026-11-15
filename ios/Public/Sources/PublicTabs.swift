@@ -135,7 +135,7 @@ struct PublicTabs: View {
             .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
-        .scrollIndicators(.hidden) }
+        .scrollIndicators(.hidden)
     }
     private func action(_ name:String,_ icon:String,_ route:Route,_ primary:Bool=false)->some View {
         NavigationLink(value:route) { HStack { Label(name,systemImage:icon); Spacer(); Image(systemName:"chevron.right") }
