@@ -24,6 +24,9 @@ jobs:
           retention-days: 7
       - name: Sign and upload internal-only build
         env:
+          BININGA_P12_BASE64: ${{ secrets.BININGA_P12_BASE64 }}
+          BININGA_P12_PASSWORD: ${{ secrets.BININGA_P12_PASSWORD }}
+          BININGA_PROFILE_BASE64: ${{ secrets.BININGA_PROFILE_BASE64 }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -36,7 +39,24 @@ jobs:
           umask 077
           key="$RUNNER_TEMP/AuthKey.p8"
           printf '%s\n' "$ASC_PRIVATE_KEY" > "$key"
-          trap 'rm -f "$key"' EXIT
-          auth=(-allowProvisioningUpdates -authenticationKeyPath "$key" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID")
-          xcodebuild -project Bininga.xcodeproj -scheme Bininga -configuration Release -destination 'generic/platform=iOS' -archivePath "$RUNNER_TEMP/Signed.xcarchive" "${auth[@]}" CURRENT_PROJECT_VERSION="$GITHUB_RUN_NUMBER" archive
-          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Signed.xcarchive" -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist InternalExport.plist "${auth[@]}"
+          keychain="$RUNNER_TEMP/bininga.keychain-db"
+          keychain_password=$(openssl rand -hex 24)
+          trap 'security delete-keychain "$keychain" || true; rm -f "$key" "$RUNNER_TEMP/distribution.p12"' EXIT
+          printf '%s' "$BININGA_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/distribution.p12"
+          printf '%s' "$BININGA_PROFILE_BASE64" | base64 --decode > "$RUNNER_TEMP/Bininga.mobileprovision"
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/distribution.p12" -P "$BININGA_P12_PASSWORD" -A -t cert -f pkcs12 -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain"
+          security list-keychains -d user -s "$keychain" login.keychain-db
+          security cms -D -i "$RUNNER_TEMP/Bininga.mobileprovision" > "$RUNNER_TEMP/profile.plist"
+          uuid=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/Bininga.mobileprovision" "$HOME/Library/MobileDevice/Provisioning Profiles/$uuid.mobileprovision"
+          cp InternalExport.plist "$RUNNER_TEMP/Export.plist"
+          /usr/libexec/PlistBuddy -c 'Set :signingStyle manual' "$RUNNER_TEMP/Export.plist"
+          /usr/libexec/PlistBuddy -c 'Add :signingCertificate string Apple Distribution' "$RUNNER_TEMP/Export.plist"
+          /usr/libexec/PlistBuddy -c 'Add :provisioningProfiles dict' "$RUNNER_TEMP/Export.plist"
+          /usr/libexec/PlistBuddy -c "Add :provisioningProfiles:fr.yaroconsulting.bininga.publicapp string $uuid" "$RUNNER_TEMP/Export.plist"
+          xcodebuild -exportArchive -archivePath "$RUNNER_TEMP/Bininga.xcarchive" -exportPath "$RUNNER_TEMP/export" -exportOptionsPlist "$RUNNER_TEMP/Export.plist" -authenticationKeyPath "$key" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
