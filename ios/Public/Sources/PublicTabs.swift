@@ -33,16 +33,45 @@ struct PublicTabs: View {
     var body: some View {
         TabView(selection: $selected) {
             page("BININGA") {
-                Text("Ange Aimé Wilfrid BININGA").font(.headline)
-                Text("Député d’Ewo, République du Congo").font(.subheadline)
-                Image("Ewo").resizable().scaledToFill().frame(maxWidth: .infinity).frame(height: 225).clipped()
-                    .overlay(alignment: .bottomLeading) {
-                        Text("Ewo, au cœur de notre action").font(.system(.title,design:.serif).bold()).padding()
-                            .frame(maxWidth:.infinity,alignment:.leading).background(.black.opacity(0.65))
-                    }.clipShape(RoundedRectangle(cornerRadius:14)).accessibilityLabel("Ewo, au cœur de notre action")
-                Text("Servir Ewo avec écoute et responsabilité").font(.system(.title2,design:.serif).weight(.semibold))
-                action("Demander une audience","calendar",.audience,true)
-                action("Suivre ma demande","doc.text.magnifyingglass",.tracking(""))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Ange Aimé Wilfrid BININGA")
+                        .font(.subheadline.weight(.semibold))
+                    Text("Député d’Ewo, République du Congo")
+                        .font(.caption).foregroundStyle(cream.opacity(0.72))
+                }
+                GeometryReader { geometry in
+                    Image("Ewo")
+                        .resizable().scaledToFill()
+                        .frame(width: geometry.size.width, height: geometry.size.height)
+                        .clipped()
+                        .overlay {
+                            LinearGradient(colors: [.clear, .black.opacity(0.85)], startPoint: .center, endPoint: .bottom)
+                        }
+                        .overlay(alignment: .bottomLeading) {
+                            Text("Ewo, au cœur de notre action")
+                                .font(.system(.title, design: .serif).weight(.semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(20)
+                        }
+                }
+                .frame(height: 250)
+                .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .accessibilityLabel("Ewo, au cœur de notre action")
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Servir Ewo avec écoute et responsabilité")
+                        .font(.system(.title3, design: .serif).weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("À vos côtés, porter vos préoccupations au Parlement et contribuer au développement durable de notre localité.")
+                        .font(.subheadline).foregroundStyle(cream.opacity(0.78))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(16)
+                .background(.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 18))
+                VStack(spacing: 10) {
+                    action("Demander une audience", "calendar", .audience, true)
+                    action("Suivre ma demande", "doc.text.magnifyingglass", .tracking(""))
+                }
             }.tag(SectionTab.home)
             page("Actualités") {
                 Picker("Rubrique",selection:$filter) { ForEach(["À la une","Terrain","Programme"],id:\.self){ Text($0) } }.pickerStyle(.segmented)
@@ -61,7 +90,7 @@ struct PublicTabs: View {
                         if articles.isEmpty { Text("Aucune publication dans cette rubrique.") }
                         ForEach(Array(articles.enumerated()),id:\.offset) { _, item in
                             NavigationLink {
-                                ScrollView { VStack(alignment:.leading,spacing:16) {
+                                ScrollView { VStack(alignment:.leading,spacing:14) {
                                     photo(item); Text(item.title).font(.system(.title,design:.serif).bold())
                                     if let date=item.date { Text(date).font(.caption) }
                                     Text(item.bodyText)
@@ -86,22 +115,33 @@ struct PublicTabs: View {
         .safeAreaInset(edge:.bottom,spacing:0) {
             HStack(spacing:0) { ForEach(SectionTab.allCases,id:\.self) { tab in
                 Button { withAnimation(.easeInOut(duration:0.22)){selected=tab} } label: {
-                    VStack(spacing:3) { Image(systemName:tab.icon); Text(tab.rawValue).font(.caption) }
-                        .frame(maxWidth:.infinity,minHeight:48)
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.icon).font(.system(size: 20, weight: .medium))
+                        Text(tab.rawValue).font(.caption2.weight(.medium))
+                    }
+                        .frame(maxWidth:.infinity,minHeight:52)
                         .background { if selected==tab { Capsule().fill(wine).matchedGeometryEffect(id:"selected",in:selection) } }
                 }.buttonStyle(.plain).accessibilityAddTraits(selected==tab ? .isSelected : [])
             }}.padding(5).background(.ultraThinMaterial,in:Capsule()).padding(.horizontal,12)
-        }.foregroundStyle(cream).task { await refresh() }
+        }.foregroundStyle(cream)
+        .toolbar(.hidden, for: .navigationBar)
+        .task { await refresh() }
     }
     private func page<V:View>(_ title:String,@ViewBuilder _ contents:()->V)->some View {
-        ScrollView { VStack(alignment:.leading,spacing:16) {
-            Text(title).font(.system(.largeTitle,design:.serif).bold()).accessibilityAddTraits(.isHeader)
+        ScrollView { VStack(alignment:.leading,spacing:14) {
+            Text(title).font(.system(.largeTitle,design:.serif).weight(.semibold)).accessibilityAddTraits(.isHeader)
             contents()
-        }.frame(maxWidth:.infinity,alignment:.leading).padding() }
+        }.frame(maxWidth: 600, alignment: .leading)
+            .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 24)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollIndicators(.hidden) }
     }
     private func action(_ name:String,_ icon:String,_ route:Route,_ primary:Bool=false)->some View {
         NavigationLink(value:route) { HStack { Label(name,systemImage:icon); Spacer(); Image(systemName:"chevron.right") }
-            .padding().background(primary ? wine : Color.white.opacity(0.09),in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
+            .font(.body.weight(.semibold))
+            .frame(minHeight: 24).padding(.horizontal, 16).padding(.vertical, 14)
+            .background(primary ? wine : Color.white.opacity(0.09),in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
     }
     @ViewBuilder private func photo(_ item:Publication)->some View {
         if let raw=item.image,!raw.isEmpty, let url=URL(string:raw,relativeTo:site)?.absoluteURL, url.scheme=="https" {
