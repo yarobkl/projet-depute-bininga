@@ -69,30 +69,33 @@ struct PublicTabs: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 homeHero
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("L’ENGAGEMENT").font(.caption2.weight(.semibold))
-                        .tracking(1).foregroundStyle(BiningaStyle.red)
-                    Text("Un homme de terrain, de conviction et de résultats.")
-                        .font(.system(.title3, design: .serif).weight(.semibold))
-                    Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
-                        .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 7) {
+                        Text("L’ENGAGEMENT").font(.caption2.weight(.semibold))
+                            .tracking(1).foregroundStyle(BiningaStyle.red)
+                        Text("Un homme de terrain, de conviction et de résultats.")
+                            .font(.system(.title3, design: .serif).weight(.semibold))
+                        Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
+                            .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                    }
+                    .card()
+                    VStack(spacing: 9) {
+                        action("Demander une audience", icon: "calendar", route: .audience, primary: true)
+                        action("Suivre ma demande", icon: "doc.text.magnifyingglass", route: .tracking(""))
+                    }
+                    if let item = content?.actus.slides?.first {
+                        HStack {
+                            Text("À la une").font(.headline)
+                            Spacer()
+                            Button("Tout voir") { selected = .news }.font(.subheadline)
+                        }.padding(.top, 6)
+                        publicationLink(item, featured: false, category: "À LA UNE")
+                    }
                 }
-                .card()
-                VStack(spacing: 9) {
-                    action("Demander une audience", icon: "calendar", route: .audience, primary: true)
-                    action("Suivre ma demande", icon: "doc.text.magnifyingglass", route: .tracking(""))
+                    .padding(.horizontal, 20).padding(.bottom, 20)
+                .frame(maxWidth: 640).frame(maxWidth: .infinity)
                 }
-                if let item = content?.actus.slides?.first {
-                    HStack {
-                        Text("À la une").font(.headline)
-                        Spacer()
-                        Button("Tout voir") { selected = .news }.font(.subheadline)
-                    }.padding(.top, 6)
-                    publicationLink(item, featured: false, category: "À LA UNE")
-                }
-            }
-            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 20)
-            .frame(maxWidth: 640).frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
         .refreshable { await refresh() }
@@ -108,14 +111,14 @@ struct PublicTabs: View {
                     .font(.caption2).foregroundStyle(BiningaStyle.text.opacity(0.8))
                 rule.padding(.top, 8)
             }
-            .padding(.horizontal, 16).padding(.top, 14)
+            .padding(.horizontal, 20).padding(.top, 8)
             Spacer(minLength: 30)
             VStack(alignment: .leading, spacing: 10) {
                 Text("Ewo, au cœur de\nnotre action")
                     .font(.system(.title, design: .serif).weight(.semibold).italic())
                     .tracking(-0.5).fixedSize(horizontal: false, vertical: true)
                 rule
-            }.padding(16)
+            }.padding(20)
         }
         .frame(maxWidth: .infinity, minHeight: textSize.isAccessibilitySize ? 420 : 300, alignment: .leading)
         .background {
@@ -132,8 +135,8 @@ struct PublicTabs: View {
                         ], startPoint: .top, endPoint: .bottom)
                     }
             }
+            .ignoresSafeArea(edges: .top)
         }
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     private var news: some View {
