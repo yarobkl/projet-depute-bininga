@@ -1,8 +1,12 @@
 import SwiftUI
 
-private enum BiningaStyle {
-    static let background = Color(red: 10 / 255, green: 10 / 255, blue: 10 / 255)
-    static let text = Color(red: 244 / 255, green: 240 / 255, blue: 234 / 255)
+enum BiningaStyle {
+    static let background = Color(red: 245 / 255, green: 242 / 255, blue: 237 / 255)
+    static let text = Color(red: 37 / 255, green: 35 / 255, blue: 33 / 255)
+    static let secondary = Color(red: 113 / 255, green: 107 / 255, blue: 101 / 255)
+    static let border = Color(red: 227 / 255, green: 221 / 255, blue: 213 / 255)
+    static let surface = Color.white
+    static let cream = Color(red: 244 / 255, green: 240 / 255, blue: 234 / 255)
     static let accent = Color(red: 122 / 255, green: 28 / 255, blue: 46 / 255)
     static let red = Color(red: 0.88, green: 0.12, blue: 0.22)
     static let site = URL(string: "https://projet-depute-bininga.vercel.app")!
@@ -80,7 +84,7 @@ struct PublicTabs: View {
                         Text("Un homme de terrain, de conviction et de résultats.")
                             .font(.system(.title3, design: .serif).weight(.semibold))
                         Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
-                            .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                            .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
                     }
                     VStack(spacing: 12) {
                         action("Demander une audience", icon: "calendar", route: .audience, primary: true)
@@ -109,7 +113,7 @@ struct PublicTabs: View {
                 .font(.system(size: nameSize, weight: .medium))
             Text("Député d’Ewo, République du Congo")
                 .font(.system(size: roleSize))
-                .foregroundStyle(BiningaStyle.text.opacity(0.65))
+                .foregroundStyle(BiningaStyle.secondary)
         }
         .foregroundStyle(BiningaStyle.text)
         .padding(.top, 4)
@@ -135,7 +139,7 @@ struct PublicTabs: View {
 
             Text("Ewo, au cœur de notre action")
                 .font(.system(size: heroTitleSize, weight: .bold, design: .serif))
-                .foregroundStyle(BiningaStyle.text)
+                .foregroundStyle(BiningaStyle.cream)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(20)
         }
@@ -185,7 +189,7 @@ struct PublicTabs: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text("Vous avez déjà une référence ?").font(.headline)
                 Text("Une demande déposée sur le site ou sur l’application se suit avec le même numéro.")
-                    .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                    .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
                 action("Suivre ma demande", icon: "doc.text.magnifyingglass", route: .tracking(""))
             }.padding(.top, 10)
         }
@@ -202,7 +206,7 @@ struct PublicTabs: View {
                 Image(systemName: "doc.text.magnifyingglass").font(.title2)
                 Text("Retrouver un dossier").font(.system(.title3, design: .serif).weight(.semibold))
                 Text("Munissez-vous de la référence reçue après l’envoi de votre demande.")
-                    .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                    .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
                 action("Saisir ma référence", icon: "magnifyingglass", route: .tracking(""), primary: true)
             }.card()
             Link(destination: BiningaStyle.site) {
@@ -229,6 +233,7 @@ struct PublicTabs: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .padding(.vertical, 1)
+                    .foregroundStyle(selected == tab ? Color.white : BiningaStyle.text)
                     .background {
                         if selected == tab {
                             Capsule().fill(BiningaStyle.accent).matchedGeometryEffect(id: "selected", in: selection)
@@ -242,8 +247,8 @@ struct PublicTabs: View {
             }
         }
         .padding(3)
-        .background(.ultraThinMaterial, in: Capsule())
-        .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 0.5) }
+        .background(BiningaStyle.surface, in: Capsule())
+        .overlay { Capsule().strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
         .padding(.horizontal, 14).padding(.top, 6)
     }
 
@@ -253,7 +258,7 @@ struct PublicTabs: View {
                     Text("BININGA").font(.system(.subheadline, design: .serif).weight(.semibold))
                     Text(title).font(.system(.title, design: .serif).weight(.semibold)).tracking(-0.4)
                         .accessibilityAddTraits(.isHeader)
-                    Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.text.opacity(0.7))
+                    Text(subtitle).font(.footnote).foregroundStyle(primary ? Color.white.opacity(0.9) : BiningaStyle.secondary)
                     rule.padding(.top, 5)
                 }.padding(.bottom, 3)
                 contents()
@@ -269,8 +274,9 @@ struct PublicTabs: View {
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold))
             }
             .frame(minHeight: 24).padding(.horizontal, 14).padding(.vertical, 11)
-            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(primary ? BiningaStyle.accent : BiningaStyle.text.opacity(0.25), lineWidth: primary ? 1 : 0.5) }
+            .foregroundStyle(primary ? Color.white : BiningaStyle.text)
+            .background(primary ? BiningaStyle.accent : BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(primary ? BiningaStyle.accent : BiningaStyle.border, lineWidth: primary ? 1 : 0.5) }
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }.buttonStyle(.plain)
     }
@@ -280,14 +286,15 @@ struct PublicTabs: View {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon).font(.title2)
                 Text(title).font(.system(.title3, design: .serif).weight(.semibold))
-                Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.text.opacity(0.8))
+                Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.right").font(.caption).frame(maxWidth: .infinity, alignment: .trailing)
             }
             .frame(minWidth: 115, maxWidth: .infinity, minHeight: 145, alignment: .topLeading)
             .padding(14)
-            .background(primary ? BiningaStyle.accent : .white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
-            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.2), lineWidth: 0.5) }
+            .foregroundStyle(primary ? Color.white : BiningaStyle.text)
+            .background(primary ? BiningaStyle.accent : BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 16))
+            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
         }.buttonStyle(.plain)
         .accessibilityLabel(primary ? "Demander une audience" : "Déposer une réclamation")
     }
@@ -305,6 +312,7 @@ struct PublicTabs: View {
                     }
                 }.padding(20).frame(maxWidth: 640).frame(maxWidth: .infinity)
             }
+.background(BiningaStyle.background)
             .navigationTitle("Actualité").navigationBarTitleDisplayMode(.inline)
             .toolbar(.visible, for: .navigationBar)
         } label: {
@@ -312,9 +320,9 @@ struct PublicTabs: View {
                 VStack(alignment: .leading, spacing: 0) {
                     publicationPhoto(item).aspectRatio(16 / 9, contentMode: .fit)
                     publicationSummary(item, category: category).padding(14)
-                }.background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 16))
+                }.background(BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 16))
                     .clipShape(RoundedRectangle(cornerRadius: 16)).contentShape(Rectangle())
-                    .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.16), lineWidth: 0.5) }
+                    .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     publicationPhoto(item).frame(width: 88, height: 96).clipShape(RoundedRectangle(cornerRadius: 9))
@@ -326,17 +334,17 @@ struct PublicTabs: View {
 
     private func publicationSummary(_ item: Publication, category: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(category).font(.system(.caption2).weight(.semibold)).tracking(0.5).foregroundStyle(BiningaStyle.text.opacity(0.65))
+            Text(category).font(.system(.caption2).weight(.semibold)).tracking(0.5).foregroundStyle(BiningaStyle.secondary)
             Text(item.title).font(.system(.headline, design: .serif)).lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
             if let date = item.date {
-                Label(date, systemImage: "calendar").font(.caption2).foregroundStyle(BiningaStyle.text.opacity(0.6))
+                Label(date, systemImage: "calendar").font(.caption2).foregroundStyle(BiningaStyle.secondary)
             }
         }.frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func publicationPhoto(_ item: Publication) -> some View {
-        Color.white.opacity(0.04).overlay {
+        BiningaStyle.border.overlay {
             if let raw = item.image, !raw.isEmpty,
                let url = URL(string: raw, relativeTo: BiningaStyle.site)?.absoluteURL, url.scheme == "https" {
                 GeometryReader { geometry in
@@ -380,8 +388,8 @@ struct PublicTabs: View {
 private extension View {
     func card(padding: CGFloat = 16) -> some View {
         self.frame(maxWidth: .infinity, alignment: .leading).padding(padding)
-            .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 16))
-            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.16), lineWidth: 0.5) }
+            .background(BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 16))
+            .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
     }
 }
 
@@ -404,7 +412,7 @@ private struct MainLayoutTemplate<Content: View>: View {
 
     var body: some View {
         ZStack {
-            Color(red: 10 / 255, green: 10 / 255, blue: 10 / 255)
+            BiningaStyle.background
                 .ignoresSafeArea()
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: spacing) {
