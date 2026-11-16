@@ -2,16 +2,18 @@ import SwiftUI
 import UIKit
 
 @main struct BiningaApp: App {
-    var body: some Scene { WindowGroup { Home().preferredColorScheme(.light).tint(BiningaStyle.accent) } }
+    var body: some Scene { WindowGroup { PublicTabs().preferredColorScheme(.light).tint(BiningaStyle.accent) } }
 }
 
 enum Route: Hashable { case audience, complaint, receipt(String), tracking(String) }
 
-private struct Home: View {
+struct PublicNavigation<Content: View>: View {
+    private let content: Content
+    init(@ViewBuilder content: () -> Content) { self.content = content() }
     @State private var path: [Route] = []
     var body: some View {
         NavigationStack(path: $path) {
-            PublicTabs()
+            content
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .audience, .complaint:
@@ -29,7 +31,6 @@ private struct Home: View {
             }
         }
         .background(BiningaStyle.background)
-        .toolbarBackground(BiningaStyle.background, for: .navigationBar)
     }
 }
 

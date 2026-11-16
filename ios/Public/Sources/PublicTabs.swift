@@ -50,23 +50,38 @@ struct PublicTabs: View {
     @State private var warning: String?
     @State private var loading = false
     @Environment(\.dynamicTypeSize) private var textSize
-    @ScaledMetric(relativeTo: .title) private var identitySize = 28
     @ScaledMetric(relativeTo: .subheadline) private var nameSize = 15
     @ScaledMetric(relativeTo: .footnote) private var roleSize = 13
     @ScaledMetric(relativeTo: .title2) private var heroTitleSize = 22
 
     var body: some View {
         TabView(selection: $selected) {
-            home
+            PublicNavigation {
+                home
+                    .navigationTitle("BININGA")
+                    .navigationBarTitleDisplayMode(.large)
+            }
                 .tabItem { Label(SectionTab.home.rawValue, systemImage: SectionTab.home.icon) }
                 .tag(SectionTab.home)
-            news
+            PublicNavigation {
+                news
+                    .navigationTitle("Actualités")
+                    .navigationBarTitleDisplayMode(.large)
+            }
                 .tabItem { Label(SectionTab.news.rawValue, systemImage: SectionTab.news.icon) }
                 .tag(SectionTab.news)
-            requests
+            PublicNavigation {
+                requests
+                    .navigationTitle("Mes démarches")
+                    .navigationBarTitleDisplayMode(.large)
+            }
                 .tabItem { Label(SectionTab.requests.rawValue, systemImage: SectionTab.requests.icon) }
                 .tag(SectionTab.requests)
-            more
+            PublicNavigation {
+                more
+                    .navigationTitle("Mon espace")
+                    .navigationBarTitleDisplayMode(.large)
+            }
                 .tabItem { Label(SectionTab.more.rawValue, systemImage: SectionTab.more.icon) }
                 .tag(SectionTab.more)
         }
@@ -75,7 +90,6 @@ struct PublicTabs: View {
         .background(BiningaStyle.background.ignoresSafeArea())
         .foregroundStyle(BiningaStyle.text)
         .tint(BiningaStyle.accent)
-        .toolbar(.hidden, for: .navigationBar)
         .task { await refresh() }
     }
 
@@ -88,7 +102,7 @@ struct PublicTabs: View {
                         Text("L’ENGAGEMENT").font(.caption2.weight(.semibold))
                             .tracking(1).foregroundStyle(BiningaStyle.red)
                         Text("Un homme de terrain, de conviction et de résultats.")
-                            .font(.system(.title3, design: .serif).weight(.semibold))
+                            .font(.system(.title3).weight(.semibold))
                         Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
                             .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
                     }
@@ -112,9 +126,6 @@ struct PublicTabs: View {
 
     private var homeIdentity: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("BININGA")
-                .font(.system(size: identitySize, weight: .bold, design: .serif))
-                .accessibilityAddTraits(.isHeader)
             Text("Ange Aimé Wilfrid BININGA")
                 .font(.system(size: nameSize, weight: .medium))
             Text("Député d’Ewo, République du Congo")
@@ -210,7 +221,7 @@ struct PublicTabs: View {
         page("Mon espace", subtitle: "Le suivi de vos demandes, sans compte à créer.") {
             VStack(alignment: .leading, spacing: 12) {
                 Image(systemName: "doc.text.magnifyingglass").font(.title2)
-                Text("Retrouver un dossier").font(.system(.title3, design: .serif).weight(.semibold))
+                Text("Retrouver un dossier").font(.system(.title3).weight(.semibold))
                 Text("Munissez-vous de la référence reçue après l’envoi de votre demande.")
                     .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
                 action("Saisir ma référence", icon: "magnifyingglass", route: .tracking(""), primary: true)
@@ -229,38 +240,28 @@ struct PublicTabs: View {
 
     private func page<Content: View>(_ title: String, subtitle: String, @ViewBuilder contents: () -> Content) -> some View {
         MainLayoutTemplate {
-                VStack(alignment: .leading, spacing: 7) {
-                    Text("BININGA").font(.system(.subheadline, design: .serif).weight(.semibold))
-                    Text(title).font(.system(.title, design: .serif).weight(.semibold)).tracking(-0.4)
-                        .accessibilityAddTraits(.isHeader)
-                    Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.secondary)
-                    rule.padding(.top, 5)
-                }.padding(.bottom, 3)
-                contents()
+            Text(subtitle).font(.subheadline).foregroundStyle(BiningaStyle.secondary)
+            contents()
         }
     }
 
     private func action(_ name: String, icon: String, route: Route, primary: Bool = false) -> some View {
         NavigationLink(value: route) {
-            HStack(spacing: 10) {
-                Image(systemName: icon).frame(width: 22)
-                Text(name).font(.subheadline.weight(.medium))
-                Spacer(minLength: 6)
-                Image(systemName: "chevron.right").font(.caption.weight(.semibold))
-            }
-            .frame(minHeight: 24).padding(.horizontal, 14).padding(.vertical, 11)
-            .foregroundStyle(primary ? Color.white : BiningaStyle.text)
-            .background(primary ? BiningaStyle.accent : BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(primary ? BiningaStyle.accent : BiningaStyle.border, lineWidth: primary ? 1 : 0.5) }
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-        }.buttonStyle(.plain)
+            Label(name, systemImage: icon)
+                .frame(maxWidth: .infinity, minHeight: 24)
+                .padding(.vertical, 2)
+        }
+        .font(.headline)
+        .controlSize(.large)
+        .buttonBorderShape(.roundedRectangle(radius: 14))
+        .modifier(NativeActionStyle(primary: primary))
     }
 
     private func requestTile(_ title: String, subtitle: String, icon: String, route: Route, primary: Bool = false) -> some View {
         NavigationLink(value: route) {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon).font(.title2)
-                Text(title).font(.system(.title3, design: .serif).weight(.semibold))
+                Text(title).font(.system(.title3).weight(.semibold))
                 Text(subtitle).font(.footnote).foregroundStyle(primary ? Color.white.opacity(0.9) : BiningaStyle.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.right").font(.caption).frame(maxWidth: .infinity, alignment: .trailing)
@@ -279,7 +280,7 @@ struct PublicTabs: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     publicationPhoto(item).aspectRatio(16 / 9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14))
-                    Text(item.title).font(.system(.title2, design: .serif).weight(.semibold))
+                    Text(item.title).font(.system(.title2).weight(.semibold))
                     if let date = item.date { Text(date).font(.caption).foregroundStyle(.secondary) }
                     Text(item.bodyText).font(.body)
                     if let raw = item.sourceUrl, let url = URL(string: raw), url.scheme == "https" {
@@ -310,7 +311,7 @@ struct PublicTabs: View {
     private func publicationSummary(_ item: Publication, category: String) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(category).font(.system(.caption2).weight(.semibold)).tracking(0.5).foregroundStyle(BiningaStyle.secondary)
-            Text(item.title).font(.system(.headline, design: .serif)).lineLimit(3)
+            Text(item.title).font(.system(.headline)).lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
             if let date = item.date {
                 Label(date, systemImage: "calendar").font(.caption2).foregroundStyle(BiningaStyle.secondary)
@@ -389,8 +390,8 @@ private struct MainLayoutTemplate<Content: View>: View {
         ZStack {
             BiningaStyle.background
                 .ignoresSafeArea()
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: spacing) {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: spacing) {
                     content
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -398,6 +399,17 @@ private struct MainLayoutTemplate<Content: View>: View {
                 .padding(.top, topPadding)
                 .padding(.bottom, 20)
             }
+        }
+    }
+}
+
+private struct NativeActionStyle: ViewModifier {
+    let primary: Bool
+    @ViewBuilder func body(content: Content) -> some View {
+        if primary {
+            content.buttonStyle(.borderedProminent)
+        } else {
+            content.buttonStyle(.bordered)
         }
     }
 }
