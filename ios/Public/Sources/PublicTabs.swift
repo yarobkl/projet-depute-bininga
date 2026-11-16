@@ -258,7 +258,7 @@ struct PublicTabs: View {
                     Text("BININGA").font(.system(.subheadline, design: .serif).weight(.semibold))
                     Text(title).font(.system(.title, design: .serif).weight(.semibold)).tracking(-0.4)
                         .accessibilityAddTraits(.isHeader)
-                    Text(subtitle).font(.footnote).foregroundStyle(primary ? Color.white.opacity(0.9) : BiningaStyle.secondary)
+                    Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.secondary)
                     rule.padding(.top, 5)
                 }.padding(.bottom, 3)
                 contents()
@@ -286,7 +286,7 @@ struct PublicTabs: View {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: icon).font(.title2)
                 Text(title).font(.system(.title3, design: .serif).weight(.semibold))
-                Text(subtitle).font(.footnote).foregroundStyle(BiningaStyle.secondary)
+                Text(subtitle).font(.footnote).foregroundStyle(primary ? Color.white.opacity(0.9) : BiningaStyle.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 Image(systemName: "chevron.right").font(.caption).frame(maxWidth: .infinity, alignment: .trailing)
             }
