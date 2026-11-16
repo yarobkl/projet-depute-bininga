@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import UserNotifications
 
 enum BiningaStyle {
@@ -445,6 +446,7 @@ private struct NativeActionStyle: ViewModifier {
 private struct NotificationInbox: View {
     @Environment(\.dismiss) private var dismiss
     @State private var notifications: [UNNotification] = []
+    @StateObject private var push = PushService.shared
 
     var body: some View {
         NavigationStack {
@@ -453,7 +455,7 @@ private struct NotificationInbox: View {
                     ContentUnavailableView {
                         Label("Aucune notification", systemImage: "bell")
                     } description: {
-                        Text("Les notifications push ne sont pas encore activées pour cette version.")
+                        Text(push.message)
                     }
                 } else {
                     List(notifications, id: \.request.identifier) { notification in
@@ -464,6 +466,16 @@ private struct NotificationInbox: View {
                         }
                     }
                 }
+            }
+            .safeAreaInset(edge: .bottom) {
+                VStack(spacing: 8) {
+                    if push.denied {
+                        Button("Ouvrir les réglages") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }
+                    } else {
+                        Button("Activer ou actualiser les notifications") { Task { await push.requestPermission() } }.disabled(push.busy)
+                    }
+                    Text(push.message).font(.footnote).foregroundStyle(.secondary)
+                }.padding().frame(maxWidth: .infinity).background(.regularMaterial)
             }
             .navigationTitle("Notifications")
             .navigationBarTitleDisplayMode(.inline)
