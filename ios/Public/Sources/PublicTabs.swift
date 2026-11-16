@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 enum BiningaStyle {
     static let background = Color(red: 245 / 255, green: 242 / 255, blue: 237 / 255)
@@ -46,6 +47,7 @@ private enum SectionTab: String, CaseIterable {
 struct PublicTabs: View {
     @State private var selected = SectionTab.home
     @State private var filter = "À la une"
+    @State private var showsNotifications = false
     @State private var content: PublicContent?
     @State private var warning: String?
     @State private var loading = false
@@ -59,6 +61,11 @@ struct PublicTabs: View {
             PublicNavigation {
                 home
                     .navigationTitle("BININGA")
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button("Notifications", systemImage: "bell") { showsNotifications = true }
+                        }
+                    }
                     .navigationBarTitleDisplayMode(.large)
             }
                 .tabItem { Label(SectionTab.home.rawValue, systemImage: SectionTab.home.icon) }
@@ -90,13 +97,13 @@ struct PublicTabs: View {
         .background(BiningaStyle.background.ignoresSafeArea())
         .foregroundStyle(BiningaStyle.text)
         .tint(BiningaStyle.accent)
+        .sheet(isPresented: $showsNotifications) { NotificationInbox() }
         .task { await refresh() }
     }
 
     private var home: some View {
         MainLayoutTemplate(spacing: 16) {
-                homeIdentity
-                homeHero
+                homePortrait
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 7) {
                         Text("L’ENGAGEMENT").font(.caption2.weight(.semibold))
@@ -121,13 +128,22 @@ struct PublicTabs: View {
                         .buttonBorderShape(.roundedRectangle(radius: 14))
                         .buttonStyle(.bordered)
                     }
-                    if let item = content?.actus.slides?.first {
-                        HStack {
-                            Text("À la une").font(.headline)
-                            Spacer()
-                            Button("Tout voir") { selected = .news }.font(.subheadline)
-                        }.padding(.top, 6)
-                        publicationLink(item, featured: false, category: "À LA UNE")
+                    if !terrainPublications.isEmpty {
+                        Text("Sur le terrain").font(.title2.bold())
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 8)
+                        ScrollView(.horizontal) {
+                            LazyHStack(alignment: .top, spacing: 12) {
+                                ForEach(Array(terrainPublications.enumerated()), id: \.offset) { _, item in
+                                    publicationLink(item, featured: true, category: "SUR LE TERRAIN")
+                                        .containerRelativeFrame(.horizontal)
+                                }
+                            }
+                            .scrollTargetLayout()
+                        }
+                        .scrollTargetBehavior(.viewAligned)
+                        .scrollIndicators(.hidden)
+                        .accessibilityLabel("Les actions sur le terrain")
                     }
                 }
                 .frame(maxWidth: .infinity)
@@ -135,44 +151,45 @@ struct PublicTabs: View {
         .refreshable { await refresh() }
     }
 
-    private var homeIdentity: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Ange Aimé Wilfrid BININGA")
-                .font(.system(size: nameSize, weight: .medium))
-            Text("Député d’Ewo, République du Congo")
-                .font(.system(size: roleSize))
-                .foregroundStyle(BiningaStyle.secondary)
+    private var homePortrait: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .center, spacing: 16) {
+                portraitPhoto.frame(width: 116, height: 172)
+                portraitIdentity.frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+            }
+            VStack(alignment: .leading, spacing: 16) {
+                portraitPhoto.frame(height: 220)
+                portraitIdentity
+            }
         }
-        .foregroundStyle(BiningaStyle.text)
-        .padding(.top, 4)
+        .card()
     }
 
-    private var homeHero: some View {
-        ZStack(alignment: .bottomLeading) {
-            GeometryReader { geometry in
-                Image("Ewo")
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .clipped()
-            }
-            .accessibilityHidden(true)
-            .allowsHitTesting(false)
-
-            LinearGradient(
-                colors: [.clear, .black.opacity(0.8)],
-                startPoint: .top, endPoint: .bottom
-            )
-            .allowsHitTesting(false)
-
-            Text("Ewo, au cœur de notre action")
-                .font(.system(size: heroTitleSize, weight: .bold, design: .serif))
-                .foregroundStyle(BiningaStyle.cream)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(20)
+    private var portraitPhoto: some View {
+        GeometryReader { geometry in
+            Image("BiningaPortrait")
+                .resizable().scaledToFill()
+                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                .clipped()
         }
-        .aspectRatio(textSize.isAccessibilitySize ? 1 : 1.75, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .accessibilityLabel("Portrait d’Ange Aimé Wilfrid BININGA")
+    }
+
+    private var portraitIdentity: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Ange Aimé Wilfrid BININGA").font(.title3.bold())
+            Text("Député d’Ewo, République du Congo")
+                .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
+        }
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var terrainPublications: [Publication] {
+        (content?.actus.cards ?? []).filter {
+            let title = $0.title.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr"))
+            return title.contains("ewo") || title.contains("cuvette") || title.contains("lebankaya")
+        }
     }
 
     private var news: some View {
@@ -421,6 +438,48 @@ private struct NativeActionStyle: ViewModifier {
             content.buttonStyle(.borderedProminent)
         } else {
             content.buttonStyle(.bordered)
+        }
+    }
+}
+
+private struct NotificationInbox: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var notifications: [UNNotification] = []
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if notifications.isEmpty {
+                    ContentUnavailableView {
+                        Label("Aucune notification", systemImage: "bell")
+                    } description: {
+                        Text("Les notifications push ne sont pas encore activées pour cette version.")
+                    }
+                } else {
+                    List(notifications, id: \.request.identifier) { notification in
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(notification.request.content.title).font(.headline)
+                            Text(notification.request.content.body).font(.body)
+                            Text(notification.date, style: .date).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Notifications")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Fermer") { dismiss() }
+                }
+            }
+        }
+        .tint(BiningaStyle.accent)
+        .task {
+            notifications = await withCheckedContinuation { continuation in
+                UNUserNotificationCenter.current().getDeliveredNotifications {
+                    continuation.resume(returning: $0.sorted { $0.date > $1.date })
+                }
+            }
         }
     }
 }
