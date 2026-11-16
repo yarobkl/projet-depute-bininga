@@ -109,6 +109,15 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
 </style>
 <script src="static/i18n.js?v=20260901-public-experience"></script>
 <script src="static/analytics-consent.js?v=20260902-ga4-consent" defer></script>
+<style id="pct-official-logo-style">
+.pct-affiliation{display:inline-flex;align-items:center;gap:12px;margin:14px 0 6px;padding:9px 13px;border:1px solid rgba(255,255,255,.2);border-radius:12px;background:rgba(0,0,0,.24);max-width:100%;text-decoration:none}
+.pct-affiliation img{display:block;width:116px;max-width:36vw;height:auto;object-fit:contain}
+.pct-affiliation span{font-size:.72rem;line-height:1.4;color:#fff;letter-spacing:.025em}
+.pct-footer-affiliation{display:inline-flex;align-items:center;gap:9px;margin:14px 0;text-decoration:none}
+.pct-footer-affiliation img{width:110px;height:auto;max-width:100%;object-fit:contain}
+.pct-footer-affiliation span{font-size:.75rem;color:inherit;opacity:.8}
+@media(max-width:480px){.pct-affiliation{gap:8px;padding:8px 10px}.pct-affiliation img{width:94px}.pct-affiliation span{font-size:.66rem}}
+</style>
 </head>
 <body>
 <a href="#hero" class="skip-link" style="position:absolute;top:-40px;left:0;background:var(--r);color:#fff;padding:8px 16px;z-index:9999;border-radius:0 0 6px 0;transition:top .2s" onfocus="this.style.top='0'" onblur="this.style.top='-40px'" data-i18n="skip.link">Aller au contenu principal</a>
@@ -199,6 +208,10 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
         <span>Campagne législative · République du Congo &nbsp;·&nbsp; </span>
       </div>
     </div>
+    <a class="pct-affiliation" href="https://pct.cg/" target="_blank" rel="noopener noreferrer" aria-label="Parti Congolais du Travail, site officiel">
+      <img src="https://pct.cg/assets/img/logo.png" alt="Logo officiel du Parti Congolais du Travail" loading="eager" referrerpolicy="no-referrer">
+      <span>Engagement politique<br>Parti Congolais du Travail</span>
+    </a>
     <h1 class="hero-name" id="dyn-name">
       Ange Aimé Wilfrid
       <span>BININGA</span>
@@ -696,6 +709,10 @@ body.theme-light .lang-btn.lang-active{border-color:rgba(139,10,30,.32);backgrou
         <div class="nlogo-badge">AB</div>
         <div class="nlogo-txt"><span id="dyn-ft-logo-name">Aimé BININGA</span><small id="dyn-ft-logo-sub">PCT · Député d'Ewo</small></div>
       </div>
+      <a class="pct-footer-affiliation" href="https://pct.cg/" target="_blank" rel="noopener noreferrer" aria-label="Site officiel du Parti Congolais du Travail">
+        <img src="https://pct.cg/assets/img/logo.png" alt="Logo officiel du PCT" loading="lazy" referrerpolicy="no-referrer">
+        <span>Parti Congolais du Travail</span>
+      </a>
       <p class="ft-brand-p" id="dyn-ft-brand">Site officiel d'Ange Aimé Wilfrid BININGA, Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones. Député de la 1re circonscription d'Ewo (Cuvette-Ouest) depuis le 19 août 2017. Parti Congolais du Travail.</p>
       <div class="social-row" hidden aria-hidden="true"></div>
     </div>
