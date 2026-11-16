@@ -84,6 +84,7 @@ jobs:
       - name: Contrats actions admin
         run: |
           python tests/test_admin_ui.py
+          python tests/test_push_notifications.py
           python tests/test_admin_action_contracts.py
           python tests/test_admin_dashboard_priority.py
           python tests/test_system_panel_lifecycle.py
