@@ -114,4 +114,11 @@ class BroadcastTests(unittest.TestCase):
             self.assertEqual(push.dispatch_batch(conn,'message')['pending'],0)
         send.assert_not_called()
 
+    def test_provider_token_is_reused_for_the_broadcast_and_rotated_on_expiry(self):
+        with patch.object(push,'_TOKEN_CACHE',None), patch.dict('os.environ',{'BININGA_APNS_PRIVATE_KEY':'test-key'}), patch('jwt.encode',side_effect=['first','second']) as encode, patch.object(push.time,'time',side_effect=[1000,1001,4000]):
+            self.assertEqual(push.provider_token(),'first')
+            self.assertEqual(push.provider_token(),'first')
+            self.assertEqual(push.provider_token(),'second')
+            self.assertEqual(encode.call_count,2)
+
 if __name__=='__main__': unittest.main()
