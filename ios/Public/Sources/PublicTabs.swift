@@ -49,23 +49,29 @@ struct PublicTabs: View {
     @State private var content: PublicContent?
     @State private var warning: String?
     @State private var loading = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var textSize
     @ScaledMetric(relativeTo: .title) private var identitySize = 28
     @ScaledMetric(relativeTo: .subheadline) private var nameSize = 15
     @ScaledMetric(relativeTo: .footnote) private var roleSize = 13
     @ScaledMetric(relativeTo: .title2) private var heroTitleSize = 22
-    @Namespace private var selection
 
     var body: some View {
         TabView(selection: $selected) {
-            home.tag(SectionTab.home)
-            news.tag(SectionTab.news)
-            requests.tag(SectionTab.requests)
-            more.tag(SectionTab.more)
+            home
+                .tabItem { Label(SectionTab.home.rawValue, systemImage: SectionTab.home.icon) }
+                .tag(SectionTab.home)
+            news
+                .tabItem { Label(SectionTab.news.rawValue, systemImage: SectionTab.news.icon) }
+                .tag(SectionTab.news)
+            requests
+                .tabItem { Label(SectionTab.requests.rawValue, systemImage: SectionTab.requests.icon) }
+                .tag(SectionTab.requests)
+            more
+                .tabItem { Label(SectionTab.more.rawValue, systemImage: SectionTab.more.icon) }
+                .tag(SectionTab.more)
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
-        .safeAreaInset(edge: .bottom, spacing: 0) { tabBar.zIndex(1) }
+        // Match QR Permanent: let iOS own tab dimensions, safe areas and glass interaction.
+        .tabViewStyle(.automatic)
         .background(BiningaStyle.background.ignoresSafeArea())
         .foregroundStyle(BiningaStyle.text)
         .tint(BiningaStyle.accent)
@@ -74,7 +80,7 @@ struct PublicTabs: View {
     }
 
     private var home: some View {
-        MainLayoutTemplate(horizontalPadding: 14, topPadding: 12, spacing: 16) {
+        MainLayoutTemplate(spacing: 16) {
                 homeIdentity
                 homeHero
                 VStack(alignment: .leading, spacing: 16) {
@@ -221,37 +227,6 @@ struct PublicTabs: View {
         RoundedRectangle(cornerRadius: 1).fill(BiningaStyle.red).frame(width: 30, height: 3).accessibilityHidden(true)
     }
 
-    private var tabBar: some View {
-        HStack(spacing: 0) {
-            ForEach(SectionTab.allCases, id: \.self) { tab in
-                Button {
-                    withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.22)) { selected = tab }
-                } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.icon).font(.system(size: 18, weight: .regular))
-                        Text(tab.rawValue).font(.caption2.weight(selected == tab ? .semibold : .regular))
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(.vertical, 1)
-                    .foregroundStyle(selected == tab ? Color.white : BiningaStyle.text)
-                    .background {
-                        if selected == tab {
-                            Capsule().fill(BiningaStyle.accent).matchedGeometryEffect(id: "selected", in: selection)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(tab.rawValue)
-                .accessibilityAddTraits(selected == tab ? .isSelected : [])
-            }
-        }
-        .padding(3)
-        .background(BiningaStyle.surface, in: Capsule())
-        .overlay { Capsule().strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
-        .padding(.horizontal, 14).padding(.top, 6)
-    }
-
     private func page<Content: View>(_ title: String, subtitle: String, @ViewBuilder contents: () -> Content) -> some View {
         MainLayoutTemplate {
                 VStack(alignment: .leading, spacing: 7) {
@@ -394,7 +369,7 @@ private extension View {
 }
 
 
-// Shared page geometry. The parent PublicTabs reserves the tab bar via safeAreaInset.
+// Shared page geometry. The native TabView owns the bottom safe area.
 // Only backgrounds may extend outside the system safe area.
 private struct MainLayoutTemplate<Content: View>: View {
     private let content: Content
@@ -402,7 +377,7 @@ private struct MainLayoutTemplate<Content: View>: View {
     private let topPadding: CGFloat
     private let spacing: CGFloat
 
-    init(horizontalPadding: CGFloat = 20, topPadding: CGFloat = 12,
+    init(horizontalPadding: CGFloat = 16, topPadding: CGFloat = 4,
          spacing: CGFloat = 20, @ViewBuilder content: () -> Content) {
         self.horizontalPadding = horizontalPadding
         self.topPadding = topPadding
