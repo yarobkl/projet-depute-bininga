@@ -69,6 +69,9 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
         <span class="icon i-dashboard" aria-hidden="true"></span> Tableau de bord
       </div>
 
+      <div class="sb-item role-superadmin" style="display:none" onclick="showPanel('push',this)">
+        <span class="icon i-bell" aria-hidden="true"></span> Notifications iPhone
+      </div>
       <div class="sb-section">Gestion</div>
       <div class="sb-item" onclick="showPanel('audiences',this)">
         <span class="icon i-calendar" aria-hidden="true"></span> Demandes d'audience
@@ -279,6 +282,22 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
         </div>
       </div>
 
+      <div class="panel" id="panel-push">
+        <div class="card" style="padding:24px">
+          <h2>Notifications iPhone</h2>
+          <p>Préparez un message et validez un envoi vers un appareil ayant autorisé les notifications. Seuls les propriétaires de l’administration peuvent envoyer.</p>
+          <p id="push-status" role="status" aria-live="polite">Ouvrez ce panneau pour vérifier la configuration.</p>
+          <button id="push-refresh" type="button">Actualiser</button>
+          <form id="push-compose" style="display:grid;gap:12px;max-width:640px;margin-top:20px">
+            <label for="push-title">Titre</label><input id="push-title" maxlength="100" required>
+            <label for="push-body">Message</label><textarea id="push-body" maxlength="500" rows="4" required></textarea>
+            <aside class="card" style="padding:16px"><strong id="push-preview-title">Titre</strong><p id="push-preview-body">Message</p></aside>
+            <button type="submit" class="btn-primary">Enregistrer le brouillon</button>
+          </form>
+          <label for="push-device">Appareil destinataire</label><select id="push-device"><option value="">Aucun appareil chargé</option></select>
+          <h3>Brouillons et historique</h3><div id="push-history"></div>
+        </div>
+      </div>
       <!-- ── AUDIENCES ── -->
       <div class="panel" id="panel-audiences">
         <div class="card">
@@ -1761,5 +1780,6 @@ function _ylFmtDate(ts){
 function _ylCap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):""}
 function _ylEsc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 </script>
+<script src="/static/admin-push.js?v=1" defer></script>
 </body>
 </html>

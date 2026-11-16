@@ -240,6 +240,9 @@ def _inject_public_form_hardening(handler: _PassengerHandler) -> None:
 
 
 def _dispatch_request(handler: _PassengerHandler) -> None:
+    import push_notifications
+    if push_notifications.handle(bininga_server, handler):
+        return
     if handler.command == "GET":
         handler.do_GET()
     elif handler.command == "POST":
