@@ -20,6 +20,7 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         CODE_SIGN_STYLE: Automatic
         INFOPLIST_KEY_CFBundleDisplayName: BININGA
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         SWIFT_VERSION: "5.0"
   BiningaUITests:
@@ -40,3 +41,4 @@ schemes:
     test:
       targets:
         - BiningaUITests
+

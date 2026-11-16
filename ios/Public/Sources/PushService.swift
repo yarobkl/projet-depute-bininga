@@ -9,6 +9,16 @@ import Security
     @Published var busy = false
     @Published var denied = false
 
+    func startOnFirstOpen() async {
+        // iOS owns the authorization prompt and remembers Allow / Don't Allow.
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        if settings.authorizationStatus == .notDetermined {
+            await requestPermission()
+        } else {
+            await refreshPermission()
+        }
+    }
+
     func refreshPermission() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
         denied = settings.authorizationStatus == .denied
@@ -86,3 +96,4 @@ final class PushAppDelegate: NSObject, UIApplicationDelegate, UNUserNotification
         completionHandler([.banner, .list, .sound])
     }
 }
+

@@ -4,7 +4,7 @@ import UIKit
 @main struct BiningaApp: App {
     @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
     @Environment(\.scenePhase) private var phase
-    var body: some Scene { WindowGroup { PublicTabs().task { await PushService.shared.refreshPermission() }.onChange(of: phase) { _, value in if value == .active { Task { await PushService.shared.refreshPermission() } } }.preferredColorScheme(.light).tint(BiningaStyle.accent) } }
+    var body: some Scene { WindowGroup { PublicTabs().task { await PushService.shared.startOnFirstOpen() }.onChange(of: phase) { _, value in if value == .active { Task { await PushService.shared.refreshPermission() } } }.preferredColorScheme(.light).tint(BiningaStyle.accent) } }
 }
 
 enum Route: Hashable { case audience, complaint, receipt(String), tracking(String) }
@@ -104,3 +104,4 @@ private struct Tracking: View {
         do { result = try await Cabinet().track(code) } catch { self.error = error.localizedDescription }
     }
 }
+

@@ -14,33 +14,14 @@ enum BiningaStyle {
     static let site = URL(string: "https://projet-depute-bininga.vercel.app")!
 }
 
-private struct Publication: Decodable, Hashable {
-    let title: String
-    var subtitle: String?, desc: String?, text1: String?, text2: String?, quote: String?
-    var image: String?, date: String?, source: String?, sourceUrl: String?
-    var bodyText: String { [subtitle, desc, text1, quote, text2].compactMap { $0 }.joined(separator: "\n\n") }
-}
-
-private struct PublicContent: Decodable {
-    struct News: Decodable {
-        var slides: [Publication]?, vedettes: [Publication]?, cards: [Publication]?
-    }
-    struct Programme: Decodable {
-        struct Axis: Decodable { let title: String; var text: String?, points: [String]? }
-        var axes: [Axis]?
-    }
-    let actus: News
-    let programme: Programme
-}
-
 private enum SectionTab: String, CaseIterable {
-    case home = "Accueil", news = "Actualités", requests = "Demandes", more = "Plus"
+    case home = "Accueil", news = "Actualités", requests = "Demandes", more = "Découvrir"
     var icon: String {
         switch self {
         case .home: "house"
         case .news: "newspaper"
         case .requests: "folder"
-        case .more: "ellipsis"
+        case .more: "person.text.rectangle"
         }
     }
 }
@@ -61,7 +42,7 @@ struct PublicTabs: View {
         TabView(selection: $selected) {
             PublicNavigation {
                 home
-                    .navigationTitle("BININGA")
+                    .navigationTitle("")
                     .toolbar {
                         ToolbarItem(placement: .topBarTrailing) {
                             Button("Notifications", systemImage: "bell") { showsNotifications = true }
@@ -87,7 +68,7 @@ struct PublicTabs: View {
                 .tag(SectionTab.requests)
             PublicNavigation {
                 more
-                    .navigationTitle("Mon espace")
+                    .navigationTitle("Découvrir")
                     .navigationBarTitleDisplayMode(.large)
             }
                 .tabItem { Label(SectionTab.more.rawValue, systemImage: SectionTab.more.icon) }
@@ -104,6 +85,10 @@ struct PublicTabs: View {
 
     private var home: some View {
         MainLayoutTemplate(spacing: 16) {
+                Text(content?.fullName ?? "Ange Aimé Wilfrid BININGA")
+                    .font(.largeTitle.bold()).tracking(-0.7)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
                 homePortrait
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 7) {
@@ -113,21 +98,20 @@ struct PublicTabs: View {
                             .font(.system(.title3).weight(.semibold))
                         Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
                             .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
+                        NavigationLink { career } label: {
+                            Label("Découvrir son parcours", systemImage: "arrow.right")
+                                .font(.subheadline.weight(.semibold)).frame(minHeight: 44)
+                        }.buttonStyle(.plain).foregroundStyle(BiningaStyle.accent)
                     }
                     VStack(spacing: 12) {
                         action("Demander une audience", icon: "calendar", route: .audience, primary: true)
-                        Button {
-                            filter = "Programme"
-                            selected = .news
-                        } label: {
+                        NavigationLink { programmeDestination } label: {
                             Label("Lire le programme", systemImage: "book.closed")
-                                .frame(maxWidth: .infinity, minHeight: 24)
-                                .padding(.vertical, 2)
+                                .frame(maxWidth: .infinity, minHeight: 24).padding(.vertical, 2)
                         }
-                        .font(.headline)
-                        .controlSize(.large)
+                        .font(.headline).controlSize(.large)
                         .buttonBorderShape(.roundedRectangle(radius: 14))
-                        .buttonStyle(.bordered)
+                        .buttonStyle(.bordered).foregroundStyle(BiningaStyle.accent)
                     }
                     if !terrainPublications.isEmpty {
                         Text("Sur le terrain").font(.title2.bold())
@@ -153,43 +137,37 @@ struct PublicTabs: View {
     }
 
     private var homePortrait: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: 16) {
-                portraitPhoto.frame(width: 116, height: 172)
-                portraitIdentity.frame(minWidth: 150, maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 16) {
+            // A portrait frame keeps the whole face visible. Never use a landscape crop here.
+            Color.clear.aspectRatio(4.0 / 5.0, contentMode: .fit)
+                .overlay {
+                    GeometryReader { geometry in
+                        Image("BiningaPortrait").resizable().scaledToFill()
+                            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
+                            .clipped()
+                    }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 18))
+                .accessibilityLabel("Portrait d’Ange Aimé Wilfrid BININGA")
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Député d’Ewo").font(.title3.bold())
+                Text("Garde des Sceaux, Ministre de la Justice, des Droits Humains et de la Promotion des Peuples Autochtones")
+                    .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            VStack(alignment: .leading, spacing: 16) {
-                portraitPhoto.frame(height: 220)
-                portraitIdentity
-            }
         }
-        .card()
+        .padding(14).background(BiningaStyle.surface, in: RoundedRectangle(cornerRadius: 24))
+        .overlay { RoundedRectangle(cornerRadius: 24).strokeBorder(BiningaStyle.border, lineWidth: 0.5) }
+        .frame(maxWidth: 580).frame(maxWidth: .infinity)
     }
 
-    private var portraitPhoto: some View {
-        GeometryReader { geometry in
-            Image("BiningaPortrait")
-                .resizable().scaledToFill()
-                .frame(width: geometry.size.width, height: geometry.size.height, alignment: .top)
-                .clipped()
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .accessibilityLabel("Portrait d’Ange Aimé Wilfrid BININGA")
-    }
+    private var terrainPublications: [Publication] { content?.terrain ?? [] }
 
-    private var portraitIdentity: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Ange Aimé Wilfrid BININGA").font(.title3.bold())
-            Text("Député d’Ewo, République du Congo")
-                .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
-        }
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
-    private var terrainPublications: [Publication] {
-        (content?.actus.cards ?? []).filter {
-            let title = $0.title.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr"))
-            return title.contains("ewo") || title.contains("cuvette") || title.contains("lebankaya")
+    @ViewBuilder private var programmeDestination: some View {
+        if let content {
+            ProgrammeReader(programme: content.programme, section: content.programmeSection)
+        } else {
+            ContentUnavailableView("Programme indisponible", systemImage: "wifi.exclamationmark", description: Text("Revenez à l’accueil et actualisez le contenu."))
         }
     }
 
@@ -206,17 +184,15 @@ struct PublicTabs: View {
             }
             if let content {
                 if filter == "Programme" {
-                    ForEach(Array((content.programme.axes ?? []).enumerated()), id: \.offset) { _, axis in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text(axis.title).font(.headline)
-                            if let text = axis.text { Text(text).font(.subheadline) }
-                            ForEach(Array((axis.points ?? []).enumerated()), id: \.offset) { _, point in
-                                Label(point, systemImage: "circle.fill").font(.footnote)
-                            }
+                    NavigationLink { ProgrammeReader(programme: content.programme, section: content.programmeSection) } label: {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label("Le programme", systemImage: "book.closed").font(.title2.bold())
+                            Text(content.programme.heroTitle ?? "Découvrir les engagements").font(.headline)
+                            Text("Ouvrir la lecture et le sommaire").font(.subheadline)
                         }.card()
-                    }
+                    }.buttonStyle(.plain).foregroundStyle(BiningaStyle.accent).accessibilityIdentifier("programme-reader-link")
                 } else {
-                    let articles = filter == "Terrain" ? content.actus.cards ?? [] : (content.actus.slides ?? []) + (content.actus.vedettes ?? [])
+                    let articles = filter == "Terrain" ? content.terrain : content.allNews
                     if articles.isEmpty { Text("Aucune publication dans cette rubrique.").font(.subheadline) }
                     ForEach(Array(articles.enumerated()), id: \.offset) { index, item in
                         publicationLink(item, featured: index == 0, category: filter.uppercased())
@@ -247,20 +223,71 @@ struct PublicTabs: View {
     }
 
     private var more: some View {
-        page("Mon espace", subtitle: "Le suivi de vos demandes, sans compte à créer.") {
-            VStack(alignment: .leading, spacing: 12) {
-                Image(systemName: "doc.text.magnifyingglass").font(.title2)
-                Text("Retrouver un dossier").font(.system(.title3).weight(.semibold))
-                Text("Munissez-vous de la référence reçue après l’envoi de votre demande.")
-                    .font(.subheadline).foregroundStyle(BiningaStyle.secondary)
-                action("Saisir ma référence", icon: "magnifyingglass", route: .tracking(""), primary: true)
-            }.card()
+        page("Découvrir", subtitle: "Le parcours, les engagements et les actions en images.") {
+            NavigationLink { career } label: {
+                discoveryRow("Son parcours", subtitle: "Les étapes de son engagement", icon: "person.text.rectangle")
+            }.buttonStyle(.plain).accessibilityLabel("Son parcours")
+            NavigationLink { gallery } label: {
+                discoveryRow("En images", subtitle: "La galerie publiée sur le site", icon: "photo.on.rectangle.angled")
+            }.buttonStyle(.plain).accessibilityLabel("En images")
+            NavigationLink { about } label: {
+                discoveryRow("À propos", subtitle: "Portrait et présentation", icon: "person.crop.rectangle")
+            }.buttonStyle(.plain)
             Link(destination: BiningaStyle.site) {
-                HStack { Label("Le site BININGA", systemImage: "safari"); Spacer(); Image(systemName: "arrow.up.right") }
-                    .font(.subheadline).padding(.vertical, 14)
+                discoveryRow("Le site BININGA", subtitle: "Consulter le site", icon: "safari")
             }
-            action("Suivre ma demande", icon: "folder", route: .tracking(""))
         }
+    }
+
+    private func discoveryRow(_ title: String, subtitle: String, icon: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon).font(.title2).foregroundStyle(BiningaStyle.accent).frame(width: 32)
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title).font(.headline)
+                Text(subtitle).font(.subheadline).foregroundStyle(BiningaStyle.secondary)
+            }
+            Spacer(minLength: 4)
+            Image(systemName: "chevron.right").font(.caption).foregroundStyle(BiningaStyle.secondary)
+        }.card().foregroundStyle(BiningaStyle.text)
+    }
+
+    private var career: some View {
+        MainLayoutTemplate {
+            if let steps = content?.parcours, !steps.isEmpty {
+                ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
+                    VStack(alignment: .leading, spacing: 10) {
+                        if let year = step.year { Text(year).font(.subheadline.weight(.semibold)).foregroundStyle(BiningaStyle.accent) }
+                        Text(step.title.editorialPlainText).font(.title3.bold()).accessibilityAddTraits(.isHeader)
+                        if let text = step.desc { Text(text.editorialPlainText).font(.body).lineSpacing(4) }
+                    }.card()
+                }
+            } else { ContentUnavailableView("Parcours indisponible", systemImage: "person.text.rectangle") }
+        }.navigationTitle("Son parcours").navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var about: some View {
+        MainLayoutTemplate {
+            Text(content?.fullName ?? "Ange Aimé Wilfrid BININGA").font(.title.bold())
+            if let intro = content?.about?.intro { Text(intro.editorialPlainText).font(.title3).lineSpacing(4) }
+            ForEach(Array((content?.about?.paragraphs ?? []).enumerated()), id: \.offset) { _, paragraph in
+                Text(paragraph.editorialPlainText).font(.body).lineSpacing(5).textSelection(.enabled)
+            }
+        }.navigationTitle("À propos").navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var gallery: some View {
+        MainLayoutTemplate {
+            let photos = content?.gallery?.slides ?? content?.gallery?.grid ?? []
+            if photos.isEmpty { ContentUnavailableView("Aucune photo publiée", systemImage: "photo.on.rectangle") }
+            ForEach(Array(photos.enumerated()), id: \.offset) { _, photo in
+                VStack(alignment: .leading, spacing: 12) {
+                    publicationPhoto(Publication(title: photo.title ?? photo.alt ?? "", image: photo.image))
+                        .aspectRatio(4.0 / 3.0, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 16))
+                    if let title = photo.title ?? photo.alt { Text(title).font(.headline) }
+                    if let subtitle = photo.subtitle { Text(subtitle).font(.subheadline).foregroundStyle(BiningaStyle.secondary) }
+                }.padding(.bottom, 12)
+            }
+        }.navigationTitle("En images").navigationBarTitleDisplayMode(.inline)
     }
 
     private var rule: some View {
@@ -310,7 +337,7 @@ struct PublicTabs: View {
                 VStack(alignment: .leading, spacing: 16) {
                     publicationPhoto(item).aspectRatio(16 / 9, contentMode: .fit).clipShape(RoundedRectangle(cornerRadius: 14))
                     Text(item.title).font(.system(.title2).weight(.semibold))
-                    if let date = item.date { Text(date).font(.caption).foregroundStyle(.secondary) }
+                    if let date = item.displayDate { Text(date).font(.caption).foregroundStyle(.secondary) }
                     Text(item.bodyText).font(.body)
                     if let raw = item.sourceUrl, let url = URL(string: raw), url.scheme == "https" {
                         Link(item.source ?? "Lire la source", destination: url)
@@ -342,7 +369,7 @@ struct PublicTabs: View {
             Text(category).font(.system(.caption2).weight(.semibold)).tracking(0.5).foregroundStyle(BiningaStyle.secondary)
             Text(item.title).font(.system(.headline)).lineLimit(3)
                 .fixedSize(horizontal: false, vertical: true)
-            if let date = item.date {
+            if let date = item.displayDate {
                 Label(date, systemImage: "calendar").font(.caption2).foregroundStyle(BiningaStyle.secondary)
             }
         }.frame(maxWidth: .infinity, alignment: .leading)
@@ -436,7 +463,7 @@ private struct NativeActionStyle: ViewModifier {
     let primary: Bool
     @ViewBuilder func body(content: Content) -> some View {
         if primary {
-            content.buttonStyle(.borderedProminent)
+            content.buttonStyle(.borderedProminent).foregroundStyle(.white)
         } else {
             content.buttonStyle(.bordered)
         }
@@ -472,7 +499,7 @@ private struct NotificationInbox: View {
                     if push.denied {
                         Button("Ouvrir les réglages") { if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) } }
                     } else {
-                        Button("Activer ou actualiser les notifications") { Task { await push.requestPermission() } }.disabled(push.busy)
+                        Button("Actualiser l’inscription") { Task { await push.refreshPermission() } }.disabled(push.busy)
                     }
                     Text(push.message).font(.footnote).foregroundStyle(.secondary)
                 }.padding().frame(maxWidth: .infinity).background(.regularMaterial)
@@ -495,3 +522,4 @@ private struct NotificationInbox: View {
         }
     }
 }
+
