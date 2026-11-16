@@ -56,6 +56,18 @@
     const preview=()=>{byId('push-preview-title').textContent=byId('push-title').value||'Titre';byId('push-preview-body').textContent=byId('push-body').value||'Message';};
     byId('push-title').addEventListener('input',preview);byId('push-body').addEventListener('input',preview);
     byId('push-refresh').addEventListener('click',load);
-    window.addEventListener('admin:panelchange',event=>{if(event.detail?.name==='push')load();});
+    // Some legacy modules replace showPanel; observe the actual visible panel.
+    let active = false;
+    const syncPanel = () => {
+      const next = byId('panel-push').classList.contains('active');
+      if (next && !active) {
+        const title = byId('topbar-title');
+        if (title) title.textContent = 'Notifications iPhone';
+        load();
+      }
+      active = next;
+    };
+    new MutationObserver(syncPanel).observe(byId('panel-push'), {attributes:true,attributeFilter:['class']});
+    syncPanel();
   });
 })();
