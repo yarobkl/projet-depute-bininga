@@ -285,7 +285,7 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
       <div class="panel" id="panel-push">
         <div class="card" style="padding:24px">
           <h2>Notifications iPhone</h2>
-          <p>Préparez un message et validez un envoi vers un appareil ayant autorisé les notifications. Seuls les propriétaires de l’administration peuvent envoyer.</p>
+          <p>Préparez un message, vérifiez son aperçu et publiez-le vers tous les appareils ayant autorisé les notifications. Seuls les propriétaires de l’administration peuvent envoyer.</p>
           <p id="push-status" role="status" aria-live="polite">Ouvrez ce panneau pour vérifier la configuration.</p>
           <button id="push-refresh" type="button">Actualiser</button>
           <form id="push-compose" style="display:grid;gap:12px;max-width:640px;margin-top:20px">
@@ -294,7 +294,7 @@ try{if(localStorage.getItem('bininga_admin_theme')==='light')document.body.class
             <aside class="card" style="padding:16px"><strong id="push-preview-title">Titre</strong><p id="push-preview-body">Message</p></aside>
             <button type="submit" class="btn-primary">Enregistrer le brouillon</button>
           </form>
-          <label for="push-device">Appareil destinataire</label><select id="push-device"><option value="">Aucun appareil chargé</option></select>
+          <p id="push-audience" role="status">Chargement du nombre d’abonnés…</p><p>Gardez ce panneau ouvert jusqu’à la fin de la diffusion. Si elle est interrompue, reprenez-la depuis l’historique.</p>
           <h3>Brouillons et historique</h3><div id="push-history"></div>
         </div>
       </div>
@@ -1780,6 +1780,6 @@ function _ylFmtDate(ts){
 function _ylCap(s){return s?s.charAt(0).toUpperCase()+s.slice(1):""}
 function _ylEsc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}
 </script>
-<script src="/static/admin-push.js?v=20261116-panel-state" defer></script>
+<script src="/static/admin-push.js?v=20261116-broadcast-1" defer></script>
 </body>
 </html>
