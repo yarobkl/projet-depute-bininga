@@ -286,6 +286,7 @@ struct PublicTabs: View {
             .background(primary ? BiningaStyle.accent : .white.opacity(0.035), in: RoundedRectangle(cornerRadius: 16))
             .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.2), lineWidth: 0.5) }
         }.buttonStyle(.plain)
+        .accessibilityLabel(primary ? "Demander une audience" : "Déposer une réclamation")
     }
 
     private func publicationLink(_ item: Publication, featured: Bool, category: String) -> some View {
