@@ -66,8 +66,7 @@ struct PublicTabs: View {
     }
 
     private var home: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+        MainLayoutTemplate(horizontalPadding: 0, topPadding: 0, spacing: 16) {
                 homeHero
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 7) {
@@ -92,12 +91,9 @@ struct PublicTabs: View {
                         publicationLink(item, featured: false, category: "À LA UNE")
                     }
                 }
-                    .padding(.horizontal, 20).padding(.bottom, 20)
+                .padding(.horizontal, 20)
                 .frame(maxWidth: 640).frame(maxWidth: .infinity)
-                }
-            .frame(maxWidth: .infinity)
         }
-        .scrollIndicators(.hidden)
         .refreshable { await refresh() }
     }
 
@@ -244,8 +240,7 @@ struct PublicTabs: View {
     }
 
     private func page<Content: View>(_ title: String, subtitle: String, @ViewBuilder contents: () -> Content) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+        MainLayoutTemplate {
                 VStack(alignment: .leading, spacing: 7) {
                     Text("BININGA").font(.system(.subheadline, design: .serif).weight(.semibold))
                     Text(title).font(.system(.title, design: .serif).weight(.semibold)).tracking(-0.4)
@@ -254,10 +249,7 @@ struct PublicTabs: View {
                     rule.padding(.top, 5)
                 }.padding(.bottom, 3)
                 contents()
-            }
-            .padding(.horizontal, 20).padding(.top, 14).padding(.bottom, 20)
-            .frame(maxWidth: 640).frame(maxWidth: .infinity)
-        }.scrollIndicators(.hidden)
+        }
     }
 
     private func action(_ name: String, icon: String, route: Route, primary: Bool = false) -> some View {
@@ -382,5 +374,39 @@ private extension View {
         self.frame(maxWidth: .infinity, alignment: .leading).padding(padding)
             .background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 16))
             .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.16), lineWidth: 0.5) }
+    }
+}
+
+
+// Shared page geometry. The parent PublicTabs reserves the tab bar via safeAreaInset.
+// Only backgrounds may extend outside the system safe area.
+private struct MainLayoutTemplate<Content: View>: View {
+    private let content: Content
+    private let horizontalPadding: CGFloat
+    private let topPadding: CGFloat
+    private let spacing: CGFloat
+
+    init(horizontalPadding: CGFloat = 20, topPadding: CGFloat = 12,
+         spacing: CGFloat = 20, @ViewBuilder content: () -> Content) {
+        self.horizontalPadding = horizontalPadding
+        self.topPadding = topPadding
+        self.spacing = spacing
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack {
+            Color(red: 10 / 255, green: 10 / 255, blue: 10 / 255)
+                .ignoresSafeArea()
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: spacing) {
+                    content
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, horizontalPadding)
+                .padding(.top, topPadding)
+                .padding(.bottom, 20)
+            }
+        }
     }
 }
