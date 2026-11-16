@@ -24,4 +24,23 @@ class RetentionTests(unittest.TestCase):
     def test_open_before_reception_rejected(self):
         with self.assertRaises(ValueError): expires_at(self.received,self.received-timedelta(seconds=1))
 
+
+    def test_pre_receipt_access_denied(self):
+        self.assertFalse(can_read(self.received,None,self.received-timedelta(seconds=1)))
+        with self.assertRaises(ValueError):
+            register_first_open(self.received,None,self.received-timedelta(seconds=1))
+    def test_first_open_at_expiry_rejected(self):
+        with self.assertRaises(PermissionError):
+            register_first_open(self.received,None,self.received+timedelta(days=7))
+    def test_first_open_after_expiry_is_invalid(self):
+        with self.assertRaises(ValueError):
+            expires_at(self.received,self.received+timedelta(days=8))
+    def test_first_open_utc_normalization(self):
+        from datetime import timezone
+        opened=self.received+timedelta(hours=1)
+        self.assertEqual(register_first_open(self.received,opened,self.received+timedelta(hours=2)),opened)
+    def test_naive_now_rejected(self):
+        with self.assertRaises(ValueError):
+            can_read(self.received,None,datetime(2026,11,16))
+
 if __name__=="__main__": unittest.main()
