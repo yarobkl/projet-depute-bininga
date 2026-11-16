@@ -47,6 +47,10 @@ struct PublicTabs: View {
     @State private var loading = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var textSize
+    @ScaledMetric(relativeTo: .title) private var identitySize = 28
+    @ScaledMetric(relativeTo: .subheadline) private var nameSize = 15
+    @ScaledMetric(relativeTo: .footnote) private var roleSize = 13
+    @ScaledMetric(relativeTo: .title2) private var heroTitleSize = 22
     @Namespace private var selection
 
     var body: some View {
@@ -66,7 +70,8 @@ struct PublicTabs: View {
     }
 
     private var home: some View {
-        MainLayoutTemplate(horizontalPadding: 0, topPadding: 0, spacing: 16) {
+        MainLayoutTemplate {
+                homeIdentity
                 homeHero
                 VStack(alignment: .leading, spacing: 16) {
                     VStack(alignment: .leading, spacing: 7) {
@@ -91,48 +96,52 @@ struct PublicTabs: View {
                         publicationLink(item, featured: false, category: "À LA UNE")
                     }
                 }
-                .padding(.horizontal, 20)
-                .frame(maxWidth: 640).frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity)
         }
         .refreshable { await refresh() }
     }
 
-    private var homeHero: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("BININGA")
-                    .font(.system(.title, design: .serif).weight(.semibold)).tracking(-0.5)
-                Text("Ange Aimé Wilfrid BININGA").font(.caption.weight(.semibold))
-                Text("Député d’Ewo, République du Congo")
-                    .font(.caption2).foregroundStyle(BiningaStyle.text.opacity(0.8))
-                rule.padding(.top, 8)
-            }
-            .padding(.horizontal, 20).padding(.top, 8)
-            Spacer(minLength: 30)
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Ewo, au cœur de\nnotre action")
-                    .font(.system(.title, design: .serif).weight(.semibold).italic())
-                    .tracking(-0.5).fixedSize(horizontal: false, vertical: true)
-                rule
-            }.padding(20)
+    private var homeIdentity: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("BININGA")
+                .font(.system(size: identitySize, weight: .bold, design: .serif))
+                .accessibilityAddTraits(.isHeader)
+            Text("Ange Aimé Wilfrid BININGA")
+                .font(.system(size: nameSize, weight: .medium))
+            Text("Député d’Ewo, République du Congo")
+                .font(.system(size: roleSize))
+                .foregroundStyle(BiningaStyle.text.opacity(0.65))
         }
-        .frame(maxWidth: .infinity, minHeight: textSize.isAccessibilitySize ? 420 : 300, alignment: .leading)
-        .background {
+        .foregroundStyle(BiningaStyle.text)
+        .padding(.top, 4)
+    }
+
+    private var homeHero: some View {
+        ZStack(alignment: .bottomLeading) {
             GeometryReader { geometry in
-                Image("Ewo").resizable().scaledToFill()
+                Image("Ewo")
+                    .resizable()
+                    .scaledToFill()
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
-                    .overlay {
-                        LinearGradient(stops: [
-                            .init(color: BiningaStyle.background.opacity(0.97), location: 0),
-                            .init(color: BiningaStyle.background.opacity(0.7), location: 0.28),
-                            .init(color: .clear, location: 0.48),
-                            .init(color: BiningaStyle.background.opacity(0.9), location: 1)
-                        ], startPoint: .top, endPoint: .bottom)
-                    }
             }
-            .ignoresSafeArea(edges: .top)
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+
+            LinearGradient(
+                colors: [.clear, .black.opacity(0.8)],
+                startPoint: .top, endPoint: .bottom
+            )
+            .allowsHitTesting(false)
+
+            Text("Ewo, au cœur de notre action")
+                .font(.system(size: heroTitleSize, weight: .bold, design: .serif))
+                .foregroundStyle(BiningaStyle.text)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(20)
         }
+        .frame(height: textSize.isAccessibilitySize ? 420 : 260)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
     }
 
     private var news: some View {
