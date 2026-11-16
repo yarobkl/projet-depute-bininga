@@ -70,7 +70,7 @@ struct PublicTabs: View {
     }
 
     private var home: some View {
-        MainLayoutTemplate {
+        MainLayoutTemplate(horizontalPadding: 14, topPadding: 12, spacing: 16) {
                 homeIdentity
                 homeHero
                 VStack(alignment: .leading, spacing: 16) {
@@ -82,8 +82,7 @@ struct PublicTabs: View {
                         Text("Une vie au service du peuple congolais et de la Cuvette-Ouest.")
                             .font(.subheadline).foregroundStyle(BiningaStyle.text.opacity(0.7))
                     }
-                    .card()
-                    VStack(spacing: 9) {
+                    VStack(spacing: 12) {
                         action("Demander une audience", icon: "calendar", route: .audience, primary: true)
                         action("Suivre ma demande", icon: "doc.text.magnifyingglass", route: .tracking(""))
                     }
@@ -140,8 +139,8 @@ struct PublicTabs: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(20)
         }
-        .frame(height: textSize.isAccessibilitySize ? 420 : 260)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .aspectRatio(textSize.isAccessibilitySize ? 1 : 1.75, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var news: some View {
@@ -228,8 +227,8 @@ struct PublicTabs: View {
                         Image(systemName: tab.icon).font(.system(size: 18, weight: .regular))
                         Text(tab.rawValue).font(.caption2.weight(selected == tab ? .semibold : .regular))
                     }
-                    .frame(maxWidth: .infinity, minHeight: 46)
-                    .padding(.vertical, 3)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(.vertical, 1)
                     .background {
                         if selected == tab {
                             Capsule().fill(BiningaStyle.accent).matchedGeometryEffect(id: "selected", in: selection)
@@ -242,10 +241,10 @@ struct PublicTabs: View {
                 .accessibilityAddTraits(selected == tab ? .isSelected : [])
             }
         }
-        .padding(4)
+        .padding(3)
         .background(.ultraThinMaterial, in: Capsule())
         .overlay { Capsule().strokeBorder(.white.opacity(0.1), lineWidth: 0.5) }
-        .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 6)
+        .padding(.horizontal, 14).padding(.top, 6)
     }
 
     private func page<Content: View>(_ title: String, subtitle: String, @ViewBuilder contents: () -> Content) -> some View {
@@ -265,13 +264,13 @@ struct PublicTabs: View {
         NavigationLink(value: route) {
             HStack(spacing: 10) {
                 Image(systemName: icon).frame(width: 22)
-                Text(name).font(.subheadline.weight(.semibold))
+                Text(name).font(.subheadline.weight(.medium))
                 Spacer(minLength: 6)
                 Image(systemName: "chevron.right").font(.caption.weight(.semibold))
             }
             .frame(minHeight: 24).padding(.horizontal, 14).padding(.vertical, 11)
-            .background(primary ? BiningaStyle.accent : Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(BiningaStyle.text.opacity(primary ? 0.1 : 0.35), lineWidth: 0.5) }
+            .background(Color.white.opacity(0.035), in: RoundedRectangle(cornerRadius: 12))
+            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(primary ? BiningaStyle.accent : BiningaStyle.text.opacity(0.25), lineWidth: primary ? 1 : 0.5) }
             .contentShape(RoundedRectangle(cornerRadius: 12))
         }.buttonStyle(.plain)
     }
