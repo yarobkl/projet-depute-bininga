@@ -1023,3 +1023,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   .kpi-grid{grid-template-columns:1fr!important}
   .topbar-title{font-size:13px}
 }
+
+/* Notification composer is a standalone workflow, not a CMS edit screen. */
+body:has(#panel-push.active) #admin-actionbar{display:none!important}
+#panel-push{max-width:960px}
+#push-compose{display:grid;gap:12px;margin:20px 0}
+#push-compose label{display:grid;gap:6px}
+#push-compose input,#push-compose textarea,#push-device{width:100%;min-height:44px;padding:12px;border:1px solid var(--line,rgba(148,163,184,.25));border-radius:10px;background:var(--n2);color:var(--w);font:inherit}
+#push-compose textarea{min-height:112px;resize:vertical}
+#push-preview{padding:16px;border-radius:14px;background:var(--n3);line-height:1.5}
+#panel-push button{min-height:44px;padding:10px 16px;border-radius:10px;border:1px solid rgba(148,163,184,.3);background:var(--n3);color:var(--w);font:inherit;cursor:pointer}
+#push-status{margin:12px 0;line-height:1.5}
+#push-history{display:grid;gap:12px;margin-top:16px}
+#push-history article{padding:16px;display:grid;gap:10px}
