@@ -6,10 +6,13 @@ import os
 import re
 import secrets
 import time
+import threading
 import uuid
 from urllib.parse import urlparse
 
 TOPIC = 'fr.yaroconsulting.bininga.publicapp'
+_TOKEN_LOCK = threading.Lock()
+_TOKEN_CACHE = None
 
 
 def validate_message(data):
@@ -41,14 +44,25 @@ def connection(server):
     return conn
 
 
+def provider_token():
+    import jwt
+    global _TOKEN_CACHE
+    key = os.environ.get('BININGA_APNS_PRIVATE_KEY', '')
+    if not key: raise RuntimeError('Clé APNs non configurée')
+    fingerprint = hashlib.sha256(key.encode()).digest()
+    now = int(time.time())
+    with _TOKEN_LOCK:
+        if _TOKEN_CACHE and _TOKEN_CACHE[0] == fingerprint and _TOKEN_CACHE[2] > now:
+            return _TOKEN_CACHE[1]
+        token = jwt.encode({'iss': 'UK4UQCQ57G', 'iat': now}, key,
+            algorithm='ES256', headers={'kid': 'A2J3Z6G7WJ'})
+        _TOKEN_CACHE = (fingerprint, token, now + 45 * 60)
+        return token
+
+
 def send_apns(token, title, body, message_id):
     import httpx
-    import jwt
-    key = os.environ.get('BININGA_APNS_PRIVATE_KEY', '')
-    if not key:
-        raise RuntimeError('Clé APNs non configurée')
-    bearer = jwt.encode({'iss': 'UK4UQCQ57G', 'iat': int(time.time())}, key,
-                        algorithm='ES256', headers={'kid': 'A2J3Z6G7WJ'})
+    bearer = provider_token()
     with httpx.Client(http2=True, timeout=8) as client:
         response = client.post('https://api.push.apple.com/3/device/' + token,
             headers={'authorization': 'bearer ' + bearer, 'apns-topic': TOPIC,
