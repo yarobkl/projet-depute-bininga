@@ -5,7 +5,8 @@ on:
     paths: ['ios/Public/**', '.github/workflows/ios-public.yml']
 jobs:
   simulator:
-    runs-on: macos-15
+    runs-on: macos-26
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - run: brew list xcodegen >/dev/null || brew install xcodegen
@@ -20,7 +21,7 @@ jobs:
           xcrun simctl launch "$device" fr.yaroconsulting.bininga.publicapp
           sleep 3
           xcrun simctl io "$device" screenshot "$RUNNER_TEMP/Bininga-home.png"
-          xcrun simctl list devices available -j | python3 -c 'import json,sys; rows=[d for k,v in json.load(sys.stdin)["devices"].items() if "iOS" in k for d in v]; names=["iPhone SE (3rd generation)","iPhone 16 Plus","iPhone 16 Pro"]; selected=[next((d for d in rows if d["name"]==n),None) for n in names]; [print(d["udid"]) for d in selected if d]' > "$RUNNER_TEMP/layout-devices.txt"
+          xcrun simctl list devices available -j | python3 -c 'import json,sys; rows=[d for k,v in json.load(sys.stdin)["devices"].items() if "iOS" in k for d in v]; names=["iPhone 16e","iPhone 16 Plus","iPhone 17 Pro"]; selected=[next((d for d in rows if d["name"]==n),None) for n in names]; [print(d["udid"]) for d in selected if d]' > "$RUNNER_TEMP/layout-devices.txt"
           while read -r layout_device; do
             xcrun simctl boot "$layout_device" || true
             xcrun simctl bootstatus "$layout_device" -b
