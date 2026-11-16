@@ -57,7 +57,7 @@ struct PublicTabs: View {
             more.tag(SectionTab.more)
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .safeAreaInset(edge: .bottom, spacing: 0) { tabBar }
+        .safeAreaInset(edge: .bottom, spacing: 0) { tabBar.zIndex(1) }
         .background(BiningaStyle.background.ignoresSafeArea())
         .foregroundStyle(BiningaStyle.text)
         .tint(BiningaStyle.accent)
@@ -349,7 +349,7 @@ struct PublicTabs: View {
                     }
                 }
             }
-        }.clipped().accessibilityHidden(true)
+        }.clipped().contentShape(Rectangle()).allowsHitTesting(false).accessibilityHidden(true)
     }
 
     @MainActor private func refresh() async {
