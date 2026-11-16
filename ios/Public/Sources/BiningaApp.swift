@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 @main struct BiningaApp: App {
-    var body: some Scene { WindowGroup { Home().preferredColorScheme(.dark).tint(Color(red: 0.82, green: 0.19, blue: 0.32)) } }
+    var body: some Scene { WindowGroup { Home().preferredColorScheme(.light).tint(BiningaStyle.accent) } }
 }
 
 enum Route: Hashable { case audience, complaint, receipt(String), tracking(String) }
@@ -23,11 +23,13 @@ private struct Home: View {
                             Button("Copier la référence") { UIPasteboard.general.string = code }
                             NavigationLink("Suivre ma demande", value: Route.tracking(code))
                         } header: { Text("Votre référence") } footer: { Text("Conservez cette référence pour consulter le dossier depuis le site ou l’application.") }
-                    }.navigationTitle("Demande reçue")
+                    }.scrollContentBackground(.hidden).background(BiningaStyle.background).navigationTitle("Demande reçue")
                 case .tracking(let code): Tracking(initial: code)
                 }
             }
         }
+        .background(BiningaStyle.background)
+        .toolbarBackground(BiningaStyle.background, for: .navigationBar)
     }
 }
 
@@ -64,7 +66,7 @@ private struct RequestForm: View {
                     } catch { self.error = error.localizedDescription }
                 }
             }.disabled(!eligible || busy)
-        }.disabled(busy).navigationBarBackButtonHidden(busy).navigationTitle(complaint ? "Réclamation" : "Audience")
+        }.scrollContentBackground(.hidden).background(BiningaStyle.background).disabled(busy).navigationBarBackButtonHidden(busy).navigationTitle(complaint ? "Réclamation" : "Audience")
     }
 }
 
@@ -91,7 +93,7 @@ private struct Tracking: View {
                     if let note = result.decision_note, !note.isEmpty { Text(note) }
                 }
             }
-        }.navigationTitle("Mon dossier").onChange(of:code) { result = nil; error = nil }
+        }.scrollContentBackground(.hidden).background(BiningaStyle.background).navigationTitle("Mon dossier").onChange(of:code) { result = nil; error = nil }
     }
     private func search() async {
         guard !busy else { return }; busy = true; error = nil; result = nil
