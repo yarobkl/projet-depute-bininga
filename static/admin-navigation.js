@@ -80,7 +80,7 @@
 
     const titles = window.PANEL_TITLES || {};
     const title = document.getElementById('topbar-title');
-    if (title) title.textContent = titles[name] || name;
+    if (title) title.textContent = titles[name] || (name === 'push' ? 'Notifications iPhone' : name);
 
     if (isMobile()) closeSidebar();
 
@@ -123,7 +123,8 @@
     if (!sidebar) return;
     _sidebarOpen = false;
     sidebar.classList.remove('open');
-    sidebar.style.setProperty('left', 'calc(-1 * min(84vw, 304px))', 'important');
+    if (isMobile()) sidebar.style.setProperty('left', 'calc(-1 * min(84vw, 304px))', 'important');
+    else sidebar.style.removeProperty('left');
     if (overlay) overlay.classList.remove('open');
     if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
     if (pull) pull.classList.remove('visible');
@@ -158,7 +159,7 @@
     });
 
     window.addEventListener('resize', () => {
-      if (!isMobile() && _sidebarOpen) closeSidebar();
+      if (!isMobile()) closeSidebar();
     }, { passive: true });
 
     if (isMobile()) closeSidebar();
