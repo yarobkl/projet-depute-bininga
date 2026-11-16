@@ -108,7 +108,18 @@ struct PublicTabs: View {
                     }
                     VStack(spacing: 12) {
                         action("Demander une audience", icon: "calendar", route: .audience, primary: true)
-                        action("Suivre ma demande", icon: "doc.text.magnifyingglass", route: .tracking(""))
+                        Button {
+                            filter = "Programme"
+                            selected = .news
+                        } label: {
+                            Label("Lire le programme", systemImage: "book.closed")
+                                .frame(maxWidth: .infinity, minHeight: 24)
+                                .padding(.vertical, 2)
+                        }
+                        .font(.headline)
+                        .controlSize(.large)
+                        .buttonBorderShape(.roundedRectangle(radius: 14))
+                        .buttonStyle(.bordered)
                     }
                     if let item = content?.actus.slides?.first {
                         HStack {
