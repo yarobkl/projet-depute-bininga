@@ -310,13 +310,13 @@ struct PublicTabs: View {
                     publicationPhoto(item).aspectRatio(16 / 9, contentMode: .fit)
                     publicationSummary(item, category: category).padding(14)
                 }.background(.white.opacity(0.045), in: RoundedRectangle(cornerRadius: 16))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: 16)).contentShape(Rectangle())
                     .overlay { RoundedRectangle(cornerRadius: 16).strokeBorder(.white.opacity(0.16), lineWidth: 0.5) }
             } else {
                 HStack(alignment: .top, spacing: 12) {
                     publicationPhoto(item).frame(width: 88, height: 96).clipShape(RoundedRectangle(cornerRadius: 9))
                     publicationSummary(item, category: category)
-                }.card(padding: 10)
+                }.card(padding: 10).contentShape(Rectangle())
             }
         }.buttonStyle(.plain)
     }
