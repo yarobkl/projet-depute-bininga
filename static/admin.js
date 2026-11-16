@@ -2292,7 +2292,7 @@ function showPanel(name, el) {
   }
   panel.classList.add("active");
   if (el) el.classList.add("active");
-  document.getElementById("topbar-title").textContent = PANEL_TITLES[name] || name;
+  document.getElementById("topbar-title").textContent = PANEL_TITLES[name] || (name === "push" ? "Notifications iPhone" : name);
   if (name === "dashboard")    syncMessages().then(() => refreshDashboard());
   if (name === "audiences")    syncMessages().then(() => renderAudiences());
   if (name === "reclamations") syncMessages().then(() => renderReclamations());
@@ -2314,6 +2314,7 @@ function showPanel(name, el) {
   if (formPanels.includes(name)) populateForm();
   // Fermer la sidebar sur mobile après sélection
   if (window.innerWidth <= 768) closeSidebar();
+  window.dispatchEvent(new CustomEvent("admin:panelchange", { detail: { name } }));
 }
 
 // ══════════════════════════════════════════════════════════════════════════
