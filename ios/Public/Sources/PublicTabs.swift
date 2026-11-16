@@ -85,6 +85,14 @@ struct PublicTabs: View {
 
     private var home: some View {
         MainLayoutTemplate(spacing: 16) {
+                HStack {
+                    Text("PCT").font(.caption.bold()).padding(.horizontal, 12).padding(.vertical, 7)
+                        .foregroundStyle(BiningaStyle.accent)
+                        .background(BiningaStyle.accent.opacity(0.08), in: Capsule())
+                    Spacer()
+                    Text("Législatives 2027").font(.subheadline.weight(.semibold))
+                        .foregroundStyle(BiningaStyle.secondary)
+                }.accessibilityElement(children: .combine)
                 Text(content?.fullName ?? "Ange Aimé Wilfrid BININGA")
                     .font(.largeTitle.bold()).tracking(-0.7)
                     .fixedSize(horizontal: false, vertical: true)
@@ -251,19 +259,7 @@ struct PublicTabs: View {
         }.card().foregroundStyle(BiningaStyle.text)
     }
 
-    private var career: some View {
-        MainLayoutTemplate {
-            if let steps = content?.parcours, !steps.isEmpty {
-                ForEach(Array(steps.enumerated()), id: \.offset) { _, step in
-                    VStack(alignment: .leading, spacing: 10) {
-                        if let year = step.year { Text(year).font(.subheadline.weight(.semibold)).foregroundStyle(BiningaStyle.accent) }
-                        Text(step.title.editorialPlainText).font(.title3.bold()).accessibilityAddTraits(.isHeader)
-                        if let text = step.desc { Text(text.editorialPlainText).font(.body).lineSpacing(4) }
-                    }.card()
-                }
-            } else { ContentUnavailableView("Parcours indisponible", systemImage: "person.text.rectangle") }
-        }.navigationTitle("Son parcours").navigationBarTitleDisplayMode(.inline)
-    }
+    private var career: some View { CareerTimeline(steps: content?.parcours ?? []) }
 
     private var about: some View {
         MainLayoutTemplate {
