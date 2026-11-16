@@ -3,6 +3,7 @@ import XCTest
 final class PublicNavigationTests: XCTestCase {
     func testPublicRoutes() throws {
         let app = XCUIApplication()
+        continueAfterFailure = false
         app.launch()
         let audience = app.buttons["Demander une audience"].firstMatch
         XCTAssertTrue(audience.waitForExistence(timeout: 10))
@@ -13,7 +14,7 @@ final class PublicNavigationTests: XCTestCase {
 
         app.buttons["Actualités"].firstMatch.tap()
         app.buttons["Programme"].firstMatch.tap()
-        XCTAssertTrue(app.staticTexts["Justice accessible"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Justice accessible"].waitForExistence(timeout: 10), app.debugDescription)
         app.buttons["Demandes"].firstMatch.tap()
         app.buttons["Déposer une réclamation"].firstMatch.tap()
         XCTAssertTrue(app.textFields["Prénom"].waitForExistence(timeout: 5))
