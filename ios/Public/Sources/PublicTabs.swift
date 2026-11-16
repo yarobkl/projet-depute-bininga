@@ -43,7 +43,7 @@ struct PublicTabs: View {
                         .font(.caption).foregroundStyle(cream.opacity(0.72))
                 }
                 Color.clear
-                    .aspectRatio(4 / 3, contentMode: .fit)
+                    .aspectRatio(16 / 9, contentMode: .fit)
                     .overlay {
                         GeometryReader { geometry in
                             Image("Ewo")
@@ -62,7 +62,7 @@ struct PublicTabs: View {
                     }
                     .overlay(alignment: .bottomLeading) {
                         Text("Ewo, au cœur de notre action")
-                            .font(.system(.title, design: .serif).weight(.semibold))
+                            .font(.system(.title2, design: .serif).weight(.semibold))
                             .tracking(-0.4)
                             .lineSpacing(1)
                             .fixedSize(horizontal: false, vertical: true)
@@ -72,10 +72,10 @@ struct PublicTabs: View {
                     .accessibilityElement(children: .combine)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Servir Ewo avec écoute et responsabilité")
-                        .font(.system(.title3, design: .serif).weight(.semibold))
+                        .font(.system(.headline, design: .serif).weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                     Text("À vos côtés, porter vos préoccupations au Parlement et contribuer au développement durable de notre localité.")
-                        .font(.subheadline).foregroundStyle(cream.opacity(0.78))
+                        .font(.footnote).foregroundStyle(cream.opacity(0.78))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -103,7 +103,7 @@ struct PublicTabs: View {
                         if articles.isEmpty { Text("Aucune publication dans cette rubrique.") }
                         ForEach(Array(articles.enumerated()),id:\.offset) { _, item in
                             NavigationLink {
-                                ScrollView { VStack(alignment:.leading,spacing:14) {
+                                ScrollView { VStack(alignment:.leading,spacing:12) {
                                     photo(item); Text(item.title).font(.system(.title,design:.serif).bold())
                                     if let date=item.date { Text(date).font(.caption) }
                                     Text(item.bodyText)
@@ -132,7 +132,7 @@ struct PublicTabs: View {
                         Image(systemName: tab.icon).font(.system(size: 20, weight: .medium))
                         Text(tab.rawValue).font(.caption2.weight(.medium))
                     }
-                        .frame(maxWidth:.infinity,minHeight:52)
+                        .frame(maxWidth:.infinity,minHeight:48)
                         .background { if selected==tab { Capsule().fill(wine).matchedGeometryEffect(id:"selected",in:selection) } }
                 }.buttonStyle(.plain).contentShape(Rectangle())
                 .accessibilityLabel(tab.rawValue)
@@ -151,7 +151,7 @@ struct PublicTabs: View {
     private func page<V:View>(_ title:String,@ViewBuilder _ contents:()->V)->some View {
         ScrollView { VStack(alignment:.leading,spacing:14) {
             Text(title)
-                .font(.system(.largeTitle, design: .serif).weight(.semibold))
+                .font(.system(.title, design: .serif).weight(.semibold))
                 .tracking(-0.5)
                 .fixedSize(horizontal: false, vertical: true)
                 .accessibilityAddTraits(.isHeader)
@@ -160,7 +160,7 @@ struct PublicTabs: View {
                 .accessibilityHidden(true)
             contents()
         }.frame(maxWidth: 600, alignment: .leading)
-            .padding(.horizontal, 20).padding(.top, 16).padding(.bottom, 24)
+            .padding(.horizontal, 20).padding(.top, 8).padding(.bottom, 24)
             .frame(maxWidth: .infinity)
         }
         .scrollIndicators(.hidden)
@@ -168,7 +168,7 @@ struct PublicTabs: View {
     private func action(_ name:String,_ icon:String,_ route:Route,_ primary:Bool=false)->some View {
         NavigationLink(value:route) { HStack { Label(name,systemImage:icon); Spacer(); Image(systemName:"chevron.right") }
             .font(.body.weight(.semibold))
-            .frame(minHeight: 24).padding(.horizontal, 16).padding(.vertical, 14)
+            .frame(minHeight: 24).padding(.horizontal, 16).padding(.vertical, 10)
             .background(primary ? wine : Color.white.opacity(0.06),in:RoundedRectangle(cornerRadius:14))
             .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(cream.opacity(primary ? 0.1 : 0.35), lineWidth: 0.5) } }.buttonStyle(.plain)
     }
